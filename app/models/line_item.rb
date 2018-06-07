@@ -1,4 +1,4 @@
-class OrderLineItem < ApplicationRecord
+class LineItem < ApplicationRecord
   include ActiveModel::Serializers::JSON
 
   belongs_to :order

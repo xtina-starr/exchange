@@ -1,6 +1,6 @@
-class CreateOrderLineItems < ActiveRecord::Migration[5.2]
+class CreateLineItems < ActiveRecord::Migration[5.2]
   def change
-    create_table :order_line_items do |t|
+    create_table :line_items do |t|
       t.references :order, foreign_key: true
       t.string :artwork_id
       t.string :edition_set_id

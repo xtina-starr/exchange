@@ -10,19 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_07_003224) do
+ActiveRecord::Schema.define(version: 2018_06_07_135803) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "order_line_items", force: :cascade do |t|
+  create_table "line_items", force: :cascade do |t|
     t.bigint "order_id"
     t.string "artwork_id"
     t.string "edition_set_id"
     t.integer "price_cents"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["order_id"], name: "index_order_line_items_on_order_id"
+    t.index ["order_id"], name: "index_line_items_on_order_id"
   end
 
   create_table "orders", force: :cascade do |t|
@@ -36,10 +36,13 @@ ActiveRecord::Schema.define(version: 2018_06_07_003224) do
     t.string "partner_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "state", default: "pending"
+    t.datetime "last_state_change_at"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["partner_id"], name: "index_orders_on_partner_id"
+    t.index ["state"], name: "index_orders_on_state"
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
-  add_foreign_key "order_line_items", "orders"
+  add_foreign_key "line_items", "orders"
 end
