@@ -1,6 +1,4 @@
 class Order < ApplicationRecord
-  include ActiveModel::Serializers::JSON
-
   STATES = [
     PENDING = 'pending',
     SUBMITTED = 'submitted'
@@ -23,17 +21,5 @@ class Order < ApplicationRecord
 
   def set_last_state_change
     self.last_state_change_at = Time.now.utc
-  end
-
-  def attributes
-    {
-      id: nil,
-      code: nil,
-      user_id: nil,
-      partner_id: nil,
-      state: nil,
-      last_state_change_at: nil,
-      created_at: nil
-    }
   end
 end
