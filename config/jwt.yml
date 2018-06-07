@@ -1,0 +1,7 @@
+development: &default
+  hmac_secret: <%= ENV['HMAC_SECRET'] || 'https://giphy.com/gifs/yow6i0Zmp7G24/html5' %>
+  alg: 'HS256'
+test:
+  <<: *default
+production:
+  <<: *default

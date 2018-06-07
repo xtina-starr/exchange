@@ -12,6 +12,10 @@ module ErrorHandler
       rescue_from ::Errors::OrderError do |exception|
         render json: { errors: [ 'failed_request' => exception.to_s ] }, status: :bad_request
       end
+
+      rescue_from ::Errors::AuthError do |exception|
+        render json: { errors: [ 'failed_request' => exception.to_s ] }, status: :unauthorized
+      end
     end
   end
 end

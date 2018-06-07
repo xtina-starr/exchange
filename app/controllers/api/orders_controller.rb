@@ -1,5 +1,7 @@
 module Api
   class OrdersController < ApplicationController
+    before_action :verify_user!
+
     def create
       raise(Errors::OrderError.new('Existing pending order.')) if OrderService.create_params_has_pending_order?(create_params)
       order = OrderService.create!(create_params)
@@ -22,6 +24,10 @@ module Api
 
     def submit_params
       params.requre(:order).permit(:shipping_info, :credit_card_id)
+    end
+
+    def verify_user!
+      raise(Errors::AuthError.new('Not Permitted.')) if params.dig(:order, :user_id).nil? || current_user['id'] != params.dig(:order, :user_id)
     end
   end
 end
