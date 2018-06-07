@@ -1,24 +1,44 @@
-# README
+# Stress
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Stress is currently a prototype Rails API for handling ecommerce orders at Artsy.
 
-Things you may want to cover:
+## Meta
 
-* Ruby version
+* State: development
+* Production: 
+* Staging: 
+* GitHub: [https://github.com/artsy/stress/][stress]
+* Point People: [@ashkan18][ashkan18]
 
-* System dependencies
+## Setup
 
-* Configuration
+* Fork the project to your GitHub account
 
-* Database creation
+* Clone your fork:
+  ```
+  $ git clone git@github.com:your-github-username/radiation.git
+  ```
 
-* Database initialization
+* Install bundles:
+  ```
+  $ bundle install
+  ```
 
-* How to run the test suite
+## Tests
 
-* Services (job queues, cache servers, search engines, etc.)
+Once setup, you can run the tests like this:
 
-* Deployment instructions
+```
+$ bundle exec rspec
+```
 
-* ...
+Note: the default rake task is setup to run tests and Rubocop.
+
+## Starting Server
+
+
+```
+$ rails s
+```
+
+[ashkan18]: https://github.com/ashkan18
