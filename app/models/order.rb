@@ -1,6 +1,8 @@
 class Order < ApplicationRecord
   include ActiveModel::Serializers::JSON
 
+  has_many :line_items, class_name: 'OrderLineItem'
+
   before_create :set_code
 
   def set_code
