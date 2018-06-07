@@ -26,7 +26,7 @@ class ApplicationController < ActionController::API
   end
 
   def auth_token
-    @auth_token ||= decode_token
+    @auth_token ||= decode_token.with_indifferent_access
   end
 
   def user_id_in_token?

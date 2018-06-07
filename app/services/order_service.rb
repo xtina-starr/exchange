@@ -1,9 +1,8 @@
 module OrderService
-  def self.create!(params)
+  def self.create!(user_id:, partner_id:, line_items: [])
     Order.transaction do
-      line_items = params[:line_items]
-      order = Order.create!(params.except(:line_items))
-      line_items.each { |li_param| LineItemService.create!(order, li_param) } if line_items 
+      order = Order.create!(user_id: user_id, partner_id: partner_id)
+      line_items.each { |li| LineItemService.create!(order, li) } if line_items 
       order
     end
   end
@@ -21,7 +20,7 @@ module OrderService
     Order.pending.joins(:line_items).find_by(user_id: user_id, line_items: { artwork_id: artwork_id, edition_set_id: edition_set_id })
   end
 
-  def self.create_params_has_pending_order?(params)
-    params[:line_items].map { |li_param| user_pending_artwork_order(params[:user_id], li_param[:artwork_id], li_param[:edition_set_id]) }.any?
+  def self.create_params_has_pending_order?(user_id: , line_items:)
+    line_items.map { |li| user_pending_artwork_order(user_id, li[:artwork_id], li[:edition_set_id]) }.any?
   end
 end

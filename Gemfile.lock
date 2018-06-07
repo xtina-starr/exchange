@@ -53,6 +53,7 @@ GEM
     ffi (1.9.25)
     globalid (0.4.1)
       activesupport (>= 4.2.0)
+    graphql (1.8.2)
     i18n (1.0.1)
       concurrent-ruby (~> 1.0)
     jwt (2.1.0)
@@ -147,6 +148,7 @@ PLATFORMS
 DEPENDENCIES
   byebug
   fabrication
+  graphql
   jwt
   listen (>= 3.0.5, < 3.2)
   pg (>= 0.18, < 2.0)
