@@ -1,4 +1,4 @@
 module Errors
-  class OrderError < StandardError
+  class OrderError < ApplicationError
   end
 end

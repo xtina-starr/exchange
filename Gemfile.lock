@@ -43,8 +43,6 @@ GEM
       minitest (~> 5.1)
       tzinfo (~> 1.1)
     arel (9.0.0)
-    bootsnap (1.3.0)
-      msgpack (~> 1.0)
     builder (3.2.3)
     byebug (10.0.2)
     concurrent-ruby (1.0.5)
@@ -74,7 +72,6 @@ GEM
     mini_mime (1.0.0)
     mini_portile2 (2.3.0)
     minitest (5.11.3)
-    msgpack (1.2.4)
     nio4r (2.3.1)
     nokogiri (1.8.2)
       mini_portile2 (~> 2.3.0)
@@ -129,11 +126,6 @@ GEM
       rspec-support (~> 3.7.0)
     rspec-support (3.7.1)
     ruby_dep (1.5.0)
-    spring (2.0.2)
-      activesupport (>= 4.2)
-    spring-watcher-listen (2.0.1)
-      listen (>= 2.7, < 4.0)
-      spring (>= 1.2, < 3.0)
     sprockets (3.7.1)
       concurrent-ruby (~> 1.0)
       rack (> 1, < 3)
@@ -153,7 +145,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bootsnap (>= 1.1.0)
   byebug
   fabrication
   jwt
@@ -162,8 +153,6 @@ DEPENDENCIES
   puma (~> 3.11)
   rails (~> 5.2.0)
   rspec-rails
-  spring
-  spring-watcher-listen (~> 2.0.0)
   tzinfo-data
 
 RUBY VERSION

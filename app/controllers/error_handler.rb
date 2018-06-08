@@ -4,7 +4,7 @@ module ErrorHandler
       rescue_from ActionController::ParameterMissing do |exception|
         render json: { errors: [ exception.param => "is required" ] }, status: :bad_request
       end
-    
+
       rescue_from ActiveRecord::RecordNotFound do |exception|
         render json: { errors: [ 'not found' => exception.to_s ] }, status: :not_found
       end
