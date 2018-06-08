@@ -3,7 +3,7 @@ class Mutations::CreateOrder < Mutations::BaseMutation
 
   argument :user_id, String, required: true
   argument :partner_id, String, required: true
-  
+
   argument :line_items, [Types::LineItemAttributes], required: false
 
   field :order, Types::OrderType, null: true
