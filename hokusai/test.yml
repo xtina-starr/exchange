@@ -1,0 +1,18 @@
+---
+version: '2'
+services:
+  stress:
+    extends:
+      file: common.yml
+      service: stress
+    ports:
+    - 8080:8080
+    environment:
+    - RAILS_ENV=test
+    - DATABASE_HOST=stress-db
+    - DATABASE_USER=postgres
+    command: ./hokusai/ci.sh
+    depends_on:
+      - stress-db
+  stress-db:
+    image: postgres:9.6

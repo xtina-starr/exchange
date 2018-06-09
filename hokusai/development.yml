@@ -1,0 +1,14 @@
+---
+version: '2'
+services:
+  stress:
+    command: bundle exec rails server
+    environment:
+    - RAILS_ENV=development
+    extends:
+      file: common.yml
+      service: stress
+    ports:
+      - 8080:8080
+    volumes:
+      - ../:/app
