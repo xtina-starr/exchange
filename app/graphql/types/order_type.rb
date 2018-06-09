@@ -8,7 +8,7 @@ class Types::OrderType < Types::BaseObject
   field :partner_id, String, null: false
   field :state, String, null: false
   field :currency_code, String, null: false
-  field :last_state_change_at, Types::DateTimeType, null: false
   field :created_at, Types::DateTimeType, null: false
+  field :update_at, Types::DateTimeType, null: false
   field :line_items, [Types::LineItemType], null: true
 end

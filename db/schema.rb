@@ -38,7 +38,6 @@ ActiveRecord::Schema.define(version: 2018_06_07_135803) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "state", default: "pending"
-    t.datetime "last_state_change_at"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["partner_id"], name: "index_orders_on_partner_id"
     t.index ["state"], name: "index_orders_on_state"
