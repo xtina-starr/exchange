@@ -74,7 +74,7 @@ describe Api::GraphqlController, type: :request do
         it 'returns error' do
           expect do
             response = client.execute(mutation, order_input_with_line_item)
-            expect(response.data.create_order.errors).to include 'Currency not suppoerted'
+            expect(response.data.create_order.errors).to include 'Currency not supported'
           end.to change(Order, :count).by(0)
         end
       end
@@ -90,7 +90,5 @@ describe Api::GraphqlController, type: :request do
         end
       end
     end
-
-    
   end
 end

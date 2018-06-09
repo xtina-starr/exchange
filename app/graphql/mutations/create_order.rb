@@ -11,27 +11,16 @@ class Mutations::CreateOrder < Mutations::BaseMutation
   field :errors, [String], null: false
 
   def resolve(user_id:, partner_id:, currency_code:, line_items: [])
-    errors = []
-    errors << 'Not permitted' unless valid_user?(user_id)
-    errors << 'Existing pending order' if has_pending_orders?(user_id, line_items)
-    errors << 'Currency not suppoerted' unless valid_currency_code?(currency_code)
-    return { order: nil, errors: errors} if errors.any?
-    order = OrderService.create!(user_id: user_id, partner_id: partner_id, currency_code: currency_code, line_items: line_items)
+    validate_user!(user_id)
     {
-      order: order,
+      order: OrderService.create!(user_id: user_id, partner_id: partner_id, currency_code: currency_code, line_items: line_items),
       errors: [],
     }
+  rescue Errors::ApplicationError => e
+    { order: nil, errors: [e.message] }
   end
 
-  def valid_user?(user_id)
-    context[:current_user]['id'] == user_id
-  end
-
-  def has_pending_orders?(user_id, line_items)
-    OrderService.create_params_has_pending_order?(user_id, line_items)
-  end
-
-  def valid_currency_code?(currency_code)
-    currency_code == 'usd'
+  def validate_user!(user_id)
+    raise Errors::AuthError.new('Not permitted') if context[:current_user]['id'] != user_id
   end
 end
