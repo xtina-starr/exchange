@@ -10,6 +10,7 @@ class Order < ApplicationRecord
 
   before_create :set_code
   before_save :set_last_state_change, if: :state_changed?
+  before_save :set_currency_code
 
   scope :pending, -> { where(state: PENDING) }
 
@@ -21,5 +22,9 @@ class Order < ApplicationRecord
 
   def set_last_state_change
     self.last_state_change_at = Time.now.utc
+  end
+
+  def set_currency_code
+    self.currency_code ||= 'usd'
   end
 end
