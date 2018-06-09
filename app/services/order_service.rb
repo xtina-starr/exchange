@@ -1,7 +1,7 @@
 module OrderService
-  def self.create!(user_id:, partner_id:, line_items: [])
+  def self.create!(user_id:, partner_id:, currency_code:, line_items: [])
     Order.transaction do
-      order = Order.create!(user_id: user_id, partner_id: partner_id)
+      order = Order.create!(user_id: user_id, partner_id: partner_id, currency_code: currency_code)
       line_items.each { |li| LineItemService.create!(order, li) } if line_items 
       order
     end
