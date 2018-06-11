@@ -32,12 +32,12 @@ ActiveRecord::Schema.define(version: 2018_06_07_135803) do
     t.integer "tax_total_cents"
     t.integer "transaction_fee_cents"
     t.integer "comission_fee_cents"
+    t.string "currency_code", limit: 3
     t.string "user_id"
     t.string "partner_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "state", default: "pending"
-    t.datetime "last_state_change_at"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["partner_id"], name: "index_orders_on_partner_id"
     t.index ["state"], name: "index_orders_on_state"

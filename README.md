@@ -1,6 +1,6 @@
 # Stress
 
-Stress is currently a prototype Rails API for handling ecommerce orders at Artsy.
+Stress is currently a prototype [Ruby GraphQL](http://graphql-ruby.org/) API for handling ecommerce orders at Artsy.
 
 ## Meta
 

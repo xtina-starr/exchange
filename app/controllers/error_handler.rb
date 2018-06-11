@@ -9,10 +9,6 @@ module ErrorHandler
         render json: { errors: [ 'not found' => exception.to_s ] }, status: :not_found
       end
 
-      rescue_from ::Errors::OrderError do |exception|
-        render json: { errors: [ 'failed_request' => exception.to_s ] }, status: :bad_request
-      end
-
       rescue_from ::Errors::AuthError do |exception|
         render json: { errors: [ 'failed_request' => exception.to_s ] }, status: :unauthorized
       end

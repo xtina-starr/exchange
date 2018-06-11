@@ -12,6 +12,7 @@ gem 'puma', '~> 3.11'
 
 gem 'jwt'
 
+gem 'graphql'
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
 # gem 'jbuilder', '~> 2.5'
 # Use Redis adapter to run Action Cable in production
@@ -32,6 +33,7 @@ group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
   gem 'rspec-rails'
+  gem 'graphlient'
 end
 
 group :development do
