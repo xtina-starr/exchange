@@ -9,13 +9,15 @@ module OrderService
     end
   end
 
-  def self.submit!(order, shipping_info:, credit_card_id:)
+  def self.submit!(order, credit_card_id:, shipping_info: '')
+    raise Errors::OrderError.new('Order cannot be submitted') unless order.pending?
     Order.transaction do
       # verify price change?
       # hold price on credit card
       order.update_attributes!(state: Order::SUBMITTED, credit_card_id: credit_card_id)
       # status submitted
     end
+    order
   end
 
   def self.user_pending_artwork_order(user_id, artwork_id, edition_set_id=nil)

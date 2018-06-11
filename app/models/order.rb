@@ -22,6 +22,12 @@ class Order < ApplicationRecord
 
   scope :pending, -> { where(state: PENDING) }
 
+  STATES.each do |state|
+    define_method "#{state}?" do
+      self.state == state
+    end
+  end
+
   private
 
   def set_code
