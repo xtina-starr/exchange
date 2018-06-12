@@ -1,0 +1,7 @@
+development: &default
+  api_v1_root: <%= "#{ENV['GRAVITY_API_ROOT'] || 'https://stagingapi.artsy.net'}/api/v1" %>
+  xapp_token:  <%= ENV['GRAVITY_JWT'] %>
+test:
+  <<: *default
+production:
+  <<: *default
