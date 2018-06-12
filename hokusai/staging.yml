@@ -23,15 +23,15 @@ spec:
       - name: stress-web
         env:
         - name: RAILS_SERVE_STATIC_FILES
-          value: true
+          value: 'true'
         - name: RAILS_LOG_TO_STDOUT
-          value: true
+          value: 'true'
         - name: RAILS_ENV
           value: production
         envFrom:
         - configMapRef:
             name: stress-environment
-        image: None:staging
+        image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/stress:staging
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -47,7 +47,7 @@ metadata:
   namespace: default
 spec:
   ports:
-  - port: 8080
+  - port: 80
     protocol: TCP
     targetPort: 8080
   selector:

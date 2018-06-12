@@ -12,7 +12,7 @@ class ApplicationController < ActionController::API
       render json: { errors: ['Not Authenticated'] }, status: :unauthorized
       return
     end
-    @current_user = auth_token
+    @current_user = auth_token.with_indifferent_access.merge(id: auth_token[:sub])
   rescue JWT::VerificationError, JWT::DecodeError
     render json: { errors: ['Not Authenticated'] }, status: :unauthorized
   end
@@ -30,7 +30,7 @@ class ApplicationController < ActionController::API
   end
 
   def user_id_in_token?
-    http_token && auth_token && auth_token['id']
+    http_token && auth_token && auth_token['sub']
   end
 
   def decode_token
