@@ -35,5 +35,7 @@ module Stress
     config.eager_load_paths += %W[
       #{Rails.root}/lib
     ]
+
+    config.active_job.queue_adapter = :sidekiq
   end
 end

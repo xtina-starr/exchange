@@ -13,6 +13,7 @@ gem 'puma', '~> 3.11'
 gem 'jwt'
 
 gem 'graphql'
+gem 'hyperclient' # for connecting to hypermedia apis
 gem 'sidekiq'
 
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder

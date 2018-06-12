@@ -11,8 +11,12 @@ services:
     - RAILS_ENV=test
     - DATABASE_HOST=stress-db
     - DATABASE_USER=postgres
+    - REDIS_URL=redis://stress-redis
     command: ./hokusai/ci.sh
     depends_on:
       - stress-db
+      - stress-redis
   stress-db:
-    image: postgres:9.6
+    image: postgres:9.6-alpine
+  stress-redis:
+    image: redis:3.2-alpine

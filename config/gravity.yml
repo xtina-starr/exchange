@@ -1,7 +1,8 @@
 development: &default
   api_v1_root: <%= "#{ENV['GRAVITY_API_ROOT'] || 'https://stagingapi.artsy.net'}/api/v1" %>
-  xapp_token:  <%= ENV['GRAVITY_JWT'] %>
+  xapp_token:  <%= ENV['GRAVITY_JWT'] || 'https://media.giphy.com/media/yow6i0Zmp7G24/giphy.gif' %>
 test:
   <<: *default
+  api_v1_root: 'http://stress-test-gravity.biz'
 production:
   <<: *default

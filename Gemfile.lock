@@ -53,6 +53,11 @@ GEM
     fabrication (2.20.1)
     faraday (0.15.2)
       multipart-post (>= 1.2, < 3)
+    faraday-digestauth (0.3.0)
+      faraday (~> 0.7)
+      net-http-digest_auth (~> 1.4)
+    faraday_hal_middleware (0.1.0)
+      faraday_middleware (~> 0.9)
     faraday_middleware (0.12.2)
       faraday (>= 0.7.4, < 1.0)
     ffi (1.9.25)
@@ -66,6 +71,13 @@ GEM
     graphql-client (0.12.3)
       activesupport (>= 3.0, < 6.0)
       graphql (~> 1.6)
+    hyperclient (0.9.0)
+      faraday (>= 0.9.0)
+      faraday-digestauth
+      faraday_hal_middleware
+      faraday_middleware
+      net-http-digest_auth
+      uri_template
     i18n (1.0.1)
       concurrent-ruby (~> 1.0)
     jwt (2.1.0)
@@ -86,6 +98,7 @@ GEM
     mini_portile2 (2.3.0)
     minitest (5.11.3)
     multipart-post (2.0.0)
+    net-http-digest_auth (1.4.1)
     nio4r (2.3.1)
     nokogiri (1.8.2)
       mini_portile2 (~> 2.3.0)
@@ -159,6 +172,7 @@ GEM
     thread_safe (0.3.6)
     tzinfo (1.2.5)
       thread_safe (~> 0.1)
+    uri_template (0.7.0)
     websocket-driver (0.7.0)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.3)
@@ -171,6 +185,7 @@ DEPENDENCIES
   fabrication
   graphlient
   graphql
+  hyperclient
   jwt
   listen (>= 3.0.5, < 3.2)
   pg (>= 0.18, < 2.0)
