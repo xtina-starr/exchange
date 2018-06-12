@@ -20,6 +20,6 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
   end
 
   def validate_request!(order)
-    raise Errors::AuthError.new('Not permitted') unless context[:current_user]['partner_ids'].include?(order.partner_id)
+    raise Errors::AuthError.new('Not permitted') unless context[:current_user]['id'] == order.user_id
   end
 end

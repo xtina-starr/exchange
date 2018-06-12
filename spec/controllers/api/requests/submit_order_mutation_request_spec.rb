@@ -4,8 +4,9 @@ describe Api::GraphqlController, type: :request do
   describe 'submit_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
+    let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
-    let(:order) { Fabricate(:order, partner_id: partner_id)}
+    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -32,8 +33,8 @@ describe Api::GraphqlController, type: :request do
         }
       }
     end
-    context 'with user without permission to this partner' do
-      let(:partner_id) { 'another-partner-id' }
+    context 'with user without permission to this order' do
+      let(:user_id) { 'random-user-id-on-another-order' }
       it 'returns permission error' do
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order.errors).to include 'Not permitted'
