@@ -23,9 +23,9 @@ spec:
       - name: stress-web
         env:
         - name: RAILS_SERVE_STATIC_FILES
-          value: true
+          value: 'true'
         - name: RAILS_LOG_TO_STDOUT
-          value: true
+          value: 'true'
         - name: RAILS_ENV
           value: production
         envFrom:
@@ -47,7 +47,7 @@ metadata:
   namespace: default
 spec:
   ports:
-  - port: 8080
+  - port: 80
     protocol: TCP
     targetPort: 8080
   selector:

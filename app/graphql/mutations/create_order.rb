@@ -21,6 +21,6 @@ class Mutations::CreateOrder < Mutations::BaseMutation
   end
 
   def validate_user!(user_id)
-    raise Errors::AuthError.new('Not permitted') if context[:current_user]['id'] != user_id
+    raise Errors::AuthError.new('Not permitted') if context[:current_user][:id] != user_id
   end
 end
