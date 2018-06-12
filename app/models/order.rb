@@ -1,7 +1,16 @@
 class Order < ApplicationRecord
   STATES = [
     PENDING = 'pending',
-    SUBMITTED = 'submitted'
+    ABANDONED = 'abandoned',
+    # Check-out complete; payment authorized.
+    # Buyer credit card has been authorized and hold has been placed.
+    # At this point, availability must be confirmed manually.
+    # Holds expire 7 days after being placed.
+    SUBMITTED = 'submitted',
+    # Availability has been manually confirmed and hold has been "captured" (debited).
+    APPROVED = 'approved',
+    # Items have been deemed unavailable and hold is voided.
+    REJECTED = 'rejected'
   ]
 
   has_many :line_items, class_name: 'LineItem'
@@ -12,6 +21,12 @@ class Order < ApplicationRecord
   before_save :set_currency_code
 
   scope :pending, -> { where(state: PENDING) }
+
+  STATES.each do |state|
+    define_method "#{state}?" do
+      self.state == state
+    end
+  end
 
   private
 
