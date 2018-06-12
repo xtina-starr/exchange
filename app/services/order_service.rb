@@ -20,6 +20,14 @@ module OrderService
     order
   end
 
+  def self.approve!(order)
+    raise Errors::OrderError.new('Order cannot be approved') unless order.submitted?
+    Order.transaction do
+      order.update_attributes!(state: Order::APPROVED)
+    end
+    order
+  end
+
   def self.user_pending_artwork_order(user_id, artwork_id, edition_set_id=nil)
     Order.pending.joins(:line_items).find_by(user_id: user_id, line_items: { artwork_id: artwork_id, edition_set_id: edition_set_id })
   end
