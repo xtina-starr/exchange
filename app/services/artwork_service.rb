@@ -7,20 +7,6 @@ module ArtworkService
 
   def self.snapshot(artwork_id)
     item = find(artwork_id)
-    if item[:images]
-      image = item[:images].detect { |img| img[:id] == item[:default_image_id] }
-      image ||= item[:images].first
-      image_urls = image.try(:fetch, :image_urls)
-    else
-      image_urls = {}
-    end
-    permalink = "https://www.artsy.net/artwork/#{item['id']}"
-    properties = item.except(*PRIVATE_ARTWORK_FIELDS)
-    {
-      permalink: permalink,
-      title: item[:title],
-      image_urls: image_urls,
-      properties: properties
-    }
+    item.except(*PRIVATE_ARTWORK_FIELDS)
   end
 end

@@ -19,9 +19,8 @@ describe LineItemService, type: :services do
         expect(li.edition_set_id).to eq 'ed-1'
         expect(li.price_cents).to eq 420_00
         artwork_snapshot = li.artwork_snapshot.with_indifferent_access
-        expect(artwork_snapshot[:permalink]).to eq 'https://www.artsy.net/artwork/cat'
         expect(artwork_snapshot[:title]).to eq 'Cat'
-        expect(artwork_snapshot[:image_urls]['cats']).to eq '/path/to/cats.jpg'
+        expect(artwork_snapshot[:images].first[:image_urls][:cats]).to eq '/path/to/cats.jpg'
       end
     end
   end
@@ -31,12 +30,11 @@ describe LineItemService, type: :services do
       expect(Adapters::GravityV1).to receive(:request).with('/artwork/test-id?include_deleted=true').and_return(gravity_v1_artwork)
       LineItemService.set_artwork_snapshot(line_item)
       artwork_snapshot = line_item.reload.artwork_snapshot.with_indifferent_access
-      expect(artwork_snapshot[:permalink]).to eq 'https://www.artsy.net/artwork/cat'
       expect(artwork_snapshot[:title]).to eq 'Cat'
-      expect(artwork_snapshot[:image_urls]['cats']).to eq '/path/to/cats.jpg'
+      expect(artwork_snapshot[:images].first[:image_urls][:cats]).to eq '/path/to/cats.jpg'
       scrubbed_artwork = gravity_v1_artwork
       scrubbed_artwork.delete('confidential_notes')
-      expect(artwork_snapshot[:properties]).to eq scrubbed_artwork
+      expect(artwork_snapshot).to eq scrubbed_artwork
     end
   end
 end
