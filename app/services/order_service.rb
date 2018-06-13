@@ -13,7 +13,7 @@ module OrderService
     raise Errors::OrderError.new('Order cannot be submitted') unless order.pending?
     Order.transaction do
       # verify price change?
-      # hold price on credit card
+      # TODO: hold the charge for this price on credit card
       order.update_attributes!(state: Order::SUBMITTED, credit_card_id: credit_card_id)
       # status submitted
     end
@@ -24,6 +24,25 @@ module OrderService
     raise Errors::OrderError.new('Order cannot be approved') unless order.submitted?
     Order.transaction do
       order.update_attributes!(state: Order::APPROVED)
+      # TODO: process the charge by calling gravity with current credit_card_id and price
+    end
+    order
+  end
+
+  def self.finalize!(order)
+    raise Errors::OrderError.new('Order cannot be finalized') unless order.approved?
+    Order.transaction do
+      order.update_attributes!(state: Order::FINALIZED)
+      # TODO: process the charge by calling gravity with current credit_card_id and price
+    end
+    order
+  end
+
+  def self.reject!(order)
+    raise Errors::OrderError.new('Order cannot be rejected') unless order.submitted?
+    Order.transaction do
+      order.update_attributes!(state: Order::REJECTED)
+      # TODO: release the charge
     end
     order
   end
