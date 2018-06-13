@@ -31,7 +31,7 @@ ActiveRecord::Schema.define(version: 2018_06_11_192822) do
     t.integer "shipping_total_cents"
     t.integer "tax_total_cents"
     t.integer "transaction_fee_cents"
-    t.integer "comission_fee_cents"
+    t.integer "commission_fee_cents"
     t.string "currency_code", limit: 3
     t.string "user_id"
     t.string "partner_id"

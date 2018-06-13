@@ -6,7 +6,7 @@ class CreateOrders < ActiveRecord::Migration[5.2]
       t.integer :shipping_total_cents
       t.integer :tax_total_cents
       t.integer :transaction_fee_cents
-      t.integer :comission_fee_cents
+      t.integer :commission_fee_cents
       t.string :currency_code, limit: 3
       t.string :user_id
       t.string :partner_id
