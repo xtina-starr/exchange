@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 describe Api::GraphqlController, type: :request do
-  describe 'approve_order mutation' do
+  describe 'reject_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
@@ -10,8 +10,8 @@ describe Api::GraphqlController, type: :request do
 
     let(:mutation) do
       <<-GRAPHQL
-        mutation($input: ApproveOrderInput!) {
-          approveOrder(input: $input) {
+        mutation($input: RejectOrderInput!) {
+          rejectOrder(input: $input) {
             order {
               id
               userId
@@ -24,7 +24,7 @@ describe Api::GraphqlController, type: :request do
       GRAPHQL
     end
 
-    let(:approve_order_input) do
+    let(:reject_order_input) do
       {
         input: {
           id: order.id.to_s
@@ -34,8 +34,8 @@ describe Api::GraphqlController, type: :request do
     context 'with user without permission to this partner' do
       let(:partner_id) { 'another-partner-id' }
       it 'returns permission error' do
-        response = client.execute(mutation, approve_order_input)
-        expect(response.data.approve_order.errors).to include 'Not permitted'
+        response = client.execute(mutation, reject_order_input)
+        expect(response.data.reject_order.errors).to include 'Not permitted'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -45,8 +45,8 @@ describe Api::GraphqlController, type: :request do
         order.update_attributes! state: Order::PENDING
       end
       it 'returns error' do
-        response = client.execute(mutation, approve_order_input)
-        expect(response.data.approve_order.errors).to include 'Order cannot be approved'
+        response = client.execute(mutation, reject_order_input)
+        expect(response.data.reject_order.errors).to include 'Order cannot be rejected'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -55,12 +55,12 @@ describe Api::GraphqlController, type: :request do
       before do
         order.update_attributes! state: Order::SUBMITTED
       end
-      it 'approves the order' do
-        response = client.execute(mutation, approve_order_input)
-        expect(response.data.approve_order.order.id).to eq order.id.to_s
-        expect(response.data.approve_order.order.state).to eq Order::APPROVED
-        expect(response.data.approve_order.errors).to match []
-        expect(order.reload.state).to eq Order::APPROVED
+      it 'rejects the order' do
+        response = client.execute(mutation, reject_order_input)
+        expect(response.data.reject_order.order.id).to eq order.id.to_s
+        expect(response.data.reject_order.order.state).to eq Order::REJECTED
+        expect(response.data.reject_order.errors).to match []
+        expect(order.reload.state).to eq Order::REJECTED
       end
     end
   end
