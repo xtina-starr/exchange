@@ -58,7 +58,9 @@ describe Api::GraphqlController, type: :request do
           response = client.execute(mutation, order_input_with_line_item)
           expect(response.data.create_order.order.id).not_to be_nil
           expect(response.data.create_order.errors).to match []
-        end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
+        end.to change(Order, :count).by(1).and \
+               change(LineItem, :count).by(1).and \
+               have_enqueued_job(SetLineItemArtworkJob)
         order = Order.last
         expect(order.currency_code).to eq 'usd'
         expect(order.user_id).to eq jwt_user_id

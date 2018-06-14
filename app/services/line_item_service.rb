@@ -7,6 +7,12 @@ module LineItemService
       order_id: order.id
     )
     # queue fetching gravity artwork
+    SetLineItemArtworkJob.perform_later(line_item.id)
     line_item
+  end
+
+  def self.set_artwork_snapshot(line_item)
+    artwork_snapshot = ArtworkService.snapshot(line_item.artwork_id)
+    line_item.update_attributes!(artwork_snapshot: artwork_snapshot)
   end
 end
