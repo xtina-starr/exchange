@@ -17,7 +17,7 @@ class Order < ApplicationRecord
 
   has_many :line_items, class_name: 'LineItem'
 
-  validates :state, inclusion: { in: STATES }
+  validates :state, presence: true, inclusion: STATES
 
   before_create :set_code
   before_save :set_currency_code
@@ -25,8 +25,10 @@ class Order < ApplicationRecord
   scope :pending, -> { where(state: PENDING) }
 
   STATES.each do |state|
-    define_method "#{state}?" do
-      self.state == state
+    define_method "#{state}!" do
+      state_machine.trigger!(state)
+    rescue MicroMachine::InvalidState => e
+      raise Errors::OrderError.new("Order cannot be #{state}")
     end
   end
 
@@ -38,5 +40,25 @@ class Order < ApplicationRecord
 
   def set_currency_code
     self.currency_code ||= 'usd'
+  end
+
+  def state_machine
+    @state_machine ||= build_machine
+  end
+
+  def build_machine
+    machine = MicroMachine.new(self.state)
+    machine.when(SUBMITTED, PENDING => SUBMITTED)
+    machine.when(APPROVED, SUBMITTED => APPROVED)
+    machine.when(REJECTED, SUBMITTED => REJECTED)
+    machine.when(FINALIZED, APPROVED => FINALIZED)
+    machine.on(:any) do |new_state, _payload|
+      update_state(new_state)
+    end
+    machine
+  end
+
+  def update_state(new_state)
+    self.state = new_state
   end
 end
