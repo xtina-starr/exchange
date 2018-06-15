@@ -10,7 +10,9 @@ class Order < ApplicationRecord
     # Availability has been manually confirmed and hold has been "captured" (debited).
     APPROVED = 'approved',
     # Items have been deemed unavailable and hold is voided.
-    REJECTED = 'rejected'
+    REJECTED = 'rejected',
+
+    FINALIZED = 'finalized'
   ]
 
   has_many :line_items, class_name: 'LineItem'
