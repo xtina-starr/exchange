@@ -16,7 +16,14 @@ class Types::QueryType < Types::BaseObject
 
   def order(id:)
     order = Order.find(id)
-    raise GraphQL::ExecutionError, 'permission error' unless order.user_id == context[:current_user][:id]
+    raise GraphQL::ExecutionError, 'permission error' unless order.user_id == context[:current_user][:id] || context[:current_user][:partner_ids].include?(order.partner_id)
     order
+  end
+
+  def orders(params)
+    raise GraphQL::ExecutionError, 'requires one of userId or partnerId' unless params[:user_id].present? || params[:partner_id].present?
+    raise GraphQL::ExecutionError, 'Not permitted' if params[:user_id] && params[:user_id] != context[:current_user][:id]
+    raise GraphQL::ExecutionError, 'Not permitted' if params[:partner_id] && !context[:current_user][:partner_ids].include?(params[:partner_id])
+    Order.where(params)
   end
 end
