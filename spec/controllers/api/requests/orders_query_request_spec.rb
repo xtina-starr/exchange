@@ -15,10 +15,14 @@ describe Api::GraphqlController, type: :request do
       <<-GRAPHQL
         query($userId: String, $partnerId: String, $state: String) {
           orders(userId: $userId, partnerId: $partnerId, state: $state) {
-            id
-            userId
-            partnerId
-            state
+            edges{
+              node{
+                id
+                userId
+                partnerId
+                state
+              }
+            }
           }
         }
       GRAPHQL
@@ -47,14 +51,14 @@ describe Api::GraphqlController, type: :request do
 
       it 'returns users orders' do
         results = client.execute(query, userId: user_id)
-        expect(results.data.orders.count).to eq 2
-        expect(results.data.orders.map(&:id)).to match_array([user1_order1.id, user1_order2.id].map(&:to_s))
+        expect(results.data.orders.edges.count).to eq 2
+        expect(results.data.orders.edges.map(&:node).map(&:id)).to match_array([user1_order1.id, user1_order2.id].map(&:to_s))
       end
 
       it 'returns partners orders' do
         results = client.execute(query, partnerId: partner_id)
-        expect(results.data.orders.count).to eq 2
-        expect(results.data.orders.map(&:id)).to match_array([user1_order1.id, user2_order1.id].map(&:to_s))
+        expect(results.data.orders.edges.count).to eq 2
+        expect(results.data.orders.edges.map(&:node).map(&:id)).to match_array([user1_order1.id, user2_order1.id].map(&:to_s))
       end
     end
   end

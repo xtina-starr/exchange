@@ -7,7 +7,7 @@ class Types::QueryType < Types::BaseObject
     argument :id, ID, required: true
   end
 
-  field :orders, [Types::OrderType], null: true do
+  field :orders, Types::OrderType.connection_type, null: true do
     description "Find list of orders"
     argument :user_id, String, required: false
     argument :partner_id, String, required: false
