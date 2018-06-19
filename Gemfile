@@ -12,7 +12,7 @@ gem 'jwt'
 gem 'sidekiq'
 
 group :development, :test do
-  gem 'byebug'
+  gem 'rails-pry'
   gem 'rspec-rails'
   gem 'graphlient'
 end
