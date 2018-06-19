@@ -47,24 +47,9 @@ Style/ExpandPathArguments:
     - 'spec/rails_helper.rb'
 
 # Offense count: 1
-# Cop supports --auto-correct.
-Style/IfUnlessModifier:
-  Exclude:
-    - 'app/controllers/concerns/auth_handler.rb'
-
-# Offense count: 1
 Style/MixinUsage:
   Exclude:
     - 'bin/update'
-
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, ConsistentQuotesInMultiline.
-# SupportedStyles: single_quotes, double_quotes
-Style/StringLiterals:
-  Exclude:
-    - 'spec/controllers/api/graphql_controller_spec.rb'
-    - 'spec/rails_helper.rb'
 
 # Offense count: 77
 # Configuration parameters: AllowHeredoc, AllowURI, URISchemes, IgnoreCopDirectives, IgnoredPatterns.
