@@ -34,13 +34,6 @@ Rails/ActiveRecordAliases:
     - 'spec/controllers/api/requests/submit_order_mutation_request_spec.rb'
 
 # Offense count: 1
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: slashes, arguments
-Rails/FilePath:
-  Exclude:
-    - 'config/application.rb'
-
-# Offense count: 1
 # Configuration parameters: Include.
 # Include: app/models/**/*.rb
 Rails/HasManyOrHasOneDependent:
