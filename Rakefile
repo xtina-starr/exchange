@@ -6,6 +6,10 @@ Rails.application.load_tasks
 GraphQL::RakeTask.new(schema_name: 'StressSchema')
 
 if %w[development test].include? Rails.env
+  require 'rubocop/rake_task'
+  desc 'Run RuboCop'
+  RuboCop::RakeTask.new(:rubocop)
+
   Rake::Task[:default].clear
-  task default: %i[spec]
+  task default: %i[rubocop spec]
 end
