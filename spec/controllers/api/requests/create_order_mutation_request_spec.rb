@@ -5,7 +5,7 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner_id) { 'partner-id' }
     let(:artwork_id) { 'artwork-1' }
-    let(:edition_set_id) { 'ed-1'}
+    let(:edition_set_id) { 'ed-1' }
     let(:line_item1) { { artworkId: artwork_id, editionSetId: edition_set_id, priceCents: 420_00 } }
     let(:line_items) { [line_item1] }
     let(:currency_code) { 'usd' }
