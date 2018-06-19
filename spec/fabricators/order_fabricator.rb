@@ -1,4 +1,3 @@
-
 Fabricator(:order) do
   code { SecureRandom.hex(10) }
   user_id { sequence(:user_id) { |i| "user-id-#{i}" } }
