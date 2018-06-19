@@ -172,13 +172,12 @@ DEPENDENCIES
   graphlient
   graphql
   jwt
-  listen (>= 3.0.5, < 3.2)
-  pg (>= 0.18, < 2.0)
-  puma (~> 3.11)
-  rails (~> 5.2.0)
+  listen
+  pg
+  puma
+  rails (= 5.2.0)
   rspec-rails
   sidekiq
-  tzinfo-data
 
 RUBY VERSION
    ruby 2.5.1p57
