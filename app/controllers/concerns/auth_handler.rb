@@ -1,7 +1,6 @@
 module AuthHandler
   def self.included(clazz)
     clazz.class_eval do
-
       protected
 
       def authenticate_request!
@@ -18,7 +17,7 @@ module AuthHandler
 
       def http_token
         @http_token ||= if request.headers['Authorization'].present?
-          request.headers['Authorization'].split(' ').last
+                          request.headers['Authorization'].split(' ').last
         end
       end
 
@@ -31,7 +30,7 @@ module AuthHandler
       end
 
       def decode_token
-        JWT.decode(http_token, Rails.application.config_for(:jwt)['hmac_secret'], true, { algorithm: 'HS256' })[0]
+        JWT.decode(http_token, Rails.application.config_for(:jwt)['hmac_secret'], true, algorithm: 'HS256')[0]
       end
     end
   end

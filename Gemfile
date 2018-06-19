@@ -1,9 +1,9 @@
 source 'https://rubygems.org'
-git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby File.read('.ruby-version')
 
 gem 'rails', '5.2.0'
+
 gem 'pg'
 gem 'puma'
 
@@ -12,9 +12,10 @@ gem 'jwt'
 gem 'sidekiq'
 
 group :development, :test do
+  gem 'graphlient'
   gem 'rails-pry'
   gem 'rspec-rails'
-  gem 'graphlient'
+  gem 'rubocop'
 end
 
 group :development do

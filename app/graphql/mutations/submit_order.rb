@@ -13,13 +13,13 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
     validate_request!(order)
     {
       order: OrderService.submit!(order, credit_card_id: credit_card_id, shipping_info: shipping_info),
-      errors: [],
+      errors: []
     }
   rescue Errors::ApplicationError => e
     { order: nil, errors: [e.message] }
   end
 
   def validate_request!(order)
-    raise Errors::AuthError.new('Not permitted') unless context[:current_user]['id'] == order.user_id
+    raise Errors::AuthError, 'Not permitted' unless context[:current_user]['id'] == order.user_id
   end
 end
