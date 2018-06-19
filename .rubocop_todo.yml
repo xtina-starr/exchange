@@ -33,13 +33,6 @@ Rails/ActiveRecordAliases:
     - 'spec/controllers/api/requests/reject_order_mutation_request_spec.rb'
     - 'spec/controllers/api/requests/submit_order_mutation_request_spec.rb'
 
-# Offense count: 1
-# Configuration parameters: Include.
-# Include: app/models/**/*.rb
-Rails/HasManyOrHasOneDependent:
-  Exclude:
-    - 'app/models/order.rb'
-
 # Offense count: 3
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, ProceduralMethods, FunctionalMethods, IgnoredMethods.

@@ -15,7 +15,7 @@ class Order < ApplicationRecord
     FINALIZED = 'finalized'.freeze
   ].freeze
 
-  has_many :line_items, class_name: 'LineItem'
+  has_many :line_items, dependent: :destroy, class_name: 'LineItem'
 
   validates :state, inclusion: { in: STATES }
 
