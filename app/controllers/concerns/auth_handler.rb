@@ -16,9 +16,7 @@ module AuthHandler
       private
 
       def http_token
-        @http_token ||= if request.headers['Authorization'].present?
-                          request.headers['Authorization'].split(' ').last
-        end
+        @http_token ||= request.headers['Authorization']&.split(' ')&.last
       end
 
       def auth_token
