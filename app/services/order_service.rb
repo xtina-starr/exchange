@@ -9,6 +9,7 @@ module OrderService
     end
   end
 
+  # rubocop:disable Lint/UnusedMethodArgument
   def self.submit!(order, credit_card_id:, shipping_info: '')
     raise Errors::OrderError, 'Order cannot be submitted' unless order.pending?
     Order.transaction do
@@ -19,6 +20,7 @@ module OrderService
     end
     order
   end
+  # rubocop:enable Lint/UnusedMethodArgument
 
   def self.approve!(order)
     raise Errors::OrderError, 'Order cannot be approved' unless order.submitted?
