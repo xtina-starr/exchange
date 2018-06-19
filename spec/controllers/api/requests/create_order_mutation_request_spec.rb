@@ -9,7 +9,7 @@ describe Api::GraphqlController, type: :request do
     let(:line_item1) { { artworkId: artwork_id, editionSetId: edition_set_id, priceCents: 420_00 } }
     let(:line_items) { [line_item1] }
     let(:currency_code) { 'usd' }
-    let(:order_input_with_line_item) {
+    let(:order_input_with_line_item) do
       {
         input: {
           userId: jwt_user_id,
@@ -18,8 +18,8 @@ describe Api::GraphqlController, type: :request do
           currencyCode: currency_code
         }
       }
-    }
-    let(:order_input_wrong_user) {
+    end
+    let(:order_input_wrong_user) do
       {
         input: {
           userId: 'random-dude',
@@ -28,8 +28,8 @@ describe Api::GraphqlController, type: :request do
           currencyCode: currency_code
         }
       }
-    }
-    let(:mutation) {
+    end
+    let(:mutation) do
       <<-GRAPHQL
         mutation($input: CreateOrderInput!) {
           createOrder(input: $input) {
@@ -42,7 +42,7 @@ describe Api::GraphqlController, type: :request do
           }
         }
       GRAPHQL
-    }
+    end
     context 'with user id not matching jwt user id' do
       it 'returns error when users dont match' do
         expect do
