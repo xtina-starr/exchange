@@ -12,6 +12,7 @@ RUN adduser --disabled-password --gecos '' deploy
 
 # Set up gems
 WORKDIR /tmp
+ADD .ruby-version .ruby-version
 ADD Gemfile Gemfile
 ADD Gemfile.lock Gemfile.lock
 RUN bundle install -j4
