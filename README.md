@@ -53,8 +53,11 @@ In order to talk to Exchange GraphQL endpoint:
 - In GraphiQL app, go to http://localhost:300/api/graphql, you should ge unauthorized error
 - Edit HTTP Headers and add `Authorization` header and set it to `Bearer <token>` where `<token>` is your Gravity token generated few steps above.
 
-### Seed Some Data
-Here are some useful queries mutation to get started
+## Order Lifecycle
+
+Users create and submit orders. Partners then approve and finalize or reject the order.
+
+### As a User
 
 #### Create an order
 ```graphql
@@ -88,7 +91,7 @@ For input set following variables:
 }
 ```
 
-##### Submit an Order
+#### Submit an Order
 ```graphql
 # submit order
 mutation($input: SubmitOrderInput!) {
@@ -113,7 +116,82 @@ For input:
 }
 ```
 
+### As a Partner
 
+Your user must have access to the partner that owns this order in order to perform these actions.
+
+#### Approve an Order
+```graphql
+# approve order
+mutation($input: ApproveOrderInput!) {
+  approveOrder(input: $input) {
+    order {
+      id
+      userId
+      partnerId
+      state
+    }
+    errors
+  }
+}
+```
+For input:
+```json
+{
+  "input": {
+    "id": "<order id>"
+  }
+}
+```
+
+
+#### Finalize an Order
+```graphql
+# finalize order
+mutation($input: FinalizeOrderInput!) {
+  finalizeOrder(input: $input) {
+    order {
+      id
+      userId
+      partnerId
+      state
+    }
+    errors
+  }
+}
+```
+For input:
+```json
+{
+  "input": {
+    "id": "<order id>"
+  }
+}
+```
+
+#### Reject an Order
+```graphql
+# reject order
+mutation($input: RejectOrderInput!) {
+  rejectOrder(input: $input) {
+    order {
+      id
+      userId
+      partnerId
+      state
+    }
+    errors
+  }
+}
+```
+For input:
+```json
+{
+  "input": {
+    "id": "<order id>"
+  }
+}
+```
 
 [ashkan18]: https://github.com/ashkan18
 [williardx]: https://github.com/williardx
