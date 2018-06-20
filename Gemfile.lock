@@ -45,6 +45,7 @@ GEM
     arel (9.0.0)
     ast (2.4.0)
     builder (3.2.3)
+    coderay (1.1.2)
     concurrent-ruby (1.0.5)
     connection_pool (2.2.2)
     crass (1.0.4)
@@ -95,6 +96,11 @@ GEM
       ast (~> 2.4.0)
     pg (1.0.0)
     powerpack (0.1.2)
+    pry (0.11.3)
+      coderay (~> 1.1.0)
+      method_source (~> 0.9.0)
+    pry-rails (0.3.6)
+      pry (>= 0.10.4)
     puma (3.11.4)
     rack (2.0.5)
     rack-protection (2.0.3)
@@ -119,7 +125,6 @@ GEM
       nokogiri (>= 1.6)
     rails-html-sanitizer (1.0.4)
       loofah (~> 2.2, >= 2.2.2)
-    rails-pry (0.0.1)
     railties (5.2.0)
       actionpack (= 5.2.0)
       activesupport (= 5.2.0)
@@ -190,9 +195,9 @@ DEPENDENCIES
   jwt
   listen
   pg
+  pry-rails
   puma
   rails (= 5.2.0)
-  rails-pry
   rspec-rails
   rubocop
   sidekiq

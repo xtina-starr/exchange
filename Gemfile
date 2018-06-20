@@ -13,7 +13,7 @@ gem 'sidekiq'
 
 group :development, :test do
   gem 'graphlient'
-  gem 'rails-pry'
+  gem 'pry-rails'
   gem 'rspec-rails'
   gem 'rubocop'
 end
