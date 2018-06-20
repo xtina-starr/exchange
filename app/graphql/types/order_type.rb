@@ -10,5 +10,5 @@ class Types::OrderType < Types::BaseObject
   field :currency_code, String, null: false
   field :created_at, Types::DateTimeType, null: false
   field :update_at, Types::DateTimeType, null: false
-  field :line_items, [Types::LineItemType], null: true
+  field :line_items, Types::LineItemType.connection_type, null: true
 end

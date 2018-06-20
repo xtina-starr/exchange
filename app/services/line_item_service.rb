@@ -13,6 +13,6 @@ module LineItemService
 
   def self.set_artwork_snapshot(line_item)
     artwork_snapshot = ArtworkService.snapshot(line_item.artwork_id)
-    line_item.update_attributes!(artwork_snapshot: artwork_snapshot)
+    line_item.update!(artwork_snapshot: artwork_snapshot)
   end
 end

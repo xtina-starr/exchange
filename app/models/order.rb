@@ -1,22 +1,22 @@
 class Order < ApplicationRecord
   STATES = [
-    PENDING = 'pending',
-    ABANDONED = 'abandoned',
+    PENDING = 'pending'.freeze,
+    ABANDONED = 'abandoned'.freeze,
     # Check-out complete; payment authorized.
     # Buyer credit card has been authorized and hold has been placed.
     # At this point, availability must be confirmed manually.
     # Holds expire 7 days after being placed.
-    SUBMITTED = 'submitted',
+    SUBMITTED = 'submitted'.freeze,
     # Availability has been manually confirmed and hold has been "captured" (debited).
-    APPROVED = 'approved',
+    APPROVED = 'approved'.freeze,
     # Items have been deemed unavailable and hold is voided.
-    REJECTED = 'rejected',
+    REJECTED = 'rejected'.freeze,
 
-    FINALIZED = 'finalized'
+    FINALIZED = 'finalized'.freeze
   ]
   ACTIONS = %i[submit approve reject finalize]
 
-  has_many :line_items, class_name: 'LineItem'
+  has_many :line_items, dependent: :destroy, class_name: 'LineItem'
 
   validates :state, presence: true, inclusion: STATES
 
