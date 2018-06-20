@@ -13,8 +13,9 @@ class Order < ApplicationRecord
     REJECTED = 'rejected'.freeze,
 
     FINALIZED = 'finalized'.freeze
-  ]
-  ACTIONS = %i[submit approve reject finalize]
+  ].freeze
+
+  ACTIONS = %i[submit approve reject finalize].freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
 
@@ -28,8 +29,8 @@ class Order < ApplicationRecord
   ACTIONS.each do |action|
     define_method "#{action}!" do
       state_machine.trigger!(action)
-    rescue MicroMachine::InvalidState => e
-      raise Errors::OrderError.new("Invalid action on this #{self.state} order")
+    rescue MicroMachine::InvalidState
+      raise Errors::OrderError, "Invalid action on this #{state} order"
     end
   end
 
@@ -48,12 +49,12 @@ class Order < ApplicationRecord
   end
 
   def build_machine
-    machine = MicroMachine.new(self.state)
+    machine = MicroMachine.new(state)
     machine.when(:submit, PENDING => SUBMITTED)
     machine.when(:approve, SUBMITTED => APPROVED)
     machine.when(:reject, SUBMITTED => REJECTED)
     machine.when(:finalize, APPROVED => FINALIZED)
-    machine.on(:any) do |new_state, _payload|
+    machine.on(:any) do
       self.state = machine.state
     end
     machine
