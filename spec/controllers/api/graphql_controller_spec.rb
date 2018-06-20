@@ -10,7 +10,7 @@ describe Api::GraphqlController, type: :request do
         expect(response.status).to eq 401
       end
       it 'raises error when unknown jwt' do
-        post '/api/graphql', params: { query: query }, headers: { 'Authorization' => "Bearer: random-token" }
+        post '/api/graphql', params: { query: query }, headers: { 'Authorization' => 'Bearer: random-token' }
         expect(response.status).to eq 401
       end
     end

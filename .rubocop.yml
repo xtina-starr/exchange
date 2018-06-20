@@ -1,0 +1,30 @@
+inherit_from: .rubocop_todo.yml
+
+AllCops:
+  Exclude:
+    - 'db/schema.rb'
+    - 'vendor/**/*'
+
+Metrics/AbcSize:
+  Exclude:
+    - 'db/migrate/*'
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/MethodLength:
+  Exclude:
+    - 'db/migrate/*'
+
+Rails/ReversibleMigration:
+  Enabled: false
+
+Rails/TimeZone:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false

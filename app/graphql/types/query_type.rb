@@ -3,12 +3,12 @@ class Types::QueryType < Types::BaseObject
   # They will be entry points for queries on your schema.
 
   field :order, Types::OrderType, null: false do
-    description "Find an order by ID"
+    description 'Find an order by ID'
     argument :id, ID, required: true
   end
 
   field :orders, Types::OrderType.connection_type, null: true do
-    description "Find list of orders"
+    description 'Find list of orders'
     argument :user_id, String, required: false
     argument :partner_id, String, required: false
     argument :state, String, required: false

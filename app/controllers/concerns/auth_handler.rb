@@ -1,7 +1,6 @@
 module AuthHandler
   def self.included(clazz)
     clazz.class_eval do
-
       protected
 
       def authenticate_request!
@@ -10,16 +9,14 @@ module AuthHandler
           return
         end
         @current_user = auth_token.with_indifferent_access.merge(id: auth_token[:sub])
-      rescue JWT::VerificationError, JWT::DecodeError
+      rescue JWT::DecodeError # includes verification error too
         render json: { errors: ['Not Authenticated'] }, status: :unauthorized
       end
 
       private
 
       def http_token
-        @http_token ||= if request.headers['Authorization'].present?
-          request.headers['Authorization'].split(' ').last
-        end
+        @http_token ||= request.headers['Authorization']&.split(' ')&.last
       end
 
       def auth_token
@@ -31,7 +28,7 @@ module AuthHandler
       end
 
       def decode_token
-        JWT.decode(http_token, Rails.application.config_for(:jwt)['hmac_secret'], true, { algorithm: 'HS256' })[0]
+        JWT.decode(http_token, Rails.application.config_for(:jwt)['hmac_secret'], true, algorithm: 'HS256')[0]
       end
     end
   end
