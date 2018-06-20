@@ -55,4 +55,66 @@ In order to talk to Stress GraphQL endpoint:
 - In GraphiQL app, go to http://localhost:300/api/graphql, you should ge unauthorized error
 - Edit HTTP Headers and add `Authorization` header and set it to `Bearer <token>` where `<token>` is your Gravity token generated few steps above.
 
+### Seed Some Data
+Here are some useful queries mutation to get started
+
+#### Create an order
+```graphql
+## create order
+mutation($input: CreateOrderInput!) {
+  createOrder(input: $input) {
+    order {
+      id
+      userId
+      partnerId
+    }
+    errors
+  }
+}
+```
+For input set following variables:
+```json
+{
+  "input": {
+    "userId": "<your user id>",
+    "partnerId": "<partner id>",
+    "currencyCode": "usd",
+    "lineItems": [
+      {
+        "artworkId": "<id of your favorite artwork>",
+        "priceCents": "<some affordable number>",
+        "editionSetId": <optional>
+      }
+    ]
+  }
+}
+```
+
+##### Submit an Order
+```graphql
+# submit order
+mutation($input: SubmitOrderInput!) {
+  submitOrder(input: $input) {
+    order {
+      id
+      userId
+      partnerId
+      state
+    }
+    errors
+  }
+}
+```
+For input:
+```json
+{
+  "input": {
+    "id": "<order id>",
+    "creditCardId": "<credit card id>"
+  }
+}
+```
+
+
+
 [ashkan18]: https://github.com/ashkan18
