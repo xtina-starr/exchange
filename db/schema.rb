@@ -38,7 +38,7 @@ ActiveRecord::Schema.define(version: 2018_06_12_185116) do
     t.string "partner_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "state", default: "pending"
+    t.string "state", null: false
     t.string "credit_card_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["partner_id"], name: "index_orders_on_partner_id"

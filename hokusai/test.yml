@@ -1,22 +1,22 @@
 ---
 version: '2'
 services:
-  stress:
+  exchange:
     extends:
       file: common.yml
-      service: stress
+      service: exchange
     ports:
     - 8080:8080
     environment:
     - RAILS_ENV=test
-    - DATABASE_HOST=stress-db
+    - DATABASE_HOST=exchange-db
     - DATABASE_USER=postgres
-    - REDIS_URL=redis://stress-redis
+    - REDIS_URL=redis://exchange-redis
     command: ./hokusai/ci.sh
     depends_on:
-      - stress-db
-      - stress-redis
-  stress-db:
+      - exchange-db
+      - exchange-redis
+  exchange-db:
     image: postgres:9.6-alpine
-  stress-redis:
+  exchange-redis:
     image: redis:3.2-alpine

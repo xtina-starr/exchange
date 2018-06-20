@@ -1,16 +1,14 @@
-# Stress
+# Exchange
 
-Stress aspires to be responsible for the various types of e-commerce interactions available on the Artsy platform. It's currently a prototype, with legacy e-commerce still handled by Gravity. It uses Ruby, Rails, Postgresql, and exposes a [GraphQL](http://graphql-ruby.org/) API.
-
-It's called "Stress" because financial transactions are serious stuff.
+Exchange aspires to be responsible for the various types of e-commerce interactions available on the Artsy platform. It's currently a prototype, with legacy e-commerce still handled by Gravity. It uses Ruby, Rails, Postgresql, and exposes a [GraphQL](http://graphql-ruby.org/) API.
 
 ## Meta
 
 * State: development
-* Production: 
-* Staging: https://stress-staging.artsy.net
-* GitHub: https://github.com/artsy/stress/
-* Point People: [@ashkan18][ashkan18]
+* Production:
+* Staging: https://exchange-staging.artsy.net
+* GitHub: https://github.com/artsy/exchange/
+* Point People: [@ashkan18][ashkan18], [@williardx][williardx]
 
 ## Setup
 
@@ -45,8 +43,8 @@ rails db:setup
 $ rails s
 ```
 
-## Stress Talking 😰 Or Talking to Stress 😀
-In order to talk to Stress GraphQL endpoint:
+## Talking to Exchange 🤑
+In order to talk to Exchange GraphQL endpoint:
 - Copy `.env.example` to `.env`
 - Install `dotenv` by `gem install dotenv`
 - Start local server `dotenv rails s`
@@ -118,3 +116,4 @@ For input:
 
 
 [ashkan18]: https://github.com/ashkan18
+[williardx]: https://github.com/williardx
