@@ -3,6 +3,6 @@ development: &default
   xapp_token:  <%= ENV['GRAVITY_JWT'] || 'https://media.giphy.com/media/yow6i0Zmp7G24/giphy.gif' %>
 test:
   <<: *default
-  api_v1_root: 'http://stress-test-gravity.biz'
+  api_v1_root: 'http://exchange-test-gravity.biz'
 production:
   <<: *default

@@ -2,7 +2,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: stress-web
+  name: exchange-web
   namespace: default
 spec:
   replicas: 2
@@ -14,13 +14,13 @@ spec:
   template:
     metadata:
       labels:
-        app: stress
+        app: exchange
         component: web
         layer: application
-      name: stress-web
+      name: exchange-web
     spec:
       containers:
-      - name: stress-web
+      - name: exchange-web
         env:
         - name: RAILS_SERVE_STATIC_FILES
           value: 'true'
@@ -30,8 +30,8 @@ spec:
           value: production
         envFrom:
         - configMapRef:
-            name: stress-environment
-        image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/stress:production
+            name: exchange-environment
+        image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/exchange:production
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -40,10 +40,10 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: stress
+    app: exchange
     component: web
     layer: application
-  name: stress-web
+  name: exchange-web
   namespace: default
 spec:
   ports:
@@ -51,7 +51,7 @@ spec:
     protocol: TCP
     targetPort: 8080
   selector:
-    app: stress
+    app: exchange
     component: web
     layer: application
   type: LoadBalancer
