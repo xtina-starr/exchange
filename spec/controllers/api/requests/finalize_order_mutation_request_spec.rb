@@ -46,7 +46,7 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, finalize_order_input)
-        expect(response.data.finalize_order.errors).to include 'Order cannot be finalized'
+        expect(response.data.finalize_order.errors).to include 'Invalid action on this submitted order'
         expect(order.reload.state).to eq Order::SUBMITTED
       end
     end

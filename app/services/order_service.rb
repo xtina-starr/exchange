@@ -15,7 +15,7 @@ module OrderService
       # verify price change?
       order.credit_card_id = credit_card_id
       # TODO: hold the charge for this price on credit card
-      order.submitted!
+      order.submit!
       order.save!
     end
     order
@@ -23,7 +23,7 @@ module OrderService
 
   def self.approve!(order)
     Order.transaction do
-      order.approved!
+      order.approve!
       order.save!
       # TODO: process the charge by calling gravity with current credit_card_id and price
     end
@@ -32,7 +32,7 @@ module OrderService
 
   def self.finalize!(order)
     Order.transaction do
-      order.finalized!
+      order.finalize!
       order.save!
       # TODO: process the charge by calling gravity with current credit_card_id and price
     end
@@ -41,7 +41,7 @@ module OrderService
 
   def self.reject!(order)
     Order.transaction do
-      order.rejected!
+      order.reject!
       order.save!
       # TODO: release the charge
     end

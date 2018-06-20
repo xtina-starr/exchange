@@ -48,7 +48,7 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, submit_order_input)
-        expect(response.data.submit_order.errors).to include 'Order cannot be submitted'
+        expect(response.data.submit_order.errors).to include 'Invalid action on this approved order'
         expect(order.reload.state).to eq Order::APPROVED
       end
     end

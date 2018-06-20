@@ -14,6 +14,7 @@ class Order < ApplicationRecord
 
     FINALIZED = 'finalized'
   ]
+  ACTIONS = %i[submit approve reject finalize]
 
   has_many :line_items, class_name: 'LineItem'
 
@@ -24,11 +25,11 @@ class Order < ApplicationRecord
 
   scope :pending, -> { where(state: PENDING) }
 
-  STATES.each do |state|
-    define_method "#{state}!" do
-      state_machine.trigger!(state)
+  ACTIONS.each do |action|
+    define_method "#{action}!" do
+      state_machine.trigger!(action)
     rescue MicroMachine::InvalidState => e
-      raise Errors::OrderError.new("Order cannot be #{state}")
+      raise Errors::OrderError.new("Invalid action on this #{self.state} order")
     end
   end
 
@@ -48,17 +49,13 @@ class Order < ApplicationRecord
 
   def build_machine
     machine = MicroMachine.new(self.state)
-    machine.when(SUBMITTED, PENDING => SUBMITTED)
-    machine.when(APPROVED, SUBMITTED => APPROVED)
-    machine.when(REJECTED, SUBMITTED => REJECTED)
-    machine.when(FINALIZED, APPROVED => FINALIZED)
+    machine.when(:submit, PENDING => SUBMITTED)
+    machine.when(:approve, SUBMITTED => APPROVED)
+    machine.when(:reject, SUBMITTED => REJECTED)
+    machine.when(:finalize, APPROVED => FINALIZED)
     machine.on(:any) do |new_state, _payload|
-      update_state(new_state)
+      self.state = machine.state
     end
     machine
-  end
-
-  def update_state(new_state)
-    self.state = new_state
   end
 end

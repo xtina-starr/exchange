@@ -46,7 +46,7 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, reject_order_input)
-        expect(response.data.reject_order.errors).to include 'Order cannot be rejected'
+        expect(response.data.reject_order.errors).to include 'Invalid action on this pending order'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
