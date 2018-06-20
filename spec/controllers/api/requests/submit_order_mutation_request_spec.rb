@@ -28,8 +28,7 @@ describe Api::GraphqlController, type: :request do
       {
         input: {
           id: order.id.to_s,
-          creditCardId: credit_card_id,
-          shippingInfo: ''
+          creditCardId: credit_card_id
         }
       }
     end
