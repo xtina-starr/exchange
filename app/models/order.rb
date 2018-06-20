@@ -15,18 +15,22 @@ class Order < ApplicationRecord
     FINALIZED = 'finalized'.freeze
   ].freeze
 
+  ACTIONS = %i[submit approve reject finalize].freeze
+
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
 
-  validates :state, inclusion: { in: STATES }
+  validates :state, presence: true, inclusion: STATES
 
   before_create :set_code
   before_save :set_currency_code
 
   scope :pending, -> { where(state: PENDING) }
 
-  STATES.each do |state|
-    define_method "#{state}?" do
-      self.state == state
+  ACTIONS.each do |action|
+    define_method "#{action}!" do
+      state_machine.trigger!(action)
+    rescue MicroMachine::InvalidState
+      raise Errors::OrderError, "Invalid action on this #{state} order"
     end
   end
 
@@ -38,5 +42,21 @@ class Order < ApplicationRecord
 
   def set_currency_code
     self.currency_code ||= 'usd'
+  end
+
+  def state_machine
+    @state_machine ||= build_machine
+  end
+
+  def build_machine
+    machine = MicroMachine.new(state)
+    machine.when(:submit, PENDING => SUBMITTED)
+    machine.when(:approve, SUBMITTED => APPROVED)
+    machine.when(:reject, SUBMITTED => REJECTED)
+    machine.when(:finalize, APPROVED => FINALIZED)
+    machine.on(:any) do
+      self.state = machine.state
+    end
+    machine
   end
 end
