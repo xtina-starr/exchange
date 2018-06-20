@@ -83,7 +83,7 @@ For input set following variables:
       {
         "artworkId": "<id of your favorite artwork>",
         "priceCents": "<some affordable number>",
-        "editionSetId": <optional>
+        "editionSetId": "<optional>"
       }
     ]
   }
