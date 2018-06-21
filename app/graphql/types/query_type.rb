@@ -12,6 +12,7 @@ class Types::QueryType < Types::BaseObject
     argument :user_id, String, required: false
     argument :partner_id, String, required: false
     argument :state, Types::OrderStateEnum, required: false
+    argument :sort, Types::OrderConnectionSortEnum, required: false
   end
 
   def order(id:)
@@ -21,9 +22,25 @@ class Types::QueryType < Types::BaseObject
   end
 
   def orders(params)
+    validate_params!(params)
+    sort = params.delete(:sort)
+    query = Order.where(params)
+
+    case sort
+    when 'UPDATED_AT_ASC'
+      query.order(updated_at: :asc)
+    when 'UPDATED_AT_DESC'
+      query.order(updated_at: :desc)
+    else
+      query
+    end
+  end
+
+  private
+
+  def validate_params!(params)
     raise GraphQL::ExecutionError, 'requires one of userId or partnerId' unless params[:user_id].present? || params[:partner_id].present?
     raise GraphQL::ExecutionError, 'Not permitted' if params[:user_id] && params[:user_id] != context[:current_user][:id]
     raise GraphQL::ExecutionError, 'Not permitted' if params[:partner_id] && !context[:current_user][:partner_ids].include?(params[:partner_id])
-    Order.where(params)
   end
 end
