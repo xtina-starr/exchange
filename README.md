@@ -43,6 +43,19 @@ rails db:setup
 $ rails s
 ```
 
+## Did You Change GraphQL Schema?
+Metaphysics is the current consumer of Exchange GraphQL schema and keeps a copy of latest schema in https://github.com/artsy/metaphysics/tree/master/src/data, if you have changed Exchange GraphQL schema, make sure you also update the copy of this schema in Metaphysics. In order to do so follow these steps:
+1) In exchange run
+```shell
+rake graphql:schema:idl
+```
+2) rename `schema.graphql` file generated ☝🏼 to `exchange.graphql`
+```shell
+mv schema.graphql exchange.graphql
+```
+3) copy file above to your local update Metaphysics under `src/data` and make a PR to Metaphysics with this change
+
+
 ## Talking to Exchange 🤑
 In order to talk to Exchange GraphQL endpoint:
 - Copy `.env.example` to `.env`
