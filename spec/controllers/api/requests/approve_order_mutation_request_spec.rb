@@ -58,7 +58,7 @@ describe Api::GraphqlController, type: :request do
       it 'approves the order' do
         response = client.execute(mutation, approve_order_input)
         expect(response.data.approve_order.order.id).to eq order.id.to_s
-        expect(response.data.approve_order.order.state).to eq Order::APPROVED
+        expect(response.data.approve_order.order.state).to eq 'APPROVED'
         expect(response.data.approve_order.errors).to match []
         expect(order.reload.state).to eq Order::APPROVED
       end

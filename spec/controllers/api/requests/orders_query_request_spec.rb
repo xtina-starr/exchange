@@ -13,7 +13,7 @@ describe Api::GraphqlController, type: :request do
 
     let(:query) do
       <<-GRAPHQL
-        query($userId: String, $partnerId: String, $state: String) {
+        query($userId: String, $partnerId: String, $state: OrderStateEnum) {
           orders(userId: $userId, partnerId: $partnerId, state: $state) {
             edges{
               node{
@@ -30,7 +30,7 @@ describe Api::GraphqlController, type: :request do
 
     it 'returns error when missing both userId and partnerId' do
       expect do
-        client.execute(query, state: 'pending')
+        client.execute(query, state: 'PENDING')
       end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: requires one of userId or partnerId')
     end
 

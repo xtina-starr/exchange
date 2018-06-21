@@ -56,7 +56,7 @@ describe Api::GraphqlController, type: :request do
       it 'submits the order' do
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order.order.id).to eq order.id.to_s
-        expect(response.data.submit_order.order.state).to eq Order::SUBMITTED
+        expect(response.data.submit_order.order.state).to eq 'SUBMITTED'
         expect(response.data.submit_order.errors).to match []
         expect(order.reload.credit_card_id).to eq credit_card_id
         expect(order.state).to eq Order::SUBMITTED
