@@ -1,2 +1,3 @@
 ---
 project-name: exchange
+pre-deploy: 'bundle exec rake db:migrate'
