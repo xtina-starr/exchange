@@ -6,7 +6,8 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { 'partner-id' }
     let(:artwork_id) { 'artwork-1' }
     let(:edition_set_id) { 'ed-1' }
-    let(:line_item1) { { artworkId: artwork_id, editionSetId: edition_set_id, priceCents: 420_00 } }
+    let(:quantity) { 1 }
+    let(:line_item1) { { artworkId: artwork_id, editionSetId: edition_set_id, priceCents: 420_00, quantity: quantity } }
     let(:line_items) { [line_item1] }
     let(:currency_code) { 'usd' }
     let(:order_input_with_line_item) do
@@ -67,6 +68,7 @@ describe Api::GraphqlController, type: :request do
         expect(order.line_items.first.price_cents).to eq 420_00
         expect(order.line_items.first.artwork_id).to eq 'artwork-1'
         expect(order.line_items.first.edition_set_id).to eq 'ed-1'
+        expect(order.line_items.first.quantity).to eq 1
       end
 
       context 'with unsupported currency code' do
