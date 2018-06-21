@@ -5,7 +5,7 @@ describe LineItemService, type: :services do
   include ActiveJob::TestHelper
   let(:order) { Fabricate(:order) }
   describe '#create!' do
-    let(:line_item_params) { { artwork_id: 'test-id', edition_set_id: 'ed-1', price_cents: 420_00 } }
+    let(:line_item_params) { { artwork_id: 'test-id', edition_set_id: 'ed-1', price_cents: 420_00, quantity: 1 } }
     it 'queues a job to set line item artwork snapshot' do
       expect do
         LineItemService.create!(order, line_item_params)
@@ -18,6 +18,7 @@ describe LineItemService, type: :services do
         expect(li.reload.artwork_id).to eq 'test-id'
         expect(li.edition_set_id).to eq 'ed-1'
         expect(li.price_cents).to eq 420_00
+        expect(li.quantity).to eq 1
         artwork_snapshot = li.artwork_snapshot.with_indifferent_access
         expect(artwork_snapshot[:title]).to eq 'Cat'
         expect(artwork_snapshot[:images].first[:image_urls][:cats]).to eq '/path/to/cats.jpg'

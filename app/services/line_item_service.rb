@@ -4,7 +4,8 @@ module LineItemService
       artwork_id: line_item_param[:artwork_id],
       edition_set_id: line_item_param[:edition_set_id],
       price_cents: line_item_param[:price_cents],
-      order_id: order.id
+      order_id: order.id,
+      quantity: line_item_param[:quantity]
     )
     # queue fetching gravity artwork
     SetLineItemArtworkJob.perform_later(line_item.id)
