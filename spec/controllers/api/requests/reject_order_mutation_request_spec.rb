@@ -58,7 +58,7 @@ describe Api::GraphqlController, type: :request do
       it 'rejects the order' do
         response = client.execute(mutation, reject_order_input)
         expect(response.data.reject_order.order.id).to eq order.id.to_s
-        expect(response.data.reject_order.order.state).to eq Order::REJECTED
+        expect(response.data.reject_order.order.state).to eq 'REJECTED'
         expect(response.data.reject_order.errors).to match []
         expect(order.reload.state).to eq Order::REJECTED
       end

@@ -58,7 +58,7 @@ describe Api::GraphqlController, type: :request do
       it 'finalizes the order' do
         response = client.execute(mutation, finalize_order_input)
         expect(response.data.finalize_order.order.id).to eq order.id.to_s
-        expect(response.data.finalize_order.order.state).to eq Order::FINALIZED
+        expect(response.data.finalize_order.order.state).to eq 'FINALIZED'
         expect(response.data.finalize_order.errors).to match []
         expect(order.reload.state).to eq Order::FINALIZED
       end

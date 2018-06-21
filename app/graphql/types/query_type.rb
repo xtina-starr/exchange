@@ -11,7 +11,7 @@ class Types::QueryType < Types::BaseObject
     description 'Find list of orders'
     argument :user_id, String, required: false
     argument :partner_id, String, required: false
-    argument :state, String, required: false
+    argument :state, Types::OrderStateEnum, required: false
   end
 
   def order(id:)
