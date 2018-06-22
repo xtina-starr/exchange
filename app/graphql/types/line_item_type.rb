@@ -7,4 +7,6 @@ class Types::LineItemType < Types::BaseObject
   field :artwork_id, String, null: false
   field :edition_set_id, String, null: true
   field :quantity, Integer, null: false
+  field :created_at, Types::DateTimeType, null: false
+  field :updated_at, Types::DateTimeType, null: false
 end
