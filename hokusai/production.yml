@@ -64,14 +64,6 @@ spec:
           image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/exchange:production
           imagePullPolicy: Always
           command: ["bundle", "exec", "sidekiq"]
-          livenessProbe:
-            exec:
-              command:
-              - pgrep
-              - -f
-              - sidekiq
-            initialDelaySeconds: 5
-            periodSeconds: 5
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
