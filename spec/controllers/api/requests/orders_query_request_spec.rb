@@ -21,6 +21,15 @@ describe Api::GraphqlController, type: :request do
                 userId
                 partnerId
                 state
+                currencyCode
+                itemsTotalCents
+                lineItems{
+                  edges{
+                    node{
+                      priceCents
+                    }
+                  }
+                }
               }
             }
           }

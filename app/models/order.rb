@@ -34,6 +34,10 @@ class Order < ApplicationRecord
     end
   end
 
+  def items_total_cents
+    (line_items.present? && line_items.map(&:price_cents).reduce(0, :+)) || 0
+  end
+
   private
 
   def set_code
