@@ -8,7 +8,7 @@ class Types::OrderType < Types::BaseObject
   field :partner_id, String, null: false
   field :state, Types::OrderStateEnum, null: false
   field :currency_code, String, null: false
-  field :items_total_cents, Integer, null: true
+  field :items_total_cents, Integer, null: false
   field :shipping_total_cents, Integer, null: true
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true
