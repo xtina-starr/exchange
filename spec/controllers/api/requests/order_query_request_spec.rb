@@ -51,6 +51,15 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'partner accessing order' do
+      it 'returns order when accessing correct order' do
+        another_user_order = Fabricate(:order, partner_id: partner_id, user_id: 'someone-else-id')
+        result = client.execute(query, id: another_user_order.id)
+        expect(result.data.order.user_id).to eq 'someone-else-id'
+        expect(result.data.order.partner_id).to eq partner_id
+        expect(result.data.order.currency_code).to eq 'usd'
+        expect(result.data.order.state).to eq 'PENDING'
+        expect(result.data.order.items_total_cents).to eq 0
+      end
     end
   end
 end
