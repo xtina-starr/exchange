@@ -8,6 +8,11 @@ class Types::OrderType < Types::BaseObject
   field :partner_id, String, null: false
   field :state, Types::OrderStateEnum, null: false
   field :currency_code, String, null: false
+  field :items_total_cents, Integer, null: true
+  field :shipping_total_cents, Integer, null: true
+  field :tax_total_cents, Integer, null: true
+  field :transaction_fee_cents, Integer, null: true
+  field :commission_fee_cents, Integer, null: true
   field :created_at, Types::DateTimeType, null: false
   field :updated_at, Types::DateTimeType, null: false
   field :line_items, Types::LineItemType.connection_type, null: true
