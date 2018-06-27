@@ -15,7 +15,7 @@ class Order < ApplicationRecord
     FINALIZED = 'finalized'.freeze
   ].freeze
 
-  ACTIONS = %i[submit approve reject finalize].freeze
+  ACTIONS = %i[abandon submit approve reject finalize].freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
 
@@ -54,6 +54,7 @@ class Order < ApplicationRecord
 
   def build_machine
     machine = MicroMachine.new(state)
+    machine.when(:abandon, PENDING => ABANDONED)
     machine.when(:submit, PENDING => SUBMITTED)
     machine.when(:approve, SUBMITTED => APPROVED)
     machine.when(:reject, SUBMITTED => REJECTED)

@@ -82,13 +82,14 @@ describe Api::GraphqlController, type: :request do
       end
 
       context 'with existing pending order for artwork' do
-        let!(:order) { Fabricate(:order, user_id: jwt_user_id) }
-        let!(:line_item) { Fabricate(:line_item, order: order, artwork_id: artwork_id, edition_set_id: edition_set_id) }
+        let!(:order) { Fabricate(:order, user_id: jwt_user_id, state: Order::PENDING) }
         it 'returns error' do
           expect do
             response = client.execute(mutation, order_input_with_line_item)
-            expect(response.data.create_order.errors).to include 'Existing pending order'
-          end.to change(Order, :count).by(0)
+            expect(response.data.create_order.order.id).not_to be_nil
+            expect(response.data.create_order.errors).to match []
+            expect(order.reload.state).to eq Order::ABANDONED
+          end.to change(Order, :count).by(1).and change(Order.where(state: Order::ABANDONED), :count).by(1)
         end
       end
     end
