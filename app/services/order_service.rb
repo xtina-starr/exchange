@@ -1,8 +1,8 @@
 module OrderService
   def self.create!(user_id:, partner_id:, currency_code:, line_items: [])
     raise Errors::OrderError, 'Currency not supported' unless valid_currency_code?(currency_code)
-    raise Errors::OrderError, 'Existing pending order' if create_params_has_pending_order?(user_id, line_items)
     Order.transaction do
+      abandon_pending_orders!(user_id) if pending_order?(user_id)
       order = Order.create!(user_id: user_id, partner_id: partner_id, currency_code: currency_code, state: Order::PENDING)
       line_items.each { |li| LineItemService.create!(order, li) }
       # queue a job for few days from now to abandon the order
@@ -50,12 +50,25 @@ module OrderService
     order
   end
 
+  def self.abandon!(order)
+    Order.transaction do
+      order.abandon!
+      order.save!
+    end
+  end
+
   def self.user_pending_artwork_order(user_id, artwork_id, edition_set_id = nil)
     Order.pending.joins(:line_items).find_by(user_id: user_id, line_items: { artwork_id: artwork_id, edition_set_id: edition_set_id })
   end
 
-  def self.create_params_has_pending_order?(user_id, line_items)
-    line_items.map { |li| user_pending_artwork_order(user_id, li[:artwork_id], li[:edition_set_id]) }.any?
+  def self.pending_order?(user_id)
+    Order.pending.where(user_id: user_id).exists?
+  end
+
+  def self.abandon_pending_orders!(user_id)
+    Order.pending.where(user_id: user_id).each do |o|
+      abandon!(o)
+    end
   end
 
   def self.valid_currency_code?(currency_code)
