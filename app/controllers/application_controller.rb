@@ -5,4 +5,5 @@ class ApplicationController < ActionController::API
   attr_reader :current_user
 
   before_action :authenticate_request!
+  before_action :set_paper_trail_whodunnit
 end

@@ -10,6 +10,7 @@ gem 'puma'
 gem 'graphql'
 gem 'jwt'
 gem 'micromachine'
+gem 'paper_trail'
 gem 'sidekiq'
 
 group :development, :test do

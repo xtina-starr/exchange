@@ -1,4 +1,5 @@
 class Order < ApplicationRecord
+  has_paper_trail
   STATES = [
     PENDING = 'pending'.freeze,
     ABANDONED = 'abandoned'.freeze,
