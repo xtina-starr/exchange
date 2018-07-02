@@ -54,5 +54,12 @@ RSpec.describe Order, type: :model do
         expect(order.items_total_cents).to eq 246_00
       end
     end
+
+    context 'with a line item that has no price' do
+      it 'returns 0' do
+        Fabricate :line_item, order: order, price_cents: nil
+        expect(order.items_total_cents).to eq 0
+      end
+    end
   end
 end

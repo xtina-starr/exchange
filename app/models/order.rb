@@ -41,7 +41,7 @@ class Order < ApplicationRecord
   end
 
   def items_total_cents
-    (line_items.present? && line_items.map(&:price_cents).reduce(0, :+)) || 0
+    line_items.pluck(:price_cents).sum
   end
 
   private
