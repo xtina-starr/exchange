@@ -2,6 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Order, type: :model do
   let(:order) { Fabricate(:order) }
+
   describe 'update_state_timestamps' do
     it 'sets state timestamps in create' do
       expect(order.state_updated_at).not_to be_nil
@@ -30,6 +31,35 @@ RSpec.describe Order, type: :model do
       order.save!
       expect(order.state_updated_at).not_to eq submitted_timestamp
       expect(order.state_expires_at).to be_nil
+    end
+  end
+
+  describe '#items_total_cents' do
+    context 'with no line items' do
+      it 'returns 0' do
+        expect(order.items_total_cents).to eq 0
+      end
+    end
+
+    context 'with one line item' do
+      it 'returns the price for that line item' do
+        Fabricate :line_item, order: order, price_cents: 500_00
+        expect(order.items_total_cents).to eq 500_00
+      end
+    end
+
+    context 'with a couple line items' do
+      it 'returns the sum of the prices of those line items' do
+        Fabricate.times 2, :line_item, order: order, price_cents: 123_00
+        expect(order.items_total_cents).to eq 246_00
+      end
+    end
+
+    context 'with a line item that has no price' do
+      it 'returns 0' do
+        Fabricate :line_item, order: order, price_cents: nil
+        expect(order.items_total_cents).to eq 0
+      end
     end
   end
 end
