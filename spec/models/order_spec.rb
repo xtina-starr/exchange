@@ -14,7 +14,7 @@ RSpec.describe Order, type: :model do
       expect(order.state_updated_at).to eq current_timestamp
     end
 
-    it 'does not update timestamps if state changed to state with expiration' do
+    it 'updates timestamps if state changed to state with expiration' do
       current_timestamp = order.state_updated_at
       current_expiration = order.state_expires_at
       order.submit!
