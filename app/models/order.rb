@@ -15,6 +15,11 @@ class Order < ApplicationRecord
     FINALIZED = 'finalized'.freeze
   ].freeze
 
+  STATE_EXPIRATIONS = {
+    'pending' => 2.days,
+    'submitted' => 2.days
+  }.freeze
+
   ACTIONS = %i[abandon submit approve reject finalize].freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
@@ -22,6 +27,7 @@ class Order < ApplicationRecord
   validates :state, presence: true, inclusion: STATES
 
   before_create :set_code
+  before_save :update_state_timestamps, if: :state_changed?
   before_save :set_currency_code
 
   scope :pending, -> { where(state: PENDING) }
@@ -42,6 +48,11 @@ class Order < ApplicationRecord
 
   def set_code
     self.code = SecureRandom.hex(10)
+  end
+
+  def update_state_timestamps
+    self.state_updated_at = Time.now.utc
+    self.state_expires_at = STATE_EXPIRATIONS.key?(state) ? state_updated_at + STATE_EXPIRATIONS[state] : nil
   end
 
   def set_currency_code

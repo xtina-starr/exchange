@@ -60,6 +60,8 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.submit_order.errors).to match []
         expect(order.reload.credit_card_id).to eq credit_card_id
         expect(order.state).to eq Order::SUBMITTED
+        expect(order.state_updated_at).not_to be_nil
+        expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
       end
     end
   end

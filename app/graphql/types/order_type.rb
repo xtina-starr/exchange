@@ -15,5 +15,7 @@ class Types::OrderType < Types::BaseObject
   field :commission_fee_cents, Integer, null: true
   field :created_at, Types::DateTimeType, null: false
   field :updated_at, Types::DateTimeType, null: false
+  field :state_updated_at, Types::DateTimeType, null: true
+  field :state_expires_at, Types::DateTimeType, null: true
   field :line_items, Types::LineItemType.connection_type, null: true
 end
