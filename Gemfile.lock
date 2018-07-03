@@ -93,6 +93,11 @@ GEM
     nio4r (2.3.1)
     nokogiri (1.8.2)
       mini_portile2 (~> 2.3.0)
+    paper_trail (9.2.0)
+      activerecord (>= 4.2, < 5.3)
+      paper_trail-association_tracking (< 2)
+      request_store (~> 1.1)
+    paper_trail-association_tracking (1.0.0)
     parallel (1.12.1)
     parser (2.5.1.0)
       ast (~> 2.4.0)
@@ -139,6 +144,8 @@ GEM
     rb-inotify (0.9.10)
       ffi (>= 0.5.0, < 2)
     redis (4.0.1)
+    request_store (1.4.1)
+      rack (>= 1.4)
     rspec-core (3.7.1)
       rspec-support (~> 3.7.0)
     rspec-expectations (3.7.0)
@@ -198,6 +205,7 @@ DEPENDENCIES
   jwt
   listen
   micromachine
+  paper_trail
   pg
   pry-rails
   puma
