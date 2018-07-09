@@ -11,10 +11,11 @@ module OrderService
   end
 
   # rubocop:disable Lint/UnusedMethodArgument
-  def self.submit!(order, credit_card_id:, shipping_info: '')
+  def self.submit!(order, credit_card_id:, destination_account_id:)
     Order.transaction do
       # verify price change?
       order.credit_card_id = credit_card_id
+      order.destination_account_id = destination_account_id
       PaymentService.authorize_charge(order)
       order.submit!
       order.save!
