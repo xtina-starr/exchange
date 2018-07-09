@@ -15,7 +15,7 @@ module OrderService
     Order.transaction do
       # verify price change?
       order.credit_card_id = credit_card_id
-      # TODO: hold the charge for this price on credit card
+      PaymentService.authorize_charge(order)
       order.submit!
       order.save!
     end
