@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_07_09_174608) do
+ActiveRecord::Schema.define(version: 2018_07_09_194840) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -42,6 +42,7 @@ ActiveRecord::Schema.define(version: 2018_07_09_174608) do
     t.string "credit_card_id"
     t.datetime "state_updated_at"
     t.datetime "state_expires_at"
+    t.string "destination_account_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["partner_id"], name: "index_orders_on_partner_id"
     t.index ["state"], name: "index_orders_on_state"
