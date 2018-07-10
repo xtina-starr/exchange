@@ -8,6 +8,11 @@ class Types::OrderType < Types::BaseObject
   field :partner_id, String, null: false
   field :state, Types::OrderStateEnum, null: false
   field :currency_code, String, null: false
+  field :shipping_address, String, null: true
+  field :shipping_city, String, null: true
+  field :shipping_country, String, null: true
+  field :shipping_postal_code, String, null: true
+  field :shipping_type, Types::OrderShippingTypeEnum, null: true
   field :items_total_cents, Integer, null: false
   field :shipping_total_cents, Integer, null: true
   field :tax_total_cents, Integer, null: true

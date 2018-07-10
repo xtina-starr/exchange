@@ -21,6 +21,11 @@ class Order < ApplicationRecord
     'submitted' => 2.days
   }.freeze
 
+  SHIPPING_TYPES = [
+    PICKUP = 'pickup'.freeze,
+    SHIP = 'ship'.freeze
+  ].freeze
+
   ACTIONS = %i[abandon submit approve reject finalize].freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
@@ -43,6 +48,15 @@ class Order < ApplicationRecord
 
   def items_total_cents
     line_items.pluck(:price_cents).sum
+  end
+
+  def shipping_info?
+    shipping_type == PICKUP ||
+      (shipping_type == SHIP && %i[shipping_address shipping_city shipping_country shipping_postal_code].any? { |sh_field| send(sh_field).present? })
+  end
+
+  def payment_info?
+    credit_card_id.present?
   end
 
   private

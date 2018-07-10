@@ -10,18 +10,32 @@ module OrderService
     end
   end
 
-  # rubocop:disable Lint/UnusedMethodArgument
-  def self.submit!(order, credit_card_id:, shipping_info: '')
+  def self.update!(order, attributes)
+    raise Errors::OrderError, 'Cannot update non-pending orders' unless order.state == Order::PENDING
+    Order.transaction do
+      order.update!(
+        attributes.slice(
+          :shipping_address,
+          :shipping_city,
+          :shipping_country,
+          :shipping_postal_code,
+          :shipping_type,
+          :credit_card_id
+        )
+      )
+    end
+  end
+
+  def self.submit!(order)
+    raise Errors::OrderError, "Missing info for submitting order(#{order.id})" unless can_submit?(order)
     Order.transaction do
       # verify price change?
-      order.credit_card_id = credit_card_id
       # TODO: hold the charge for this price on credit card
       order.submit!
       order.save!
     end
     order
   end
-  # rubocop:enable Lint/UnusedMethodArgument
 
   def self.approve!(order)
     Order.transaction do
@@ -73,5 +87,9 @@ module OrderService
 
   def self.valid_currency_code?(currency_code)
     currency_code == 'usd'
+  end
+
+  def self.can_submit?(order)
+    order.shipping_info? && order.payment_info?
   end
 end
