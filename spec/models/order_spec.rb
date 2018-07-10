@@ -62,4 +62,31 @@ RSpec.describe Order, type: :model do
       end
     end
   end
+
+  describe '#total_cents' do
+  end
+
+  describe '#subtotal_cents' do
+    context 'without shipping total cents' do
+      it 'returns tax + line items' do
+        Fabricate.times 2, :line_item, order: order, price_cents: 100_00
+        order.update!(tax_total_cents: 100_00)
+        expect(order.subtotal_cents).to eq 300_00
+      end
+    end
+    context 'without tax total cents' do
+      it 'returns tax + line items' do
+        Fabricate.times 2, :line_item, order: order, price_cents: 100_00
+        order.update!(shipping_total_cents: 100_00)
+        expect(order.subtotal_cents).to eq 300_00
+      end
+    end
+    context 'with shipping/tax and line items' do
+      it 'returns shipping + tax + line items' do
+        Fabricate.times 2, :line_item, order: order, price_cents: 100_00
+        order.update!(shipping_total_cents: 100_00, tax_total_cents: 50_00)
+        expect(order.subtotal_cents).to eq 350_00
+      end
+    end
+  end
 end

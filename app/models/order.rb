@@ -42,7 +42,15 @@ class Order < ApplicationRecord
   end
 
   def items_total_cents
-    line_items.pluck(:price_cents).sum
+    line_items.sum(:price_cents)
+  end
+
+  def subtotal_cents
+    items_total_cents + shipping_total_cents.to_i + tax_total_cents.to_i
+  end
+
+  def total_cents
+    subtotal_cents + commission_fee_cents.to_i + transaction_fee_cents.to_i
   end
 
   private
