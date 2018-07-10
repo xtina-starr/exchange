@@ -1,15 +1,19 @@
 module PaymentService
   def self.authorize_charge(order, amount=order.items_total_cents)
     validate_payment_info(order)
-    charge = Stripe::Charge.create(
-      amount: amount,
-      currency: 'usd',
-      description: 'Artsy',
-      source: order.credit_card_id,
-      destination: order.destination_account_id,
-      capture: false
-    )
-    TransactionService.create!(order, charge)
+    begin
+      charge = Stripe::Charge.create(
+        amount: amount,
+        currency: 'usd',
+        description: 'Artsy',
+        source: order.credit_card_id,
+        destination: order.destination_account_id,
+        capture: false
+      )
+      TransactionService.create!(order, charge)
+    rescue Stripe::CardError => e
+      raise Errors::PaymentError, e.message
+    end
   end
 
   def self.validate_payment_info(order)
