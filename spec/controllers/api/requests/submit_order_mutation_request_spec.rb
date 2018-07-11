@@ -6,6 +6,7 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
+    let(:destination_account_id) { 'destination_account' }
     let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
 
     let(:mutation) do
@@ -28,7 +29,8 @@ describe Api::GraphqlController, type: :request do
       {
         input: {
           id: order.id.to_s,
-          creditCardId: credit_card_id
+          creditCardId: credit_card_id,
+          destinationAccountId: destination_account_id
         }
       }
     end
@@ -54,11 +56,14 @@ describe Api::GraphqlController, type: :request do
 
     context 'with proper permission' do
       it 'submits the order' do
+        allow(PaymentService).to receive(:authorize_charge).with(order)
         response = client.execute(mutation, submit_order_input)
+        expect(PaymentService).to have_received(:authorize_charge).with(order)
         expect(response.data.submit_order.order.id).to eq order.id.to_s
         expect(response.data.submit_order.order.state).to eq 'SUBMITTED'
         expect(response.data.submit_order.errors).to match []
         expect(order.reload.credit_card_id).to eq credit_card_id
+        expect(order.reload.destination_account_id).to eq destination_account_id
         expect(order.state).to eq Order::SUBMITTED
         expect(order.state_updated_at).not_to be_nil
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)

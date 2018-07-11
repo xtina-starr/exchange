@@ -16,8 +16,8 @@ module OrderService
       # verify price change?
       order.credit_card_id = credit_card_id
       order.destination_account_id = destination_account_id
-      PaymentService.authorize_charge(order)
       order.submit!
+      PaymentService.authorize_charge(order)
       order.save!
     end
     order
