@@ -5,7 +5,7 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
-    let(:credit_card_id) { 'cc-1' }
+    let(:payment_source) { 'cc-1' }
     let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
 
     let(:mutation) do
@@ -28,7 +28,7 @@ describe Api::GraphqlController, type: :request do
       {
         input: {
           id: order.id.to_s,
-          creditCardId: credit_card_id
+          paymentSource: payment_source
         }
       }
     end
@@ -58,7 +58,7 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.set_payment.order.id).to eq order.id.to_s
         expect(response.data.set_payment.order.state).to eq 'PENDING'
         expect(response.data.set_payment.errors).to match []
-        expect(order.reload.credit_card_id).to eq credit_card_id
+        expect(order.reload.payment_source).to eq payment_source
         expect(order.state).to eq Order::PENDING
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
       end

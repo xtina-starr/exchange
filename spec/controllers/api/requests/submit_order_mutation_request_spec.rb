@@ -5,8 +5,8 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
-    let(:credit_card_id) { 'cc-1' }
-    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id, credit_card_id: credit_card_id, shipping_country: 'IR', shipping_type: Order::SHIP) }
+    let(:payment_source) { 'cc-1' }
+    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id, payment_source: payment_source, shipping_country: 'IR', shipping_type: Order::SHIP) }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -53,7 +53,7 @@ describe Api::GraphqlController, type: :request do
       end
       context 'with order without payment info' do
         before do
-          order.update_attributes! credit_card_id: nil
+          order.update_attributes! payment_source: nil
         end
         it 'returns error' do
           response = client.execute(mutation, submit_order_input)
@@ -77,7 +77,7 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.submit_order.order.id).to eq order.id.to_s
         expect(response.data.submit_order.order.state).to eq 'SUBMITTED'
         expect(response.data.submit_order.errors).to match []
-        expect(order.reload.credit_card_id).to eq credit_card_id
+        expect(order.reload.payment_source).to eq payment_source
         expect(order.state).to eq Order::SUBMITTED
         expect(order.state_updated_at).not_to be_nil
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)

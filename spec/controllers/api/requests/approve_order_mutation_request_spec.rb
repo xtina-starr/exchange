@@ -5,7 +5,7 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
-    let(:credit_card_id) { 'cc-1' }
+    let(:payment_source) { 'cc-1' }
     let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
 
     let(:mutation) do

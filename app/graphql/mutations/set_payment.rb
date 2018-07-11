@@ -2,7 +2,7 @@ class Mutations::SetPayment < Mutations::BaseMutation
   null true
 
   argument :id, ID, required: true
-  argument :credit_card_id, String, required: false
+  argument :payment_source, String, required: false
 
   field :order, Types::OrderType, null: true
   field :errors, [String], null: false
