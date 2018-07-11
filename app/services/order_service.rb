@@ -10,8 +10,18 @@ module OrderService
     end
   end
 
-  def self.update!(order, attributes)
-    raise Errors::OrderError, 'Cannot update non-pending orders' unless order.state == Order::PENDING
+  def self.set_payment!(order, attributes)
+    raise Errors::OrderError, 'Cannot set payment info on non-pending orders' unless order.state == Order::PENDING
+    Order.transaction do
+      order.update!(
+        attributes.slice(:credit_card_id)
+      )
+    end
+    order.reload
+  end
+
+  def self.set_shipping!(order, attributes)
+    raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
     Order.transaction do
       order.update!(
         attributes.slice(
@@ -19,11 +29,11 @@ module OrderService
           :shipping_city,
           :shipping_country,
           :shipping_postal_code,
-          :shipping_type,
-          :credit_card_id
+          :shipping_type
         )
       )
     end
+    order.reload
   end
 
   def self.submit!(order)

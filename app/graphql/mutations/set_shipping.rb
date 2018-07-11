@@ -1,8 +1,7 @@
-class Mutations::UpdateOrder < Mutations::BaseMutation
+class Mutations::SetShipping < Mutations::BaseMutation
   null true
 
   argument :id, ID, required: true
-  argument :credit_card_id, String, required: false
   argument :shipping_address, String, required: false
   argument :shipping_city, String, required: false
   argument :shipping_country, String, required: false
@@ -16,7 +15,7 @@ class Mutations::UpdateOrder < Mutations::BaseMutation
     order = Order.find(args[:id])
     validate_request!(order)
     {
-      order: OrderService.update!(order, args.except(:id)),
+      order: OrderService.set_shipping!(order, args.except(:id)),
       errors: []
     }
   rescue Errors::ApplicationError => e
