@@ -50,7 +50,7 @@ class Order < ApplicationRecord
   end
 
   def total_cents
-    subtotal_cents + commission_fee_cents.to_i + transaction_fee_cents.to_i
+    subtotal_cents - commission_fee_cents.to_i - transaction_fee_cents.to_i
   end
 
   private
