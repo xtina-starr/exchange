@@ -13,6 +13,8 @@ class Types::OrderType < Types::BaseObject
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true
   field :commission_fee_cents, Integer, null: true
+  field :subtotal_cents, Integer, null: true
+  field :total_cents, Integer, null: true
   field :created_at, Types::DateTimeType, null: false
   field :updated_at, Types::DateTimeType, null: false
   field :state_updated_at, Types::DateTimeType, null: true
