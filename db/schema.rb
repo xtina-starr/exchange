@@ -51,7 +51,7 @@ ActiveRecord::Schema.define(version: 2018_07_09_194840) do
 
   create_table "transactions", force: :cascade do |t|
     t.bigint "order_id"
-    t.string "charge_id"
+    t.string "external_id"
     t.string "source_id"
     t.string "destination_id"
     t.integer "amount_cents"

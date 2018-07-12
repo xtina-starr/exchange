@@ -1,7 +1,7 @@
 module TransactionService
   def self.create_failure!(order, error)
     order.transactions.create!(
-      charge_id: error[:id],
+      external_id: error[:id],
       source_id: order.credit_card_id,
       destination_id: order.destination_account_id,
       amount_cents: error[:amount],
@@ -13,7 +13,7 @@ module TransactionService
 
   def self.create_success!(order, charge)
     order.transactions.create!(
-      charge_id: charge.id,
+      external_id: charge.id,
       source_id: order.credit_card_id,
       destination_id: order.destination_account_id,
       amount_cents: charge.amount,
