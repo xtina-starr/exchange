@@ -56,7 +56,7 @@ describe Api::GraphqlController, type: :request do
 
     context 'with proper permission' do
       it 'submits the order' do
-        allow(PaymentService).to receive(:authorize_charge).with(order)
+        allow(PaymentService).to receive(:authorize_charge).with(order, order.items_total_cents)
         response = client.execute(mutation, submit_order_input)
         expect(PaymentService).to have_received(:authorize_charge).with(order)
         expect(response.data.submit_order.order.id).to eq order.id.to_s

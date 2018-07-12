@@ -10,7 +10,6 @@ module PaymentService
       capture: false
     )
   rescue Stripe::StripeError => e
-    puts e.json_body
     body = e.json_body[:error]
     failed_charge = {
       amount: amount,
