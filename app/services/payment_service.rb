@@ -13,6 +13,7 @@ module PaymentService
     puts e.json_body
     body = e.json_body[:error]
     failed_charge = {
+      amount: amount,
       id: body[:charge],
       failure_code: body[:code],
       failure_message: body[:message],

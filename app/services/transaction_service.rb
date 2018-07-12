@@ -4,7 +4,7 @@ module TransactionService
       charge_id: error[:id],
       source_id: order.credit_card_id,
       destination_id: order.destination_account_id,
-      amount_cents: order.items_total_cents,
+      amount_cents: error[:amount],
       failure_code: error[:failure_code],
       failure_message: error[:failure_message],
       status: 'failure'
@@ -16,7 +16,7 @@ module TransactionService
       charge_id: charge.id,
       source_id: order.credit_card_id,
       destination_id: order.destination_account_id,
-      amount_cents: order.items_total_cents,
+      amount_cents: charge.amount,
       failure_code: charge.failure_code,
       failure_message: charge.failure_message,
       status: 'success'

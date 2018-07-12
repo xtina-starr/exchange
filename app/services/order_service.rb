@@ -12,7 +12,6 @@ module OrderService
 
   # rubocop:disable Lint/UnusedMethodArgument
   def self.submit!(order, credit_card_id:, destination_account_id:)
-    raise Errors::OrderError, 'Invalid credit card id' if credit_card_id.blank?
     Order.transaction do
       # verify price change?
       order.credit_card_id = credit_card_id
