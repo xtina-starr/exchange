@@ -20,5 +20,4 @@ class Types::OrderType < Types::BaseObject
   field :state_updated_at, Types::DateTimeType, null: true
   field :state_expires_at, Types::DateTimeType, null: true
   field :line_items, Types::LineItemType.connection_type, null: true
-  field :destination_account_id, String, null: true
 end
