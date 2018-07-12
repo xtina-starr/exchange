@@ -16,7 +16,7 @@ describe Api::GraphqlController, type: :request do
               userId
               partnerId
               state
-              shippingType
+              fulfillmentType
             }
             errors
           }
@@ -28,11 +28,11 @@ describe Api::GraphqlController, type: :request do
       {
         input: {
           id: order.id.to_s,
-          shippingType: 'SHIP',
+          fulfillmentType: 'SHIP',
           shippingCountry: 'IR',
           shippingCity: 'Tehran',
           shippingPostalCode: '02198912',
-          shippingAddress: 'Vanak'
+          shippingStreet: 'Vanak'
         }
       }
     end
@@ -62,12 +62,12 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.set_shipping.order.id).to eq order.id.to_s
         expect(response.data.set_shipping.order.state).to eq 'PENDING'
         expect(response.data.set_shipping.errors).to match []
-        expect(order.reload.shipping_type).to eq Order::SHIP
+        expect(order.reload.fulfillment_type).to eq Order::SHIP
         expect(order.state).to eq Order::PENDING
         expect(order.shipping_country).to eq 'IR'
         expect(order.shipping_city).to eq 'Tehran'
         expect(order.shipping_postal_code).to eq '02198912'
-        expect(order.shipping_address).to eq 'Vanak'
+        expect(order.shipping_street).to eq 'Vanak'
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
       end
     end

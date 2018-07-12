@@ -6,7 +6,19 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:payment_source) { 'cc-1' }
-    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id, payment_source: payment_source, shipping_country: 'IR', shipping_type: Order::SHIP) }
+    let(:order) do
+      Fabricate(
+        :order,
+        partner_id: partner_id,
+        user_id: user_id,
+        payment_source: payment_source,
+        shipping_street: '12 Vanak St',
+        shipping_city: 'Tehran',
+        shipping_postal_code: '02198',
+        shipping_country: 'IR',
+        fulfillment_type: Order::SHIP
+      )
+    end
 
     let(:mutation) do
       <<-GRAPHQL

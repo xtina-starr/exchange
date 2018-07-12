@@ -9,7 +9,7 @@ class Mutations::SetPayment < Mutations::BaseMutation
 
   def resolve(args)
     order = Order.find(args[:id])
-    validate_request!(order)
+    assert_order_can_set_payment!(order)
     {
       order: OrderService.set_payment!(order, args.except(:id)),
       errors: []
@@ -18,7 +18,7 @@ class Mutations::SetPayment < Mutations::BaseMutation
     { order: nil, errors: [e.message] }
   end
 
-  def validate_request!(order)
+  def assert_order_can_set_payment!(order)
     raise Errors::AuthError, 'Not permitted' unless context[:current_user]['id'] == order.user_id
   end
 end

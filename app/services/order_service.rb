@@ -15,7 +15,7 @@ module OrderService
     Order.transaction do
       order.update!(payment_source: payment_source)
     end
-    order.reload
+    order
   end
 
   def self.set_shipping!(order, attributes)
@@ -23,15 +23,15 @@ module OrderService
     Order.transaction do
       order.update!(
         attributes.slice(
-          :shipping_address,
+          :shipping_street,
           :shipping_city,
           :shipping_country,
           :shipping_postal_code,
-          :shipping_type
+          :fulfillment_type
         )
       )
     end
-    order.reload
+    order
   end
 
   def self.submit!(order)

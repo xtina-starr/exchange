@@ -62,4 +62,23 @@ RSpec.describe Order, type: :model do
       end
     end
   end
+
+  describe '#shipping_info' do
+    context 'with Ship fulfillment type' do
+      it 'returns true when all shipping data available' do
+        order.update!(fulfillment_type: Order::PICKUP, shipping_country: 'IR', shipping_street: 'Vanak', shipping_postal_code: '09821', shipping_city: 'Tehran')
+        expect(order.shipping_info?).to be true
+      end
+      it 'returns false if missing any shipping data' do
+        order.update!(fulfillment_type: Order::SHIP, shipping_country: 'IR', shipping_street: nil, shipping_postal_code: nil)
+        expect(order.shipping_info?).to be false
+      end
+    end
+    context 'with Pickup fulfillment type' do
+      it 'returns true' do
+        order.update!(fulfillment_type: Order::PICKUP, shipping_country: nil, shipping_street: nil, shipping_postal_code: nil)
+        expect(order.shipping_info?).to be true
+      end
+    end
+  end
 end

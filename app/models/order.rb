@@ -21,7 +21,7 @@ class Order < ApplicationRecord
     'submitted' => 2.days
   }.freeze
 
-  SHIPPING_TYPES = [
+  FULFILLMENT_TYPES = [
     PICKUP = 'pickup'.freeze,
     SHIP = 'ship'.freeze
   ].freeze
@@ -51,8 +51,8 @@ class Order < ApplicationRecord
   end
 
   def shipping_info?
-    shipping_type == PICKUP ||
-      (shipping_type == SHIP && %i[shipping_address shipping_city shipping_country shipping_postal_code].any? { |sh_field| send(sh_field).present? })
+    fulfillment_type == PICKUP ||
+      (fulfillment_type == SHIP && %i[shipping_street shipping_city shipping_country shipping_postal_code].all? { |sh_field| send(sh_field).present? })
   end
 
   def payment_info?
