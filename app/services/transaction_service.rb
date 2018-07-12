@@ -1,13 +1,25 @@
 module TransactionService
-  def self.create!(order, charge)
+  def self.create_failure!(order, error)
+    order.transactions.create!(
+      charge_id: error[:id],
+      source_id: order.credit_card_id,
+      destination_id: order.destination_account_id,
+      amount_cents: order.items_total_cents,
+      failure_code: error[:failure_code],
+      failure_message: error[:failure_message],
+      status: 'failure'
+    )
+  end
+
+  def self.create_success!(order, charge)
     order.transactions.create!(
       charge_id: charge.id,
-      source_id: charge.source.id,
-      destination_id: charge.destination,
-      amount_cents: charge.amount,
+      source_id: order.credit_card_id,
+      destination_id: order.destination_account_id,
+      amount_cents: order.items_total_cents,
       failure_code: charge.failure_code,
       failure_message: charge.failure_message,
-      status: charge.status 
+      status: 'success'
     )
   end
 end

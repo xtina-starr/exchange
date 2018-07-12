@@ -12,19 +12,22 @@ module OrderService
 
   # rubocop:disable Lint/UnusedMethodArgument
   def self.submit!(order, credit_card_id:, destination_account_id:)
-    raise Errors::OrderError, 'Invalid credit card id' if order.credit_card_id.blank?
+    raise Errors::OrderError, 'Invalid credit card id' if credit_card_id.blank?
     Order.transaction do
       # verify price change?
       order.credit_card_id = credit_card_id
       order.destination_account_id = destination_account_id
       order.submit!
-      PaymentService.authorize_charge(order, order.items_total_cents)
+      charge = PaymentService.authorize_charge(order, order.items_total_cents)
+      TransactionService.create_success!(order, charge)
       order.save!
-    rescue Errors::PaymentError => e
-      TransactionService.create!(order, e)
     end
     order
+  rescue Errors::PaymentError => e
+    TransactionService.create_failure!(order, e.body)
+    raise e
   end
+
   # rubocop:enable Lint/UnusedMethodArgument
 
   def self.approve!(order)

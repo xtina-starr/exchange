@@ -14,14 +14,12 @@ describe PaymentService, type: :services do
 
   describe '#authorize_charge' do
     context 'with order with valid payment info' do
-      it "authorizes a charge on the user's credit card and records the transaction" do
+      it "authorizes a charge on the user's credit card" do
         allow(Stripe::Charge).to receive(:create).with(authorize_charge_params).and_return(charge)
         allow(PaymentService).to receive(:valid_destination_account?).and_return(true)
-        allow(TransactionService).to receive(:create!).with(order, charge)
 
         PaymentService.authorize_charge(order, charge_amount)
         expect(Stripe::Charge).to have_received(:create).with(authorize_charge_params)
-        expect(TransactionService).to have_received(:create!).with(order, charge)
       end
     end
 
@@ -36,28 +34,27 @@ describe PaymentService, type: :services do
   end
 
   describe '#valid_destination_account?' do
-    
     it "calls the /merchant_accounts Gravity endpoint" do
       allow(Adapters::GravityV1).to receive(:request).with("/merchant_accounts?partner_id=#{order.partner_id}").and_return(matching_partner_merchant_accounts)
-      PaymentService.valid_destination_account?(order.partner_id, order.destination_account_id) 
+      PaymentService.valid_destination_account?(order) 
       expect(Adapters::GravityV1).to have_received(:request).with("/merchant_accounts?partner_id=#{order.partner_id}")
     end
 
     it "returns true if the destination account matches one of the partner's merchant accounts" do
       allow(Adapters::GravityV1).to receive(:request).with("/merchant_accounts?partner_id=#{order.partner_id}").and_return(matching_partner_merchant_accounts)
-      result = PaymentService.valid_destination_account?(order.partner_id, order.destination_account_id) 
+      result = PaymentService.valid_destination_account?(order) 
       expect(result).to be(true)
     end
 
     it "returns false if the destination account does not match the partner's account" do
       allow(Adapters::GravityV1).to receive(:request).with("/merchant_accounts?partner_id=#{order.partner_id}").and_return(nonmatching_partner_merchant_accounts)
-      result = PaymentService.valid_destination_account?(order.partner_id, order.destination_account_id) 
+      result = PaymentService.valid_destination_account?(order) 
       expect(result).to be(false)
     end
 
     it "returns false if the partner does not have any merchant accounts" do
       allow(Adapters::GravityV1).to receive(:request).with("/merchant_accounts?partner_id=#{order.partner_id}").and_return([])
-      result = PaymentService.valid_destination_account?(order.partner_id, order.destination_account_id) 
+      result = PaymentService.valid_destination_account?(order) 
       expect(result).to be(false)    
     end
   end
