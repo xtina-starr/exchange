@@ -1,7 +1,7 @@
 module PaymentService
   def self.authorize_charge(order, amount)
-    raise Errors::PaymentError.new('Invalid destination account id', { failure_code: 'artsy_internal', failure_message: 'Invalid destination account id' }) unless valid_destination_account?(order)
-    charge = Stripe::Charge.create(
+    raise Errors::PaymentError.new('Invalid destination account id', failure_code: 'artsy_internal', failure_message: 'Invalid destination account id') unless valid_destination_account?(order)
+    Stripe::Charge.create(
       amount: amount,
       currency: order.currency_code,
       description: 'Artsy',
@@ -15,7 +15,7 @@ module PaymentService
       amount: amount,
       id: body[:charge],
       failure_code: body[:code],
-      failure_message: body[:message],
+      failure_message: body[:message]
     }
     raise Errors::PaymentError.new(e.message, failed_charge)
   end

@@ -10,7 +10,6 @@ module OrderService
     end
   end
 
-  # rubocop:disable Lint/UnusedMethodArgument
   def self.submit!(order, credit_card_id:, destination_account_id:)
     Order.transaction do
       # verify price change?
@@ -26,8 +25,6 @@ module OrderService
     TransactionService.create_failure!(order, e.body)
     raise e
   end
-
-  # rubocop:enable Lint/UnusedMethodArgument
 
   def self.approve!(order)
     Order.transaction do
