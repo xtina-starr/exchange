@@ -56,17 +56,12 @@ describe Api::GraphqlController, type: :request do
 
     context 'with proper permission' do
       it 'submits the order' do
-        allow(PaymentService).to receive(:authorize_charge).with(order, order.items_total_cents)
+        allow(PaymentService).to receive(:authorize_charge)
+        allow(TransactionService).to receive(:create_success!)
         response = client.execute(mutation, submit_order_input)
-        expect(PaymentService).to have_received(:authorize_charge).with(order)
         expect(response.data.submit_order.order.id).to eq order.id.to_s
         expect(response.data.submit_order.order.state).to eq 'SUBMITTED'
         expect(response.data.submit_order.errors).to match []
-        expect(order.reload.credit_card_id).to eq credit_card_id
-        expect(order.reload.destination_account_id).to eq destination_account_id
-        expect(order.state).to eq Order::SUBMITTED
-        expect(order.state_updated_at).not_to be_nil
-        expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
       end
     end
   end
