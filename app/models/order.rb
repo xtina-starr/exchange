@@ -21,6 +21,11 @@ class Order < ApplicationRecord
     'submitted' => 2.days
   }.freeze
 
+  FULFILLMENT_TYPES = [
+    PICKUP = 'pickup'.freeze,
+    SHIP = 'ship'.freeze
+  ].freeze
+
   ACTIONS = %i[abandon submit approve reject finalize].freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
@@ -52,6 +57,15 @@ class Order < ApplicationRecord
 
   def total_cents
     subtotal_cents - commission_fee_cents.to_i - transaction_fee_cents.to_i
+  end
+
+  def shipping_info?
+    fulfillment_type == PICKUP ||
+      (fulfillment_type == SHIP && %i[shipping_address_line1 shipping_city shipping_country shipping_postal_code].all? { |sh_field| send(sh_field).present? })
+  end
+
+  def payment_info?
+    credit_card_id.present? && merchant_account_id.present?
   end
 
   private

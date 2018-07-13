@@ -6,8 +6,22 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
-    let(:destination_account_id) { 'destination_account' }
-    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
+    let(:merchant_account_id) { 'ma1' }
+    let(:order) do
+      Fabricate(
+        :order,
+        partner_id: partner_id,
+        user_id: user_id,
+        credit_card_id: credit_card_id,
+        merchant_account_id: merchant_account_id,
+        shipping_address_line1: '12 Vanak St',
+        shipping_address_line2: 'P 80',
+        shipping_city: 'Tehran',
+        shipping_postal_code: '02198',
+        shipping_country: 'IR',
+        fulfillment_type: Order::SHIP
+      )
+    end
 
     let(:mutation) do
       <<-GRAPHQL
@@ -28,9 +42,7 @@ describe Api::GraphqlController, type: :request do
     let(:submit_order_input) do
       {
         input: {
-          id: order.id.to_s,
-          creditCardId: credit_card_id,
-          destinationAccountId: destination_account_id
+          id: order.id.to_s
         }
       }
     end
@@ -43,18 +55,44 @@ describe Api::GraphqlController, type: :request do
       end
     end
 
-    context 'with order in non-pending state' do
-      before do
-        order.update_attributes! state: Order::APPROVED
-      end
-      it 'returns error' do
-        response = client.execute(mutation, submit_order_input)
-        expect(response.data.submit_order.errors).to include 'Invalid action on this approved order'
-        expect(order.reload.state).to eq Order::APPROVED
-      end
-    end
-
     context 'with proper permission' do
+      context 'with order without shipping info' do
+        before do
+          order.update_attributes! shipping_country: nil
+        end
+        it 'returns error' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.errors).to include "Missing info for submitting order(#{order.id})"
+          expect(order.reload.state).to eq Order::PENDING
+        end
+      end
+      context 'with order without credit card id' do
+        let(:credit_card_id) { nil }
+        it 'returns error' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.errors).to include "Missing info for submitting order(#{order.id})"
+          expect(order.reload.state).to eq Order::PENDING
+        end
+      end
+      context 'with order without merchant account id' do
+        let(:merchant_account_id) { nil }
+        it 'returns error' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.errors).to include "Missing info for submitting order(#{order.id})"
+          expect(order.reload.state).to eq Order::PENDING
+        end
+      end
+      context 'with order in non-pending state' do
+        before do
+          order.update_attributes! state: Order::APPROVED
+        end
+        it 'returns error' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.errors).to include 'Invalid action on this approved order'
+          expect(order.reload.state).to eq Order::APPROVED
+        end
+      end
+
       it 'submits the order' do
         allow(PaymentService).to receive(:authorize_charge)
         allow(TransactionService).to receive(:create_success!)
@@ -62,6 +100,9 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.submit_order.order.id).to eq order.id.to_s
         expect(response.data.submit_order.order.state).to eq 'SUBMITTED'
         expect(response.data.submit_order.errors).to match []
+        expect(order.reload.state).to eq Order::SUBMITTED
+        expect(order.state_updated_at).not_to be_nil
+        expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
       end
     end
   end

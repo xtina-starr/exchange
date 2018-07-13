@@ -6,7 +6,7 @@ module PaymentService
       currency: order.currency_code,
       description: 'Artsy',
       source: order.credit_card_id,
-      destination: order.destination_account_id,
+      destination: order.merchant_account_id,
       capture: false
     )
   rescue Stripe::StripeError => e
@@ -22,6 +22,6 @@ module PaymentService
 
   def self.valid_destination_account?(order)
     merchant_account_ids = Adapters::GravityV1.request("/merchant_accounts?partner_id=#{order.partner_id}")
-    merchant_account_ids.pluck(:external_id).include? order.destination_account_id
+    merchant_account_ids.pluck(:external_id).include? order.merchant_account_id
   end
 end

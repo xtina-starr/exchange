@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_07_09_194840) do
+ActiveRecord::Schema.define(version: 2018_07_13_200558) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -42,7 +42,13 @@ ActiveRecord::Schema.define(version: 2018_07_09_194840) do
     t.string "credit_card_id"
     t.datetime "state_updated_at"
     t.datetime "state_expires_at"
-    t.string "destination_account_id"
+    t.string "shipping_address_line1"
+    t.string "shipping_address_line2"
+    t.string "shipping_city"
+    t.string "shipping_country"
+    t.string "shipping_postal_code"
+    t.string "fulfillment_type"
+    t.string "merchant_account_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["partner_id"], name: "index_orders_on_partner_id"
     t.index ["state"], name: "index_orders_on_state"

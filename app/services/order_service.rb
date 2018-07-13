@@ -10,11 +10,36 @@ module OrderService
     end
   end
 
-  def self.submit!(order, credit_card_id:, destination_account_id:)
+  def self.set_payment!(order, credit_card_id:, merchant_account_id:)
+    raise Errors::OrderError, 'Cannot set payment info on non-pending orders' unless order.state == Order::PENDING
+    Order.transaction do
+      order.update!(credit_card_id: credit_card_id, merchant_account_id: merchant_account_id)
+    end
+    order
+  end
+
+  def self.set_shipping!(order, attributes)
+    raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
+    Order.transaction do
+      order.update!(
+        attributes.slice(
+          :shipping_address_line1,
+          :shipping_address_line2,
+          :shipping_city,
+          :shipping_country,
+          :shipping_postal_code,
+          :fulfillment_type
+        )
+      )
+    end
+    order
+  end
+
+  def self.submit!(order)
+    raise Errors::OrderError, "Missing info for submitting order(#{order.id})" unless can_submit?(order)
     Order.transaction do
       # verify price change?
-      order.credit_card_id = credit_card_id
-      order.destination_account_id = destination_account_id
+      # TODO: hold the charge for this price on credit card
       order.submit!
       charge = PaymentService.authorize_charge(order, order.items_total_cents)
       TransactionService.create_success!(order, charge)
@@ -76,5 +101,9 @@ module OrderService
 
   def self.valid_currency_code?(currency_code)
     currency_code == 'usd'
+  end
+
+  def self.can_submit?(order)
+    order.shipping_info? && order.payment_info?
   end
 end
