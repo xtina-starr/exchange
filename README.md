@@ -16,7 +16,7 @@ Exchange aspires to be responsible for the various types of e-commerce interacti
 
 * Clone your fork:
   ```
-  $ git clone git@github.com:your-github-username/radiation.git
+  $ git clone git@github.com:your-github-username/exchange.git
   ```
 
 * Install bundles:

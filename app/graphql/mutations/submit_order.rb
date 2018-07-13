@@ -2,6 +2,7 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
   null true
 
   argument :id, ID, required: true
+  argument :destination_account_id, String, required: true
 
   field :order, Types::OrderType, null: true
   field :errors, [String], null: false
@@ -13,7 +14,7 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
       order: OrderService.submit!(order),
       errors: []
     }
-  rescue Errors::ApplicationError => e
+  rescue Errors::ApplicationError, Errors::PaymentError => e
     { order: nil, errors: [e.message] }
   end
 

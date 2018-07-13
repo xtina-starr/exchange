@@ -41,9 +41,14 @@ module OrderService
       # verify price change?
       # TODO: hold the charge for this price on credit card
       order.submit!
+      charge = PaymentService.authorize_charge(order, order.items_total_cents)
+      TransactionService.create_success!(order, charge)
       order.save!
     end
     order
+  rescue Errors::PaymentError => e
+    TransactionService.create_failure!(order, e.body)
+    raise e
   end
 
   def self.approve!(order)
