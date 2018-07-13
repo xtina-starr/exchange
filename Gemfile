@@ -12,6 +12,7 @@ gem 'jwt'
 gem 'micromachine'
 gem 'paper_trail'
 gem 'sidekiq'
+gem 'stripe'
 
 group :development, :test do
   gem 'byebug'

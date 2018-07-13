@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_07_02_162920) do
+ActiveRecord::Schema.define(version: 2018_07_09_194840) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -42,10 +42,25 @@ ActiveRecord::Schema.define(version: 2018_07_02_162920) do
     t.string "credit_card_id"
     t.datetime "state_updated_at"
     t.datetime "state_expires_at"
+    t.string "destination_account_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["partner_id"], name: "index_orders_on_partner_id"
     t.index ["state"], name: "index_orders_on_state"
     t.index ["user_id"], name: "index_orders_on_user_id"
+  end
+
+  create_table "transactions", force: :cascade do |t|
+    t.bigint "order_id"
+    t.string "external_id"
+    t.string "source_id"
+    t.string "destination_id"
+    t.integer "amount_cents"
+    t.string "failure_code"
+    t.string "failure_message"
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_transactions_on_order_id"
   end
 
   create_table "versions", force: :cascade do |t|
@@ -59,4 +74,5 @@ ActiveRecord::Schema.define(version: 2018_07_02_162920) do
   end
 
   add_foreign_key "line_items", "orders"
+  add_foreign_key "transactions", "orders"
 end
