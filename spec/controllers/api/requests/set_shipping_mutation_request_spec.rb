@@ -32,7 +32,8 @@ describe Api::GraphqlController, type: :request do
           shippingCountry: 'IR',
           shippingCity: 'Tehran',
           shippingPostalCode: '02198912',
-          shippingStreet: 'Vanak'
+          shippingAddressLine1: 'Vanak',
+          shippingAddressLine2: 'P 80'
         }
       }
     end
@@ -67,7 +68,8 @@ describe Api::GraphqlController, type: :request do
         expect(order.shipping_country).to eq 'IR'
         expect(order.shipping_city).to eq 'Tehran'
         expect(order.shipping_postal_code).to eq '02198912'
-        expect(order.shipping_street).to eq 'Vanak'
+        expect(order.shipping_address_line1).to eq 'Vanak'
+        expect(order.shipping_address_line2).to eq 'P 80'
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
       end
     end

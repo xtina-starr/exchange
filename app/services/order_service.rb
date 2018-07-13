@@ -23,7 +23,8 @@ module OrderService
     Order.transaction do
       order.update!(
         attributes.slice(
-          :shipping_street,
+          :shipping_address_line1,
+          :shipping_address_line2,
           :shipping_city,
           :shipping_country,
           :shipping_postal_code,

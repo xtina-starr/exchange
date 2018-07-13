@@ -52,7 +52,7 @@ class Order < ApplicationRecord
 
   def shipping_info?
     fulfillment_type == PICKUP ||
-      (fulfillment_type == SHIP && %i[shipping_street shipping_city shipping_country shipping_postal_code].all? { |sh_field| send(sh_field).present? })
+      (fulfillment_type == SHIP && %i[shipping_address_line1 shipping_city shipping_country shipping_postal_code].all? { |sh_field| send(sh_field).present? })
   end
 
   def payment_info?
