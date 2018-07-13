@@ -3,13 +3,13 @@ require 'support/gravity_helper'
 
 describe PaymentService, type: :services do
   let(:credit_card_id) { 'cc-1' }
-  let(:destination_account_id) { 'destination_account' }
+  let(:merchant_account_id) { 'destination_account' }
   let(:charge_amount) { 2222 }
-  let(:order) { Fabricate(:order, credit_card_id: credit_card_id, destination_account_id: destination_account_id) }
+  let(:order) { Fabricate(:order, credit_card_id: credit_card_id, merchant_account_id: merchant_account_id) }
   let(:invalid_order) { Fabricate(:order) }
-  let(:authorize_charge_params) { { amount: charge_amount, currency: order.currency_code, description: 'Artsy', source: order.credit_card_id, destination: order.destination_account_id, capture: false } }
+  let(:authorize_charge_params) { { amount: charge_amount, currency: order.currency_code, description: 'Artsy', source: order.credit_card_id, destination: order.merchant_account_id, capture: false } }
   let(:charge) { { id: 'ch_22' } }
-  let(:matching_partner_merchant_accounts) { [{ external_id: destination_account_id }, { external_id: 'some_account' }] }
+  let(:matching_partner_merchant_accounts) { [{ external_id: merchant_account_id }, { external_id: 'some_account' }] }
   let(:nonmatching_partner_merchant_accounts) { [{ external_id: 'some_account' }] }
 
   describe '#authorize_charge' do

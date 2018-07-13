@@ -2,7 +2,6 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
   null true
 
   argument :id, ID, required: true
-  argument :destination_account_id, String, required: true
 
   field :order, Types::OrderType, null: true
   field :errors, [String], null: false

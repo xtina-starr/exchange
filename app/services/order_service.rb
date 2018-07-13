@@ -10,10 +10,10 @@ module OrderService
     end
   end
 
-  def self.set_payment!(order, payment_source:)
+  def self.set_payment!(order, credit_card_id:, merchant_account_id:)
     raise Errors::OrderError, 'Cannot set payment info on non-pending orders' unless order.state == Order::PENDING
     Order.transaction do
-      order.update!(payment_source: payment_source)
+      order.update!(credit_card_id: credit_card_id, merchant_account_id: merchant_account_id)
     end
     order
   end
@@ -55,7 +55,7 @@ module OrderService
     Order.transaction do
       order.approve!
       order.save!
-      # TODO: process the charge by calling gravity with current payment_source and price
+      # TODO: process the charge by calling gravity with current credit_card_id and price
     end
     order
   end
@@ -64,7 +64,7 @@ module OrderService
     Order.transaction do
       order.finalize!
       order.save!
-      # TODO: process the charge by calling gravity with current payment_source and price
+      # TODO: process the charge by calling gravity with current credit_card_id and price
     end
     order
   end

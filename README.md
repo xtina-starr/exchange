@@ -124,7 +124,7 @@ For input:
 {
   "input": {
     "id": "<order id>",
-    "paymentSource": "<credit card id>"
+    "creditCardId": "<credit card id>"
   }
 }
 ```

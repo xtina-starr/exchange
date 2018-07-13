@@ -5,7 +5,8 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
-    let(:payment_source) { 'cc-1' }
+    let(:credit_card_id) { 'cc-1' }
+    let(:merchant_account_id) { 'ma1' }
     let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
 
     let(:mutation) do
@@ -28,7 +29,8 @@ describe Api::GraphqlController, type: :request do
       {
         input: {
           id: order.id.to_s,
-          paymentSource: payment_source
+          creditCardId: credit_card_id,
+          merchantAccountId: merchant_account_id
         }
       }
     end
@@ -53,12 +55,22 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
+      context 'without required args' do
+        let(:merchant_account_id) { nil }
+        let(:credit_card_id) { nil }
+        it 'returns error for missing required params' do
+          response = client.execute(mutation, set_payment_input)
+          expect(response.data.set_payment.errors).to include 'Missing required arguments'
+        end
+      end
+
       it 'sets payments on the order' do
         response = client.execute(mutation, set_payment_input)
         expect(response.data.set_payment.order.id).to eq order.id.to_s
         expect(response.data.set_payment.order.state).to eq 'PENDING'
         expect(response.data.set_payment.errors).to match []
-        expect(order.reload.payment_source).to eq payment_source
+        expect(order.reload.credit_card_id).to eq credit_card_id
+        expect(order.merchant_account_id).to eq merchant_account_id
         expect(order.state).to eq Order::PENDING
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
       end
