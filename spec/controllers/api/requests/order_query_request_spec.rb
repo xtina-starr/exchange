@@ -21,8 +21,8 @@ describe Api::GraphqlController, type: :request do
             currencyCode
             itemsTotalCents
             shippingTotalCents
-            totalCents
-            subtotalCents
+            sellerTotalCents
+            buyerTotalCents
             lineItems{
               edges{
                 node{
@@ -49,8 +49,8 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.currency_code).to eq 'usd'
         expect(result.data.order.state).to eq 'PENDING'
         expect(result.data.order.items_total_cents).to eq 0
-        expect(result.data.order.total_cents).to eq 50_00
-        expect(result.data.order.subtotal_cents).to eq 100_00
+        expect(result.data.order.seller_total_cents).to eq 50_00
+        expect(result.data.order.buyer_total_cents).to eq 100_00
       end
     end
 
