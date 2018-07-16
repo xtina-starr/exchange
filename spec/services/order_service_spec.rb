@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 describe OrderService, type: :services do
-  let(:order) { Fabricate(:order, credit_card_id: 'cc1', merchant_account_id: 'ma1', fulfillment_type: Order::PICKUP) }
+  let(:order) { Fabricate(:order, credit_card_id: 'cc1', fulfillment_type: Order::PICKUP) }
   let(:credit_card_id) { 'cc-1' }
   let(:charge_success) { { id: 'ch-1' } }
   let(:charge_failure) { { failure_message: 'some_error' } }
