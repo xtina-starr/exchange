@@ -39,9 +39,8 @@ module OrderService
     raise Errors::OrderError, "Missing info for submitting order(#{order.id})" unless can_submit?(order)
     Order.transaction do
       # verify price change?
-      # TODO: hold the charge for this price on credit card
       order.submit!
-      charge = PaymentService.authorize_charge(order, order.items_total_cents)
+      charge = PaymentService.authorize_charge(order, order.buyer_total_cents)
       TransactionService.create_success!(order, charge)
       order.save!
     end

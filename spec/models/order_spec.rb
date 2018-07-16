@@ -82,48 +82,48 @@ RSpec.describe Order, type: :model do
     end
   end
 
-  describe '#total_cents' do
+  describe '#seller_total_cents' do
     before do
       Fabricate.times 2, :line_item, order: order, price_cents: 100_00
     end
-    it 'returns correct total_cents' do
+    it 'returns correct seller_total_cents' do
       order.update!(tax_total_cents: 50_00, shipping_total_cents: 50_00, commission_fee_cents: 20_00, transaction_fee_cents: 20_00)
-      expect(order.reload.total_cents).to eq 260_00
+      expect(order.reload.seller_total_cents).to eq 260_00
     end
     context 'without commission fee' do
       it 'returns correct total cents' do
         order.update!(tax_total_cents: 50_00, shipping_total_cents: 50_00, commission_fee_cents: nil, transaction_fee_cents: 20_00)
-        expect(order.reload.total_cents).to eq 280_00
+        expect(order.reload.seller_total_cents).to eq 280_00
       end
     end
     context 'without transaction fee' do
       it 'returns correct total cents' do
         order.update!(tax_total_cents: 50_00, shipping_total_cents: 50_00, commission_fee_cents: 20_00, transaction_fee_cents: nil)
-        expect(order.reload.total_cents).to eq 280_00
+        expect(order.reload.seller_total_cents).to eq 280_00
       end
     end
   end
 
-  describe '#subtotal_cents' do
+  describe '#buyer_total_cents' do
     context 'without shipping total cents' do
       it 'returns tax + line items' do
         Fabricate.times 2, :line_item, order: order, price_cents: 100_00
         order.update!(tax_total_cents: 100_00)
-        expect(order.subtotal_cents).to eq 300_00
+        expect(order.buyer_total_cents).to eq 300_00
       end
     end
     context 'without tax total cents' do
       it 'returns tax + line items' do
         Fabricate.times 2, :line_item, order: order, price_cents: 100_00
         order.update!(shipping_total_cents: 100_00)
-        expect(order.subtotal_cents).to eq 300_00
+        expect(order.buyer_total_cents).to eq 300_00
       end
     end
     context 'with shipping/tax and line items' do
       it 'returns shipping + tax + line items' do
         Fabricate.times 2, :line_item, order: order, price_cents: 100_00
         order.update!(shipping_total_cents: 100_00, tax_total_cents: 50_00)
-        expect(order.subtotal_cents).to eq 350_00
+        expect(order.buyer_total_cents).to eq 350_00
       end
     end
   end
