@@ -6,14 +6,12 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
-    let(:merchant_account_id) { 'ma1' }
     let(:order) do
       Fabricate(
         :order,
         partner_id: partner_id,
         user_id: user_id,
         credit_card_id: credit_card_id,
-        merchant_account_id: merchant_account_id,
         shipping_address_line1: '12 Vanak St',
         shipping_address_line2: 'P 80',
         shipping_city: 'Tehran',
@@ -68,14 +66,6 @@ describe Api::GraphqlController, type: :request do
       end
       context 'with order without credit card id' do
         let(:credit_card_id) { nil }
-        it 'returns error' do
-          response = client.execute(mutation, submit_order_input)
-          expect(response.data.submit_order.errors).to include "Missing info for submitting order(#{order.id})"
-          expect(order.reload.state).to eq Order::PENDING
-        end
-      end
-      context 'with order without merchant account id' do
-        let(:merchant_account_id) { nil }
         it 'returns error' do
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.errors).to include "Missing info for submitting order(#{order.id})"

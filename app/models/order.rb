@@ -67,7 +67,7 @@ class Order < ApplicationRecord
   end
 
   def payment_info?
-    credit_card_id.present? && merchant_account_id.present?
+    credit_card_id.present?
   end
 
   private

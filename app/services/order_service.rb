@@ -10,10 +10,10 @@ module OrderService
     end
   end
 
-  def self.set_payment!(order, credit_card_id:, merchant_account_id:)
+  def self.set_payment!(order, credit_card_id:)
     raise Errors::OrderError, 'Cannot set payment info on non-pending orders' unless order.state == Order::PENDING
     Order.transaction do
-      order.update!(credit_card_id: credit_card_id, merchant_account_id: merchant_account_id)
+      order.update!(credit_card_id: credit_card_id)
     end
     order
   end
