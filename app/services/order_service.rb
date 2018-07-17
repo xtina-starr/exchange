@@ -35,21 +35,6 @@ module OrderService
     order
   end
 
-  def self.submit!(order)
-    raise Errors::OrderError, "Missing info for submitting order(#{order.id})" unless can_submit?(order)
-    Order.transaction do
-      # verify price change?
-      order.submit!
-      charge = PaymentService.authorize_charge(order, order.buyer_total_cents)
-      TransactionService.create_success!(order, charge)
-      order.save!
-    end
-    order
-  rescue Errors::PaymentError => e
-    TransactionService.create_failure!(order, e.body)
-    raise e
-  end
-
   def self.approve!(order)
     Order.transaction do
       order.approve!
@@ -100,9 +85,5 @@ module OrderService
 
   def self.valid_currency_code?(currency_code)
     currency_code == 'usd'
-  end
-
-  def self.can_submit?(order)
-    order.shipping_info? && order.payment_info?
   end
 end
