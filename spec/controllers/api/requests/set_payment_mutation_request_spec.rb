@@ -53,14 +53,6 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      context 'without required args' do
-        let(:credit_card_id) { nil }
-        it 'returns error for missing required params' do
-          response = client.execute(mutation, set_payment_input)
-          expect(response.data.set_payment.errors).to include 'Missing required arguments'
-        end
-      end
-
       it 'sets payments on the order' do
         response = client.execute(mutation, set_payment_input)
         expect(response.data.set_payment.order.id).to eq order.id.to_s
