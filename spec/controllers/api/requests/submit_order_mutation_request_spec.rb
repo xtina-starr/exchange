@@ -6,6 +6,7 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
+    let(:merchant_account) { { external_id: 'ma-1' } }
     let(:order) do
       Fabricate(
         :order,
@@ -86,6 +87,7 @@ describe Api::GraphqlController, type: :request do
       it 'submits the order' do
         allow(PaymentService).to receive(:authorize_charge)
         allow(TransactionService).to receive(:create_success!)
+        allow(OrderSubmitService).to receive(:get_merchant_account).and_return(merchant_account)
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order.order.id).to eq order.id.to_s
         expect(response.data.submit_order.order.state).to eq 'SUBMITTED'

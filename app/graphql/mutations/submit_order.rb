@@ -10,7 +10,7 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
     order = Order.find(id)
     validate_request!(order)
     {
-      order: OrderService.submit!(order),
+      order: OrderSubmitService.submit!(order),
       errors: []
     }
   rescue Errors::ApplicationError, Errors::PaymentError => e
