@@ -6,7 +6,7 @@ module OrderSubmitService
       order.submit!
       merchant_account = get_merchant_account(order)
       raise Errors::OrderError, 'Partner does not have merchant account' if merchant_account.nil?
-      charge = PaymentService.authorize_charge(order.credit_card_id, merchant_account[:external_id], order.items_total_cents, order.currency_code)
+      charge = PaymentService.authorize_charge(order.credit_card_id, merchant_account[:external_id], order.buyer_total_cents, order.currency_code)
       TransactionService.create_success!(order, charge)
       order.save!
     end

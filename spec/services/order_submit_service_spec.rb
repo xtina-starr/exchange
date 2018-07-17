@@ -14,13 +14,13 @@ describe OrderSubmitService, type: :services do
       context 'with a successful transaction' do
         before(:each) do
           allow(OrderSubmitService).to receive(:get_merchant_account).with(order).and_return(partner_merchant_accounts.first)
-          allow(PaymentService).to receive(:authorize_charge).with(credit_card_id, merchant_account_id, order.items_total_cents, order.currency_code).and_return(charge_success)
+          allow(PaymentService).to receive(:authorize_charge).with(credit_card_id, merchant_account_id, order.buyer_total_cents, order.currency_code).and_return(charge_success)
           allow(TransactionService).to receive(:create_success!).with(order, charge_success)
           OrderSubmitService.submit!(order)
         end
 
         it 'authorizes a charge for the full amount of the order' do
-          expect(PaymentService).to have_received(:authorize_charge).with(credit_card_id, merchant_account_id, order.items_total_cents, order.currency_code)
+          expect(PaymentService).to have_received(:authorize_charge).with(credit_card_id, merchant_account_id, order.buyer_total_cents, order.currency_code)
         end
 
         it 'creates a record of the transaction' do
@@ -40,7 +40,7 @@ describe OrderSubmitService, type: :services do
       context 'with an unsuccessful transaction' do
         it 'creates a record of the transaction' do
           allow(OrderSubmitService).to receive(:get_merchant_account).with(order).and_return(partner_merchant_accounts.first)
-          allow(PaymentService).to receive(:authorize_charge).with(credit_card_id, merchant_account_id, order.items_total_cents, order.currency_code).and_raise(Errors::PaymentError.new('some_error', charge_failure))
+          allow(PaymentService).to receive(:authorize_charge).with(credit_card_id, merchant_account_id, order.buyer_total_cents, order.currency_code).and_raise(Errors::PaymentError.new('some_error', charge_failure))
           allow(TransactionService).to receive(:create_failure!).with(order, charge_failure)
           expect { OrderSubmitService.submit!(order) }.to raise_error(Errors::PaymentError)
           expect(TransactionService).to have_received(:create_failure!).with(order, charge_failure)
