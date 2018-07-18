@@ -127,6 +127,7 @@ For input:
     "shippingAddresLine1": "",
     "shippingAddressLine2": "",
     "shippingCity": "",
+    "shippingRegion": "",
     "shippingCountry": "",
     "shippingPostalCode": ""
   }
