@@ -1,3 +1,5 @@
+require 'net/http'
+
 module Adapters
   class GravityV1
     def self.request(url)
