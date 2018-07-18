@@ -90,7 +90,6 @@ For input set following variables:
 ```json
 {
   "input": {
-    "userId": "<your user id>",
     "partnerId": "<partner id>",
     "currencyCode": "usd",
     "lineItems": [
@@ -100,6 +99,61 @@ For input set following variables:
         "editionSetId": "<optional>"
       }
     ]
+  }
+}
+```
+
+#### Set Shipping on an order
+```graphql
+# set shipping order
+mutation($input: SetShippingInput!) {
+  setShipping(input: $input) {
+    order {
+      id
+      userId
+      partnerId
+      state
+    }
+    errors
+  }
+}
+```
+For input:
+```json
+{
+  "input": {
+    "id": "<order id>",
+    "fulfillmentType": "SHIP/PICKUP",
+    "shippingAddresLine1": "",
+    "shippingAddressLine2": "",
+    "shippingCity": "",
+    "shippingCountry": "",
+    "shippingPostalCode": ""
+  }
+}
+```
+
+#### Set Payment on an order
+```graphql
+# set payment order
+mutation($input: SetShippingInput!) {
+  setPayment(input: $input) {
+    order {
+      id
+      userId
+      partnerId
+      state
+    }
+    errors
+  }
+}
+```
+For input:
+```json
+{
+  "input": {
+    "id": "<order id>",
+    "creditCardId": "<gravity credit card id>"
   }
 }
 ```
