@@ -5,6 +5,7 @@ class Mutations::SetShipping < Mutations::BaseMutation
   argument :shipping_address_line1, String, required: false
   argument :shipping_address_line2, String, required: false
   argument :shipping_city, String, required: false
+  argument :shipping_region, String, required: false
   argument :shipping_country, String, required: false
   argument :shipping_postal_code, String, required: false
   argument :fulfillment_type, Types::OrderFulfillmentTypeEnum, required: false

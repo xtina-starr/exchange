@@ -31,6 +31,7 @@ describe Api::GraphqlController, type: :request do
           fulfillmentType: 'SHIP',
           shippingCountry: 'IR',
           shippingCity: 'Tehran',
+          shippingRegion: 'Tehran',
           shippingPostalCode: '02198912',
           shippingAddressLine1: 'Vanak',
           shippingAddressLine2: 'P 80'
@@ -67,6 +68,7 @@ describe Api::GraphqlController, type: :request do
         expect(order.state).to eq Order::PENDING
         expect(order.shipping_country).to eq 'IR'
         expect(order.shipping_city).to eq 'Tehran'
+        expect(order.shipping_region).to eq 'Tehran'
         expect(order.shipping_postal_code).to eq '02198912'
         expect(order.shipping_address_line1).to eq 'Vanak'
         expect(order.shipping_address_line2).to eq 'P 80'

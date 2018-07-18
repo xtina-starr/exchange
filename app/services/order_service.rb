@@ -24,6 +24,7 @@ module OrderService
           :shipping_address_line1,
           :shipping_address_line2,
           :shipping_city,
+          :shipping_region,
           :shipping_country,
           :shipping_postal_code,
           :fulfillment_type
