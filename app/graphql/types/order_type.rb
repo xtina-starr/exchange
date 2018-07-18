@@ -11,6 +11,7 @@ class Types::OrderType < Types::BaseObject
   field :shipping_address_line1, String, null: true
   field :shipping_address_line2, String, null: true
   field :shipping_city, String, null: true
+  field :shipping_region, String, null: true
   field :shipping_country, String, null: true
   field :shipping_postal_code, String, null: true
   field :fulfillment_type, Types::OrderFulfillmentTypeEnum, null: true
