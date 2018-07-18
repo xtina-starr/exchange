@@ -13,7 +13,6 @@ describe Api::GraphqlController, type: :request do
     let(:order_input_with_line_item) do
       {
         input: {
-          userId: jwt_user_id,
           partnerId: partner_id,
           lineItems: line_items,
           currencyCode: currency_code
@@ -23,7 +22,6 @@ describe Api::GraphqlController, type: :request do
     let(:order_input_wrong_user) do
       {
         input: {
-          userId: 'random-dude',
           partnerId: partner_id,
           lineItems: line_items,
           currencyCode: currency_code
@@ -44,16 +42,8 @@ describe Api::GraphqlController, type: :request do
         }
       GRAPHQL
     end
-    context 'with user id not matching jwt user id' do
-      it 'returns error when users dont match' do
-        expect do
-          response = client.execute(mutation, order_input_wrong_user)
-          expect(response.data.create_order.errors).to include 'Not permitted'
-        end.to change(Order, :count).by(0)
-      end
-    end
 
-    context 'with user id matching jwt user id' do
+    context 'with proper token' do
       it 'creates order with proper defaults' do
         expect do
           response = client.execute(mutation, order_input_with_line_item)

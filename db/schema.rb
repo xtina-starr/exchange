@@ -42,7 +42,6 @@ ActiveRecord::Schema.define(version: 2018_07_16_171451) do
     t.string "credit_card_id"
     t.datetime "state_updated_at"
     t.datetime "state_expires_at"
-    t.string "merchant_account_id"
     t.string "shipping_address_line1"
     t.string "shipping_address_line2"
     t.string "shipping_city"
