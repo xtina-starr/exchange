@@ -21,4 +21,20 @@ module PaymentService
     }
     raise Errors::PaymentError.new(e.message, failed_charge)
   end
+
+  def self.capture_charge(charge_id)
+    charge = Stripe::Charge.retrieve(charge_id)
+    charge.capture
+  rescue Stripe::StripeError => e
+    body = e.json_body[:error]
+    failed_charge = {
+      amount: nil,
+      id: nil,
+      source_id: nil,
+      destination_id: nil,
+      failure_code: body[:code],
+      failure_message: body[:message]
+    }
+    raise Errors::PaymentError.new(e.message, failed_charge)
+  end
 end

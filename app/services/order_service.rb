@@ -28,17 +28,20 @@ module OrderService
   def self.approve!(order)
     Order.transaction do
       order.approve!
+      charge = PaymentService.capture_charge(order.external_charge_id)
+      TransactionService.create_success!(order, charge)
       order.save!
-      # TODO: process the charge by calling gravity with current credit_card_id and price
     end
     order
+  rescue Errors::PaymentError => e
+    TransactionService.create_failure!(order, e.body)
+    raise e
   end
 
   def self.finalize!(order)
     Order.transaction do
       order.finalize!
       order.save!
-      # TODO: process the charge by calling gravity with current credit_card_id and price
     end
     order
   end
