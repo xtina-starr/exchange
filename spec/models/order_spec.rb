@@ -27,7 +27,7 @@ RSpec.describe Order, type: :model do
       order.submit!
       order.save!
       submitted_timestamp = order.state_updated_at
-      order.approve!
+      order.reject!
       order.save!
       expect(order.state_updated_at).not_to eq submitted_timestamp
       expect(order.state_expires_at).to be_nil
