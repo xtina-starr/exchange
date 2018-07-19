@@ -6,6 +6,7 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
+    let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'ma-1' } } }
     let(:merchant_account) { { external_id: 'ma-1' } }
     let(:order) do
       Fabricate(
@@ -78,6 +79,8 @@ describe Api::GraphqlController, type: :request do
           order.update_attributes! state: Order::APPROVED
         end
         it 'returns error' do
+          allow(OrderSubmitService).to receive(:get_merchant_account).and_return(merchant_account)
+          allow(OrderSubmitService).to receive(:get_credit_card).and_return(credit_card)
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.errors).to include 'Invalid action on this approved order'
           expect(order.reload.state).to eq Order::APPROVED
@@ -88,6 +91,7 @@ describe Api::GraphqlController, type: :request do
         allow(PaymentService).to receive(:authorize_charge)
         allow(TransactionService).to receive(:create_success!)
         allow(OrderSubmitService).to receive(:get_merchant_account).and_return(merchant_account)
+        allow(OrderSubmitService).to receive(:get_credit_card).and_return(credit_card)
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order.order.id).to eq order.id.to_s
         expect(response.data.submit_order.order.state).to eq 'SUBMITTED'
