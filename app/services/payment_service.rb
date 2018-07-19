@@ -28,10 +28,7 @@ module PaymentService
   rescue Stripe::StripeError => e
     body = e.json_body[:error]
     failed_charge = {
-      amount: nil,
-      id: nil,
-      source_id: nil,
-      destination_id: nil,
+      id: charge_id,
       failure_code: body[:code],
       failure_message: body[:message]
     }
