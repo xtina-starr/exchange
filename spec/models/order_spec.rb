@@ -127,4 +127,10 @@ RSpec.describe Order, type: :model do
       end
     end
   end
+
+  describe '#code' do
+    it 'sets code in proper format' do
+      expect(order.code).to match /^B\d{6}$/
+    end
+  end
 end
