@@ -20,6 +20,7 @@ module OrderSubmitService
     Order.transaction do
       order.submit!
       charge = PaymentService.authorize_charge(charge_params)
+      order.external_charge_id = charge[:id]
       TransactionService.create_success!(order, charge)
       order.save!
     end

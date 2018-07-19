@@ -8,6 +8,7 @@ describe Api::GraphqlController, type: :request do
     let(:credit_card_id) { 'cc-1' }
     let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'ma-1' } } }
     let(:merchant_account) { { external_id: 'ma-1' } }
+    let(:charge_success) { { id: 'ch-1' } }
     let(:order) do
       Fabricate(
         :order,
@@ -88,7 +89,7 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'submits the order' do
-        allow(PaymentService).to receive(:authorize_charge)
+        allow(PaymentService).to receive(:authorize_charge).and_return(charge_success)
         allow(TransactionService).to receive(:create_success!)
         allow(OrderSubmitService).to receive(:get_merchant_account).and_return(merchant_account)
         allow(OrderSubmitService).to receive(:get_credit_card).and_return(credit_card)

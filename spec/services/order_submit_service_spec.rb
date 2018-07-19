@@ -45,6 +45,10 @@ describe OrderSubmitService, type: :services do
           expect(order.state).to eq Order::SUBMITTED
           expect(order.state_updated_at).not_to be_nil
         end
+
+        it 'updates external_charge_id with the id of the charge' do
+          expect(order.external_charge_id).to eq(charge_success[:id])
+        end
       end
 
       context 'with an unsuccessful transaction' do
