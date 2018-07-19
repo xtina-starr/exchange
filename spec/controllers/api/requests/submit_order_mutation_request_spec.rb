@@ -79,6 +79,8 @@ describe Api::GraphqlController, type: :request do
           order.update_attributes! state: Order::APPROVED
         end
         it 'returns error' do
+          allow(OrderSubmitService).to receive(:get_merchant_account).and_return(merchant_account)
+          allow(OrderSubmitService).to receive(:get_credit_card).and_return(credit_card)
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.errors).to include 'Invalid action on this approved order'
           expect(order.reload.state).to eq Order::APPROVED

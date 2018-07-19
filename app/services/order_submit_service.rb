@@ -1,23 +1,24 @@
 module OrderSubmitService
   def self.submit!(order)
+    # verify price change?
     raise Errors::OrderError, "Missing info for submitting order(#{order.id})" unless can_submit?(order)
+
+    merchant_account = get_merchant_account(order)
+    raise Errors::OrderError, 'Partner does not have merchant account' if merchant_account.nil?
+
+    credit_card = get_credit_card(order)
+    raise Errors::OrderError, 'User does not have stored credit card' if credit_card.blank?
+
+    charge_params = {
+      source_id: credit_card[:external_id],
+      customer_id: credit_card[:customer_account][:external_id],
+      destination_id: merchant_account[:external_id],
+      amount: order.buyer_total_cents,
+      currency_code: order.currency_code
+    }
+
     Order.transaction do
-      # verify price change?
       order.submit!
-
-      merchant_account = get_merchant_account(order)
-      raise Errors::OrderError, 'Partner does not have merchant account' if merchant_account.nil?
-
-      credit_card = get_credit_card(order)
-      raise Errors::OrderError, 'User does not have stored credit card' if credit_card.blank?
-
-      charge_params = {
-        source_id: credit_card[:external_id],
-        customer_id: credit_card[:customer_account][:external_id],
-        destination_id: merchant_account[:external_id],
-        amount: order.buyer_total_cents,
-        currency_code: order.currency_code
-      }
       charge = PaymentService.authorize_charge(charge_params)
       TransactionService.create_success!(order, charge)
       order.save!
