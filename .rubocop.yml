@@ -4,6 +4,7 @@ AllCops:
   Exclude:
     - 'db/schema.rb'
     - 'vendor/**/*'
+    - 'spec/support/gravity_helper.rb'
 
 Metrics/AbcSize:
   Exclude:
