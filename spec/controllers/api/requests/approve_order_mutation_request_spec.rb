@@ -57,15 +57,15 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'with proper permission' do
-      let(:uncaptured_charge) {
+      let(:uncaptured_charge) do
         Stripe::Charge.create(
-          amount: 22222,
+          amount: 22_222,
           currency: 'usd',
           source: stripe_helper.generate_card_token,
           destination: 'ma-1',
           capture: false
         )
-      }
+      end
       before do
         order.update_attributes! state: Order::SUBMITTED
         order.update_attributes! external_charge_id: uncaptured_charge.id

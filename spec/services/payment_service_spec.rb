@@ -12,10 +12,12 @@ describe PaymentService, type: :services do
   let(:charge_amount) { 2222 }
 
   describe '#authorize_charge' do
-    let(:stripe_customer) { Stripe::Customer.create({
-      email: 'someuser@email.com',
-      source: stripe_helper.generate_card_token
-    }) }
+    let(:stripe_customer) do
+      Stripe::Customer.create(
+        email: 'someuser@email.com',
+        source: stripe_helper.generate_card_token
+      )
+    end
 
     it "authorizes a charge on the user's credit card" do
       params = {
@@ -43,7 +45,7 @@ describe PaymentService, type: :services do
         currency_code: currency_code,
         amount: charge_amount
       }
-      expect { PaymentService.authorize_charge(params) }.to raise_error {|e| 
+      expect { PaymentService.authorize_charge(params) }.to(raise_error do |e|
         expect(e).to be_a Errors::PaymentError
         expect(e.message).not_to eq nil
         expect(e.body[:amount]).to eq charge_amount
@@ -51,12 +53,12 @@ describe PaymentService, type: :services do
         expect(e.body[:destination_id]).to eq destination_id
         expect(e.body[:failure_code]).not_to eq nil
         expect(e.body[:failure_message]).not_to eq nil
-      }
+      end)
     end
   end
 
   describe '#capture_charge' do
-    let(:uncaptured_charge) {
+    let(:uncaptured_charge) do
       Stripe::Charge.create(
         amount: charge_amount,
         currency: currency_code,
@@ -65,20 +67,20 @@ describe PaymentService, type: :services do
         description: 'Artsy',
         capture: false
       )
-    }
+    end
     it 'captures a charge' do
       captured_charge = PaymentService.capture_charge(uncaptured_charge.id)
       expect(captured_charge.captured).to eq(true)
     end
     it 'catches Stripe errors and raises a PaymentError in its place' do
       StripeMock.prepare_card_error(:card_declined, :capture_charge)
-      expect { PaymentService.capture_charge(uncaptured_charge.id) }.to raise_error {|e| 
+      expect { PaymentService.capture_charge(uncaptured_charge.id) }.to(raise_error do |e|
         expect(e).to be_a Errors::PaymentError
         expect(e.message).not_to eq nil
         expect(e.body[:id]).to eq uncaptured_charge.id
         expect(e.body[:failure_code]).not_to eq nil
         expect(e.body[:failure_message]).not_to eq nil
-      }
+      end)
     end
   end
 end
