@@ -74,7 +74,7 @@ class Order < ApplicationRecord
   private
 
   def set_code
-    update!(code: "B%06d" % self.id)
+    update!(code: format('B%06d', id))
   end
 
   def update_state_timestamps
