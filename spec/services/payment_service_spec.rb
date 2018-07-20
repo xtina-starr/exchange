@@ -1,27 +1,55 @@
 require 'rails_helper'
 require 'support/gravity_helper'
+require 'stripe_mock'
 
 describe PaymentService, type: :services do
-  let(:source_id) { 'cc-1' }
+  let(:stripe_helper) { StripeMock.create_test_helper }
+  before { StripeMock.start }
+  after { StripeMock.stop }
+  
   let(:destination_id) { 'ma-1' }
-  let(:customer_id) { 'cust-1' }
   let(:currency_code) { 'usd' }
   let(:charge_amount) { 2222 }
-  let(:authorize_charge_params) { { amount: charge_amount, currency: currency_code, description: 'Artsy', source: source_id, customer: customer_id, destination: destination_id, capture: false } }
-  let(:charge) { { id: 'ch_22' } }
 
   describe '#authorize_charge' do
+    let(:stripe_customer) { Stripe::Customer.create({
+      email: 'someuser@email.com',
+      source: stripe_helper.generate_card_token
+    }) }
+
     it "authorizes a charge on the user's credit card" do
-      allow(Stripe::Charge).to receive(:create).with(authorize_charge_params).and_return(charge)
       params = {
-        source_id: source_id,
-        customer_id: customer_id,
+        source_id: stripe_customer.default_source,
+        customer_id: stripe_customer.id,
         destination_id: destination_id,
         currency_code: currency_code,
         amount: charge_amount
       }
-      PaymentService.authorize_charge(params)
-      expect(Stripe::Charge).to have_received(:create).with(authorize_charge_params)
+      charge = PaymentService.authorize_charge(params)
+      expect(charge.amount).to eq(charge_amount)
+      expect(charge.destination).to eq(destination_id)
+      expect(charge.customer).to eq(stripe_customer.id)
+      expect(charge.source.id).to eq(stripe_customer.default_source)
+      expect(charge.currency).to eq(currency_code)
+      expect(charge.description).to eq('Artsy')
+      expect(charge.captured).to eq(false)
+    end
+  end
+
+  describe '#capture_charge' do
+    let(:uncaptured_charge) {
+      Stripe::Charge.create(
+        amount: charge_amount,
+        currency: currency_code,
+        source: stripe_helper.generate_card_token,
+        destination: destination_id,
+        description: 'Artsy',
+        capture: false
+      )
+    }
+    it 'captures a charge' do
+      captured_charge = PaymentService.capture_charge(uncaptured_charge.id)
+      expect(captured_charge.captured).to eq(true)
     end
   end
 end
