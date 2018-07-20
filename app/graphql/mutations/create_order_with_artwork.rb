@@ -8,7 +8,7 @@ class Mutations::CreateOrderWithArtwork < Mutations::BaseMutation
 
   def resolve(artwork_id:, edition_set_id: nil, quantity: 1)
     {
-      order: CreateOrderWithArtworkService.process!(user_id: context[:current_user][:id], artwork_id: artwork_id, edition_set_id: edition_set_id, quantity: quantity),
+      order: CreateOrderService.with_artwork!(user_id: context[:current_user][:id], artwork_id: artwork_id, edition_set_id: edition_set_id, quantity: quantity),
       errors: []
     }
   rescue Errors::ApplicationError => e
