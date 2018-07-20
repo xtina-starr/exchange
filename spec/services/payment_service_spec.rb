@@ -6,7 +6,7 @@ describe PaymentService, type: :services do
   let(:stripe_helper) { StripeMock.create_test_helper }
   before { StripeMock.start }
   after { StripeMock.stop }
-  
+
   let(:destination_id) { 'ma-1' }
   let(:currency_code) { 'usd' }
   let(:charge_amount) { 2222 }
@@ -34,6 +34,25 @@ describe PaymentService, type: :services do
       expect(charge.description).to eq('Artsy')
       expect(charge.captured).to eq(false)
     end
+    it 'catches Stripe errors and raises a PaymentError in its place' do
+      StripeMock.prepare_card_error(:card_declined, :new_charge)
+      params = {
+        source_id: stripe_customer.default_source,
+        customer_id: stripe_customer.id,
+        destination_id: destination_id,
+        currency_code: currency_code,
+        amount: charge_amount
+      }
+      expect { PaymentService.authorize_charge(params) }.to raise_error {|e| 
+        expect(e).to be_a Errors::PaymentError
+        expect(e.message).not_to eq nil
+        expect(e.body[:amount]).to eq charge_amount
+        expect(e.body[:source_id]).to eq stripe_customer.default_source
+        expect(e.body[:destination_id]).to eq destination_id
+        expect(e.body[:failure_code]).not_to eq nil
+        expect(e.body[:failure_message]).not_to eq nil
+      }
+    end
   end
 
   describe '#capture_charge' do
@@ -50,6 +69,16 @@ describe PaymentService, type: :services do
     it 'captures a charge' do
       captured_charge = PaymentService.capture_charge(uncaptured_charge.id)
       expect(captured_charge.captured).to eq(true)
+    end
+    it 'catches Stripe errors and raises a PaymentError in its place' do
+      StripeMock.prepare_card_error(:card_declined, :capture_charge)
+      expect { PaymentService.capture_charge(uncaptured_charge.id) }.to raise_error {|e| 
+        expect(e).to be_a Errors::PaymentError
+        expect(e.message).not_to eq nil
+        expect(e.body[:id]).to eq uncaptured_charge.id
+        expect(e.body[:failure_code]).not_to eq nil
+        expect(e.body[:failure_message]).not_to eq nil
+      }
     end
   end
 end

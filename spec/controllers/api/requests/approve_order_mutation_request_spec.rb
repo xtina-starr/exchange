@@ -1,6 +1,11 @@
 require 'rails_helper'
+require 'stripe_mock'
 
 describe Api::GraphqlController, type: :request do
+  let(:stripe_helper) { StripeMock.create_test_helper }
+  before { StripeMock.start }
+  after { StripeMock.stop }
+
   describe 'approve_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
@@ -52,8 +57,18 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'with proper permission' do
+      let(:uncaptured_charge) {
+        Stripe::Charge.create(
+          amount: 22222,
+          currency: 'usd',
+          source: stripe_helper.generate_card_token,
+          destination: 'ma-1',
+          capture: false
+        )
+      }
       before do
         order.update_attributes! state: Order::SUBMITTED
+        order.update_attributes! external_charge_id: uncaptured_charge.id
       end
       it 'approves the order' do
         expect do
@@ -62,6 +77,8 @@ describe Api::GraphqlController, type: :request do
           expect(response.data.approve_order.order.state).to eq 'APPROVED'
           expect(response.data.approve_order.errors).to match []
           expect(order.reload.state).to eq Order::APPROVED
+          expect(order.reload.transactions.last.external_id).to eq uncaptured_charge.id
+          expect(order.reload.transactions.last.captured).to eq(true)
         end.to change(order, :state_expires_at)
       end
     end
