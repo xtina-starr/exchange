@@ -10,7 +10,7 @@ module PaymentService
       capture: false
     )
     charge.transaction_type = 'hold'
-    return charge
+    charge
   rescue Stripe::StripeError => e
     body = e.json_body[:error]
     failed_charge = {
@@ -29,7 +29,7 @@ module PaymentService
     charge = Stripe::Charge.retrieve(charge_id)
     charge.capture
     charge.transaction_type = 'capture'
-    return charge
+    charge
   rescue Stripe::StripeError => e
     body = e.json_body[:error]
     failed_charge = {

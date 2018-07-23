@@ -19,7 +19,6 @@ RSpec.shared_context 'use stripe mock' do
       capture: false
     )
   end
-
 end
 
 RSpec.configure do |rspec|
