@@ -1,4 +1,5 @@
 require 'rails_helper'
+require 'support/gravity_helper'
 
 describe Api::GraphqlController, type: :request do
   describe 'set_shipping mutation' do
@@ -6,6 +7,8 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
+    let(:shipping_country) { 'IR' }
+    let(:fulfillment_type) { 'SHIP' }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -17,6 +20,7 @@ describe Api::GraphqlController, type: :request do
               partnerId
               state
               fulfillmentType
+              shippingTotalCents
             }
             errors
           }
@@ -28,8 +32,8 @@ describe Api::GraphqlController, type: :request do
       {
         input: {
           id: order.id.to_s,
-          fulfillmentType: 'SHIP',
-          shippingCountry: 'IR',
+          fulfillmentType: fulfillment_type,
+          shippingCountry: shipping_country,
           shippingCity: 'Tehran',
           shippingRegion: 'Tehran',
           shippingPostalCode: '02198912',
@@ -73,6 +77,52 @@ describe Api::GraphqlController, type: :request do
         expect(order.shipping_address_line1).to eq 'Vanak'
         expect(order.shipping_address_line2).to eq 'P 80'
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
+      end
+
+      describe '#shipping_total_cents' do
+        let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1'), Fabricate(:line_item, order: order, artwork_id: 'a-2')] }
+        let(:free_shipping) { false }
+        let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00, free_shipping: false) }
+        let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00, free_shipping: false) }
+        before do
+          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-1?include_deleted=true').and_return(artwork1)
+          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-2?include_deleted=true').and_return(artwork2)
+        end
+        context 'with PICKUP as fulfillment type' do
+          let(:fulfillment_type) { 'PICKUP' }
+          it 'sets total shipping cents to 0' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order.shipping_total_cents).to eq 0
+            expect(order.reload.shipping_total_cents).to eq 0
+          end
+        end
+        context 'with SHIP as fulfillment type' do
+          context 'with international shipping' do
+            it 'sets total shipping cents properly' do
+              response = client.execute(mutation, set_shipping_input)
+              expect(response.data.set_shipping.order.shipping_total_cents).to eq 800_00
+              expect(order.reload.shipping_total_cents).to eq 800_00
+            end
+          end
+
+          context 'with domestic shipping' do
+            let(:shipping_country) { 'US' }
+            it 'sets total shipping cents properly' do
+              response = client.execute(mutation, set_shipping_input)
+              expect(response.data.set_shipping.order.shipping_total_cents).to eq 600_00
+              expect(order.reload.shipping_total_cents).to eq 600_00
+            end
+          end
+
+          context 'with one free shipping artwork' do
+            let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00, free_shipping: true) }
+            it 'sets total shipping cents only based on non-free shipping artwork' do
+              response = client.execute(mutation, set_shipping_input)
+              expect(response.data.set_shipping.order.shipping_total_cents).to eq 500_00
+              expect(order.reload.shipping_total_cents).to eq 500_00
+            end
+          end
+        end
       end
     end
   end
