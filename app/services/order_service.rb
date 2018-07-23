@@ -35,6 +35,7 @@ module OrderService
     order
   rescue Errors::PaymentError => e
     TransactionService.create_failure!(order, e.body)
+    Rails.logger.error("Could not approve order #{order.id}: #{e.message}")
     raise e
   end
 
