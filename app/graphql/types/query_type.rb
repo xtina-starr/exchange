@@ -38,9 +38,25 @@ class Types::QueryType < Types::BaseObject
 
   private
 
+  def user_logged_in?(user_id)
+    user_id == context[:current_user][:id]
+  end
+
+  def user_trusted?
+    context[:current_user][:roles].include?('trusted')
+  end
+
+  def user_permitted?(id) 
+    user_trusted? || user_logged_in?(id)
+  end
+
+  def partner_permitted?(id)
+    context[:current_user][:partner_ids].include?(id)
+  end
+
   def validate_orders_params!(params)
     raise GraphQL::ExecutionError, 'requires one of userId or partnerId' unless params[:user_id].present? || params[:partner_id].present?
-    raise GraphQL::ExecutionError, 'Not permitted' if params[:user_id] && params[:user_id] != context[:current_user][:id] || !context[:current_user][:roles].include?('trusted')
-    raise GraphQL::ExecutionError, 'Not permitted' if params[:partner_id] && !context[:current_user][:partner_ids].include?(params[:partner_id])
+    raise GraphQL::ExecutionError, 'Not permitted' if params[:user_id] && !user_permitted?(params[:user_id])
+    raise GraphQL::ExecutionError, 'Not permitted' if params[:partner_id] && !partner_permitted?(params[:partner_id])
   end
 end
