@@ -1,24 +1,15 @@
 require 'rails_helper'
 require 'support/gravity_helper'
-require 'stripe_mock'
+require 'support/use_stripe_mock'
 
 describe PaymentService, type: :services do
-  let(:stripe_helper) { StripeMock.create_test_helper }
-  before { StripeMock.start }
-  after { StripeMock.stop }
+  include_context 'use stripe mock'
 
   let(:destination_id) { 'ma-1' }
   let(:currency_code) { 'usd' }
   let(:charge_amount) { 2222 }
 
   describe '#authorize_charge' do
-    let(:stripe_customer) do
-      Stripe::Customer.create(
-        email: 'someuser@email.com',
-        source: stripe_helper.generate_card_token
-      )
-    end
-
     it "authorizes a charge on the user's credit card" do
       params = {
         source_id: stripe_customer.default_source,
@@ -60,16 +51,6 @@ describe PaymentService, type: :services do
   end
 
   describe '#capture_charge' do
-    let(:uncaptured_charge) do
-      Stripe::Charge.create(
-        amount: charge_amount,
-        currency: currency_code,
-        source: stripe_helper.generate_card_token,
-        destination: destination_id,
-        description: 'Artsy',
-        capture: false
-      )
-    end
     it 'captures a charge' do
       captured_charge = PaymentService.capture_charge(uncaptured_charge.id)
       expect(captured_charge.captured).to eq(true)

@@ -1,10 +1,8 @@
 require 'rails_helper'
-require 'stripe_mock'
+require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
-  let(:stripe_helper) { StripeMock.create_test_helper }
-  before { StripeMock.start }
-  after { StripeMock.stop }
+  include_context 'use stripe mock'
 
   describe 'approve_order mutation' do
     include_context 'GraphQL Client'
@@ -57,15 +55,6 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'with proper permission' do
-      let(:uncaptured_charge) do
-        Stripe::Charge.create(
-          amount: 22_222,
-          currency: 'usd',
-          source: stripe_helper.generate_card_token,
-          destination: 'ma-1',
-          capture: false
-        )
-      end
       before do
         order.update_attributes! state: Order::SUBMITTED
         order.update_attributes! external_charge_id: uncaptured_charge.id
