@@ -1,13 +1,4 @@
 module OrderService
-  def self.create!(user_id:, partner_id:, currency_code:, line_items: [])
-    raise Errors::OrderError, 'Currency not supported' unless valid_currency_code?(currency_code)
-    Order.transaction do
-      order = Order.create!(user_id: user_id, partner_id: partner_id, currency_code: currency_code, state: Order::PENDING)
-      line_items.each { |li| LineItemService.create!(order, li) }
-      order
-    end
-  end
-
   def self.set_payment!(order, credit_card_id:)
     raise Errors::OrderError, 'Cannot set payment info on non-pending orders' unless order.state == Order::PENDING
     Order.transaction do

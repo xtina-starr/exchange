@@ -72,11 +72,11 @@ Users create and submit orders. Partners then approve and finalize or reject the
 
 ### As a User
 
-#### Create an order
+#### Create an Order With an Artwork
 ```graphql
 ## create order
-mutation($input: CreateOrderInput!) {
-  createOrder(input: $input) {
+mutation($input: CreateOrderWithArtworkInput!) {
+  createOrderWithArtwork(input: $input) {
     order {
       id
       userId
@@ -90,15 +90,9 @@ For input set following variables:
 ```json
 {
   "input": {
-    "partnerId": "<partner id>",
-    "currencyCode": "usd",
-    "lineItems": [
-      {
-        "artworkId": "<id of your favorite artwork>",
-        "priceCents": "<some affordable number>",
-        "editionSetId": "<optional>"
-      }
-    ]
+    "artworkId": "<id of your favorite artwork>",
+    "editionSetId": "<optional>",
+    "quantity": 2
   }
 }
 ```

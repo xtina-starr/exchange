@@ -17,7 +17,6 @@ gem 'stripe'
 group :development, :test do
   gem 'byebug'
   gem 'graphlient'
-  gem 'pry-rails'
   gem 'rspec-rails'
   gem 'rubocop'
 end
