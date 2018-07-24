@@ -75,19 +75,24 @@ describe Api::GraphqlController, type: :request do
       end
     end
 
-    context 'user query where user is not in jwt' do
-      it 'usually returns permission error' do
-        expect do
-          client.execute(query, userId: 'someone-elses-userid')
-        end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: Not permitted')
-      end
+    context 'trusted user rules' do
+      let(:jwt_user_id) { 'rando' }
 
-      context('but is trusted') do
+      context 'trusted account accessing another account\'s order' do
         let(:jwt_roles) { 'trusted' }
         it 'allows access' do
           expect do
             client.execute(query, userId: 'someone-elses-userid')
           end.to_not raise_error
+        end
+      end
+
+      context 'untrusted account accessing another account\'s order' do
+        let(:jwt_roles) { 'foobar' }
+        it 'raises error' do
+          expect do
+            client.execute(query, userId: 'someone-elses-userid')
+          end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: Not permitted')
         end
       end
     end

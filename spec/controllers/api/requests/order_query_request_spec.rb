@@ -54,14 +54,38 @@ describe Api::GraphqlController, type: :request do
       end
     end
 
-    context 'trusted account accessing order' do
-      let(:jwt_roles) { 'trusted' }
-      let(:order_to_use) { Fabricate(:order, partner_id: second_partner_id, user_id: user_id) }
+    context 'trusted user rules' do
+      let(:jwt_user_id) { 'rando' }
 
-      it 'allows action on behalf of a non-current user as long as they are trusted' do
-        expect do
-          client.execute(query, id: order_to_use.id)
-        end.to_not raise_error
+      context 'trusted account accessing another account\'s order' do
+        let(:jwt_roles) { 'trusted' }
+
+        it 'allows action' do
+          expect do
+            client.execute(query, id: user2_order1.id)
+          end.to_not raise_error
+        end
+
+        it 'returns expected payload' do
+          result = client.execute(query, id: user2_order1.id)
+          expect(result.data.order.user_id).to eq user2_order1.user_id
+          expect(result.data.order.partner_id).to eq user2_order1.partner_id
+          expect(result.data.order.currency_code).to eq 'usd'
+          expect(result.data.order.state).to eq 'PENDING'
+          expect(result.data.order.items_total_cents).to eq 0
+          expect(result.data.order.seller_total_cents).to eq user2_order1.seller_total_cents
+          expect(result.data.order.buyer_total_cents).to eq user2_order1.buyer_total_cents
+        end
+      end
+
+      context 'untrusted account accessing another account\'s order' do
+        let(:jwt_roles) { 'foobar' }
+
+        it 'raises error' do
+          expect do
+            client.execute(query, id: user2_order1.id)
+          end.to raise_error(Graphlient::Errors::ExecutionError, 'order: Not permitted')
+        end
       end
     end
 
