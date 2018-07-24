@@ -1,5 +1,6 @@
 require 'rails_helper'
 require 'support/gravity_helper'
+require 'support/taxjar_helper'
 
 describe Api::GraphqlController, type: :request do
   describe 'set_shipping mutation' do
@@ -7,8 +8,14 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
+    let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1'), Fabricate(:line_item, order: order, artwork_id: 'a-2')] }
+    let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
+    let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
     let(:shipping_country) { 'IR' }
     let(:fulfillment_type) { 'SHIP' }
+    let(:total_sales_tax) { 2222 }
+    let(:partner) { { billing_location_id: '123abc' } }
+    let(:partner_location) { { address: '123 Main St', address_2: nil, city: 'New York', state: 'NY', country: 'US', postal_code: 10_001 } }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -50,6 +57,11 @@ describe Api::GraphqlController, type: :request do
         }
       }
     end
+
+    before do
+      stub_tax_for_order
+    end
+
     context 'with user without permission to this order' do
       let(:user_id) { 'random-user-id-on-another-order' }
       it 'returns permission error' do
@@ -71,7 +83,11 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      it 'sets shipping info on the order' do
+      it 'sets shipping info and sales tax on the order' do
+        allow(Adapters::GravityV1).to receive(:request).twice.with('/artwork/a-1').and_return(artwork1)
+        allow(Adapters::GravityV1).to receive(:request).twice.with('/artwork/a-2').and_return(artwork2)
+        allow(GravityService).to receive(:fetch_partner).and_return(partner)
+        allow(GravityService).to receive(:fetch_partner_location).and_return(partner_location)
         response = client.execute(mutation, set_shipping_input)
         expect(response.data.set_shipping.order.id).to eq order.id.to_s
         expect(response.data.set_shipping.order.state).to eq 'PENDING'
@@ -87,15 +103,15 @@ describe Api::GraphqlController, type: :request do
         expect(order.shipping_address_line1).to eq 'Vanak'
         expect(order.shipping_address_line2).to eq 'P 80'
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
+        expect(order.tax_total_cents).to eq 232
       end
 
       describe '#shipping_total_cents' do
-        let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1'), Fabricate(:line_item, order: order, artwork_id: 'a-2')] }
-        let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
-        let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
         before do
-          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-1').and_return(artwork1)
-          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-2').and_return(artwork2)
+          expect(Adapters::GravityV1).to receive(:request).twice.with('/artwork/a-1').and_return(artwork1)
+          expect(Adapters::GravityV1).to receive(:request).twice.with('/artwork/a-2').and_return(artwork2)
+          allow(GravityService).to receive(:fetch_partner).and_return(partner)
+          allow(GravityService).to receive(:fetch_partner_location).and_return(partner_location)
         end
         context 'with PICKUP as fulfillment type' do
           let(:fulfillment_type) { 'PICKUP' }

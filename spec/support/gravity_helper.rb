@@ -110,7 +110,9 @@ def gravity_v1_artwork(options={})
     location: {
         country: 'US',
         city: 'Brooklyn',
-        state: 'NY'
+        state: 'NY',
+        address: '22 Fake St',
+        postal_code: 10013
       },
     _id: 'artwork-id',
     id: 'artwork-slug',
