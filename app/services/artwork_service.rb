@@ -8,7 +8,7 @@ module ArtworkService
   end
 
   def self.find!(artwork_id)
-    Rails.cache.fetch("gravity_#{artwork_id}", expires_in: ARTWORK_CACHE_EXPIRATION_IN_MINUTES.minutes) do
+    Rails.cache.fetch("gravity_artwork_#{artwork_id}", expires_in: ARTWORK_CACHE_EXPIRATION_IN_MINUTES.minutes) do
       Adapters::GravityV1.request("/artwork/#{artwork_id}?include_deleted=true")
     end
   end
