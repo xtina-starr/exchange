@@ -13,6 +13,10 @@ describe OrderEvent, type: :events do
   let(:event) { OrderEvent.new(user: user_id, action: Order::SUBMITTED, model: order) }
 
   describe 'post' do
+    it 'calls ArtsyEventService to post event' do
+      expect(Artsy::EventService).to receive(:post_event).with(topic: 'BNMO', event: instance_of(OrderEvent))
+      OrderEvent.post(order, Order::SUBMITTED, user_id)
+    end
   end
 
   describe '#subject' do

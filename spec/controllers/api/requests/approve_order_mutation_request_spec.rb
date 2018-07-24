@@ -70,6 +70,12 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.transactions.last.transaction_type).to eq Transaction::CAPTURE
         end.to change(order, :state_expires_at)
       end
+
+      it 'queues a job for posting events' do
+        ActiveJob::Base.queue_adapter = :test
+        client.execute(mutation, approve_order_input)
+        expect(PostNotificationJob).to have_been_enqueued
+      end
     end
   end
 end

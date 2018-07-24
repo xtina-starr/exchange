@@ -22,13 +22,13 @@ describe OrderSubmitService, type: :services do
     context 'with a partner with a merchant account' do
       context 'with a successful transaction' do
         before(:each) do
+          ActiveJob::Base.queue_adapter = :test
           allow(OrderSubmitService).to receive(:get_merchant_account).with(order).and_return(partner_merchant_accounts.first)
           allow(OrderSubmitService).to receive(:get_credit_card).with(order).and_return(credit_card)
           allow(PaymentService).to receive(:authorize_charge).with(authorize_charge_params).and_return(charge_success)
           allow(TransactionService).to receive(:create_success!).with(order, charge_success)
           OrderSubmitService.submit!(order)
         end
-
         it 'authorizes a charge for the full amount of the order' do
           expect(PaymentService).to have_received(:authorize_charge).with(authorize_charge_params)
         end
@@ -48,6 +48,10 @@ describe OrderSubmitService, type: :services do
 
         it 'updates external_charge_id with the id of the charge' do
           expect(order.external_charge_id).to eq(charge_success[:id])
+        end
+
+        it 'queues a job for posting event' do
+          expect(PostNotificationJob).to have_been_enqueued
         end
       end
 
