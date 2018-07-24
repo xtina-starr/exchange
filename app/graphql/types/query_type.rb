@@ -17,7 +17,7 @@ class Types::QueryType < Types::BaseObject
 
   def order(id:)
     order = Order.find(id)
-    raise GraphQL::ExecutionError, 'Not permitted' unless order.user_id == context[:current_user][:id] || context[:current_user][:partner_ids].include?(order.partner_id)
+    raise GraphQL::ExecutionError, 'Not permitted' unless user_permitted?(order.user_id) || partner_permitted?(order.partner_id)
     order
   end
 
@@ -46,7 +46,7 @@ class Types::QueryType < Types::BaseObject
     context[:current_user][:roles].include?('trusted')
   end
 
-  def user_permitted?(id) 
+  def user_permitted?(id)
     user_trusted? || user_logged_in?(id)
   end
 

@@ -52,12 +52,6 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'query with userId' do
-      it 'returns permission error when query for user not in jwt' do
-        expect do
-          client.execute(query, userId: 'someone-elses-userid')
-        end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: Not permitted')
-      end
-
       it 'returns users orders' do
         results = client.execute(query, userId: user_id)
         expect(results.data.orders.edges.count).to eq 2
@@ -78,6 +72,23 @@ describe Api::GraphqlController, type: :request do
       it 'sorts by updated_at in descending order' do
         results = client.execute(query, userId: user_id, sort: 'UPDATED_AT_DESC')
         expect(results.data.orders.edges.map(&:node).map(&:id).map(&:to_i)).to eq([user1_order2.id, user1_order1.id])
+      end
+    end
+
+    context 'user query where user is not in jwt' do
+      it 'usually returns permission error' do
+        expect do
+          client.execute(query, userId: 'someone-elses-userid')
+        end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: Not permitted')
+      end
+
+      context('but is trusted') do
+        let(:jwt_roles) { 'trusted' }
+        it 'allows access' do
+          expect do
+            client.execute(query, userId: 'someone-elses-userid')
+          end.to_not raise_error
+        end
       end
     end
   end

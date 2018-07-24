@@ -54,6 +54,17 @@ describe Api::GraphqlController, type: :request do
       end
     end
 
+    context 'trusted account accessing order' do
+      let(:jwt_roles) { 'trusted' }
+      let(:order_to_use) { Fabricate(:order, partner_id: second_partner_id, user_id: user_id) }
+
+      it 'allows action on behalf of a non-current user as long as they are trusted' do
+        expect do
+          client.execute(query, id: order_to_use.id)
+        end.to_not raise_error
+      end
+    end
+
     context 'partner accessing order' do
       it 'returns order when accessing correct order' do
         another_user_order = Fabricate(:order, partner_id: partner_id, user_id: 'someone-else-id')
