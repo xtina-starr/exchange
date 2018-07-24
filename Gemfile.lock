@@ -42,9 +42,14 @@ GEM
       i18n (>= 0.7, < 2)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
+    amq-protocol (2.3.0)
     arel (9.0.0)
+    artsy-eventservice (1.0.8)
+      bunny
     ast (2.4.0)
     builder (3.2.3)
+    bunny (2.11.0)
+      amq-protocol (~> 2.3.0)
     byebug (10.0.2)
     concurrent-ruby (1.0.5)
     connection_pool (2.2.2)
@@ -200,6 +205,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  artsy-eventservice
   byebug
   fabrication
   graphlient
