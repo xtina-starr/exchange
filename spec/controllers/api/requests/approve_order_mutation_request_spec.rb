@@ -1,6 +1,9 @@
 require 'rails_helper'
+require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
+  include_context 'use stripe mock'
+
   describe 'approve_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
@@ -54,6 +57,7 @@ describe Api::GraphqlController, type: :request do
     context 'with proper permission' do
       before do
         order.update_attributes! state: Order::SUBMITTED
+        order.update_attributes! external_charge_id: uncaptured_charge.id
       end
       it 'approves the order' do
         expect do
@@ -62,6 +66,8 @@ describe Api::GraphqlController, type: :request do
           expect(response.data.approve_order.order.state).to eq 'APPROVED'
           expect(response.data.approve_order.errors).to match []
           expect(order.reload.state).to eq Order::APPROVED
+          expect(order.reload.transactions.last.external_id).to eq uncaptured_charge.id
+          expect(order.reload.transactions.last.transaction_type).to eq Transaction::CAPTURE
         end.to change(order, :state_expires_at)
       end
     end

@@ -7,6 +7,7 @@ module TransactionService
       amount_cents: error[:amount],
       failure_code: error[:failure_code],
       failure_message: error[:failure_message],
+      transaction_type: error[:transaction_type],
       status: 'failure'
     )
   end
@@ -19,6 +20,7 @@ module TransactionService
       amount_cents: charge.amount,
       failure_code: charge.failure_code,
       failure_message: charge.failure_message,
+      transaction_type: charge.transaction_type,
       status: 'success'
     )
   end

@@ -1,14 +1,15 @@
 require 'rails_helper'
+require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
+  include_context 'use stripe mock'
   describe 'submit_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
-    let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'ma-1' } } }
     let(:merchant_account) { { external_id: 'ma-1' } }
-    let(:charge_success) { { id: 'ch-1' } }
+    let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
     let(:order) do
       Fabricate(
         :order,
@@ -22,6 +23,9 @@ describe Api::GraphqlController, type: :request do
         shipping_country: 'IR',
         fulfillment_type: Order::SHIP
       )
+    end
+    let(:line_item) do
+      Fabricate(:line_item, order: order)
     end
 
     let(:mutation) do
@@ -47,6 +51,11 @@ describe Api::GraphqlController, type: :request do
         }
       }
     end
+
+    before do
+      order.line_items << line_item
+    end
+
     context 'with user without permission to this order' do
       let(:user_id) { 'random-user-id-on-another-order' }
       it 'returns permission error' do
@@ -89,8 +98,6 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'submits the order' do
-        allow(PaymentService).to receive(:authorize_charge).and_return(charge_success)
-        allow(TransactionService).to receive(:create_success!)
         allow(OrderSubmitService).to receive(:get_merchant_account).and_return(merchant_account)
         allow(OrderSubmitService).to receive(:get_credit_card).and_return(credit_card)
         response = client.execute(mutation, submit_order_input)
@@ -100,6 +107,8 @@ describe Api::GraphqlController, type: :request do
         expect(order.reload.state).to eq Order::SUBMITTED
         expect(order.state_updated_at).not_to be_nil
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
+        expect(order.reload.transactions.last.external_id).not_to be_nil
+        expect(order.reload.transactions.last.transaction_type).to eq Transaction::HOLD
       end
     end
   end
