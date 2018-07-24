@@ -155,7 +155,6 @@ def gravity_v1_artwork(options={})
     cultural_maker: nil,
     sale_ids: [],
     attribution_class: 'limited edition',
-    free_shipping: false,
     domestic_shipping_fee_cents: 100_00,
     international_shipping_fee_cents: 500_00
   }.merge(options).with_indifferent_access

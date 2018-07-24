@@ -5,17 +5,13 @@ module ShippingService
     artwork = ArtworkService.find(line_item.artwork_id)
     raise Errors::OrderError, 'Cannot caclulate shipping, unknown artwork' unless artwork
 
-    if free_shipping?(artwork) || fulfillment_type == Order::PICKUP
+    if fulfillment_type == Order::PICKUP
       0
     elsif domestic?(artwork[:location], shipping_country)
       calculate_domestic(artwork)
     else
       calculate_international(artwork)
     end
-  end
-
-  def self.free_shipping?(artwork)
-    artwork[:free_shipping] == true
   end
 
   def self.domestic?(artwork_location, shipping_country)

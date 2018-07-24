@@ -9,10 +9,8 @@ describe ShippingService, type: :services do
       state: 'NY'
     }
   end
-  let(:free_shipping) { false }
   let(:artwork_shipping_setting) do
     {
-      free_shipping: free_shipping,
       domestic_shipping_fee_cents: 100_00,
       international_shipping_fee_cents: 500_00,
       location: artwork_location
@@ -28,12 +26,6 @@ describe ShippingService, type: :services do
       context 'with pickup fulfillment type' do
         it 'returns 0' do
           expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::PICKUP, shipping_country: 'US')).to eq 0
-        end
-      end
-      context 'with free shipping' do
-        let(:free_shipping) { true }
-        it 'returns 0' do
-          expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::SHIP, shipping_country: 'US')).to eq 0
         end
       end
       context 'with domestic address' do
@@ -56,20 +48,6 @@ describe ShippingService, type: :services do
         expect do
           expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::SHIP, shipping_country: 'US'))
         end.to raise_error(Errors::OrderError, 'Cannot caclulate shipping, unknown artwork')
-      end
-    end
-  end
-
-  describe '#free_shipping?' do
-    context 'without free shipping' do
-      it 'returns false' do
-        expect(ShippingService.free_shipping?(artwork)).to eq false
-      end
-    end
-    context 'with free shipping' do
-      let(:free_shipping) { true }
-      it 'returns true' do
-        expect(ShippingService.free_shipping?(artwork)).to eq true
       end
     end
   end

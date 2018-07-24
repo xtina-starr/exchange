@@ -81,9 +81,8 @@ describe Api::GraphqlController, type: :request do
 
       describe '#shipping_total_cents' do
         let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1'), Fabricate(:line_item, order: order, artwork_id: 'a-2')] }
-        let(:free_shipping) { false }
-        let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00, free_shipping: false) }
-        let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00, free_shipping: false) }
+        let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
+        let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
         before do
           expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-1?include_deleted=true').and_return(artwork1)
           expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-2?include_deleted=true').and_return(artwork2)
@@ -115,7 +114,7 @@ describe Api::GraphqlController, type: :request do
           end
 
           context 'with one free shipping artwork' do
-            let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00, free_shipping: true) }
+            let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 0) }
             it 'sets total shipping cents only based on non-free shipping artwork' do
               response = client.execute(mutation, set_shipping_input)
               expect(response.data.set_shipping.order.shipping_total_cents).to eq 500_00
