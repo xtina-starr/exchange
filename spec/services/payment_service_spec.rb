@@ -26,7 +26,7 @@ describe PaymentService, type: :services do
       expect(charge.currency).to eq(currency_code)
       expect(charge.description).to eq('Artsy')
       expect(charge.captured).to eq(false)
-      expect(charge.transaction_type).to eq('hold')
+      expect(charge.transaction_type).to eq Transaction::HOLD
     end
     it 'catches Stripe errors and raises a PaymentError in its place' do
       StripeMock.prepare_card_error(:card_declined, :new_charge)
@@ -45,7 +45,7 @@ describe PaymentService, type: :services do
         expect(e.body[:destination_id]).to eq destination_id
         expect(e.body[:failure_code]).not_to eq nil
         expect(e.body[:failure_message]).not_to eq nil
-        expect(e.body[:transaction_type]).to eq 'hold'
+        expect(e.body[:transaction_type]).to eq Transaction::HOLD
       end)
     end
   end
@@ -54,7 +54,7 @@ describe PaymentService, type: :services do
     it 'captures a charge' do
       captured_charge = PaymentService.capture_charge(uncaptured_charge.id)
       expect(captured_charge.captured).to eq(true)
-      expect(captured_charge.transaction_type).to eq('capture')
+      expect(captured_charge.transaction_type).to eq Transaction::CAPTURE
     end
     it 'catches Stripe errors and raises a PaymentError in its place' do
       StripeMock.prepare_card_error(:card_declined, :capture_charge)
@@ -64,7 +64,7 @@ describe PaymentService, type: :services do
         expect(e.body[:id]).to eq uncaptured_charge.id
         expect(e.body[:failure_code]).not_to eq nil
         expect(e.body[:failure_message]).not_to eq nil
-        expect(e.body[:transaction_type]).to eq 'capture'
+        expect(e.body[:transaction_type]).to eq Transaction::CAPTURE
       end)
     end
   end

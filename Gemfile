@@ -19,7 +19,6 @@ group :development, :test do
   gem 'graphlient'
   gem 'rspec-rails'
   gem 'rubocop'
-  gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
 end
 
 group :development do
@@ -28,4 +27,5 @@ end
 
 group :test do
   gem 'fabrication'
+  gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
 end

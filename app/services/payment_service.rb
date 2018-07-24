@@ -9,7 +9,7 @@ module PaymentService
       destination: destination_id,
       capture: false
     )
-    charge.transaction_type = 'hold'
+    charge.transaction_type = Transaction::HOLD
     charge
   rescue Stripe::StripeError => e
     body = e.json_body[:error]
@@ -20,7 +20,7 @@ module PaymentService
       destination_id: destination_id,
       failure_code: body[:code],
       failure_message: body[:message],
-      transaction_type: 'hold'
+      transaction_type: Transaction::HOLD
     }
     raise Errors::PaymentError.new(e.message, failed_charge)
   end
@@ -28,7 +28,7 @@ module PaymentService
   def self.capture_charge(charge_id)
     charge = Stripe::Charge.retrieve(charge_id)
     charge.capture
-    charge.transaction_type = 'capture'
+    charge.transaction_type = Transaction::CAPTURE
     charge
   rescue Stripe::StripeError => e
     body = e.json_body[:error]
@@ -36,7 +36,7 @@ module PaymentService
       id: charge_id,
       failure_code: body[:code],
       failure_message: body[:message],
-      transaction_type: 'capture'
+      transaction_type: Transaction::CAPTURE
     }
     raise Errors::PaymentError.new(e.message, failed_charge)
   end
