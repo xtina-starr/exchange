@@ -17,7 +17,7 @@ class Types::QueryType < Types::BaseObject
 
   def order(id:)
     order = Order.find(id)
-    raise GraphQL::ExecutionError, 'Not permitted' unless user_permitted?(order.user_id) || partner_permitted?(order.partner_id)
+    raise GraphQL::ExecutionError, 'Not permitted' unless trusted? || user_permitted?(order.user_id) || partner_permitted?(order.partner_id)
     order
   end
 
@@ -43,11 +43,11 @@ class Types::QueryType < Types::BaseObject
   end
 
   def user_permitted?(id)
-    trusted? || id == context[:current_user][:id]
+    id == context[:current_user][:id]
   end
 
   def partner_permitted?(id)
-    trusted? || context[:current_user][:partner_ids].include?(id)
+    context[:current_user][:partner_ids].include?(id)
   end
 
   def validate_user(id)
@@ -59,6 +59,7 @@ class Types::QueryType < Types::BaseObject
   end
 
   def validate_orders_params!(params)
+    return if trusted?
     if params[:user_id].present?
       validate_user(params[:user_id])
     elsif params[:partner_id].present?
