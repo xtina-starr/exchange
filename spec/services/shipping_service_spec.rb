@@ -47,7 +47,7 @@ describe ShippingService, type: :services do
       it 'raises Errors::OrderError' do
         expect do
           expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::SHIP, shipping_country: 'US'))
-        end.to raise_error(Errors::OrderError, 'Cannot caclulate shipping, unknown artwork')
+        end.to raise_error(Errors::OrderError, 'Cannot calculate shipping, unknown artwork')
       end
     end
   end
@@ -66,11 +66,36 @@ describe ShippingService, type: :services do
     it 'returns domestic shipping cost' do
       expect(ShippingService.calculate_domestic(artwork)).to eq 100_00
     end
+
+    context 'with nil domestic shipping' do
+      let(:artwork_shipping_setting) do
+        {
+          domestic_shipping_fee_cents: nil,
+          international_shipping_fee_cents: 500_00,
+          location: artwork_location
+        }
+      end
+      it 'returns 0' do
+        expect(ShippingService.calculate_domestic(artwork)).to eq 0
+      end
+    end
   end
 
   describe '#calculate_international' do
     it 'returns international shipping cost' do
       expect(ShippingService.calculate_international(artwork)).to eq 500_00
+    end
+    context 'with nil domestic shipping' do
+      let(:artwork_shipping_setting) do
+        {
+          domestic_shipping_fee_cents: 100_00,
+          international_shipping_fee_cents: nil,
+          location: artwork_location
+        }
+      end
+      it 'returns 0' do
+        expect(ShippingService.calculate_international(artwork)).to eq 0
+      end
     end
   end
 end
