@@ -7,6 +7,7 @@ gem 'rails', '5.2.0'
 gem 'pg'
 gem 'puma'
 
+gem 'faraday'
 gem 'graphql'
 gem 'jwt'
 gem 'micromachine'
@@ -28,4 +29,5 @@ end
 group :test do
   gem 'fabrication'
   gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
+  gem 'webmock'
 end

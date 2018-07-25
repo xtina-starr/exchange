@@ -1,6 +1,7 @@
 development: &default
   api_v1_root: <%= "#{ENV['GRAVITY_API_ROOT'] || 'https://stagingapi.artsy.net'}/api/v1" %>
   xapp_token:  <%= ENV['GRAVITY_JWT'] || 'https://media.giphy.com/media/yow6i0Zmp7G24/giphy.gif' %>
+  artwork_cache_in_minutes: <%= (ENV['GRAVITY_JWT'] || '10').to_i %>
 test:
   <<: *default
   api_v1_root: 'http://exchange-test-gravity.biz'
