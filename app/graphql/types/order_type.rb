@@ -6,6 +6,7 @@ class Types::OrderType < Types::BaseObject
   field :code, String, null: false
   field :user_id, String, null: false
   field :partner_id, String, null: false
+  field :credit_card_id, String, null: true
   field :state, Types::OrderStateEnum, null: false
   field :currency_code, String, null: false
   field :shipping_address_line1, String, null: true
