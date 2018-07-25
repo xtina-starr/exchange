@@ -28,5 +28,6 @@ end
 
 group :test do
   gem 'fabrication'
+  gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
   gem 'webmock'
 end

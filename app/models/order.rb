@@ -34,7 +34,7 @@ class Order < ApplicationRecord
 
   validates :state, presence: true, inclusion: STATES
 
-  before_create :set_code
+  after_create :set_code
   before_save :update_state_timestamps, if: :state_changed?
   before_save :set_currency_code
 
@@ -74,7 +74,7 @@ class Order < ApplicationRecord
   private
 
   def set_code
-    self.code = SecureRandom.hex(10)
+    update!(code: format('B%06d', id))
   end
 
   def update_state_timestamps
