@@ -27,4 +27,5 @@ end
 
 group :test do
   gem 'fabrication'
+  gem 'webmock'
 end
