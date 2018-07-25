@@ -39,8 +39,7 @@ module CreateOrderService
   # TODO: 🚨 update gravity to expose amount in cents and remove this duplicate logic
   # https://github.com/artsy/gravity/blob/65e398e3648d61175e7a8f4403a2d379b5aa2107/app/models/util/for_sale.rb#L221
   def self.price_in_cents(price_in_dollars, currency)
-    byebug
-    raise Errors::OrderError 'No price found' unless price_in_dollars && price_in_dollars > 0
+    raise Errors::OrderError 'No price found' unless price_in_dollars&.positive?
     raise Errors::OrderError 'Invalid currency' if currency.present? && currency != 'USD' # TODO: handle other currencies
     (price_in_dollars * 100).round
   end

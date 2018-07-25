@@ -16,7 +16,7 @@ describe CreateOrderService, type: :services do
             expect(order.user_id).to eq user_id
             expect(order.partner_id).to eq 'gravity-partner-id'
             expect(order.line_items.count).to eq 1
-            expect(order.line_items.first.price_cents).to eq 5400
+            expect(order.line_items.first.price_cents).to eq 540_012
             expect(order.line_items.first.artwork_id).to eq 'artwork-id'
             expect(order.line_items.first.edition_set_id).to be_nil
             expect(order.line_items.first.quantity).to eq 2
@@ -31,7 +31,7 @@ describe CreateOrderService, type: :services do
             expect(order.user_id).to eq user_id
             expect(order.partner_id).to eq 'gravity-partner-id'
             expect(order.line_items.count).to eq 1
-            expect(order.line_items.first.price_cents).to eq 4200
+            expect(order.line_items.first.price_cents).to eq 420_042
             expect(order.line_items.first.artwork_id).to eq 'artwork-id'
             expect(order.line_items.first.edition_set_id).to eq 'edition-set-id'
             expect(order.line_items.first.quantity).to eq 2
@@ -59,7 +59,7 @@ describe CreateOrderService, type: :services do
   describe '#artwork_price' do
     context 'for edition set' do
       it 'returns edition_set_price for known edition set id' do
-        expect(CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'edition-set-id')).to eq 4200_00
+        expect(CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'edition-set-id')).to eq 420_042
       end
       it 'raises Errors::OrderError for unknown edition set id' do
         expect { CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'random-id') }.to raise_error(Errors::OrderError, /Unknown edition set/)
