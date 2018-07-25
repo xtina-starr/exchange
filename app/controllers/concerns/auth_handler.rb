@@ -4,7 +4,7 @@ module AuthHandler
       protected
 
       def authenticate_request!
-        unless user_id_in_token?
+        unless user_id_in_token? || !auth_token.key?('sub')
           render json: { errors: ['Not Authenticated'] }, status: :unauthorized
           return
         end
