@@ -207,6 +207,7 @@ PLATFORMS
 DEPENDENCIES
   byebug
   fabrication
+  faraday
   graphlient
   graphql
   jwt
