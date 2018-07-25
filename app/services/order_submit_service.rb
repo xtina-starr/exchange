@@ -4,10 +4,7 @@ module OrderSubmitService
     raise Errors::OrderError, "Missing info for submitting order(#{order.id})" unless can_submit?(order)
 
     merchant_account = get_merchant_account(order)
-    raise Errors::OrderError, 'Partner does not have merchant account' if merchant_account.nil?
-
     credit_card = get_credit_card(order)
-    raise Errors::OrderError, 'User does not have stored credit card' if credit_card.blank?
 
     charge_params = {
       source_id: credit_card[:external_id],
@@ -33,11 +30,27 @@ module OrderSubmitService
   end
 
   def self.get_merchant_account(order)
-    Adapters::GravityV1.request("/merchant_accounts?partner_id=#{order.partner_id}").first
+    merchant_account = Adapters::GravityV1.request("/merchant_accounts?partner_id=#{order.partner_id}").first
+    raise Errors::OrderError, 'Partner does not have merchant account' if merchant_account.nil?
+    merchant_account
+  rescue Adapters::GravityError => e
+    raise Errors::OrderError, 'Unable to find partner or merchant account' if e.status == 404
+    raise Errors::OrderError, e.message
   end
 
   def self.get_credit_card(order)
-    Adapters::GravityV1.request("/credit_card/#{order.credit_card_id}")
+    credit_card = Adapters::GravityV1.request("/credit_card/#{order.credit_card_id}")
+    validate_credit_card(credit_card)
+    credit_card
+  rescue Adapters::GravityError => e
+    raise Errors::OrderError, 'Credit card not found' if e.status == 404
+    raise Errors::OrderError, e.message
+  end
+
+  def self.validate_credit_card(credit_card)
+    raise Errors::OrderError, 'Credit card does not have external id' if credit_card[:external_id].blank?
+    raise Errors::OrderError, 'Credit card does not have customer id' if credit_card.dig(:customer_account, :external_id).blank?
+    raise Errors::OrderError, 'Credit card is deactivated' unless credit_card[:deactivated_at].nil?
   end
 
   def self.can_submit?(order)

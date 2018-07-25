@@ -5,7 +5,7 @@ describe OrderSubmitService, type: :services do
   let(:partner_id) { 'partner-1' }
   let(:order) { Fabricate(:order, partner_id: partner_id, credit_card_id: 'cc-1', fulfillment_type: Order::PICKUP) }
   let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 200_000), Fabricate(:line_item, order: order, price_cents: 800_000)] }
-  let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'cust-1' } } }
+  let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
   let(:charge_success) { { id: 'ch-1' } }
   let(:charge_failure) { { failure_message: 'some_error' } }
@@ -69,14 +69,6 @@ describe OrderSubmitService, type: :services do
         end
       end
     end
-
-    context 'with a partner without a merchant account' do
-      it 'raises an an error and does not call PaymentService' do
-        allow(OrderSubmitService).to receive(:get_merchant_account).with(order).and_return(nil)
-        expect { OrderSubmitService.submit!(order) }.to raise_error(Errors::OrderError)
-        expect(PaymentService).not_to receive(:authorize_charge)
-      end
-    end
   end
 
   describe '#get_merchant_account' do
@@ -92,18 +84,34 @@ describe OrderSubmitService, type: :services do
       expect(result).to be(partner_merchant_accounts.first)
     end
 
-    it 'returns nil if the partner does not have a merchant account' do
+    it 'raises an error if the partner does not have a merchant account' do
       allow(Adapters::GravityV1).to receive(:request).with("/merchant_accounts?partner_id=#{order.partner_id}").and_return([])
-      result = OrderSubmitService.get_merchant_account(order)
-      expect(result).to be(nil)
+      expect { OrderSubmitService.get_merchant_account(order) }.to raise_error(Errors::OrderError)
     end
   end
 
   describe '#get_credit_card' do
-    it 'calls the /credit_card Gravity endpoint' do
-      allow(Adapters::GravityV1).to receive(:request).with("/credit_card/#{order.credit_card_id}")
+    it 'calls the /credit_card Gravity endpoint and validates the credit card' do
+      allow(Adapters::GravityV1).to receive(:request).with("/credit_card/#{order.credit_card_id}").and_return(credit_card)
+      allow(OrderSubmitService).to receive(:validate_credit_card).with(credit_card)
       OrderSubmitService.get_credit_card(order)
       expect(Adapters::GravityV1).to have_received(:request).with("/credit_card/#{order.credit_card_id}")
+      expect(OrderSubmitService).to have_received(:validate_credit_card).with(credit_card)
+    end
+  end
+
+  describe '#validate_credit_card' do
+    it 'raises an error if the credit card does not have an external id' do
+      expect { OrderSubmitService.validate_credit_card(customer_account: { external_id: 'cust-1' }, deactivated_at: nil) }.to raise_error(Errors::OrderError)
+    end
+
+    it 'raises an error if the credit card does not have a customer id' do
+      expect { OrderSubmitService.validate_credit_card(external_id: 'cc-1') }.to raise_error(Errors::OrderError)
+      expect { OrderSubmitService.validate_credit_card(external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil) }.to raise_error(Errors::OrderError)
+    end
+
+    it 'raises an error if the card is deactivated' do
+      expect { OrderSubmitService.validate_credit_card(external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 'today') }.to raise_error(Errors::OrderError)
     end
   end
 
