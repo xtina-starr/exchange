@@ -1,4 +1,5 @@
 require 'rails_helper'
+require 'support/gravity_helper'
 require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
@@ -25,7 +26,7 @@ describe Api::GraphqlController, type: :request do
       )
     end
     let(:line_item) do
-      Fabricate(:line_item, order: order)
+      Fabricate(:line_item, order: order, price_cents: 100_000)
     end
 
     let(:mutation) do
@@ -37,6 +38,7 @@ describe Api::GraphqlController, type: :request do
               userId
               partnerId
               state
+              commissionFeeCents
             }
             errors
           }
@@ -98,13 +100,16 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'submits the order' do
-        allow(OrderSubmitService).to receive(:get_merchant_account).and_return(merchant_account)
-        allow(OrderSubmitService).to receive(:get_credit_card).and_return(credit_card)
+        expect(OrderSubmitService).to receive(:get_merchant_account).and_return(merchant_account)
+        expect(OrderSubmitService).to receive(:get_credit_card).and_return(credit_card)
+        expect(Adapters::GravityV1).to receive(:request).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order.order.id).to eq order.id.to_s
         expect(response.data.submit_order.order.state).to eq 'SUBMITTED'
+        expect(response.data.submit_order.order.commission_fee_cents).to eq 800_00
         expect(response.data.submit_order.errors).to match []
         expect(order.reload.state).to eq Order::SUBMITTED
+        expect(order.commission_fee_cents).to eq 800_00
         expect(order.state_updated_at).not_to be_nil
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
         expect(order.reload.transactions.last.external_id).not_to be_nil

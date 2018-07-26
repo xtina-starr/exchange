@@ -2,7 +2,9 @@ require 'rails_helper'
 require 'support/gravity_helper'
 
 describe OrderSubmitService, type: :services do
-  let(:order) { Fabricate(:order, credit_card_id: 'cc-1', fulfillment_type: Order::PICKUP) }
+  let(:partner_id) { 'partner-1' }
+  let(:order) { Fabricate(:order, partner_id: partner_id, credit_card_id: 'cc-1', fulfillment_type: Order::PICKUP) }
+  let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 200_000), Fabricate(:line_item, order: order, price_cents: 800_000)] }
   let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'cust-1' } } }
   let(:merchant_account_id) { 'ma-1' }
   let(:charge_success) { { id: 'ch-1' } }
@@ -26,6 +28,7 @@ describe OrderSubmitService, type: :services do
           allow(OrderSubmitService).to receive(:get_credit_card).with(order).and_return(credit_card)
           allow(PaymentService).to receive(:authorize_charge).with(authorize_charge_params).and_return(charge_success)
           allow(TransactionService).to receive(:create_success!).with(order, charge_success)
+          allow(Adapters::GravityV1).to receive(:request).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
           OrderSubmitService.submit!(order)
         end
 
@@ -48,6 +51,10 @@ describe OrderSubmitService, type: :services do
 
         it 'updates external_charge_id with the id of the charge' do
           expect(order.external_charge_id).to eq(charge_success[:id])
+        end
+
+        it 'sets commission_fee_cents' do
+          expect(order.commission_fee_cents).to eq 800_000
         end
       end
 
@@ -97,6 +104,27 @@ describe OrderSubmitService, type: :services do
       allow(Adapters::GravityV1).to receive(:request).with("/credit_card/#{order.credit_card_id}")
       OrderSubmitService.get_credit_card(order)
       expect(Adapters::GravityV1).to have_received(:request).with("/credit_card/#{order.credit_card_id}")
+    end
+  end
+
+  describe '#calculate_commission' do
+    context 'with successful gravity call' do
+      before do
+        stub_request(:get, %r{partner\/#{partner_id}/all}).to_return(status: 200, body: gravity_v1_partner.to_json)
+      end
+      it 'returns calculated commission fee' do
+        expect(OrderSubmitService.calculate_commission(order)).to eq 800_000.0
+      end
+    end
+    context 'with failed gravity call' do
+      before do
+        stub_request(:get, %r{partner\/#{partner_id}}).to_return(status: 404, body: { error: 'not found' }.to_json)
+      end
+      it 'raises OrderError' do
+        expect do
+          OrderSubmitService.calculate_commission(order)
+        end.to raise_error(Errors::OrderError, /Cannot fetch partner/)
+      end
     end
   end
 end
