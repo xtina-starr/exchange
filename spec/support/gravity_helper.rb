@@ -162,3 +162,38 @@ def gravity_v1_artwork(options={})
     international_shipping_fee_cents: 500_00
   }.merge(options).with_indifferent_access
 end
+
+def gravity_v1_partner(options={})
+  {
+    admin: nil,
+    outreach_admin: nil,
+    referral_contact: nil,
+    partner_categories: [],
+    _id: '581b45e4cd530e658b000124',
+    id: "invoicing-demo-partner",
+    default_profile_id: "invoicing-demo-partner",
+    default_profile_public: false,
+    sortable_id: "invoicing-demo-partner",
+    type: "Gallery",
+    name: "Invoicing Demo Partner",
+    short_name: "",
+    pre_qualify: false,
+    sortable_name: "",
+    given_name: "Invoicing Demo Partner",
+    display_name: "",
+    website: "http://gallery.com",
+    email: "info@gallery.com",
+    artists_count: 10,
+    partner_artists_count: 10,
+    artworks_count: 27,
+    artsy_collects_sales_tax: true,
+    region: "",
+    subscription_state: "active",
+    alternate_names: ["Partner Success Invoicing Demo Partner"],
+    contract_type: "Subscription",
+    billing_location_id: '581b46959c18db1dee001f50',
+    payments_enabled: true,
+    commission_rate: 0.8,
+    effective_commission_rate: 0.8,
+  }.merge(options).with_indifferent_access
+end

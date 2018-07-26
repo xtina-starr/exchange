@@ -22,6 +22,7 @@ module OrderSubmitService
       charge = PaymentService.authorize_charge(charge_params)
       order.external_charge_id = charge[:id]
       TransactionService.create_success!(order, charge)
+      order.commission_fee_cents = calculate_commission(order)
       order.save!
     end
     order
@@ -41,5 +42,13 @@ module OrderSubmitService
 
   def self.can_submit?(order)
     order.shipping_info? && order.payment_info?
+  end
+
+  def self.calculate_commission(order)
+    partner = GravityService.fetch_partner(order.partner_id)
+    order.items_total_cents * partner[:effective_commission_rate]
+  rescue Adapters::GravityError => e
+    Rails.logger.error("Could not fetch partner for order #{order.id}: #{e.message}")
+    raise Errors::OrderError, 'Cannot fetch partner'
   end
 end
