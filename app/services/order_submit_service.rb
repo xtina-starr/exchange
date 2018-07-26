@@ -33,8 +33,9 @@ module OrderSubmitService
     merchant_account = Adapters::GravityV1.request("/merchant_accounts?partner_id=#{order.partner_id}").first
     raise Errors::OrderError, 'Partner does not have merchant account' if merchant_account.nil?
     merchant_account
+  rescue Adapters::GravityNotFoundError
+    raise Errors::OrderError, 'Unable to find partner or merchant account'
   rescue Adapters::GravityError => e
-    raise Errors::OrderError, 'Unable to find partner or merchant account' if e.status == 404
     raise Errors::OrderError, e.message
   end
 
@@ -42,8 +43,9 @@ module OrderSubmitService
     credit_card = Adapters::GravityV1.request("/credit_card/#{order.credit_card_id}")
     validate_credit_card(credit_card)
     credit_card
+  rescue Adapters::GravityNotFoundError
+    raise Errors::OrderError, 'Credit card not found'
   rescue Adapters::GravityError => e
-    raise Errors::OrderError, 'Credit card not found' if e.status == 404
     raise Errors::OrderError, e.message
   end
 
