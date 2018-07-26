@@ -71,6 +71,7 @@ def gravity_v1_artwork(options={})
         sold: false,
         price: '$4200',
         price_listed: 4200.42,
+        price_currency: "USD",
         acquireable: false,
         dimensions: {in: '44 × 30 1/2 in', cm: '111.8 × 77.5 cm'},
         editions: 'Edition of 15',

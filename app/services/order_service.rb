@@ -71,6 +71,6 @@ module OrderService
   end
 
   def self.valid_currency_code?(currency_code)
-    currency_code == 'usd'
+    Order::SUPPORTED_CURRENCIES.include?(currency_code.downcase)
   end
 end

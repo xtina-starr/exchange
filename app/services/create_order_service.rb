@@ -26,9 +26,9 @@ module CreateOrderService
     if edition_set_id
       edition_set = find_edition_set(external_artwork, edition_set_id)
       raise Errors::OrderError, 'Unknown edition set.' unless edition_set
-      price_in_cents(edition_set[:price_listed], external_artwork[:currency])
+      price_in_cents(edition_set[:price_listed], edition_set[:price_currency])
     else
-      price_in_cents(external_artwork[:price_listed], external_artwork[:currency])
+      price_in_cents(external_artwork[:price_listed], external_artwork[:price_currency])
     end
   end
 
@@ -39,8 +39,9 @@ module CreateOrderService
   # TODO: 🚨 update gravity to expose amount in cents and remove this duplicate logic
   # https://github.com/artsy/gravity/blob/65e398e3648d61175e7a8f4403a2d379b5aa2107/app/models/util/for_sale.rb#L221
   def self.price_in_cents(price_in_dollars, currency)
-    raise Errors::OrderError 'No price found' unless price_in_dollars&.positive?
-    raise Errors::OrderError 'Invalid currency' if currency.present? && currency != 'USD' # TODO: handle other currencies
+    raise Errors::OrderError, 'No price found' unless price_in_dollars&.positive?
+    raise Errors::OrderError, 'Missing currency' if currency.blank?
+    raise Errors::OrderError, 'Invalid currency' unless Order::SUPPORTED_CURRENCIES.include?(currency.downcase)
     (price_in_dollars * 100).round
   end
 end

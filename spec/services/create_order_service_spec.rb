@@ -57,6 +57,11 @@ describe CreateOrderService, type: :services do
   end
 
   describe '#artwork_price' do
+    context 'for artwork' do
+      it 'returns artwork price' do
+        expect(CreateOrderService.artwork_price(gravity_v1_artwork)).to eq 540_012
+      end
+    end
     context 'for edition set' do
       it 'returns edition_set_price for known edition set id' do
         expect(CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'edition-set-id')).to eq 420_042
