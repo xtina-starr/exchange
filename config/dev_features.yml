@@ -1,0 +1,6 @@
+development: &default
+  disable_shipping_calculation: <%= ENV['DISABLE_SHIPPING_CALCULATION'] == 'true' %>
+test:
+  <<: *default
+production:
+  <<: *default

@@ -1,17 +1,15 @@
-require 'net/http'
-
 module Adapters
-  class GravityError < StandardError
-  end
+  class GravityError < StandardError; end
+  class GravityNotFoundError < GravityError; end
   class GravityV1
     def self.request(url)
-      base_url = "#{Rails.application.config_for(:gravity)['api_v1_root']}#{url}"
-      uri = URI.parse(base_url)
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      req = Net::HTTP::Get.new("#{uri.path}?#{uri.query}", headers)
-      response = http.request(req)
+      url = "#{Rails.application.config_for(:gravity)['api_v1_root']}#{url}"
+      response = Faraday.get(url, {}, headers)
+      raise GravityNotFoundError if response.status == 404
+      raise GravityError, "couldn't perform request! Response was #{response.status}." unless response.success?
       JSON.parse(response.body, symbolize_names: true)
+    rescue GravityNotFoundError => e
+      raise e
     rescue StandardError => e
       raise GravityError, e.message
     end

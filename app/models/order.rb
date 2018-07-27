@@ -1,5 +1,6 @@
 class Order < ApplicationRecord
   has_paper_trail
+  SUPPORTED_CURRENCIES = %w[usd].freeze
   STATES = [
     PENDING = 'pending'.freeze,
     ABANDONED = 'abandoned'.freeze,

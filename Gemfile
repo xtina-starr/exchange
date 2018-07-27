@@ -8,6 +8,8 @@ gem 'pg'
 gem 'puma'
 
 gem 'artsy-eventservice'
+gem 'dalli'
+gem 'faraday'
 gem 'graphql'
 gem 'jwt'
 gem 'micromachine'
@@ -29,4 +31,5 @@ end
 group :test do
   gem 'fabrication'
   gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
+  gem 'webmock'
 end
