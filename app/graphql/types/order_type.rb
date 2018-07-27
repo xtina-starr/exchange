@@ -19,10 +19,10 @@ class Types::OrderType < Types::BaseObject
   field :items_total_cents, Integer, null: false
   field :shipping_total_cents, Integer, null: true
   field :tax_total_cents, Integer, null: true
-  field :transaction_fee_cents, Integer, null: true
-  field :commission_fee_cents, Integer, null: true
-  field :buyer_total_cents, Integer, null: true
-  field :seller_total_cents, Integer, null: true
+  field :transaction_fee_cents, Integer, null: true, seller_only: true
+  field :commission_fee_cents, Integer, null: true, seller_only: true
+  field :seller_total_cents, Integer, null: true, seller_only: true
+  field :buyer_total_cents, Integer, null: true, buyer_only: true
   field :created_at, Types::DateTimeType, null: false
   field :updated_at, Types::DateTimeType, null: false
   field :state_updated_at, Types::DateTimeType, null: true

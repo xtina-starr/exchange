@@ -4,7 +4,7 @@ require 'support/gravity_helper'
 describe OrderSubmitService, type: :services do
   let(:partner_id) { 'partner-1' }
   let(:order) { Fabricate(:order, partner_id: partner_id, credit_card_id: 'cc-1', fulfillment_type: Order::PICKUP) }
-  let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 200_000), Fabricate(:line_item, order: order, price_cents: 800_000)] }
+  let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00), Fabricate(:line_item, order: order, price_cents: 8000_00)] }
   let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'cust-1' } } }
   let(:merchant_account_id) { 'ma-1' }
   let(:charge_success) { { id: 'ch-1' } }
@@ -54,7 +54,7 @@ describe OrderSubmitService, type: :services do
         end
 
         it 'sets commission_fee_cents' do
-          expect(order.commission_fee_cents).to eq 800_000
+          expect(order.commission_fee_cents).to eq 8000_00
         end
       end
 
@@ -113,7 +113,7 @@ describe OrderSubmitService, type: :services do
         stub_request(:get, %r{partner\/#{partner_id}/all}).to_return(status: 200, body: gravity_v1_partner.to_json)
       end
       it 'returns calculated commission fee' do
-        expect(OrderSubmitService.calculate_commission(order)).to eq 800_000.0
+        expect(OrderSubmitService.calculate_commission(order)).to eq 8000_00.0
       end
     end
     context 'with failed gravity call' do
