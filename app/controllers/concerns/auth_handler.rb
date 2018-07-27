@@ -4,10 +4,6 @@ module AuthHandler
       protected
 
       def authenticate_request!
-        unless user_id_in_token?
-          render json: { errors: ['Not Authenticated'] }, status: :unauthorized
-          return
-        end
         @current_user = auth_token.with_indifferent_access.merge(id: auth_token[:sub])
       rescue JWT::DecodeError # includes verification error too
         render json: { errors: ['Not Authenticated'] }, status: :unauthorized
