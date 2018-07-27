@@ -73,8 +73,14 @@ describe Api::GraphqlController, type: :request do
           expect(result.data.order.currency_code).to eq 'usd'
           expect(result.data.order.state).to eq 'PENDING'
           expect(result.data.order.items_total_cents).to eq 0
-          expect(result.data.order.seller_total_cents).to eq user2_order1.seller_total_cents
-          expect(result.data.order.buyer_total_cents).to eq user2_order1.buyer_total_cents
+        end
+
+        it 'cannot access seller_only buyer_only fields' do
+          # TODO: we may want to change this logic later but for now not allowing
+          # those fields for trusted apps
+          result = client.execute(query, id: user2_order1.id)
+          expect(result.data.order.seller_total_cents).to be_nil
+          expect(result.data.order.buyer_total_cents).to be_nil
         end
       end
 
