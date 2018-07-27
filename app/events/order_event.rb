@@ -2,7 +2,7 @@ class OrderEvent < Events::BaseEvent
   TOPIC = 'BNMO'.freeze
 
   def self.post(order, action, user_id)
-    event = OrderEvent.new(user: user_id, action: action, model: order)
+    event = new(user: user_id, action: action, model: order)
     Artsy::EventService.post_event(topic: TOPIC, event: event)
   end
 
