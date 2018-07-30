@@ -5,5 +5,5 @@ class Types::MutationType < Types::BaseObject
   field :submit_order, mutation: Mutations::SubmitOrder
   field :approve_order, mutation: Mutations::ApproveOrder
   field :reject_order, mutation: Mutations::RejectOrder
-  field :finalize_order, mutation: Mutations::FinalizeOrder
+  field :finalize_with_one_fulfillment, mutation: Mutations::FinalizeWithOneFulfillment
 end

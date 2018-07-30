@@ -10,10 +10,27 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_07_23_192428) do
+ActiveRecord::Schema.define(version: 2018_07_30_173943) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "fulfillments", force: :cascade do |t|
+    t.string "courier"
+    t.string "tracking_id"
+    t.date "estimated_delivery"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "line_item_fulfillments", force: :cascade do |t|
+    t.bigint "line_item_id"
+    t.bigint "fulfillment_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fulfillment_id"], name: "index_line_item_fulfillments_on_fulfillment_id"
+    t.index ["line_item_id"], name: "index_line_item_fulfillments_on_line_item_id"
+  end
 
   create_table "line_items", force: :cascade do |t|
     t.bigint "order_id"
@@ -80,6 +97,8 @@ ActiveRecord::Schema.define(version: 2018_07_23_192428) do
     t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
   end
 
+  add_foreign_key "line_item_fulfillments", "fulfillments"
+  add_foreign_key "line_item_fulfillments", "line_items"
   add_foreign_key "line_items", "orders"
   add_foreign_key "transactions", "orders"
 end
