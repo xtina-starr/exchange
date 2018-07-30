@@ -68,7 +68,7 @@ In order to talk to Exchange GraphQL endpoint:
 
 ## Order Lifecycle
 
-Users create and submit orders. Partners then approve and finalize or reject the order.
+Users create and submit orders. Partners then approve and fulfill or reject the order.
 
 ### As a User
 
@@ -207,16 +207,31 @@ For input:
 ```
 
 
-#### Finalize an Order
+#### Fulfill an Order
 ```graphql
-# finalize order
-mutation($input: FinalizeOrderInput!) {
-  finalizeOrder(input: $input) {
+# fulfill order with one fulfillment
+mutation($input: FulfillAtOnceInput!) {
+  fulfillAtOnce(input: $input) {
     order {
       id
       userId
       partnerId
       state
+      lineItems{
+        edges{
+          node{
+            fulfillments{
+              edges{
+                node{
+                  courier
+                  trackingId
+                  estimatedDelivery
+                }
+              }
+            }
+          }
+        }
+      }
     }
     errors
   }
@@ -226,7 +241,11 @@ For input:
 ```json
 {
   "input": {
-    "id": "<order id>"
+    "id": "<order id>",
+    "fulfillment": {
+      "courier": "FedEx",
+      "trackingId": "track-431"
+    }
   }
 }
 ```

@@ -9,4 +9,5 @@ class Types::LineItemType < Types::BaseObject
   field :quantity, Integer, null: false
   field :created_at, Types::DateTimeType, null: false
   field :updated_at, Types::DateTimeType, null: false
+  field :fulfillments, Types::FulfillmentType.connection_type, null: true
 end
