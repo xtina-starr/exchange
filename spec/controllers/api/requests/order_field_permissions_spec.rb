@@ -47,9 +47,9 @@ describe Api::GraphqlController, type: :request do
           }
         GRAPHQL
       end
-      it 'returns nil for buyer_only fields' do
+      it 'returns seller_only fields' do
         result = client.execute(order_query_with_buyer_fields, id: order.id)
-        expect(result.data.order.buyer_total_cents).to be_nil
+        expect(result.data.order.buyer_total_cents).to eq 1100_00
         expect(result.data.order.seller_total_cents).to eq 1050_00
         expect(result.data.order.commission_fee_cents).to eq 30_00
       end

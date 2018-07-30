@@ -16,12 +16,8 @@ class Types::BaseField < GraphQL::Schema::Field
   private
 
   def order_field_authorized?(obj, current_user)
-    if @buyer_only && current_user['id'] != obj.user_id
-      false
-    elsif @seller_only && !current_user[:partner_ids].include?(obj.partner_id)
-      false
-    else
-      true
-    end
+    return current_user[:id] == obj.user_id if @buyer_only
+    return current_user[:partner_ids].include?(obj.partner_id) if @seller_only
+    true
   end
 end
