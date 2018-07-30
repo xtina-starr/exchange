@@ -49,8 +49,9 @@ module OrderService
 
   def self.finalize_with_one_fulfillment!(order, fulfillment, by)
     Order.transaction do
+      fulfillment = Fulfillment.create!(fulfillment.slice(:courier, :tracking_id, :estimated_delivery))
       order.line_items.each do |li|
-        li.fulfillments.create!(fulfillment.slice(:courier, :tracking_id, :estimated_delivery))
+        li.line_item_fulfillments.create!(fulfillment_id: fulfillment.id)
       end
       order.finalize!
       order.save!

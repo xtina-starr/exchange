@@ -99,7 +99,7 @@ describe Api::GraphqlController, type: :request do
             expect(li.fulfillments.first.tracking_id).to eq 'fedx-123'
             expect(li.fulfillments.first.estimated_delivery).to eq Date.strptime('2018-12-15', '%Y-%m-%d')
           end
-        end.to change(Fulfillment, :count).by(2).and change(LineItemFulfillment, :count).by(2)
+        end.to change(Fulfillment, :count).by(1).and change(LineItemFulfillment, :count).by(2)
       end
     end
   end
