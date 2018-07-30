@@ -68,7 +68,7 @@ In order to talk to Exchange GraphQL endpoint:
 
 ## Order Lifecycle
 
-Users create and submit orders. Partners then approve and finalize or reject the order.
+Users create and submit orders. Partners then approve and fulfill or reject the order.
 
 ### As a User
 
@@ -207,11 +207,11 @@ For input:
 ```
 
 
-#### Finalize an Order
+#### Fulfill an Order
 ```graphql
-# finalize order with one fulfillment
-mutation($input: FinalizeWithOneFulfillmentInput!) {
-  finalizeWithOneFulfillment(input: $input) {
+# fulfill order with one fulfillment
+mutation($input: FulfillWithOneFulfillmentInput!) {
+  fulfillWithOneFulfillment(input: $input) {
     order {
       id
       userId

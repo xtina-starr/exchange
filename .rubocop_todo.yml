@@ -29,7 +29,6 @@ Naming/AccessorMethodName:
 Rails/ActiveRecordAliases:
   Exclude:
     - 'spec/controllers/api/requests/approve_order_mutation_request_spec.rb'
-    - 'spec/controllers/api/requests/finalize_order_mutation_request_spec.rb'
     - 'spec/controllers/api/requests/reject_order_mutation_request_spec.rb'
     - 'spec/controllers/api/requests/submit_order_mutation_request_spec.rb'
 

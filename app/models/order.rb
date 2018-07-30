@@ -14,7 +14,7 @@ class Order < ApplicationRecord
     # Items have been deemed unavailable and hold is voided.
     REJECTED = 'rejected'.freeze,
 
-    FINALIZED = 'finalized'.freeze
+    FULFILLED = 'fulfilled'.freeze
   ].freeze
 
   STATE_EXPIRATIONS = {
@@ -28,7 +28,7 @@ class Order < ApplicationRecord
     SHIP = 'ship'.freeze
   ].freeze
 
-  ACTIONS = %i[abandon submit approve reject finalize].freeze
+  ACTIONS = %i[abandon submit approve reject fulfill].freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
   has_many :transactions, dependent: :destroy
@@ -97,7 +97,7 @@ class Order < ApplicationRecord
     machine.when(:submit, PENDING => SUBMITTED)
     machine.when(:approve, SUBMITTED => APPROVED)
     machine.when(:reject, SUBMITTED => REJECTED)
-    machine.when(:finalize, APPROVED => FINALIZED)
+    machine.when(:fulfill, APPROVED => FULFILLED)
     machine.on(:any) do
       self.state = machine.state
     end

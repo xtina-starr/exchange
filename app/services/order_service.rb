@@ -47,15 +47,15 @@ module OrderService
     raise e
   end
 
-  def self.finalize_with_one_fulfillment!(order, fulfillment, by)
+  def self.fulfill_with_one_fulfillment!(order, fulfillment, by)
     Order.transaction do
       fulfillment = Fulfillment.create!(fulfillment.slice(:courier, :tracking_id, :estimated_delivery))
       order.line_items.each do |li|
         li.line_item_fulfillments.create!(fulfillment_id: fulfillment.id)
       end
-      order.finalize!
+      order.fulfill!
       order.save!
-      PostNotificationJob.perform_later(order.id, Order::FINALIZED, by)
+      PostNotificationJob.perform_later(order.id, Order::FULFILLED, by)
     end
     order
   end
