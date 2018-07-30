@@ -1,5 +1,5 @@
 module OrderSubmitService
-  def self.submit!(order)
+  def self.submit!(order, by: nil)
     # verify price change?
     raise Errors::OrderError, "Missing info for submitting order(#{order.id})" unless can_submit?(order)
 
@@ -21,6 +21,7 @@ module OrderSubmitService
       TransactionService.create_success!(order, charge)
       order.commission_fee_cents = calculate_commission(order)
       order.save!
+      PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
     end
     order
   rescue Errors::PaymentError => e
