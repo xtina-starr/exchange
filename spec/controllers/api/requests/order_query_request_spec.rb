@@ -7,6 +7,7 @@ describe Api::GraphqlController, type: :request do
     let(:second_partner_id) { 'partner-2' }
     let(:user_id) { jwt_user_id }
     let(:second_user) { 'user2' }
+    let(:state) { 'PENDING' }
     let!(:user1_order1) { Fabricate(:order, partner_id: partner_id, user_id: user_id, updated_at: 1.day.ago, shipping_total_cents: 100_00, commission_fee_cents: 50_00) }
     let!(:user2_order1) { Fabricate(:order, partner_id: second_partner_id, user_id: second_user) }
 
@@ -51,6 +52,15 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.items_total_cents).to eq 0
         expect(result.data.order.seller_total_cents).to eq 50_00
         expect(result.data.order.buyer_total_cents).to eq 100_00
+      end
+
+      Order::STATES.each do |state|
+        # https://github.com/artsy/exchange/issues/88
+        it 'returns proper state' do
+          user1_order1.update!(state: state)
+          result = client.execute(query, id: user1_order1.id)
+          expect(result.data.order.state).to eq state.upcase
+        end
       end
     end
 
