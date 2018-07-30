@@ -209,14 +209,29 @@ For input:
 
 #### Finalize an Order
 ```graphql
-# finalize order
-mutation($input: FinalizeOrderInput!) {
-  finalizeOrder(input: $input) {
+# finalize order with one fulfillment
+mutation($input: FinalizeWithOneFulfillmentInput!) {
+  finalizeWithOneFulfillment(input: $input) {
     order {
       id
       userId
       partnerId
       state
+      lineItems{
+        edges{
+          node{
+            fulfillments{
+              edges{
+                node{
+                  courier
+                  trackingId
+                  estimatedDelivery
+                }
+              }
+            }
+          }
+        }
+      }
     }
     errors
   }
@@ -226,7 +241,11 @@ For input:
 ```json
 {
   "input": {
-    "id": "<order id>"
+    "id": "<order id>",
+    "fulfillment": {
+      "courier": "FedEx",
+      "trackingId": "track-431"
+    }
   }
 }
 ```
