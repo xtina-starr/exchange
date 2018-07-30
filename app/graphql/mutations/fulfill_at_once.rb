@@ -1,4 +1,4 @@
-class Mutations::FulfillWithOneFulfillment < Mutations::BaseMutation
+class Mutations::FulfillAtOnce < Mutations::BaseMutation
   null true
   description 'Fulfill an order with one Fulfillment, it sets this fulfillment to each line item in order'
 
@@ -12,7 +12,7 @@ class Mutations::FulfillWithOneFulfillment < Mutations::BaseMutation
     order = Order.find(id)
     validate_request!(order)
     {
-      order: OrderService.fulfill_with_one_fulfillment!(order, fulfillment.to_h, context[:current_user][:id]),
+      order: OrderService.fulfill_at_once!(order, fulfillment.to_h, context[:current_user][:id]),
       errors: []
     }
   rescue Errors::ApplicationError => e

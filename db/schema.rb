@@ -19,6 +19,7 @@ ActiveRecord::Schema.define(version: 2018_07_30_173943) do
     t.string "courier"
     t.string "tracking_id"
     t.date "estimated_delivery"
+    t.string "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end

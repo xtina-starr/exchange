@@ -210,8 +210,8 @@ For input:
 #### Fulfill an Order
 ```graphql
 # fulfill order with one fulfillment
-mutation($input: FulfillWithOneFulfillmentInput!) {
-  fulfillWithOneFulfillment(input: $input) {
+mutation($input: FulfillAtOnceInput!) {
+  fulfillAtOnce(input: $input) {
     order {
       id
       userId

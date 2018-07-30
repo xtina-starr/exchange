@@ -47,7 +47,7 @@ module OrderService
     raise e
   end
 
-  def self.fulfill_with_one_fulfillment!(order, fulfillment, by)
+  def self.fulfill_at_once!(order, fulfillment, by)
     Order.transaction do
       fulfillment = Fulfillment.create!(fulfillment.slice(:courier, :tracking_id, :estimated_delivery))
       order.line_items.each do |li|
