@@ -62,6 +62,10 @@ describe OrderSubmitService, type: :services do
         it 'sets commission_fee_cents' do
           expect(order.commission_fee_cents).to eq 8000_00
         end
+
+        it 'sets transaction_fee_cents' do
+          expect(order.transaction_fee_cents).to eq 290_30
+        end
       end
 
       context 'with an unsuccessful transaction' do
@@ -110,6 +114,12 @@ describe OrderSubmitService, type: :services do
           OrderSubmitService.calculate_commission(order)
         end.to raise_error(Errors::OrderError, /Cannot fetch partner/)
       end
+    end
+  end
+
+  describe '#calculate_transaction' do
+    it 'returns proper transaction fee' do
+      expect(OrderSubmitService.calculate_transaction_fee(order)).to eq 290_30
     end
   end
 end
