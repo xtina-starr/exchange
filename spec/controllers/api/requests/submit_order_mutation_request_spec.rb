@@ -26,7 +26,7 @@ describe Api::GraphqlController, type: :request do
       )
     end
     let(:line_item) do
-      Fabricate(:line_item, order: order, price_cents: 100_000)
+      Fabricate(:line_item, order: order, price_cents: 1000_00)
     end
 
     let(:mutation) do
