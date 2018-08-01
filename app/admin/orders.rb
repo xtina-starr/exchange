@@ -1,15 +1,25 @@
 ActiveAdmin.register Order do
-# See permitted parameters documentation:
-# https://github.com/activeadmin/activeadmin/blob/master/docs/2-resource-customization.md#setting-up-strong-parameters
-#
-# permit_params :list, :of, :attributes, :on, :model
-#
-# or
-#
-# permit_params do
-#   permitted = [:permitted, :attributes]
-#   permitted << :other if params[:action] == 'create' && current_user.admin?
-#   permitted
-# end
+  actions :all, except: %i[create update destroy new edit]
+
+  scope('Active', default: true) { |scope| scope.active }
+  scope('Pending') { |scope| scope.pending }
+
+  filter :partner_id_eq, label: 'Partner Id'
+  filter :user_id_eq, label: 'User Id'
+  filter :fulfillment_type, as: :check_boxes, collection: proc { Order::FULFILLMENT_TYPES }
+
+  index do
+    column :id
+    column :partner_id
+    column :user_id
+    column :state
+    column :fulfillment_type
+    column :shipping_country
+    column :updated_at
+    column 'Messages' do |conversation|
+      link_to conversation.messages.size, admin_conversation_messages_path(conversation)
+    end
+    actions
+  end
 
 end
