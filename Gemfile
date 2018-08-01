@@ -13,6 +13,7 @@ gem 'faraday'
 gem 'graphql'
 gem 'jwt'
 gem 'micromachine'
+gem 'money' # Library for dealing with money and currency conversion
 gem 'paper_trail'
 gem 'sidekiq'
 gem 'stripe'

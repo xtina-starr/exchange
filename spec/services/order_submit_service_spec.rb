@@ -1,9 +1,11 @@
 require 'rails_helper'
+require 'webmock/rspec'
 require 'support/gravity_helper'
 
 describe OrderSubmitService, type: :services do
   let(:partner_id) { 'partner-1' }
-  let(:order) { Fabricate(:order, partner_id: partner_id, credit_card_id: 'cc-1', fulfillment_type: Order::PICKUP) }
+  let(:credit_card_id) { 'cc-1' }
+  let(:order) { Fabricate(:order, partner_id: partner_id, credit_card_id: credit_card_id, fulfillment_type: Order::PICKUP) }
   let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00), Fabricate(:line_item, order: order, price_cents: 8000_00)] }
   let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
@@ -25,8 +27,8 @@ describe OrderSubmitService, type: :services do
       context 'with a successful transaction' do
         before(:each) do
           ActiveJob::Base.queue_adapter = :test
-          allow(OrderSubmitService).to receive(:get_merchant_account).with(order).and_return(partner_merchant_accounts.first)
-          allow(OrderSubmitService).to receive(:get_credit_card).with(order).and_return(credit_card)
+          allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
+          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
           allow(PaymentService).to receive(:authorize_charge).with(authorize_charge_params).and_return(charge_success)
           allow(TransactionService).to receive(:create_success!).with(order, charge_success)
           allow(Adapters::GravityV1).to receive(:request).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
@@ -60,12 +62,16 @@ describe OrderSubmitService, type: :services do
         it 'sets commission_fee_cents' do
           expect(order.commission_fee_cents).to eq 8000_00
         end
+
+        it 'sets transaction_fee_cents' do
+          expect(order.transaction_fee_cents).to eq 290_30
+        end
       end
 
       context 'with an unsuccessful transaction' do
         it 'creates a record of the transaction' do
-          allow(OrderSubmitService).to receive(:get_merchant_account).with(order).and_return(partner_merchant_accounts.first)
-          allow(OrderSubmitService).to receive(:get_credit_card).with(order).and_return(credit_card)
+          allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
+          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
           allow(PaymentService).to receive(:authorize_charge).with(authorize_charge_params).and_raise(Errors::PaymentError.new('some_error', charge_failure))
           allow(TransactionService).to receive(:create_failure!).with(order, charge_failure)
           expect { OrderSubmitService.submit!(order) }.to raise_error(Errors::PaymentError)
@@ -75,47 +81,18 @@ describe OrderSubmitService, type: :services do
     end
   end
 
-  describe '#get_merchant_account' do
-    it 'calls the /merchant_accounts Gravity endpoint' do
-      allow(Adapters::GravityV1).to receive(:request).with("/merchant_accounts?partner_id=#{order.partner_id}").and_return(partner_merchant_accounts)
-      OrderSubmitService.get_merchant_account(order)
-      expect(Adapters::GravityV1).to have_received(:request).with("/merchant_accounts?partner_id=#{order.partner_id}")
-    end
-
-    it "returns the first merchant account of the partner's merchant accounts" do
-      allow(Adapters::GravityV1).to receive(:request).with("/merchant_accounts?partner_id=#{order.partner_id}").and_return(partner_merchant_accounts)
-      result = OrderSubmitService.get_merchant_account(order)
-      expect(result).to be(partner_merchant_accounts.first)
-    end
-
-    it 'raises an error if the partner does not have a merchant account' do
-      allow(Adapters::GravityV1).to receive(:request).with("/merchant_accounts?partner_id=#{order.partner_id}").and_return([])
-      expect { OrderSubmitService.get_merchant_account(order) }.to raise_error(Errors::OrderError)
-    end
-  end
-
-  describe '#get_credit_card' do
-    it 'calls the /credit_card Gravity endpoint and validates the credit card' do
-      allow(Adapters::GravityV1).to receive(:request).with("/credit_card/#{order.credit_card_id}").and_return(credit_card)
-      allow(OrderSubmitService).to receive(:validate_credit_card).with(credit_card)
-      OrderSubmitService.get_credit_card(order)
-      expect(Adapters::GravityV1).to have_received(:request).with("/credit_card/#{order.credit_card_id}")
-      expect(OrderSubmitService).to have_received(:validate_credit_card).with(credit_card)
-    end
-  end
-
-  describe '#validate_credit_card' do
+  describe '#validate_credit_card!' do
     it 'raises an error if the credit card does not have an external id' do
-      expect { OrderSubmitService.validate_credit_card(customer_account: { external_id: 'cust-1' }, deactivated_at: nil) }.to raise_error(Errors::OrderError)
+      expect { OrderSubmitService.validate_credit_card!(customer_account: { external_id: 'cust-1' }, deactivated_at: nil) }.to raise_error(Errors::OrderError)
     end
 
     it 'raises an error if the credit card does not have a customer id' do
-      expect { OrderSubmitService.validate_credit_card(external_id: 'cc-1') }.to raise_error(Errors::OrderError)
-      expect { OrderSubmitService.validate_credit_card(external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil) }.to raise_error(Errors::OrderError)
+      expect { OrderSubmitService.validate_credit_card!(external_id: 'cc-1') }.to raise_error(Errors::OrderError)
+      expect { OrderSubmitService.validate_credit_card!(external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil) }.to raise_error(Errors::OrderError)
     end
 
     it 'raises an error if the card is deactivated' do
-      expect { OrderSubmitService.validate_credit_card(external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 'today') }.to raise_error(Errors::OrderError)
+      expect { OrderSubmitService.validate_credit_card!(external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 'today') }.to raise_error(Errors::OrderError)
     end
   end
 
@@ -137,6 +114,12 @@ describe OrderSubmitService, type: :services do
           OrderSubmitService.calculate_commission(order)
         end.to raise_error(Errors::OrderError, /Cannot fetch partner/)
       end
+    end
+  end
+
+  describe '#calculate_transaction' do
+    it 'returns proper transaction fee' do
+      expect(OrderSubmitService.calculate_transaction_fee(order)).to eq 290_30
     end
   end
 end
