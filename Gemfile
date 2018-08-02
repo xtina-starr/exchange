@@ -7,6 +7,8 @@ gem 'rails', '5.2.0'
 gem 'pg'
 gem 'puma'
 
+gem 'activeadmin'
+gem 'artsy-auth'
 gem 'artsy-eventservice'
 gem 'dalli'
 gem 'faraday'

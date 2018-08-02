@@ -5,8 +5,8 @@ Exchange aspires to be responsible for the various types of e-commerce interacti
 ## Meta
 
 * State: development
-* Production:
-* Staging: https://exchange-staging.artsy.net
+* Production: https://exchange.artsy.net, [Admin Dashboard](https://exchange.artsy.net/admin)
+* Staging: https://exchange-staging.artsy.net, [Admin Dashboard](https://exchange-staging.artsy.net/admin)
 * GitHub: https://github.com/artsy/exchange/
 * Point People: [@ashkan18][ashkan18], [@williardx][williardx]
 

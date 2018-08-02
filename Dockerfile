@@ -1,6 +1,6 @@
 FROM bitnami/ruby:2.5.1
 
-RUN install_packages libpq-dev
+RUN install_packages libpq-dev nodejs
 # Install packages
 RUN gem install bundler
 

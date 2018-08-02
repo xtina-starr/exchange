@@ -1,0 +1,8 @@
+development: &default
+  artsy_api_url: <%= ENV['GRAVITY_API_ROOT'] %>
+  application_id: <%= ENV['EXCHANGE_APP_ID'] %>
+  application_secret: <%= ENV['EXCHANGE_APP_SECRET'] %>
+test:
+  <<: *default
+production:
+  <<: *default
