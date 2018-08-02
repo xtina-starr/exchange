@@ -40,7 +40,7 @@ class Order < ApplicationRecord
   before_save :set_currency_code
 
   scope :pending, -> { where(state: PENDING) }
-  scope :active, -> { where(state: [SUBMITTED, APPROVED])}
+  scope :active, -> { where(state: [SUBMITTED, APPROVED]) }
 
   ACTIONS.each do |action|
     define_method "#{action}!" do

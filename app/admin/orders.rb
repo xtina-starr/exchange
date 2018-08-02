@@ -13,13 +13,11 @@ ActiveAdmin.register Order do
     column :partner_id
     column :user_id
     column :state
+    column :items_total_cents
+    column :currency
     column :fulfillment_type
     column :shipping_country
     column :updated_at
-    column 'Messages' do |conversation|
-      link_to conversation.messages.size, admin_conversation_messages_path(conversation)
-    end
-    actions
   end
 
 end
