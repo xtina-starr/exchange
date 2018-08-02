@@ -4,27 +4,39 @@ module AuthHandler
       protected
 
       def authenticate_request!
-        @current_user = auth_token.with_indifferent_access.merge(id: auth_token[:sub])
+        jwt = get_jwt(request.headers)
+        decoded_jwt = decode_token(jwt).with_indifferent_access
+        @current_user = get_current_user(decoded_jwt)
       rescue JWT::DecodeError # includes verification error too
         render json: { errors: ['Not Authenticated'] }, status: :unauthorized
       end
 
+      def valid_admin?(token)
+        decoded_jwt = decode_token(token).with_indifferent_access
+        if admin_access?(decoded_jwt)
+          @current_user = get_current_user(decoded_jwt)
+          true
+        else
+          false
+        end
+      end
+
       private
 
-      def http_token
-        @http_token ||= request.headers['Authorization']&.split(' ')&.last
+      def get_jwt(headers)
+        headers['Authorization']&.split(' ')&.last
       end
 
-      def auth_token
-        @auth_token ||= decode_token.with_indifferent_access
+      def get_current_user(token)
+        token.merge(id: token[:sub])
       end
 
-      def user_id_in_token?
-        http_token && auth_token && auth_token['sub']
+      def decode_token(jwt)
+        JWT.decode(jwt, Rails.application.config_for(:jwt)['hmac_secret'], true, algorithm: 'HS256')[0]
       end
 
-      def decode_token
-        JWT.decode(http_token, Rails.application.config_for(:jwt)['hmac_secret'], true, algorithm: 'HS256')[0]
+      def admin_access?(decoded_token)
+        decoded_token[:roles].include? 'sales_admin'
       end
     end
   end
