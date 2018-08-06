@@ -56,15 +56,15 @@ mv schema.graphql exchange.graphql
 3) copy file above to your local update Metaphysics under `src/data` and make a PR to Metaphysics with this change
 
 
-## Talking to Exchange 🤑
-In order to talk to Exchange GraphQL endpoint:
-- Copy `.env.example` to `.env`
-- Install `dotenv` by `gem install dotenv`
-- Start local server `dotenv rails s`
+## Working with Exchange 🤑
+In order to talk to Exchange's GraphQL endpoint, you need to be authenticated:
+- Copy `.env.example` to `.env`.
+- Install `dotenv` by `gem install dotenv`.
+- Start local server `dotenv rails s`.
 - If you work at Artsy, get proper Gravity User Token following [this](https://github.com/artsy/gravity/blob/master/doc/ApiAuthentication.md#fetching-a-jwt-for-the-target-service).
-- Install and run [GraphiQL](https://github.com/skevy/graphiql-app) app `brew cask install graphiql`
-- In GraphiQL app, go to http://localhost:300/api/graphql, you should ge unauthorized error
-- Edit HTTP Headers and add `Authorization` header and set it to `Bearer <token>` where `<token>` is your Gravity token generated few steps above.
+- Install and run [GraphiQL](https://github.com/skevy/graphiql-app) app: `brew cask install graphiql`.
+- In GraphiQL app, go to http://localhost:300/api/graphql, you should get an `"Not Authenticated"` error.
+- Edit this tab's HTTP Headers and add `Authorization` header and set it to `Bearer <token>` where `<token>` is your Gravity token generated few steps above.
 
 ## Order Lifecycle
 

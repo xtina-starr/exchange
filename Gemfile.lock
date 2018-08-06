@@ -49,10 +49,13 @@ GEM
     artsy-eventservice (1.0.8)
       bunny
     ast (2.4.0)
+    binding_of_caller (0.8.0)
+      debug_inspector (>= 0.0.1)
     builder (3.2.3)
     bunny (2.11.0)
       amq-protocol (~> 2.3.0)
     byebug (10.0.2)
+    coderay (1.1.2)
     concurrent-ruby (1.0.5)
     connection_pool (2.2.2)
     crack (0.4.3)
@@ -60,6 +63,7 @@ GEM
     crass (1.0.4)
     dalli (2.7.8)
     dante (0.2.0)
+    debug_inspector (0.0.3)
     diff-lcs (1.3)
     erubi (1.7.1)
     fabrication (2.20.1)
@@ -115,6 +119,12 @@ GEM
       ast (~> 2.4.0)
     pg (1.0.0)
     powerpack (0.1.2)
+    pry (0.11.3)
+      coderay (~> 1.1.0)
+      method_source (~> 0.9.0)
+    pry-stack_explorer (0.4.9.2)
+      binding_of_caller (>= 0.7)
+      pry (>= 0.9.11)
     public_suffix (3.0.2)
     puma (3.11.4)
     rack (2.0.5)
@@ -229,6 +239,8 @@ DEPENDENCIES
   micromachine
   paper_trail
   pg
+  pry
+  pry-stack_explorer
   puma
   rails (= 5.2.0)
   rspec-rails
@@ -242,4 +254,4 @@ RUBY VERSION
    ruby 2.5.1p57
 
 BUNDLED WITH
-   1.16.2
+   1.16.3

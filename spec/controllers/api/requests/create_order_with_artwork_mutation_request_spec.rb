@@ -19,12 +19,21 @@ describe Api::GraphqlController, type: :request do
       <<-GRAPHQL
         mutation($input: CreateOrderWithArtworkInput!) {
           createOrderWithArtwork(input: $input) {
-            order {
-              id
-              userId
-              partnerId
+            orderOrError {
+              ... on CreateOrderWithArtworkMutationSucesss {
+                order {
+                  id
+                  userId
+                  partnerId
+                }
+              }
+              ... on CreateOrderWithArtworkMutationFailure {
+                error {
+                  description
+                  code
+                }
+              }
             }
-            errors
           }
         }
       GRAPHQL

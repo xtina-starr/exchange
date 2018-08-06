@@ -26,6 +26,8 @@ end
 
 group :development do
   gem 'listen'
+  gem 'pry'
+  gem 'pry-stack_explorer'
 end
 
 group :test do
