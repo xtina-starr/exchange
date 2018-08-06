@@ -1,4 +1,10 @@
 module SalesTaxService
+  REMITTING_STATES = %w[
+    wa
+    nj
+    pa
+  ].freeze
+
   def self.calculate_total_sales_tax(order, fulfillment_type, shipping_address)
     origin_address = GravityService.fetch_partner_location(order.partner_id)
     destination_address = fulfillment_type == Order::PICKUP ? origin_address : shipping_address
@@ -14,13 +20,6 @@ module SalesTaxService
   end
 
   def self.artsy_should_remit_taxes?(destination_address)
-    remitting_states = %w[
-      wa
-      ca
-      nj
-      pa
-      tx
-    ]
-    remitting_states.include? destination_address[:shipping_region]
+    REMITTING_STATES.include? destination_address[:shipping_region]
   end
 end
