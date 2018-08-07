@@ -1,3 +1,4 @@
+require 'taxjar'
 module SalesTaxService
   REMITTING_STATES = %w[
     wa
@@ -5,18 +6,36 @@ module SalesTaxService
     pa
   ].freeze
 
-  def self.calculate_total_sales_tax(order, fulfillment_type, shipping_address)
+  def self.calculate_total_sales_tax(order, fulfillment_type, shipping_address, shipping_total_cents)
     origin_address = GravityService.fetch_partner_location(order.partner_id)
     destination_address = fulfillment_type == Order::PICKUP ? origin_address : shipping_address
-    order.line_items.map { |li| fetch_sales_tax(li.price_cents, origin_address, destination_address) }.sum
-  rescue StandardError => e
-    # TODO: 🚨 Add in proper error handling 🚨
-    raise Errors::ApplicationError, e.message
+    tax = fetch_sales_tax(order, origin_address, destination_address, shipping_total_cents)
+    tax.amount_to_collect
+  rescue Taxjar::Error => e
+    raise Errors::OrderError, e.message
   end
 
-  def self.fetch_sales_tax(_price_cents, _origin_address, _destination_address)
-    # TODO: 🚨 Add in sales tax API call 🚨
-    100
+  def self.fetch_sales_tax(order, origin_address, destination_address, shipping_total_cents)
+    client = Taxjar::Client.new(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key'])
+    line_items = order.line_items.map { |li| {
+      id: li.id,
+      quantity: li.quantity,
+      unit_price: li.price_cents
+    } }
+    client.tax_for_order({
+      from_country: origin_address[:country],
+      from_zip: origin_address[:postal_code],
+      from_state: origin_address[:state],
+      from_city: origin_address[:city],
+      from_street: origin_address[:address],
+      to_country: destination_address[:shipping_country],
+      to_zip: destination_address[:shipping_postal_code],
+      to_state: destination_address[:shipping_region],
+      to_city: destination_address[:shipping_city],
+      to_street: destination_address[:shipping_address_line1],
+      shipping: shipping_total_cents,
+      line_items: line_items
+    })
   end
 
   def self.artsy_should_remit_taxes?(destination_address)
