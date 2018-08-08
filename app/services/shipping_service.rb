@@ -4,6 +4,7 @@ module ShippingService
     return 0 if Rails.application.config_for(:dev_features)['disable_shipping_calculation']
     artwork = ArtworkService.find(line_item.artwork_id)
     raise Errors::OrderError, 'Cannot calculate shipping, unknown artwork' unless artwork
+    raise Errors::OrderError, 'Cannot calculate shipping, missing artwork location' if artwork[:location].blank?
 
     if fulfillment_type == Order::PICKUP
       0

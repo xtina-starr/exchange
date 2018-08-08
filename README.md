@@ -118,7 +118,7 @@ For input:
   "input": {
     "id": "<order id>",
     "fulfillmentType": "SHIP/PICKUP",
-    "shippingAddresLine1": "",
+    "shippingAddressLine1": "",
     "shippingAddressLine2": "",
     "shippingCity": "",
     "shippingRegion": "",
