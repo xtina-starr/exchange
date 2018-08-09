@@ -8,8 +8,6 @@ module Adapters
       raise GravityNotFoundError if response.status == 404
       raise GravityError, "couldn't perform request! Response was #{response.status}." unless response.success?
       JSON.parse(response.body, symbolize_names: true)
-    rescue StandardError => e
-      raise GravityError, e.message
     end
 
     def self.headers

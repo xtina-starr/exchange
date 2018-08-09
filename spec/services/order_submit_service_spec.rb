@@ -112,7 +112,7 @@ describe OrderSubmitService, type: :services do
       it 'raises OrderError' do
         expect do
           OrderSubmitService.calculate_commission(order)
-        end.to raise_error(Errors::OrderError, /Cannot fetch partner/)
+        end.to raise_error(Errors::OrderError, /Unable to find partner/)
       end
     end
   end
