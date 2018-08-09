@@ -105,16 +105,6 @@ describe OrderSubmitService, type: :services do
         expect(OrderSubmitService.calculate_commission(order)).to eq 8000_00.0
       end
     end
-    context 'with failed gravity call' do
-      before do
-        stub_request(:get, %r{partner\/#{partner_id}}).to_return(status: 404, body: { error: 'not found' }.to_json)
-      end
-      it 'raises OrderError' do
-        expect do
-          OrderSubmitService.calculate_commission(order)
-        end.to raise_error(Errors::OrderError, /Unable to find partner/)
-      end
-    end
   end
 
   describe '#calculate_transaction' do
