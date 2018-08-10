@@ -9,27 +9,20 @@ module OrderService
 
   def self.set_shipping!(order, attributes)
     raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
-
-    shipping_address = attributes.slice(
-      :shipping_address_line1,
-      :shipping_address_line2,
-      :shipping_city,
-      :shipping_region,
-      :shipping_country,
-      :shipping_postal_code
-    )
     Order.transaction do
-      shipping_total_cents = order.line_items.map { |li| ShippingService.calculate_shipping(li, attributes.slice(:shipping_country, :fulfillment_type)) }.sum
-      attrs = {
-        shipping_total_cents: shipping_total_cents
-        tax_total_cents: SalesTaxService.calculate_total_sales_tax(order, attributes[:fulfillment_type], shipping_address, shipping_total_cents)
-      }
-      order.update!(
-        attrs.merge(
-          **shipping_address,
-          **attributes.slice(:fulfillment_type)
-        )
-      )
+      attributes[:shipping_total_cents] = order.line_items.map { |li| ShippingService.calculate_shipping(li, attributes.slice(:shipping_country, :fulfillment_type)) }.sum
+      attributes[:tax_total_cents] = SalesTaxService.calculate_total_sales_tax(order, attributes)
+      order.update!(attributes.slice(
+        :shipping_address_line1,
+        :shipping_address_line2,
+        :shipping_city,
+        :shipping_region,
+        :shipping_country,
+        :shipping_postal_code,
+        :fulfillment_type,
+        :shipping_total_cents,
+        :tax_total_cents        
+      ))
     end
     order
   end
