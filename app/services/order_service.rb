@@ -64,8 +64,10 @@ module OrderService
   def self.reject!(order)
     Order.transaction do
       order.reject!
+      refund = PaymentService.refund_charge(order.external_charge_id)
+      order.external_refund_id = refund.id
+      TransactionService.create_success!(order, refund)
       order.save!
-      # TODO: release the charge
     end
     order
   end

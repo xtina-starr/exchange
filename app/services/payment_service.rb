@@ -40,4 +40,17 @@ module PaymentService
     }
     raise Errors::PaymentError.new(e.message, failed_charge)
   end
+
+  def self.refund_charge(charge_id)
+    refund = Stripe::Refund.create(charge: charge_id)
+    refund.transaction_type = Transaction::REFUND
+    refund
+  rescue Stripe::StripeError => e
+    body = e.json_body[:error]
+    failed_refund = {
+      transaction_type: Transaction::REFUND
+    }
+    raise Errors::PaymentError.new(e.message, failed_refund)
+  end
+
 end
