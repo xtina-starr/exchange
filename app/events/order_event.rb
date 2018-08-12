@@ -1,5 +1,5 @@
 class OrderEvent < Events::BaseEvent
-  TOPIC = 'ecommerce'.freeze
+  TOPIC = 'commerce'.freeze
 
   def self.post(order, action, user_id)
     event = new(user: user_id, action: action, model: order)
@@ -20,18 +20,12 @@ class OrderEvent < Events::BaseEvent
       items_total_cents: @object.items_total_cents,
       line_items: @object.line_items.map { |li| line_item_detail(li) },
       partner_id: @object.partner_id,
-      shipping_info: shipping_info(@object),
+      shipping_address_line1: @object.shipping_address_line1,
+      shipping_city: @object.shipping_city,
+      shipping_country: @object.shipping_country,
+      shipping_postal_code: @object.shipping_postal_code,
       state: @object.state,
       updated_at: @object.updated_at
-    }
-  end
-
-  def shipping_info(order)
-    {
-      shipping_address_line1: order.shipping_address_line1,
-      shipping_city: order.shipping_city,
-      shipping_country: order.shipping_country,
-      shipping_postal_code: order.shipping_postal_code
     }
   end
 

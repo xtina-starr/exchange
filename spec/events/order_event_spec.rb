@@ -22,7 +22,7 @@ describe OrderEvent, type: :events do
 
   describe 'post' do
     it 'calls ArtsyEventService to post event' do
-      expect(Artsy::EventService).to receive(:post_event).with(topic: 'ecommerce', event: instance_of(OrderEvent))
+      expect(Artsy::EventService).to receive(:post_event).with(topic: 'commerce', event: instance_of(OrderEvent))
       OrderEvent.post(order, Order::SUBMITTED, user_id)
     end
   end
@@ -49,7 +49,10 @@ describe OrderEvent, type: :events do
       expect(event.properties[:updated_at]).not_to be_nil
       expect(event.properties[:created_at]).not_to be_nil
       expect(event.properties[:line_items].count).to eq 2
-      expect(event.properties[:shipping_info]).to eq shipping_info
+      expect(event.properties[:shipping_address_line1]).to eq shipping_info[:shipping_address_line1]
+      expect(event.properties[:shipping_city]).to eq shipping_info[:shipping_city]
+      expect(event.properties[:shipping_country]).to eq shipping_info[:shipping_country]
+      expect(event.properties[:shipping_postal_code]).to eq shipping_info[:shipping_postal_code]
     end
   end
 end
