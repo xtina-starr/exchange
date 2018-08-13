@@ -1,5 +1,5 @@
 class OrderEvent < Events::BaseEvent
-  TOPIC = 'BNMO'.freeze
+  TOPIC = 'commerce'.freeze
 
   def self.post(order, action, user_id)
     event = new(user: user_id, action: action, model: order)
@@ -15,13 +15,17 @@ class OrderEvent < Events::BaseEvent
   def properties
     {
       code: @object.code,
-      partner_id: @object.partner_id,
+      created_at: @object.created_at,
       currency_code: @object.currency_code,
-      state: @object.state,
       items_total_cents: @object.items_total_cents,
       line_items: @object.line_items.map { |li| line_item_detail(li) },
-      updated_at: @object.updated_at,
-      created_at: @object.created_at
+      partner_id: @object.partner_id,
+      shipping_address_line1: @object.shipping_address_line1,
+      shipping_city: @object.shipping_city,
+      shipping_country: @object.shipping_country,
+      shipping_postal_code: @object.shipping_postal_code,
+      state: @object.state,
+      updated_at: @object.updated_at
     }
   end
 

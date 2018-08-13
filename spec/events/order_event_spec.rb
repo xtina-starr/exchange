@@ -3,7 +3,15 @@ require 'rails_helper'
 describe OrderEvent, type: :events do
   let(:partner_id) { 'partner-1' }
   let(:user_id) { 'user-1' }
-  let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id, currency_code: 'usd') }
+  let(:shipping_info) do
+    {
+      shipping_address_line1: '123 Main St',
+      shipping_city: 'Chicago',
+      shipping_country: 'USA',
+      shipping_postal_code: '60618'
+    }
+  end
+  let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id, currency_code: 'usd', **shipping_info) }
   let!(:line_items) do
     [
       Fabricate(:line_item, price_cents: 200, order: order),
@@ -14,7 +22,7 @@ describe OrderEvent, type: :events do
 
   describe 'post' do
     it 'calls ArtsyEventService to post event' do
-      expect(Artsy::EventService).to receive(:post_event).with(topic: 'BNMO', event: instance_of(OrderEvent))
+      expect(Artsy::EventService).to receive(:post_event).with(topic: 'commerce', event: instance_of(OrderEvent))
       OrderEvent.post(order, Order::SUBMITTED, user_id)
     end
   end
@@ -41,6 +49,10 @@ describe OrderEvent, type: :events do
       expect(event.properties[:updated_at]).not_to be_nil
       expect(event.properties[:created_at]).not_to be_nil
       expect(event.properties[:line_items].count).to eq 2
+      expect(event.properties[:shipping_address_line1]).to eq shipping_info[:shipping_address_line1]
+      expect(event.properties[:shipping_city]).to eq shipping_info[:shipping_city]
+      expect(event.properties[:shipping_country]).to eq shipping_info[:shipping_country]
+      expect(event.properties[:shipping_postal_code]).to eq shipping_info[:shipping_postal_code]
     end
   end
 end

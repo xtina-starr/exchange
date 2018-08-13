@@ -73,6 +73,10 @@ class Order < ApplicationRecord
     credit_card_id.present?
   end
 
+  def to_s
+    "Order #{id}"
+  end
+
   private
 
   def set_code
