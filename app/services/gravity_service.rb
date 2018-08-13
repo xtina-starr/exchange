@@ -3,6 +3,10 @@ module GravityService
     Rails.cache.fetch("gravity_partner_#{partner_id}", expire_in: Rails.application.config_for(:gravity)['partner_cache_in_seconds']) do
       Adapters::GravityV1.request("/partner/#{partner_id}/all")
     end
+  rescue Adapters::GravityNotFoundError
+    raise Errors::OrderError, 'Unable to find partner'
+  rescue Adapters::GravityError, StandardError => e
+    raise Errors::OrderError, e.message
   end
 
   def self.get_merchant_account(partner_id)
@@ -11,7 +15,7 @@ module GravityService
     merchant_account
   rescue Adapters::GravityNotFoundError
     raise Errors::OrderError, 'Unable to find partner or merchant account'
-  rescue Adapters::GravityError => e
+  rescue Adapters::GravityError, StandardError => e
     raise Errors::OrderError, e.message
   end
 
@@ -19,7 +23,14 @@ module GravityService
     Adapters::GravityV1.request("/credit_card/#{credit_card_id}")
   rescue Adapters::GravityNotFoundError
     raise Errors::OrderError, 'Credit card not found'
-  rescue Adapters::GravityError => e
+  rescue Adapters::GravityError, StandardError => e
     raise Errors::OrderError, e.message
+  end
+
+  def self.get_artwork(artwork_id)
+    Adapters::GravityV1.request("/artwork/#{artwork_id}")
+  rescue Adapters::GravityError, StandardError => e
+    Rails.logger.warn("Could not fetch artwork #{artwork_id} from gravity: #{e.message}")
+    nil
   end
 end
