@@ -74,4 +74,19 @@ describe GravityService, type: :services do
       end
     end
   end
+
+  describe '#get_artwork' do
+    let(:artwork_id) { 'some-id' }
+    it 'calls the /artwork endpoint' do
+      allow(Adapters::GravityV1).to receive(:request).with("/artwork/#{artwork_id}")
+      GravityService.get_artwork(artwork_id)
+      expect(Adapters::GravityV1).to have_received(:request).with("/artwork/#{artwork_id}")
+    end
+    context 'with failed gravity call' do
+      it 'returns nil' do
+        expect(Adapters::GravityV1).to receive(:request).and_raise(Adapters::GravityError, 'timeout')
+        expect(GravityService.get_artwork(artwork_id)).to be_nil
+      end
+    end
+  end
 end

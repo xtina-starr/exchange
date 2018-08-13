@@ -1,6 +1,6 @@
 module CreateOrderService
   def self.with_artwork!(user_id:, artwork_id:, edition_set_id: nil, quantity:)
-    artwork = get_artwork(artwork_id)
+    artwork = GravityService.get_artwork(artwork_id)
     raise Errors::OrderError, "Unknown artwork #{artwork_id}" if artwork.nil? || (edition_set_id && !find_edition_set(artwork, edition_set_id))
 
     Order.transaction do
@@ -13,13 +13,6 @@ module CreateOrderService
       )
       order
     end
-  end
-
-  def self.get_artwork(artwork_id)
-    Adapters::GravityV1.request("/artwork/#{artwork_id}")
-  rescue Adapters::GravityError, StandardError => e
-    Rails.logger.warn("Could not fetch artwork #{artwork_id} from gravity: #{e.message}")
-    nil
   end
 
   def self.artwork_price(external_artwork, edition_set_id: nil)

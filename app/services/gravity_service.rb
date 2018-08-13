@@ -26,4 +26,11 @@ module GravityService
   rescue Adapters::GravityError, StandardError => e
     raise Errors::OrderError, e.message
   end
+
+  def self.get_artwork(artwork_id)
+    Adapters::GravityV1.request("/artwork/#{artwork_id}")
+  rescue Adapters::GravityError, StandardError => e
+    Rails.logger.warn("Could not fetch artwork #{artwork_id} from gravity: #{e.message}")
+    nil
+  end
 end
