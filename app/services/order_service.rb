@@ -65,9 +65,11 @@ module OrderService
     Order.transaction do
       order.reject!
       refund = PaymentService.refund_charge(order.external_charge_id)
-      order.external_refund_id = refund.id
       TransactionService.create_success!(order, refund)
       order.save!
+    rescue Errors::PaymentError => e
+      TransactionService.create_failure!(order, e.body)
+      Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
     end
     order
   end
