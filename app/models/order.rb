@@ -28,12 +28,6 @@ class Order < ApplicationRecord
     SHIP = 'ship'.freeze
   ].freeze
 
-  REJECTION_REASONS = [
-    EXPIRED = 'expired'.freeze,
-    CANCELED = 'canceled'.freeze,
-    FRAUDULENT = 'fraudulent'.freeze
-  ]
-
   ACTIONS = %i[abandon submit approve reject fulfill].freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
