@@ -50,7 +50,7 @@ module PaymentService
     failed_refund = {
       id: charge_id,
       failure_code: body[:code],
-      failure_message: body[:message]
+      failure_message: body[:message],
       transaction_type: Transaction::REFUND
     }
     raise Errors::PaymentError.new(e.message, failed_refund)

@@ -19,6 +19,15 @@ RSpec.shared_context 'use stripe mock' do
       capture: false
     )
   end
+  let(:captured_charge) do
+    Stripe::Charge.create(
+      amount: 22_222,
+      currency: 'usd',
+      source: stripe_helper.generate_card_token,
+      destination: 'ma-1',
+      capture: true
+    )
+  end
 end
 
 RSpec.configure do |rspec|
