@@ -86,6 +86,7 @@ module OrderService
     rescue Errors::PaymentError => e
       TransactionService.create!(order, e.body)
       Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
+      raise e
     end
     order
   end
