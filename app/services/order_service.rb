@@ -37,13 +37,23 @@ module OrderService
     order.with_lock do
       order.approve!
       charge = PaymentService.capture_charge(order.external_charge_id)
-      TransactionService.create_success!(order, charge)
+      transaction = {
+        external_id: charge.id,
+        source_id: charge.source,
+        destination_id: charge.destination,
+        amount_cents: charge.amount,
+        failure_code: charge.failure_code,
+        failure_message: charge.failure_message,
+        transaction_type: charge.transaction_type,
+        status: Transaction::SUCCESS
+      }
+      TransactionService.create!(order, transaction)
       order.save!
       PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
     end
     order
   rescue Errors::PaymentError => e
-    TransactionService.create_failure!(order, e.body)
+    TransactionService.create!(order, e.body)
     Rails.logger.error("Could not approve order #{order.id}: #{e.message}")
     raise e
   end
@@ -65,10 +75,16 @@ module OrderService
     Order.transaction do
       order.reject!
       refund = PaymentService.refund_charge(order.external_charge_id)
-      TransactionService.create_success!(order, refund)
+      transaction = {
+        external_id: order.external_charge_id,
+        amount_cents: refund.amount,
+        transaction_type: Transaction::REFUND,
+        status: Transaction::SUCCESS
+      }
+      TransactionService.create!(order, transaction)
       order.save!
     rescue Errors::PaymentError => e
-      TransactionService.create_failure!(order, e.body)
+      TransactionService.create!(order, e.body)
       Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
     end
     order

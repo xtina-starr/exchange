@@ -3,14 +3,14 @@ require 'webmock/rspec'
 require 'support/gravity_helper'
 
 describe OrderSubmitService, type: :services do
+  include_context 'use stripe mock'
+
   let(:partner_id) { 'partner-1' }
   let(:credit_card_id) { 'cc-1' }
   let(:order) { Fabricate(:order, partner_id: partner_id, credit_card_id: credit_card_id, fulfillment_type: Order::PICKUP) }
   let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00), Fabricate(:line_item, order: order, price_cents: 8000_00)] }
-  let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil } }
+  let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
-  let(:charge_success) { { id: 'ch-1' } }
-  let(:charge_failure) { { failure_message: 'some_error' } }
   let(:partner_merchant_accounts) { [{ external_id: 'ma-1' }, { external_id: 'some_account' }] }
   let(:authorize_charge_params) do
     {
@@ -29,17 +29,14 @@ describe OrderSubmitService, type: :services do
           ActiveJob::Base.queue_adapter = :test
           allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
           allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-          allow(PaymentService).to receive(:authorize_charge).with(authorize_charge_params).and_return(charge_success)
-          allow(TransactionService).to receive(:create_success!).with(order, charge_success)
           allow(Adapters::GravityV1).to receive(:request).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
           OrderSubmitService.submit!(order)
         end
-        it 'authorizes a charge for the full amount of the order' do
-          expect(PaymentService).to have_received(:authorize_charge).with(authorize_charge_params)
-        end
 
         it 'creates a record of the transaction' do
-          expect(TransactionService).to have_received(:create_success!).with(order, charge_success)
+          expect(order.transactions.last.external_id).not_to be_nil
+          expect(order.transactions.last.transaction_type).to eq Transaction::HOLD
+          expect(order.transactions.last.status).to eq Transaction::SUCCESS
         end
 
         it 'updates the order expiration time' do
@@ -52,7 +49,7 @@ describe OrderSubmitService, type: :services do
         end
 
         it 'updates external_charge_id with the id of the charge' do
-          expect(order.external_charge_id).to eq(charge_success[:id])
+          expect(order.external_charge_id).not_to be_nil
         end
 
         it 'queues a job for posting event' do
@@ -70,12 +67,12 @@ describe OrderSubmitService, type: :services do
 
       context 'with an unsuccessful transaction' do
         it 'creates a record of the transaction' do
+          StripeMock.prepare_card_error(:card_declined, :new_charge)
           allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
           allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-          allow(PaymentService).to receive(:authorize_charge).with(authorize_charge_params).and_raise(Errors::PaymentError.new('some_error', charge_failure))
-          allow(TransactionService).to receive(:create_failure!).with(order, charge_failure)
           expect { OrderSubmitService.submit!(order) }.to raise_error(Errors::PaymentError)
-          expect(TransactionService).to have_received(:create_failure!).with(order, charge_failure)
+          expect(order.transactions.last.transaction_type).to eq Transaction::HOLD
+          expect(order.transactions.last.status).to eq Transaction::FAILURE
         end
       end
     end

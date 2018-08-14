@@ -20,7 +20,8 @@ module PaymentService
       destination_id: destination_id,
       failure_code: body[:code],
       failure_message: body[:message],
-      transaction_type: Transaction::HOLD
+      transaction_type: Transaction::HOLD,
+      status: Transaction::FAILURE
     }
     raise Errors::PaymentError.new(e.message, failed_charge)
   end
@@ -36,7 +37,8 @@ module PaymentService
       id: charge_id,
       failure_code: body[:code],
       failure_message: body[:message],
-      transaction_type: Transaction::CAPTURE
+      transaction_type: Transaction::CAPTURE,
+      status: Transaction::FAILURE
     }
     raise Errors::PaymentError.new(e.message, failed_charge)
   end
@@ -51,7 +53,8 @@ module PaymentService
       id: charge_id,
       failure_code: body[:code],
       failure_message: body[:message],
-      transaction_type: Transaction::REFUND
+      transaction_type: Transaction::REFUND,
+      status: Transaction::FAILURE
     }
     raise Errors::PaymentError.new(e.message, failed_refund)
   end
