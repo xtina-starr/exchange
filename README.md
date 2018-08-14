@@ -61,7 +61,7 @@ In order to talk to Exchange GraphQL endpoint:
 - Copy `.env.example` to `.env`
 - Install `dotenv` by `gem install dotenv`
 - Start local server `dotenv rails s`
-- If you work at Artsy, get proper Gravity User Token following [this](https://github.com/artsy/gravity/blob/master/doc/ApiAuthentication.md#fetching-a-jwt-for-the-target-service).
+- If you work at Artsy, get proper Gravity User Token following [this](https://github.com/artsy/gravity/blob/master/doc/ApiAuthentication.md#fetching-a-user-jwt-for-the-target-service).
 - Install and run [GraphiQL](https://github.com/skevy/graphiql-app) app `brew cask install graphiql`
 - In GraphiQL app, go to http://localhost:300/api/graphql, you should ge unauthorized error
 - Edit HTTP Headers and add `Authorization` header and set it to `Bearer <token>` where `<token>` is your Gravity token generated few steps above.
