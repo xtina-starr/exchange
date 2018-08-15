@@ -84,7 +84,7 @@ describe PaymentService, type: :services do
         expect(e.body[:external_id]).to eq captured_charge.id
         expect(e.body[:failure_code]).not_to eq nil
         expect(e.body[:failure_message]).not_to eq nil
-        expect(e.body[:transaction_type]).to eq Transaction::REFUND        
+        expect(e.body[:transaction_type]).to eq Transaction::REFUND
       end)
     end
   end

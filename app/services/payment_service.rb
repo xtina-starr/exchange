@@ -58,5 +58,4 @@ module PaymentService
     }
     raise Errors::PaymentError.new(e.message, failed_refund)
   end
-
 end

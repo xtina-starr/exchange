@@ -5,7 +5,7 @@ describe OrderService, type: :services do
   include_context 'use stripe mock'
   describe '#reject!' do
     before do
-      order.update_attributes! state: Order::SUBMITTED
+      order.update! state: Order::SUBMITTED
     end
     context 'with a successful refund' do
       it 'records the transaction' do

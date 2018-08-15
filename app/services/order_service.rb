@@ -72,25 +72,23 @@ module OrderService
   end
 
   def self.reject!(order)
-    Order.transaction do
-      order.with_lock do
-        order.reject!
-        refund = PaymentService.refund_charge(order.external_charge_id)
-        transaction = {
-          external_id: order.external_charge_id,
-          amount_cents: refund.amount,
-          transaction_type: Transaction::REFUND,
-          status: Transaction::SUCCESS
-        }
-        TransactionService.create!(order, transaction)
-        order.save!
-      end
-    rescue Errors::PaymentError => e
-      TransactionService.create!(order, e.body)
-      Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
-      raise e
+    order.with_lock do
+      order.reject!
+      refund = PaymentService.refund_charge(order.external_charge_id)
+      transaction = {
+        external_id: order.external_charge_id,
+        amount_cents: refund.amount,
+        transaction_type: Transaction::REFUND,
+        status: Transaction::SUCCESS
+      }
+      TransactionService.create!(order, transaction)
+      order.save!
     end
     order
+  rescue Errors::PaymentError => e
+    TransactionService.create!(order, e.body)
+    Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
+    raise e
   end
 
   def self.abandon!(order)
