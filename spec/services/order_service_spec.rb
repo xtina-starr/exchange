@@ -1,6 +1,4 @@
 require 'rails_helper'
-require 'webmock/rspec'
-require 'support/gravity_helper'
 
 describe OrderService, type: :services do
   let(:order) { Fabricate(:order, external_charge_id: captured_charge.id) }
