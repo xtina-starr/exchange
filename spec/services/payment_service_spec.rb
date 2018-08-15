@@ -81,6 +81,7 @@ describe PaymentService, type: :services do
       expect { PaymentService.refund_charge(captured_charge.id) }.to(raise_error do |e|
         expect(e).to be_a Errors::PaymentError
         expect(e.message).not_to eq nil
+        expect(e.body[:external_id]).to eq captured_charge.id
         expect(e.body[:failure_code]).not_to eq nil
         expect(e.body[:failure_message]).not_to eq nil
         expect(e.body[:transaction_type]).to eq Transaction::REFUND        
