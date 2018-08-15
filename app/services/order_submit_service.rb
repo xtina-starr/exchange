@@ -6,30 +6,35 @@ module OrderSubmitService
     merchant_account = GravityService.get_merchant_account(order.partner_id)
     credit_card = GravityService.get_credit_card(order.credit_card_id)
     validate_credit_card!(credit_card)
-
-    charge_params = {
-      source_id: credit_card[:external_id],
-      customer_id: credit_card[:customer_account][:external_id],
-      destination_id: merchant_account[:external_id],
-      amount: order.buyer_total_cents,
-      currency_code: order.currency_code
-    }
+    charge_params = construct_charge_params(order, credit_card, merchant_account)
 
     Order.transaction do
-      order.submit!
-      charge = PaymentService.authorize_charge(charge_params)
-      order.external_charge_id = charge[:id]
-      TransactionService.create_success!(order, charge)
-      order.commission_fee_cents = calculate_commission(order)
-      order.transaction_fee_cents = calculate_transaction_fee(order)
-      order.save!
-      PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
+      order.with_lock do
+        order.submit!
+        charge = PaymentService.authorize_charge(charge_params)
+        order.external_charge_id = charge[:id]
+        TransactionService.create_success!(order, charge)
+        order.commission_fee_cents = calculate_commission(order)
+        order.transaction_fee_cents = calculate_transaction_fee(order)
+        order.save!
+        PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
+      end
     end
     order
   rescue Errors::PaymentError => e
     TransactionService.create_failure!(order, e.body)
     Rails.logger.error("Could not submit order #{order.id}: #{e.message}")
     raise e
+  end
+
+  def self.construct_charge_params(order, credit_card, merchant_account)
+    {
+      source_id: credit_card[:external_id],
+      customer_id: credit_card[:customer_account][:external_id],
+      destination_id: merchant_account[:external_id],
+      amount: order.buyer_total_cents,
+      currency_code: order.currency_code
+    }
   end
 
   def self.validate_credit_card!(credit_card)
