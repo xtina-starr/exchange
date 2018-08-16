@@ -84,8 +84,8 @@ describe Api::GraphqlController, type: :request do
         let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
         let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
         before do
-          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-1?include_deleted=true').and_return(artwork1)
-          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-2?include_deleted=true').and_return(artwork2)
+          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-1').and_return(artwork1)
+          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-2').and_return(artwork2)
         end
         context 'with PICKUP as fulfillment type' do
           let(:fulfillment_type) { 'PICKUP' }

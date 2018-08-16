@@ -54,7 +54,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with successful artwork fetch' do
         before do
-          expect(Adapters::GravityV1).to receive(:request).with('/artwork/artwork-id').and_return(gravity_v1_artwork)
+          expect(GravityService).to receive(:get_artwork).with(artwork_id).and_return(gravity_v1_artwork)
         end
         context 'without editionSetId' do
           it 'creates order with artwork price' do
