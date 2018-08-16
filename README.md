@@ -59,9 +59,10 @@ mv schema.graphql exchange.graphql
 ## Talking to Exchange 🤑
 In order to talk to Exchange GraphQL endpoint:
 - Copy `.env.example` to `.env`
+- Update the `REPLACE_ME` values in the `.env` file. You can reference the values used on staging with `hokusai staging env get`.
 - Install `dotenv` by `gem install dotenv`
 - Start local server `dotenv rails s`
-- If you work at Artsy, get proper Gravity User Token following [this](https://github.com/artsy/gravity/blob/master/doc/ApiAuthentication.md#fetching-a-user-jwt-for-the-target-service).
+- If you work at Artsy, get proper Gravity User Token following [these instructions](https://github.com/artsy/gravity/blob/master/doc/ApiAuthentication.md#fetching-a-user-jwt-for-the-target-service) (the client application name is "Exchange Staging").
 - Install and run [GraphiQL](https://github.com/skevy/graphiql-app) app `brew cask install graphiql`
 - In GraphiQL app, go to http://localhost:300/api/graphql, you should ge unauthorized error
 - Edit HTTP Headers and add `Authorization` header and set it to `Bearer <token>` where `<token>` is your Gravity token generated few steps above.
