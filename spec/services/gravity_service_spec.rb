@@ -78,9 +78,9 @@ describe GravityService, type: :services do
   describe '#get_artwork' do
     let(:artwork_id) { 'some-id' }
     it 'calls the /artwork endpoint' do
-      allow(Adapters::GravityV1).to receive(:request).with("/artwork/#{artwork_id}")
+      allow(Adapters::GravityV1).to receive(:request).with("/artwork/#{artwork_id}?include_deleted=false")
       GravityService.get_artwork(artwork_id)
-      expect(Adapters::GravityV1).to have_received(:request).with("/artwork/#{artwork_id}")
+      expect(Adapters::GravityV1).to have_received(:request).with("/artwork/#{artwork_id}?include_deleted=false")
     end
     context 'with failed gravity call' do
       it 'returns nil' do

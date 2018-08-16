@@ -41,7 +41,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with failed artwork fetch' do
         before do
-          expect(Adapters::GravityV1).to receive(:request).with('/artwork/artwork-id').and_raise(Adapters::GravityError.new('Timeout'))
+          expect(Adapters::GravityV1).to receive(:request).with('/artwork/artwork-id?include_deleted=false').and_raise(Adapters::GravityError.new('Timeout'))
         end
         it 'does not create order and returns proper error' do
           expect do
@@ -54,7 +54,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with successful artwork fetch' do
         before do
-          expect(Adapters::GravityV1).to receive(:request).with('/artwork/artwork-id').and_return(gravity_v1_artwork)
+          expect(GravityService).to receive(:get_artwork).with(artwork_id).and_return(gravity_v1_artwork)
         end
         context 'without editionSetId' do
           it 'creates order with artwork price' do
