@@ -56,6 +56,10 @@ describe OrderSubmitService, type: :services do
           expect(PostNotificationJob).to have_been_enqueued
         end
 
+        it 'queues a job for rejecting the order when it expires' do
+          expect(RejectExpiredOrdersJob).to have_been_enqueued        
+        end
+
         it 'sets commission_fee_cents' do
           expect(order.commission_fee_cents).to eq 8000_00
         end

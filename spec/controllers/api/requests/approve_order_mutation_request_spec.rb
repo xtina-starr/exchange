@@ -34,6 +34,11 @@ describe Api::GraphqlController, type: :request do
         }
       }
     end
+
+    before do
+      ActiveJob::Base.queue_adapter = :test
+    end
+
     context 'with user without permission to this partner' do
       let(:partner_id) { 'another-partner-id' }
       it 'returns permission error' do
@@ -72,9 +77,13 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'queues a job for posting events' do
-        ActiveJob::Base.queue_adapter = :test
         client.execute(mutation, approve_order_input)
         expect(PostNotificationJob).to have_been_enqueued
+      end
+
+      it 'queues a job for rejecting the order when it expires' do
+        client.execute(mutation, approve_order_input)
+        expect(RejectExpiredOrdersJob).to have_been_enqueued        
       end
     end
   end
