@@ -6,6 +6,7 @@ describe CreateOrderService, type: :services do
     let(:user_id) { 'user-id' }
     context 'with known artwork' do
       before do
+        ActiveJob::Base.queue_adapter = :test
         expect(Adapters::GravityV1).to receive(:request).and_return(gravity_v1_artwork)
       end
       context 'without edition set' do
@@ -35,6 +36,7 @@ describe CreateOrderService, type: :services do
             expect(order.line_items.first.artwork_id).to eq 'artwork-id'
             expect(order.line_items.first.edition_set_id).to eq 'edition-set-id'
             expect(order.line_items.first.quantity).to eq 2
+            expect(RejectExpiredOrdersJob).to have_been_enqueued.at(order.reload.state_expires_at)
           end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
         end
       end
