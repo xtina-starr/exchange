@@ -29,7 +29,10 @@ describe OrderEvent, type: :events do
       Fabricate(:line_item, price_cents: 100, order: order)
     ]
   end
-  let(:event) { OrderEvent.new(user: user_id, action: Order::SUBMITTED, model: order) }
+  let(:event) do
+    order.updated_at = Time.parse('Aug 16, 2018 3:48 PM EDT')
+    OrderEvent.new(user: user_id, action: Order::SUBMITTED, model: order)
+  end
 
   describe 'post' do
     it 'calls ArtsyEventService to post event' do
@@ -70,6 +73,7 @@ describe OrderEvent, type: :events do
       expect(event.properties[:shipping_country]).to eq 'USA'
       expect(event.properties[:shipping_postal_code]).to eq '60618'
       expect(event.properties[:shipping_region]).to eq 'IL'
+      expect(event.properties[:confirmation_deadline]).to eq Time.parse('2018-08-18 15:48:00 -0400').iso8601
     end
   end
 end
