@@ -34,7 +34,7 @@ module OrderService
   end
 
   def self.approve!(order, by: nil)
-    Order.transaction do
+    order.with_lock do
       order.approve!
       charge = PaymentService.capture_charge(order.external_charge_id)
       TransactionService.create_success!(order, charge)
