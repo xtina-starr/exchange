@@ -63,7 +63,7 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.reject_order.order.state).to eq 'REJECTED'
         expect(response.data.reject_order.errors).to match []
         expect(order.reload.state).to eq Order::REJECTED
-        expect(order.transactions.last.external_id).to eq captured_charge.id
+        expect(order.transactions.last.external_id).to_not eq nil
         expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
       end
     end

@@ -76,7 +76,7 @@ module OrderService
       order.reject!
       refund = PaymentService.refund_charge(order.external_charge_id)
       transaction = {
-        external_id: order.external_charge_id,
+        external_id: refund.id,
         amount_cents: refund.amount,
         transaction_type: Transaction::REFUND,
         status: Transaction::SUCCESS
