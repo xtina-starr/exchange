@@ -43,8 +43,13 @@ class Order < ApplicationRecord
   scope :active, -> { where(state: [SUBMITTED, APPROVED]) }
 
   ACTIONS.each do |action|
-    define_method "#{action}!" do
-      state_machine.trigger!(action)
+    define_method "#{action}!" do |&block|
+      with_lock do
+        state_machine.trigger!(action)
+        block.call if block.present?
+        save!
+        self
+      end
     rescue MicroMachine::InvalidState
       raise Errors::OrderError, "Invalid action on this #{state} order"
     end

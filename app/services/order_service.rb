@@ -34,14 +34,11 @@ module OrderService
   end
 
   def self.approve!(order, by: nil)
-    order.with_lock do
-      order.approve!
+    order.approve! do
       charge = PaymentService.capture_charge(order.external_charge_id)
       TransactionService.create_success!(order, charge)
-      order.save!
       PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
     end
-    order
   rescue Errors::PaymentError => e
     TransactionService.create_failure!(order, e.body)
     Rails.logger.error("Could not approve order #{order.id}: #{e.message}")
@@ -62,19 +59,12 @@ module OrderService
   end
 
   def self.reject!(order)
-    Order.transaction do
-      order.reject!
-      order.save!
-      # TODO: release the charge
-    end
-    order
+    order.reject!
+    # TODO: release the charge
   end
 
   def self.abandon!(order)
-    Order.transaction do
-      order.abandon!
-      order.save!
-    end
+    order.abandon!
   end
 
   def self.valid_currency_code?(currency_code)

@@ -8,18 +8,14 @@ module OrderSubmitService
     validate_credit_card!(credit_card)
     charge_params = construct_charge_params(order, credit_card, merchant_account)
 
-    order.with_lock do
-      order.submit!
+    order.submit! do
       charge = PaymentService.authorize_charge(charge_params)
       order.external_charge_id = charge[:id]
       TransactionService.create_success!(order, charge)
       order.commission_fee_cents = calculate_commission(order)
       order.transaction_fee_cents = calculate_transaction_fee(order)
-      order.save!
       PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
     end
-
-    order
   rescue Errors::PaymentError => e
     TransactionService.create_failure!(order, e.body)
     Rails.logger.error("Could not submit order #{order.id}: #{e.message}")
