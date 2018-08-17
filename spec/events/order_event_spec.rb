@@ -5,6 +5,7 @@ describe OrderEvent, type: :events do
   let(:user_id) { 'user-1' }
   let(:shipping_info) do
     {
+      shipping_name: 'Fname Lname',
       shipping_address_line1: '123 Main St',
       shipping_address_line2: 'Apt 2',
       shipping_city: 'Chicago',
@@ -62,6 +63,7 @@ describe OrderEvent, type: :events do
       expect(event.properties[:updated_at]).not_to be_nil
       expect(event.properties[:created_at]).not_to be_nil
       expect(event.properties[:line_items].count).to eq 2
+      expect(event.properties[:shipping_name]).to eq 'Fname Lname'
       expect(event.properties[:shipping_address_line1]).to eq '123 Main St'
       expect(event.properties[:shipping_address_line2]).to eq 'Apt 2'
       expect(event.properties[:shipping_city]).to eq 'Chicago'

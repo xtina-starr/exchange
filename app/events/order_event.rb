@@ -23,6 +23,7 @@ class OrderEvent < Events::BaseEvent
       buyer_total_cents: @object.buyer_total_cents,
       line_items: @object.line_items.map { |li| line_item_detail(li) },
       partner_id: @object.partner_id,
+      shipping_name: @object.shipping_name,
       shipping_address_line1: @object.shipping_address_line1,
       shipping_address_line2: @object.shipping_address_line2,
       shipping_city: @object.shipping_city,

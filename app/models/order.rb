@@ -66,7 +66,7 @@ class Order < ApplicationRecord
 
   def shipping_info?
     fulfillment_type == PICKUP ||
-      (fulfillment_type == SHIP && %i[shipping_address_line1 shipping_city shipping_country shipping_postal_code].all? { |sh_field| send(sh_field).present? })
+      (fulfillment_type == SHIP && complete_shipping_details?)
   end
 
   def payment_info?
@@ -107,5 +107,9 @@ class Order < ApplicationRecord
       self.state = machine.state
     end
     machine
+  end
+
+  def complete_shipping_details?
+    [shipping_name, shipping_address_line1, shipping_city, shipping_country, shipping_postal_code].all?(&:present?)
   end
 end

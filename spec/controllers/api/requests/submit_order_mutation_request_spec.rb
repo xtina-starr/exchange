@@ -17,6 +17,7 @@ describe Api::GraphqlController, type: :request do
         partner_id: partner_id,
         user_id: user_id,
         credit_card_id: credit_card_id,
+        shipping_name: 'Fname Lname',
         shipping_address_line1: '12 Vanak St',
         shipping_address_line2: 'P 80',
         shipping_city: 'Tehran',

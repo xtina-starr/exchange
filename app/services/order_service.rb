@@ -18,6 +18,7 @@ module OrderService
       order.update!(
         attrs.merge(
           attributes.slice(
+            :shipping_name,
             :shipping_address_line1,
             :shipping_address_line2,
             :shipping_city,
