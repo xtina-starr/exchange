@@ -57,7 +57,7 @@ describe OrderSubmitService, type: :services do
         end
 
         it 'queues a job for rejecting the order when it expires' do
-          expect(RejectExpiredOrdersJob).to have_been_enqueued.at(order.reload.state_expires_at)        
+          expect(ExpireOrderJob).to have_been_enqueued.at(order.reload.state_expires_at)        
         end
 
         it 'sets commission_fee_cents' do

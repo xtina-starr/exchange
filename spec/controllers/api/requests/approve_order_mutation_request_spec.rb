@@ -83,7 +83,7 @@ describe Api::GraphqlController, type: :request do
 
       it 'queues a job for rejecting the order when the order should expire' do
         client.execute(mutation, approve_order_input)
-        expect(RejectExpiredOrdersJob).to have_been_enqueued.at(order.reload.state_expires_at)
+        expect(ExpireOrderJob).to have_been_enqueued.at(order.reload.state_expires_at)
       end
     end
   end
