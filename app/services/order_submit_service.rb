@@ -12,16 +12,7 @@ module OrderSubmitService
       order.submit!
       charge = PaymentService.authorize_charge(charge_params)
       order.external_charge_id = charge.id
-      transaction = {
-        external_id: charge.id,
-        source_id: charge.source,
-        destination_id: charge.destination,
-        amount_cents: charge.amount,
-        failure_code: charge.failure_code,
-        failure_message: charge.failure_message,
-        transaction_type: charge.transaction_type,
-        status: Transaction::SUCCESS
-      }
+      transaction = construct_transaction_success(charge)
       TransactionService.create!(order, transaction)
       order.commission_fee_cents = calculate_commission(order)
       order.transaction_fee_cents = calculate_transaction_fee(order)
@@ -34,6 +25,19 @@ module OrderSubmitService
     TransactionService.create!(order, e.body)
     Rails.logger.error("Could not submit order #{order.id}: #{e.message}")
     raise e
+  end
+
+  def self.construct_transaction_success(charge)
+    {
+      external_id: charge.id,
+      source_id: charge.source,
+      destination_id: charge.destination,
+      amount_cents: charge.amount,
+      failure_code: charge.failure_code,
+      failure_message: charge.failure_message,
+      transaction_type: charge.transaction_type,
+      status: Transaction::SUCCESS
+    }
   end
 
   def self.construct_charge_params(order, credit_card, merchant_account)
