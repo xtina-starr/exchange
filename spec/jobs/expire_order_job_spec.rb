@@ -2,13 +2,12 @@ require 'rails_helper'
 require 'timecop'
 
 describe ExpireOrderJob, type: :job do
-
   let(:order) { Fabricate(:order) }
 
   before do
     ActiveJob::Base.queue_adapter = :test
   end
-  
+
   describe '#perform' do
     before do
       allow(OrderService).to receive(:abandon!)
