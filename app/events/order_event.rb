@@ -12,10 +12,6 @@ class OrderEvent < Events::BaseEvent
     }
   end
 
-  def confirmation_deadline(order)
-    (order.updated_at + 48.hours).iso8601
-  end
-
   def properties
     Time.use_zone('Eastern Time (US & Canada)') do
       {
@@ -40,7 +36,7 @@ class OrderEvent < Events::BaseEvent
         shipping_region: @object.shipping_region,
         state: @object.state,
         updated_at: @object.updated_at,
-        confirmation_deadline: confirmation_deadline(@object)
+        state_expires_at: @object.state_expires_at
       }
     end
   end
