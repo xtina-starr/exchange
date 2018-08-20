@@ -7,12 +7,15 @@ gem 'rails', '5.2.0'
 gem 'pg'
 gem 'puma'
 
+gem 'activeadmin'
+gem 'artsy-auth'
 gem 'artsy-eventservice'
 gem 'dalli'
 gem 'faraday'
 gem 'graphql'
 gem 'jwt'
 gem 'micromachine'
+gem 'money' # Library for dealing with money and currency conversion
 gem 'paper_trail'
 gem 'sidekiq'
 gem 'stripe'
@@ -26,8 +29,6 @@ end
 
 group :development do
   gem 'listen'
-  gem 'pry'
-  gem 'pry-stack_explorer'
 end
 
 group :test do

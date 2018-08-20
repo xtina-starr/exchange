@@ -3,6 +3,12 @@ class Transaction < ApplicationRecord
 
   TYPES = [
     HOLD = 'hold'.freeze,
-    CAPTURE = 'capture'.freeze
+    CAPTURE = 'capture'.freeze,
+    REFUND = 'refund'.freeze
+  ].freeze
+
+  STATUSES = [
+    SUCCESS = 'success'.freeze,
+    FAILURE = 'failure'.freeze
   ].freeze
 end

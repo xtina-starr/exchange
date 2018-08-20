@@ -21,7 +21,7 @@ describe ShippingService, type: :services do
     let(:line_item) { Fabricate(:line_item, artwork_id: 'gravity-id') }
     context 'with successful artwork fetch call' do
       before do
-        allow(Adapters::GravityV1).to receive(:request).with('/artwork/gravity-id?include_deleted=true').and_return(artwork)
+        allow(Adapters::GravityV1).to receive(:request).with('/artwork/gravity-id').and_return(artwork)
       end
       context 'with pickup fulfillment type' do
         it 'returns 0' do
@@ -38,11 +38,19 @@ describe ShippingService, type: :services do
           expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::SHIP, shipping_country: 'Iran')).to eq 500_00
         end
       end
+      context 'without artwork location' do
+        let(:artwork_location) { nil }
+        it 'raises Errors::OrderError' do
+          expect do
+            expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::SHIP, shipping_country: 'US'))
+          end.to raise_error(Errors::OrderError, 'Cannot calculate shipping, missing artwork location')
+        end
+      end
     end
 
     context 'with failed artwork fetch call' do
       before do
-        allow(Adapters::GravityV1).to receive(:request).with('/artwork/gravity-id?include_deleted=true').and_raise(Adapters::GravityError.new('unknown artwork'))
+        allow(Adapters::GravityV1).to receive(:request).with('/artwork/gravity-id').and_raise(Adapters::GravityError.new('unknown artwork'))
       end
       it 'raises Errors::OrderError' do
         expect do

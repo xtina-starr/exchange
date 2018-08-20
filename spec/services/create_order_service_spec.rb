@@ -49,13 +49,6 @@ describe CreateOrderService, type: :services do
     end
   end
 
-  describe '#get_artwork' do
-    it 'rescues GravityError' do
-      expect(Adapters::GravityV1).to receive(:request).and_raise(Adapters::GravityError, 'timeout')
-      expect(CreateOrderService.get_artwork('some-id')).to be_nil
-    end
-  end
-
   describe '#artwork_price' do
     context 'for artwork' do
       it 'returns artwork price' do

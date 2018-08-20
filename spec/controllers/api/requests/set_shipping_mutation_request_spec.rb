@@ -33,6 +33,7 @@ describe Api::GraphqlController, type: :request do
         input: {
           id: order.id.to_s,
           fulfillmentType: fulfillment_type,
+          shippingName: 'Fname Lname',
           shippingCountry: shipping_country,
           shippingCity: 'Tehran',
           shippingRegion: 'Tehran',
@@ -74,6 +75,7 @@ describe Api::GraphqlController, type: :request do
         expect(order.shipping_city).to eq 'Tehran'
         expect(order.shipping_region).to eq 'Tehran'
         expect(order.shipping_postal_code).to eq '02198912'
+        expect(order.shipping_name).to eq 'Fname Lname'
         expect(order.shipping_address_line1).to eq 'Vanak'
         expect(order.shipping_address_line2).to eq 'P 80'
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
@@ -84,8 +86,8 @@ describe Api::GraphqlController, type: :request do
         let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
         let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
         before do
-          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-1?include_deleted=true').and_return(artwork1)
-          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-2?include_deleted=true').and_return(artwork2)
+          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-1').and_return(artwork1)
+          expect(Adapters::GravityV1).to receive(:request).once.with('/artwork/a-2').and_return(artwork2)
         end
         context 'with PICKUP as fulfillment type' do
           let(:fulfillment_type) { 'PICKUP' }

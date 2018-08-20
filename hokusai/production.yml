@@ -20,21 +20,31 @@ spec:
       name: exchange-web
     spec:
       containers:
-      - name: exchange-web
-        env:
-        - name: RAILS_SERVE_STATIC_FILES
-          value: 'true'
-        - name: RAILS_LOG_TO_STDOUT
-          value: 'true'
-        - name: RAILS_ENV
-          value: production
-        envFrom:
-        - configMapRef:
-            name: exchange-environment
-        image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/exchange:production
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8080
+        - name: exchange-web
+          env:
+          - name: RAILS_SERVE_STATIC_FILES
+            value: 'true'
+          - name: RAILS_LOG_TO_STDOUT
+            value: 'true'
+          - name: RAILS_ENV
+            value: production
+          envFrom:
+          - configMapRef:
+              name: exchange-environment
+          image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/exchange:production
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 8080
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: tier
+                operator: In
+                values:
+                - foreground
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment

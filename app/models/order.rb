@@ -40,6 +40,7 @@ class Order < ApplicationRecord
   before_save :set_currency_code
 
   scope :pending, -> { where(state: PENDING) }
+  scope :active, -> { where(state: [SUBMITTED, APPROVED]) }
 
   ACTIONS.each do |action|
     define_method "#{action}!" do
@@ -65,11 +66,15 @@ class Order < ApplicationRecord
 
   def shipping_info?
     fulfillment_type == PICKUP ||
-      (fulfillment_type == SHIP && %i[shipping_address_line1 shipping_city shipping_country shipping_postal_code].all? { |sh_field| send(sh_field).present? })
+      (fulfillment_type == SHIP && complete_shipping_details?)
   end
 
   def payment_info?
     credit_card_id.present?
+  end
+
+  def to_s
+    "Order #{id}"
   end
 
   private
@@ -102,5 +107,9 @@ class Order < ApplicationRecord
       self.state = machine.state
     end
     machine
+  end
+
+  def complete_shipping_details?
+    [shipping_name, shipping_address_line1, shipping_city, shipping_country, shipping_postal_code].all?(&:present?)
   end
 end

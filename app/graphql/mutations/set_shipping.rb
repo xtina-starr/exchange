@@ -2,6 +2,7 @@ class Mutations::SetShipping < Mutations::BaseMutation
   null true
 
   argument :id, ID, required: true
+  argument :shipping_name, String, required: false
   argument :shipping_address_line1, String, required: false
   argument :shipping_address_line2, String, required: false
   argument :shipping_city, String, required: false

@@ -1,5 +1,5 @@
 module Api
-  class HealthController < ApplicationController
+  class HealthController < Api::BaseApiController
     skip_before_action :authenticate_request!
 
     def index

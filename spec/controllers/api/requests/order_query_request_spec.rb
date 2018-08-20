@@ -8,7 +8,8 @@ describe Api::GraphqlController, type: :request do
     let(:user_id) { jwt_user_id }
     let(:second_user) { 'user2' }
     let(:state) { 'PENDING' }
-    let!(:user1_order1) { Fabricate(:order, partner_id: partner_id, user_id: user_id, updated_at: 1.day.ago, shipping_total_cents: 100_00, commission_fee_cents: 50_00) }
+    let(:created_at) { 2.days.ago }
+    let!(:user1_order1) { Fabricate(:order, partner_id: partner_id, user_id: user_id, created_at: created_at, updated_at: 1.day.ago, shipping_total_cents: 100_00, commission_fee_cents: 50_00) }
     let!(:user2_order1) { Fabricate(:order, partner_id: second_partner_id, user_id: second_user) }
 
     let(:query) do
@@ -24,6 +25,7 @@ describe Api::GraphqlController, type: :request do
             shippingTotalCents
             sellerTotalCents
             buyerTotalCents
+            createdAt
             lineItems{
               edges{
                 node{
@@ -52,6 +54,7 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.items_total_cents).to eq 0
         expect(result.data.order.seller_total_cents).to eq 50_00
         expect(result.data.order.buyer_total_cents).to eq 100_00
+        expect(result.data.order.created_at).to eq created_at.iso8601
       end
 
       Order::STATES.each do |state|
