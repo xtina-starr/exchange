@@ -13,7 +13,7 @@ describe ExpireOrderJob, type: :job do
       it 'transitions a pending order to abandoned' do
         Timecop.freeze(order.state_expires_at + 1.second) do
           ExpireOrderJob.perform_now(order.id, Order::PENDING)
-          expect(OrderService).to have_received(:abandon!).with(order)  
+          expect(OrderService).to have_received(:abandon!).with(order)
         end
       end
       it 'transitions a submitted order to rejected' do

@@ -4,7 +4,11 @@ class ExpireOrderJob < ApplicationJob
   def perform(order_id, state)
     order = Order.find(order_id)
     return unless order.state == state && Time.new > order.state_expires_at
-    OrderService.abandon!(order) if order.state == Order::PENDING
-    OrderService.reject!(order) if order.state == Order::SUBMITTED || order.state == Order::APPROVED
+    case order.state
+    when Order::PENDING
+      OrderService.abandon!(order)
+    when Order::SUBMITTED, Order::APPROVED
+      OrderService.reject!(order)
+    end
   end
 end
