@@ -20,14 +20,14 @@ describe Api::GraphqlController, type: :request do
         mutation($input: CreateOrderWithArtworkInput!) {
           createOrderWithArtwork(input: $input) {
             orderOrError {
-              ... on CreateOrderWithArtworkMutationSucesss {
+              ... on OrderWithMutationSucesss {
                 order {
                   id
                   userId
                   partnerId
                 }
               }
-              ... on CreateOrderWithArtworkMutationFailure {
+              ... on OrderWithMutationFailure {
                 error {
                   description
                   code
