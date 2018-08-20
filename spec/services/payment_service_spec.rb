@@ -61,10 +61,30 @@ describe PaymentService, type: :services do
       expect { PaymentService.capture_charge(uncaptured_charge.id) }.to(raise_error do |e|
         expect(e).to be_a Errors::PaymentError
         expect(e.message).not_to eq nil
-        expect(e.body[:id]).to eq uncaptured_charge.id
+        expect(e.body[:external_id]).to eq uncaptured_charge.id
         expect(e.body[:failure_code]).not_to eq nil
         expect(e.body[:failure_message]).not_to eq nil
         expect(e.body[:transaction_type]).to eq Transaction::CAPTURE
+      end)
+    end
+  end
+
+  describe '#refund_charge' do
+    it 'refunds a charge for the full amount' do
+      refund = PaymentService.refund_charge(captured_charge.id)
+      expect(refund.amount).to eq captured_charge.amount
+      expect(refund.charge).to eq captured_charge.id
+      expect(refund.transaction_type).to eq Transaction::REFUND
+    end
+    it 'catches Stripe errors and raises a PaymentError in its place' do
+      StripeMock.prepare_card_error(:processing_error, :new_refund)
+      expect { PaymentService.refund_charge(captured_charge.id) }.to(raise_error do |e|
+        expect(e).to be_a Errors::PaymentError
+        expect(e.message).not_to eq nil
+        expect(e.body[:external_id]).to eq captured_charge.id
+        expect(e.body[:failure_code]).not_to eq nil
+        expect(e.body[:failure_message]).not_to eq nil
+        expect(e.body[:transaction_type]).to eq Transaction::REFUND
       end)
     end
   end

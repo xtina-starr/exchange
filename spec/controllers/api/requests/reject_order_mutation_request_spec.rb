@@ -1,12 +1,14 @@
 require 'rails_helper'
 
 describe Api::GraphqlController, type: :request do
+  include_context 'use stripe mock'
+
   describe 'reject_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
-    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
+    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id, external_charge_id: captured_charge.id) }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -61,6 +63,8 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.reject_order.order.state).to eq 'REJECTED'
         expect(response.data.reject_order.errors).to match []
         expect(order.reload.state).to eq Order::REJECTED
+        expect(order.transactions.last.external_id).to_not eq nil
+        expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
       end
     end
   end
