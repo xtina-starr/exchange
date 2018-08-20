@@ -26,7 +26,6 @@ describe OrderSubmitService, type: :services do
     context 'with a partner with a merchant account' do
       context 'with a successful transaction' do
         before(:each) do
-          ActiveJob::Base.queue_adapter = :test
           allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
           allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
           allow(Adapters::GravityV1).to receive(:request).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)

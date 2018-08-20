@@ -6,7 +6,6 @@ describe CreateOrderService, type: :services do
     let(:user_id) { 'user-id' }
     context 'with known artwork' do
       before do
-        ActiveJob::Base.queue_adapter = :test
         expect(Adapters::GravityV1).to receive(:request).and_return(gravity_v1_artwork)
       end
       context 'without edition set' do

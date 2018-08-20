@@ -35,10 +35,6 @@ describe Api::GraphqlController, type: :request do
       }
     end
 
-    before do
-      ActiveJob::Base.queue_adapter = :test
-    end
-
     context 'with user without permission to this partner' do
       let(:partner_id) { 'another-partner-id' }
       it 'returns permission error' do
