@@ -11,6 +11,16 @@ end
 class Mutations::CreateOrderOrFailureSubject < Types::BaseUnion
   description 'Represents either a resolved Order or a potential failure'
   possible_types Mutations::CreateOrderWithArtworkMutationSucesss, Mutations::CreateOrderWithArtworkMutationFailure
+
+  def self.resolve_type(object, _context)
+    if object.key?(:order)
+      Mutations::CreateOrderWithArtworkMutationSucesss
+    elsif object.key?(:error)
+      Mutations::CreateOrderWithArtworkMutationFailure
+    else
+      raise "Unexpected Return value: #{object.inspect}"
+    end
+  end
 end
 
 class Mutations::CreateOrderWithArtwork < Mutations::BaseMutation
@@ -20,14 +30,13 @@ class Mutations::CreateOrderWithArtwork < Mutations::BaseMutation
   argument :edition_set_id, String, 'EditionSet Id', required: false
   argument :quantity, Integer, 'Number of items in the line item', required: false
 
-  field :orderOrError, Mutations::CreateOrderOrFailureSubject, null: false
+  field :order_or_error, Mutations::CreateOrderOrFailureSubject, 'A union of success/failure', null: false
 
   def resolve(artwork_id:, edition_set_id: nil, quantity: 1)
     {
-      orderOrError: { order: CreateOrderService.with_artwork!(user_id: context[:current_user][:id], artwork_id: artwork_id, edition_set_id: edition_set_id, quantity: quantity) }
+      order_or_error: { order: CreateOrderService.with_artwork!(user_id: context[:current_user][:id], artwork_id: artwork_id, edition_set_id: edition_set_id, quantity: quantity) }
     }
   rescue Errors::ApplicationError => e
-    puts "OK"
-    { orderOrError: { error: Types::MutationErrorType.from_application(e) } }
+    { order_or_error: { error: Types::MutationErrorType.from_application(e) } }
   end
 end
