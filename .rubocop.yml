@@ -8,6 +8,7 @@ AllCops:
     - 'app/admin/**'
 
 Metrics/AbcSize:
+  Max: 40
   Exclude:
     - 'db/migrate/*'
 
