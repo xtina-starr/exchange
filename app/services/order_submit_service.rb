@@ -8,19 +8,15 @@ module OrderSubmitService
     validate_credit_card!(credit_card)
     charge_params = construct_charge_params(order, credit_card, merchant_account)
 
-    order.with_lock do
-      order.submit!
+    order.submit! do
       charge = PaymentService.authorize_charge(charge_params)
       order.external_charge_id = charge.id
       transaction = construct_transaction_success(charge)
       TransactionService.create!(order, transaction)
-      order.commission_fee_cents = calculate_commission(order)
-      order.transaction_fee_cents = calculate_transaction_fee(order)
-      order.save!
-      PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
-      ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+      order.update!(commission_fee_cents: calculate_commission(order), transaction_fee_cents: calculate_transaction_fee(order))
     end
-
+    PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
+    ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
   rescue Errors::PaymentError => e
     TransactionService.create!(order, e.body)

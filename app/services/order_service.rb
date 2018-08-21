@@ -34,8 +34,7 @@ module OrderService
   end
 
   def self.approve!(order, by: nil)
-    order.with_lock do
-      order.approve!
+    order.approve! do
       charge = PaymentService.capture_charge(order.external_charge_id)
       transaction = {
         external_id: charge.id,
@@ -48,10 +47,9 @@ module OrderService
         status: Transaction::SUCCESS
       }
       TransactionService.create!(order, transaction)
-      order.save!
-      PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
-      ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     end
+    PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
+    ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
   rescue Errors::PaymentError => e
     TransactionService.create!(order, e.body)
@@ -66,15 +64,13 @@ module OrderService
         li.line_item_fulfillments.create!(fulfillment_id: fulfillment.id)
       end
       order.fulfill!
-      order.save!
       PostNotificationJob.perform_later(order.id, Order::FULFILLED, by)
     end
     order
   end
 
   def self.reject!(order)
-    order.with_lock do
-      order.reject!
+    order.reject! do
       refund = PaymentService.refund_charge(order.external_charge_id)
       transaction = {
         external_id: refund.id,
@@ -83,7 +79,6 @@ module OrderService
         status: Transaction::SUCCESS
       }
       TransactionService.create!(order, transaction)
-      order.save!
     end
     order
   rescue Errors::PaymentError => e
@@ -93,10 +88,7 @@ module OrderService
   end
 
   def self.abandon!(order)
-    Order.transaction do
-      order.abandon!
-      order.save!
-    end
+    order.abandon!
   end
 
   def self.valid_currency_code?(currency_code)
