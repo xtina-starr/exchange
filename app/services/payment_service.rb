@@ -15,12 +15,13 @@ module PaymentService
     body = e.json_body[:error]
     failed_charge = {
       amount: amount,
-      id: body[:charge],
+      external_id: body[:charge],
       source_id: source_id,
       destination_id: destination_id,
       failure_code: body[:code],
       failure_message: body[:message],
-      transaction_type: Transaction::HOLD
+      transaction_type: Transaction::HOLD,
+      status: Transaction::FAILURE
     }
     raise Errors::PaymentError.new(e.message, failed_charge)
   end
@@ -33,11 +34,28 @@ module PaymentService
   rescue Stripe::StripeError => e
     body = e.json_body[:error]
     failed_charge = {
-      id: charge_id,
+      external_id: charge_id,
       failure_code: body[:code],
       failure_message: body[:message],
-      transaction_type: Transaction::CAPTURE
+      transaction_type: Transaction::CAPTURE,
+      status: Transaction::FAILURE
     }
     raise Errors::PaymentError.new(e.message, failed_charge)
+  end
+
+  def self.refund_charge(charge_id)
+    refund = Stripe::Refund.create(charge: charge_id)
+    refund.transaction_type = Transaction::REFUND
+    refund
+  rescue Stripe::StripeError => e
+    body = e.json_body[:error]
+    failed_refund = {
+      external_id: charge_id,
+      failure_code: body[:code],
+      failure_message: body[:message],
+      transaction_type: Transaction::REFUND,
+      status: Transaction::FAILURE
+    }
+    raise Errors::PaymentError.new(e.message, failed_refund)
   end
 end

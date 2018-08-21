@@ -36,11 +36,23 @@ module OrderService
   def self.approve!(order, by: nil)
     order.approve! do
       charge = PaymentService.capture_charge(order.external_charge_id)
-      TransactionService.create_success!(order, charge)
-      PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
+      transaction = {
+        external_id: charge.id,
+        source_id: charge.source,
+        destination_id: charge.destination,
+        amount_cents: charge.amount,
+        failure_code: charge.failure_code,
+        failure_message: charge.failure_message,
+        transaction_type: charge.transaction_type,
+        status: Transaction::SUCCESS
+      }
+      TransactionService.create!(order, transaction)
     end
+    PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
+    ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    order
   rescue Errors::PaymentError => e
-    TransactionService.create_failure!(order, e.body)
+    TransactionService.create!(order, e.body)
     Rails.logger.error("Could not approve order #{order.id}: #{e.message}")
     raise e
   end
@@ -52,15 +64,27 @@ module OrderService
         li.line_item_fulfillments.create!(fulfillment_id: fulfillment.id)
       end
       order.fulfill!
-      order.save!
       PostNotificationJob.perform_later(order.id, Order::FULFILLED, by)
     end
     order
   end
 
   def self.reject!(order)
-    order.reject!
-    # TODO: release the charge
+    order.reject! do
+      refund = PaymentService.refund_charge(order.external_charge_id)
+      transaction = {
+        external_id: refund.id,
+        amount_cents: refund.amount,
+        transaction_type: Transaction::REFUND,
+        status: Transaction::SUCCESS
+      }
+      TransactionService.create!(order, transaction)
+    end
+    order
+  rescue Errors::PaymentError => e
+    TransactionService.create!(order, e.body)
+    Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
+    raise e
   end
 
   def self.abandon!(order)

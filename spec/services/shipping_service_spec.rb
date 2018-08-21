@@ -83,8 +83,8 @@ describe ShippingService, type: :services do
           location: artwork_location
         }
       end
-      it 'returns 0' do
-        expect(ShippingService.calculate_domestic(artwork)).to eq 0
+      it 'raises error' do
+        expect { ShippingService.calculate_domestic(artwork) }.to raise_error(Errors::OrderError, /Artwork is missing shipping fee/)
       end
     end
   end
@@ -101,8 +101,8 @@ describe ShippingService, type: :services do
           location: artwork_location
         }
       end
-      it 'returns 0' do
-        expect(ShippingService.calculate_international(artwork)).to eq 0
+      it 'raises error' do
+        expect { ShippingService.calculate_international(artwork) }.to raise_error(Errors::OrderError, /Artwork is missing shipping fee/)
       end
     end
   end

@@ -46,8 +46,8 @@ class Order < ApplicationRecord
     define_method "#{action}!" do |&block|
       with_lock do
         state_machine.trigger!(action)
-        block.call if block.present?
         save!
+        block.call if block.present?
         self
       end
     rescue MicroMachine::InvalidState
