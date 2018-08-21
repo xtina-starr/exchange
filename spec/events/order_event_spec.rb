@@ -31,7 +31,7 @@ describe OrderEvent, type: :events do
       Fabricate(:line_item, price_cents: 100, order: order)
     ]
   end
-  let(:event) { OrderEvent.new(user: user_id, action: Order::SUBMITTED, model: order.reload) }
+  let(:event) { OrderEvent.new(user: user_id, action: Order::SUBMITTED, model: order) }
 
   describe 'post' do
     it 'calls ArtsyEventService to post event' do
