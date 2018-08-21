@@ -7,8 +7,8 @@ class ExpireOrderJob < ApplicationJob
     case order.state
     when Order::PENDING
       OrderService.abandon!(order)
-    when Order::SUBMITTED, Order::APPROVED
-      OrderService.reject!(order)
+    when Order::SUBMITTED
+      OrderService.seller_lapse!(order)
     end
   end
 end

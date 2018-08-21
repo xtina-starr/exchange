@@ -6,7 +6,7 @@ describe ExpireOrderJob, type: :job do
   describe '#perform' do
     before do
       allow(OrderService).to receive(:abandon!)
-      allow(OrderService).to receive(:reject!)
+      allow(OrderService).to receive(:seller_lapse!)
     end
 
     context 'with an expired order' do
@@ -16,18 +16,11 @@ describe ExpireOrderJob, type: :job do
           expect(OrderService).to have_received(:abandon!).with(order)
         end
       end
-      it 'transitions a submitted order to rejected' do
+      it 'transitions a submitted order to seller_lapsed' do
         order.update!(state: Order::SUBMITTED)
         Timecop.freeze(order.state_expires_at + 1.second) do
           ExpireOrderJob.perform_now(order.id, Order::SUBMITTED)
-          expect(OrderService).to have_received(:reject!).with(order)
-        end
-      end
-      it 'transitions an approved order to rejected' do
-        order.update!(state: Order::APPROVED)
-        Timecop.freeze(order.state_expires_at + 1.second) do
-          ExpireOrderJob.perform_now(order.id, Order::APPROVED)
-          expect(OrderService).to have_received(:reject!).with(order)
+          expect(OrderService).to have_received(:seller_lapse!).with(order)
         end
       end
     end
@@ -37,7 +30,7 @@ describe ExpireOrderJob, type: :job do
         Timecop.freeze(order.state_expires_at + 1.second) do
           ExpireOrderJob.perform_now(order.id, Order::PENDING)
           expect(OrderService).to_not have_received(:abandon!)
-          expect(OrderService).to_not have_received(:reject!)
+          expect(OrderService).to_not have_received(:seller_lapse!)
         end
       end
     end
@@ -45,7 +38,7 @@ describe ExpireOrderJob, type: :job do
       it 'does nothing' do
         ExpireOrderJob.perform_now(order.id, Order::PENDING)
         expect(OrderService).to_not have_received(:abandon!)
-        expect(OrderService).to_not have_received(:reject!)
+        expect(OrderService).to_not have_received(:seller_lapse!)
       end
     end
   end
