@@ -1,6 +1,8 @@
 require 'rails_helper'
 
 describe OrderEvent, type: :events do
+  before { Timecop.freeze(Time.parse('2018-08-16 15:48:00 -0400')) }
+  after { Timecop.return }
   let(:partner_id) { 'partner-1' }
   let(:user_id) { 'user-1' }
   let(:shipping_info) do
@@ -51,11 +53,13 @@ describe OrderEvent, type: :events do
   end
 
   describe '#properties' do
-    it 'returns proper properties' do
+    it 'returns correct properties for a submitted order' do
+      order.submit!
+      order.save!
       expect(event.properties[:code]).to eq order.code
       expect(event.properties[:partner_id]).to eq partner_id
       expect(event.properties[:currency_code]).to eq 'usd'
-      expect(event.properties[:state]).to eq 'pending'
+      expect(event.properties[:state]).to eq 'submitted'
       expect(event.properties[:items_total_cents]).to eq 300
       expect(event.properties[:shipping_total_cents]).to eq 50
       expect(event.properties[:tax_total_cents]).to eq 30
@@ -70,6 +74,7 @@ describe OrderEvent, type: :events do
       expect(event.properties[:shipping_country]).to eq 'USA'
       expect(event.properties[:shipping_postal_code]).to eq '60618'
       expect(event.properties[:shipping_region]).to eq 'IL'
+      expect(event.properties[:state_expires_at]).to eq Time.parse('2018-08-18 15:48:00 -0400')
     end
   end
 end

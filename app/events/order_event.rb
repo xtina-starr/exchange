@@ -34,7 +34,8 @@ class OrderEvent < Events::BaseEvent
       shipping_postal_code: @object.shipping_postal_code,
       shipping_region: @object.shipping_region,
       state: @object.state,
-      updated_at: @object.updated_at
+      updated_at: @object.updated_at,
+      state_expires_at: @object.state_expires_at
     }
   end
 
