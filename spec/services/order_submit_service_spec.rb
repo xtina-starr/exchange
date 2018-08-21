@@ -26,7 +26,6 @@ describe OrderSubmitService, type: :services do
     context 'with a partner with a merchant account' do
       context 'with a successful transaction' do
         before(:each) do
-          ActiveJob::Base.queue_adapter = :test
           allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
           allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
           allow(Adapters::GravityV1).to receive(:request).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
@@ -54,6 +53,14 @@ describe OrderSubmitService, type: :services do
 
         it 'queues a job for posting event' do
           expect(PostNotificationJob).to have_been_enqueued
+        end
+
+        it 'queues a job for rejecting the order when it expires' do
+          job = ActiveJob::Base.queue_adapter.enqueued_jobs.detect { |j| j[:job] == ExpireOrderJob }
+          expect(job).to_not be_nil
+          expect(job[:at].to_i).to eq order.reload.state_expires_at.to_i
+          expect(job[:args][0]).to eq order.id
+          expect(job[:args][1]).to eq Order::SUBMITTED
         end
 
         it 'sets commission_fee_cents' do

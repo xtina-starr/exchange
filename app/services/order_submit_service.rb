@@ -18,6 +18,7 @@ module OrderSubmitService
       order.transaction_fee_cents = calculate_transaction_fee(order)
       order.save!
       PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
+      ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     end
 
     order
