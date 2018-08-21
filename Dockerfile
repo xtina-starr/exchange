@@ -1,7 +1,9 @@
-FROM bitnami/ruby:2.5.1
+FROM ruby:2.5.1
 
-RUN install_packages libpq-dev nodejs
-# Install packages
+RUN apt-get update -qq && apt-get install -y \
+  libpq-dev nodejs && \
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 RUN gem install bundler
 
 # throw errors if Gemfile has been modified since Gemfile.lock
