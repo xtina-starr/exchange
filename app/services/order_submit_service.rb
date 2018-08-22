@@ -3,7 +3,7 @@ module OrderSubmitService
     # verify price change?
     raise Errors::OrderError, "Missing info for submitting order(#{order.id})" unless can_submit?(order)
 
-    merchant_account = GravityService.get_merchant_account(order.partner_id)
+    merchant_account = GravityService.get_merchant_account(order.seller_id)
     credit_card = GravityService.get_credit_card(order.credit_card_id)
     validate_credit_card!(credit_card)
     charge_params = construct_charge_params(order, credit_card, merchant_account)
@@ -58,7 +58,7 @@ module OrderSubmitService
   end
 
   def self.calculate_commission(order)
-    partner = GravityService.fetch_partner(order.partner_id)
+    partner = GravityService.fetch_partner(order.seller_id)
     order.items_total_cents * partner[:effective_commission_rate]
   end
 
