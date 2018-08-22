@@ -4,7 +4,7 @@ module CreateOrderService
     raise Errors::OrderError, "Unknown artwork #{artwork_id}" if artwork.nil? || (edition_set_id && !find_edition_set(artwork, edition_set_id))
 
     Order.transaction do
-      order = Order.create!(user_id: user_id, partner_id: artwork[:partner][:_id], currency_code: artwork[:price_currency], state: Order::PENDING)
+      order = Order.create!(buyer_id: user_id, buyer_type: 'user', seller_id: artwork[:partner][:_id], seller_type: 'partner', currency_code: artwork[:price_currency], state: Order::PENDING)
       order.line_items.create!(
         artwork_id: artwork_id,
         edition_set_id: edition_set_id,
