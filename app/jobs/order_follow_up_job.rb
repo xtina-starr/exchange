@@ -1,4 +1,4 @@
-class ExpireOrderJob < ApplicationJob
+class OrderFollowUpJob < ApplicationJob
   queue_as :default
 
   def perform(order_id, state)
@@ -9,6 +9,10 @@ class ExpireOrderJob < ApplicationJob
       OrderService.abandon!(order)
     when Order::SUBMITTED
       OrderService.seller_lapse!(order)
+    when Order::APPROVED
+      # Order was approved but has not yet fulfilled,
+      # post an event so we can contact partner
+      OrderEvent.post(order, 'unfulfilled', nil)
     end
   end
 end

@@ -49,7 +49,7 @@ module OrderService
       TransactionService.create!(order, transaction)
     end
     PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
-    ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
   rescue Errors::PaymentError => e
     TransactionService.create!(order, e.body)
