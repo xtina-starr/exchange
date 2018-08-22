@@ -108,6 +108,12 @@ mutation($input: SetShippingInput!) {
       userId
       partnerId
       state
+      fulfillment{
+        ... on Ship{
+          addressLine1
+          country
+        }
+      }
     }
     errors
   }
@@ -119,12 +125,14 @@ For input:
   "input": {
     "id": "<order id>",
     "fulfillmentType": "SHIP/PICKUP",
-    "shippingAddressLine1": "",
-    "shippingAddressLine2": "",
-    "shippingCity": "",
-    "shippingRegion": "",
-    "shippingCountry": "",
-    "shippingPostalCode": ""
+    "shipping": {
+      "addressLine1": "",
+      "addressLine2": "",
+      "city": "",
+      "region": "",
+      "country": "",
+      "postalCode": ""
+    }
   }
 }
 ```

@@ -19,7 +19,12 @@ describe Api::GraphqlController, type: :request do
               userId
               partnerId
               state
-              fulfillmentType
+              fulfillment {
+                __typename
+                ... on Ship {
+                  addressLine1
+                }
+              }
               shippingTotalCents
             }
             errors
@@ -33,13 +38,15 @@ describe Api::GraphqlController, type: :request do
         input: {
           id: order.id.to_s,
           fulfillmentType: fulfillment_type,
-          shippingName: 'Fname Lname',
-          shippingCountry: shipping_country,
-          shippingCity: 'Tehran',
-          shippingRegion: 'Tehran',
-          shippingPostalCode: '02198912',
-          shippingAddressLine1: 'Vanak',
-          shippingAddressLine2: 'P 80'
+          shipping: {
+            name: 'Fname Lname',
+            country: shipping_country,
+            city: 'Tehran',
+            region: 'Tehran',
+            postalCode: '02198912',
+            addressLine1: 'Vanak',
+            addressLine2: 'P 80'
+          }
         }
       }
     end
@@ -69,6 +76,7 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.set_shipping.order.id).to eq order.id.to_s
         expect(response.data.set_shipping.order.state).to eq 'PENDING'
         expect(response.data.set_shipping.errors).to match []
+        expect(response.data.set_shipping.order.fulfillment.address_line1).to eq 'Vanak'
         expect(order.reload.fulfillment_type).to eq Order::SHIP
         expect(order.state).to eq Order::PENDING
         expect(order.shipping_country).to eq 'IR'
