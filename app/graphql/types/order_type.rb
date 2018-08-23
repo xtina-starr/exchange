@@ -27,6 +27,7 @@ class Types::OrderType < Types::BaseObject
     # fulfillment is not a field on order so we have to resolve it here
     # it uses our union, for that to work we need to pass order (aka object)
     # to our Fulfillment
+    return if object.fulfillment_type.blank?
     object
   end
 end
