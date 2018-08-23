@@ -1,4 +1,4 @@
-class Types::FulfillmentAttributes < Types::BaseInputObject
+class Inputs::FulfillmentAttributes < Types::BaseInputObject
   description 'Attributes of a Fulfillment'
 
   argument :courier, String, required: true
