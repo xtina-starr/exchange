@@ -30,11 +30,6 @@ describe Api::GraphqlController, type: :request do
                     }
                   }
                 }
-                requestedFulfillment{
-                  ... on Ship {
-                    name
-                  }
-                }
               }
             }
           }
