@@ -109,7 +109,8 @@ mutation($input: SetShippingInput!) {
       partnerId
       state
       fulfillment{
-        ... on Ship{
+        __typename
+        ... on Ship {
           addressLine1
           country
         }
@@ -124,14 +125,14 @@ For input:
 {
   "input": {
     "id": "<order id>",
-    "fulfillmentType": "SHIP/PICKUP",
+    "fulfillmentType": "<SHIP/PICKUP>",
     "shipping": {
-      "addressLine1": "",
+      "addressLine1": "Vanak v1",
       "addressLine2": "",
-      "city": "",
-      "region": "",
-      "country": "",
-      "postalCode": ""
+      "city": "Tehran",
+      "region": "Tehran",
+      "country": "IR",
+      "postalCode": "09821"
     }
   }
 }

@@ -1,14 +1,7 @@
 class Types::Ship < Types::BaseObject
-  field :name, String, null: true
-  field :address_line1, String, null: true
-  field :address_line2, String, null: true
-  field :city, String, null: true
-  field :region, String, null: true
-  field :country, String, null: true
-  field :postal_code, String, null: true
-
-  # generate methods for mapping above fields to field name on the model
+  # generate methods for shipping fields to field name on the model (add shipping_)
   %w[name address_line1 address_line2 city region country postal_code].each do |field_name|
+    field field_name.to_sym, String, null: true
     define_method field_name do
       object.send("shipping_#{field_name}".to_sym)
     end
