@@ -8,14 +8,9 @@ class Types::Ship < Types::BaseObject
   end
 end
 
-class Types::Pickup < Types::BaseObject
-  field :fulfillment_type, String, null: false
-  def fulfillment_type
-    Order::PICKUP
-  end
-end
+class Types::Pickup < Types::BaseObject; end
 
-class Types::RequestedFulfillmentUnionType < Types::BaseUnion
+class Types::FulfillmentUnionType < Types::BaseUnion
   description 'Represents either a shipping information or pickup'
   possible_types Types::Ship, Types::Pickup
 

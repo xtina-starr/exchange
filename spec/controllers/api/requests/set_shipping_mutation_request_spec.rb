@@ -26,7 +26,7 @@ describe Api::GraphqlController, type: :request do
               userId
               partnerId
               state
-              requestedFulfillment {
+              fulfillment {
                 __typename
                 ... on Ship {
                   addressLine1
@@ -92,7 +92,7 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.set_shipping.order.id).to eq order.id.to_s
         expect(response.data.set_shipping.order.state).to eq 'PENDING'
         expect(response.data.set_shipping.errors).to match []
-        expect(response.data.set_shipping.order.requested_fulfillment.address_line1).to eq 'Vanak'
+        expect(response.data.set_shipping.order.fulfillment.address_line1).to eq 'Vanak'
         expect(order.reload.fulfillment_type).to eq Order::SHIP
         expect(order.state).to eq Order::PENDING
         expect(order.shipping_country).to eq 'IR'
