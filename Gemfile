@@ -19,6 +19,7 @@ gem 'money' # Library for dealing with money and currency conversion
 gem 'paper_trail'
 gem 'sidekiq'
 gem 'stripe'
+gem 'taxjar-ruby', require: 'taxjar'
 
 group :development, :test do
   gem 'byebug'
