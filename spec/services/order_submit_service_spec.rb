@@ -56,7 +56,7 @@ describe OrderSubmitService, type: :services do
         end
 
         it 'queues a job for rejecting the order when it expires' do
-          job = ActiveJob::Base.queue_adapter.enqueued_jobs.detect { |j| j[:job] == ExpireOrderJob }
+          job = ActiveJob::Base.queue_adapter.enqueued_jobs.detect { |j| j[:job] == OrderFollowUpJob }
           expect(job).to_not be_nil
           expect(job[:at].to_i).to eq order.reload.state_expires_at.to_i
           expect(job[:args][0]).to eq order.id

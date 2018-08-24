@@ -33,4 +33,12 @@ module GravityService
     Rails.logger.warn("Could not fetch artwork #{artwork_id} from gravity: #{e.message}")
     nil
   end
+
+  def self.fetch_partner_location(partner_id)
+    partner = fetch_partner(partner_id)
+    location = Rails.cache.fetch("gravity_partner_location_#{partner[:billing_location_id]}", expire_in: Rails.application.config_for(:gravity)['partner_cache_in_seconds']) do
+      Adapters::GravityV1.request("/partner/#{partner_id}/location/#{partner[:billing_location_id]}")
+    end
+    location.slice(:address, :address_2, :city, :state, :country, :postal_code)
+  end
 end

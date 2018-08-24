@@ -1,0 +1,6 @@
+development: &default
+  taxjar_api_key: <%= ENV['TAXJAR_API_KEY'] || '' %>
+test:
+  <<: *default
+production:
+  <<: *default

@@ -7,26 +7,24 @@ module OrderService
     order
   end
 
-  def self.set_shipping!(order, attributes)
+  def self.set_shipping!(order, fulfillment_type:, shipping: {})
     raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
-
     Order.transaction do
+      shipping_total_cents = order.line_items.map { |li| ShippingService.calculate_shipping(li, shipping_country: shipping[:country], fulfillment_type: fulfillment_type) }.sum
       attrs = {
-        shipping_total_cents: order.line_items.map { |li| ShippingService.calculate_shipping(li, attributes.slice(:shipping_country, :fulfillment_type)) }.sum,
-        tax_total_cents: 100_00 # TODO: 🚨 replace this with real tax calculation 🚨
+        shipping_total_cents: shipping_total_cents,
+        tax_total_cents: SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
       }
       order.update!(
         attrs.merge(
-          attributes.slice(
-            :shipping_name,
-            :shipping_address_line1,
-            :shipping_address_line2,
-            :shipping_city,
-            :shipping_region,
-            :shipping_country,
-            :shipping_postal_code,
-            :fulfillment_type
-          )
+          fulfillment_type: fulfillment_type,
+          shipping_name: shipping[:name],
+          shipping_address_line1: shipping[:address_line1],
+          shipping_address_line2: shipping[:address_line2],
+          shipping_city: shipping[:city],
+          shipping_region: shipping[:region],
+          shipping_country: shipping[:country],
+          shipping_postal_code: shipping[:postal_code]
         )
       )
     end
@@ -49,7 +47,7 @@ module OrderService
       TransactionService.create!(order, transaction)
     end
     PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
-    ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
   rescue Errors::PaymentError => e
     TransactionService.create!(order, e.body)
@@ -69,22 +67,24 @@ module OrderService
     order
   end
 
-  def self.reject!(order)
+  def self.reject!(order, by)
     order.reject! do
-      refund = PaymentService.refund_charge(order.external_charge_id)
-      transaction = {
-        external_id: refund.id,
-        amount_cents: refund.amount,
-        transaction_type: Transaction::REFUND,
-        status: Transaction::SUCCESS
-      }
-      TransactionService.create!(order, transaction)
+      refund(order)
     end
+    PostNotificationJob.perform_later(order.id, Order::REJECTED, by)
     order
   rescue Errors::PaymentError => e
     TransactionService.create!(order, e.body)
     Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
     raise e
+  end
+
+  def self.seller_lapse!(order)
+    order.seller_lapse! do
+      refund(order)
+    end
+    PostNotificationJob.perform_later(order.id, Order::SELLER_LAPSED)
+    order
   end
 
   def self.abandon!(order)
@@ -93,5 +93,16 @@ module OrderService
 
   def self.valid_currency_code?(currency_code)
     Order::SUPPORTED_CURRENCIES.include?(currency_code.downcase)
+  end
+
+  def self.refund(order)
+    refund = PaymentService.refund_charge(order.external_charge_id)
+    transaction = {
+      external_id: refund.id,
+      amount_cents: refund.amount,
+      transaction_type: Transaction::REFUND,
+      status: Transaction::SUCCESS
+    }
+    TransactionService.create!(order, transaction)
   end
 end

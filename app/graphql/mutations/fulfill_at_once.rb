@@ -3,7 +3,7 @@ class Mutations::FulfillAtOnce < Mutations::BaseMutation
   description 'Fulfill an order with one Fulfillment, it sets this fulfillment to each line item in order'
 
   argument :id, ID, required: true
-  argument :fulfillment, Types::FulfillmentAttributes, required: true
+  argument :fulfillment, Inputs::FulfillmentAttributes, required: true
 
   field :order, Types::OrderType, null: true
   field :errors, [String], null: false

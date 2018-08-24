@@ -16,7 +16,7 @@ module OrderSubmitService
       order.update!(commission_fee_cents: calculate_commission(order), transaction_fee_cents: calculate_transaction_fee(order))
     end
     PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
-    ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
   rescue Errors::PaymentError => e
     TransactionService.create!(order, e.body)

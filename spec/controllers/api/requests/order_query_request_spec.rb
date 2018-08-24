@@ -76,7 +76,7 @@ describe Api::GraphqlController, type: :request do
     context 'trusted user rules' do
       let(:jwt_user_id) { 'rando' }
 
-      context 'trusted account accessing another account\'s order' do
+      context "trusted account accessing another account's order" do
         let(:jwt_roles) { 'trusted' }
 
         it 'allows action' do
@@ -109,6 +109,25 @@ describe Api::GraphqlController, type: :request do
           expect do
             client.execute(query, id: user2_order1.id)
           end.to raise_error(Graphlient::Errors::ExecutionError, 'order: Not permitted')
+        end
+      end
+
+      context "sale_admin accessing another account's order" do
+        let(:jwt_roles) { 'sales_admin' }
+
+        it 'allows action' do
+          expect do
+            client.execute(query, id: user2_order1.id)
+          end.to_not raise_error
+        end
+
+        it 'returns expected payload' do
+          result = client.execute(query, id: user2_order1.id)
+          expect(result.data.order.buyer.id).to eq user2_order1.buyer_id
+          expect(result.data.order.seller.id).to eq user2_order1.seller_id
+          expect(result.data.order.currency_code).to eq 'usd'
+          expect(result.data.order.state).to eq 'PENDING'
+          expect(result.data.order.items_total_cents).to eq 0
         end
       end
     end
