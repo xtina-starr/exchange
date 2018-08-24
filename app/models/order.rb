@@ -1,8 +1,11 @@
 class Order < ApplicationRecord
   has_paper_trail
   SUPPORTED_CURRENCIES = %w[usd].freeze
+  # For more docs about states go to:
+  # https://www.notion.so/artsy/37c311363ef046c3aa546047e60cc58a?v=de68d5bbc30748f88b0d92a059bc0ba8
   STATES = [
     PENDING = 'pending'.freeze,
+    # Buyer starts checkout flow but never submits
     ABANDONED = 'abandoned'.freeze,
     # Check-out complete; payment authorized.
     # Buyer credit card has been authorized and hold has been placed.
@@ -13,14 +16,15 @@ class Order < ApplicationRecord
     APPROVED = 'approved'.freeze,
     # Items have been deemed unavailable and hold is voided.
     REJECTED = 'rejected'.freeze,
-
+    # Seller didn't approve order in time
+    SELLER_LAPSED = 'seller_lapsed'.freeze,
     FULFILLED = 'fulfilled'.freeze
   ].freeze
 
   STATE_EXPIRATIONS = {
     'pending' => 2.days,
     'submitted' => 2.days,
-    'approved' => 5.days
+    'approved' => 7.days
   }.freeze
 
   FULFILLMENT_TYPES = [
@@ -28,7 +32,7 @@ class Order < ApplicationRecord
     SHIP = 'ship'.freeze
   ].freeze
 
-  ACTIONS = %i[abandon submit approve reject fulfill].freeze
+  ACTIONS = %i[abandon submit approve reject fulfill seller_lapse].freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
   has_many :transactions, dependent: :destroy
@@ -107,6 +111,7 @@ class Order < ApplicationRecord
     machine.when(:submit, PENDING => SUBMITTED)
     machine.when(:approve, SUBMITTED => APPROVED)
     machine.when(:reject, SUBMITTED => REJECTED)
+    machine.when(:seller_lapse, SUBMITTED => SELLER_LAPSED)
     machine.when(:fulfill, APPROVED => FULFILLED)
     machine.on(:any) do
       self.state = machine.state

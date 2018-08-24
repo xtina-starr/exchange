@@ -47,7 +47,7 @@ module OrderService
       TransactionService.create!(order, transaction)
     end
     PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
-    ExpireOrderJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
   rescue Errors::PaymentError => e
     TransactionService.create!(order, e.body)
@@ -67,22 +67,24 @@ module OrderService
     order
   end
 
-  def self.reject!(order)
+  def self.reject!(order, by)
     order.reject! do
-      refund = PaymentService.refund_charge(order.external_charge_id)
-      transaction = {
-        external_id: refund.id,
-        amount_cents: refund.amount,
-        transaction_type: Transaction::REFUND,
-        status: Transaction::SUCCESS
-      }
-      TransactionService.create!(order, transaction)
+      refund(order)
     end
+    PostNotificationJob.perform_later(order.id, Order::REJECTED, by)
     order
   rescue Errors::PaymentError => e
     TransactionService.create!(order, e.body)
     Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
     raise e
+  end
+
+  def self.seller_lapse!(order)
+    order.seller_lapse! do
+      refund(order)
+    end
+    PostNotificationJob.perform_later(order.id, Order::SELLER_LAPSED)
+    order
   end
 
   def self.abandon!(order)
@@ -91,5 +93,16 @@ module OrderService
 
   def self.valid_currency_code?(currency_code)
     Order::SUPPORTED_CURRENCIES.include?(currency_code.downcase)
+  end
+
+  def self.refund(order)
+    refund = PaymentService.refund_charge(order.external_charge_id)
+    transaction = {
+      external_id: refund.id,
+      amount_cents: refund.amount,
+      transaction_type: Transaction::REFUND,
+      status: Transaction::SUCCESS
+    }
+    TransactionService.create!(order, transaction)
   end
 end
