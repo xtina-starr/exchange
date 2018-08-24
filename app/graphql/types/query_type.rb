@@ -47,7 +47,7 @@ class Types::QueryType < Types::BaseObject
   end
 
   def partner_permitted?(id)
-    context[:current_user][:partner_ids].include?(id)
+    context[:current_user][:partner_ids].include?(id) || context[:current_user][:roles].include?('sales_admin')
   end
 
   def validate_user(id)
