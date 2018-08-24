@@ -114,6 +114,9 @@ mutation($input: SetShippingInput!) {
           addressLine1
           country
         }
+        ... on Pickup {
+          fulfillmentType
+        }
       }
     }
     errors
