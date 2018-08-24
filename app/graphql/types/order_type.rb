@@ -9,14 +9,7 @@ class Types::OrderType < Types::BaseObject
   field :credit_card_id, String, null: true
   field :state, Types::OrderStateEnum, null: false
   field :currency_code, String, null: false
-  field :shipping_name, String, null: true
-  field :shipping_address_line1, String, null: true
-  field :shipping_address_line2, String, null: true
-  field :shipping_city, String, null: true
-  field :shipping_region, String, null: true
-  field :shipping_country, String, null: true
-  field :shipping_postal_code, String, null: true
-  field :fulfillment_type, Types::OrderFulfillmentTypeEnum, null: true
+  field :requested_fulfillment, Types::RequestedFulfillmentUnionType, null: true
   field :items_total_cents, Integer, null: false
   field :shipping_total_cents, Integer, null: true
   field :tax_total_cents, Integer, null: true
@@ -29,4 +22,12 @@ class Types::OrderType < Types::BaseObject
   field :state_updated_at, Types::DateTimeType, null: true
   field :state_expires_at, Types::DateTimeType, null: true
   field :line_items, Types::LineItemType.connection_type, null: true
+
+  def requested_fulfillment
+    # fulfillment is not a field on order so we have to resolve it here
+    # it uses our union, for that to work we need to pass order (aka object)
+    # to our Fulfillment
+    return if object.fulfillment_type.blank?
+    object
+  end
 end
