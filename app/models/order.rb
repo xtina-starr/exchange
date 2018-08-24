@@ -24,7 +24,7 @@ class Order < ApplicationRecord
   STATE_EXPIRATIONS = {
     'pending' => 2.days,
     'submitted' => 2.days,
-    'approved' => 5.days
+    'approved' => 7.days
   }.freeze
 
   FULFILLMENT_TYPES = [
