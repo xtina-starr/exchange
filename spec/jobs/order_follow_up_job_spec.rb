@@ -5,7 +5,7 @@ describe OrderFollowUpJob, type: :job do
   let(:state) { Order::PENDING }
   let(:order) { Fabricate(:order, state: state) }
   describe '#perform' do
-    context 'with an order in the same state after its expiration tim' do
+    context 'with an order in the same state after its expiration time' do
       context 'expired PENDING' do
         it 'transitions to abandoned' do
           Timecop.freeze(order.state_expires_at + 1.second) do
