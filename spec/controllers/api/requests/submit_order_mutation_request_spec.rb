@@ -27,7 +27,7 @@ describe Api::GraphqlController, type: :request do
       )
     end
     let(:line_item) do
-      Fabricate(:line_item, order: order, price_cents: 1000_00)
+      Fabricate(:line_item, order: order, price_cents: 1000_00, artwork_id: 'a-1')
     end
 
     let(:mutation) do
@@ -101,10 +101,12 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'submits the order' do
+        inventory_request = stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json)
         expect(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
         expect(GravityService).to receive(:get_credit_card).and_return(credit_card)
         expect(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
         response = client.execute(mutation, submit_order_input)
+        expect(inventory_request).to have_been_requested
         expect(response.data.submit_order.order.id).to eq order.id.to_s
         expect(response.data.submit_order.order.state).to eq 'SUBMITTED'
         expect(response.data.submit_order.order.commission_fee_cents).to eq 800_00

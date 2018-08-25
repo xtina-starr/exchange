@@ -7,10 +7,13 @@ module OrderSubmitService
     credit_card = GravityService.get_credit_card(order.credit_card_id)
     validate_credit_card!(credit_card)
     charge_params = construct_charge_params(order, credit_card, merchant_account)
-
+    deducted_inventory = []
     order.submit! do
       # Try holding artwork and deduct inventory
-      order.line_items.each { |li| GravityService.deduct_inventory(li) }
+      order.line_items.each do |li|
+        GravityService.deduct_inventory(li)
+        deducted_inventory << li
+      end
       charge = PaymentService.authorize_charge(charge_params)
       order.external_charge_id = charge.id
       transaction = construct_transaction_success(charge)
@@ -21,6 +24,10 @@ module OrderSubmitService
     PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
+  rescue Errors::InventoryError => e
+    # deduct failed, undeduct all already deducted
+    deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
+    raise e
   rescue Errors::PaymentError => e
     TransactionService.create!(order, e.body)
     Rails.logger.error("Could not submit order #{order.id}: #{e.message}")

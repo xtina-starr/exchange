@@ -50,8 +50,8 @@ module GravityService
     end
   rescue Adapters::GravityNotFoundError
     raise Errors::OrderError, 'Credit card not found'
-  rescue Adapters::GravityError, StandardError => e
-    raise Errors::OrderError, e.message
+  rescue Adapters::GravityError => e
+    raise Errors::InventoryError.new(e.message, line_item)
   end
 
   def self.undeduct_inventory(line_item)
@@ -62,7 +62,7 @@ module GravityService
     end
   rescue Adapters::GravityNotFoundError
     raise Errors::OrderError, 'Credit card not found'
-  rescue Adapters::GravityError, StandardError => e
+  rescue Adapters::GravityError => e
     raise Errors::OrderError, e.message
   end
 end
