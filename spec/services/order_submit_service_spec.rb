@@ -1,5 +1,4 @@
 require 'rails_helper'
-require 'webmock/rspec'
 require 'support/gravity_helper'
 
 describe OrderSubmitService, type: :services do
@@ -8,7 +7,7 @@ describe OrderSubmitService, type: :services do
   let(:partner_id) { 'partner-1' }
   let(:credit_card_id) { 'cc-1' }
   let(:order) { Fabricate(:order, partner_id: partner_id, credit_card_id: credit_card_id, fulfillment_type: Order::PICKUP) }
-  let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00), Fabricate(:line_item, order: order, price_cents: 8000_00)] }
+  let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: 'a-1', quantity: 1), Fabricate(:line_item, order: order, price_cents: 8000_00, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2)] }
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
   let(:partner_merchant_accounts) { [{ external_id: 'ma-1' }, { external_id: 'some_account' }] }
@@ -24,11 +23,28 @@ describe OrderSubmitService, type: :services do
 
   describe '#submit!' do
     context 'with a partner with a merchant account' do
+      let(:inventory_deduct_request_status) { 200 }
+      let(:artwork_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: inventory_deduct_request_status, body: {}.to_json) }
+      let(:edition_set_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/edition_set/es-1/inventory").with(body: { deduct: 2 }).to_return(status: inventory_deduct_request_status, body: {}.to_json) }
+      before do
+        allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
+        allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
+      end
+      context 'with failed inventory deduct' do
+        let(:inventory_deduct_request_status) { 400 }
+        before do
+          artwork_inventory_deduct_request
+          edition_set_inventory_deduct_request
+        end
+        it 'raises error' do
+          expect do
+            OrderSubmitService.submit!(order)
+          end.to raise_error(Errors::OrderError).and change(order.transactions, :count).by(0)
+        end
+      end
       context 'with a successful transaction' do
         before(:each) do
-          allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
-          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-          allow(Adapters::GravityV1).to receive(:request).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
           OrderSubmitService.submit!(order)
         end
 

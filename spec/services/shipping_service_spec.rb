@@ -21,7 +21,7 @@ describe ShippingService, type: :services do
     let(:line_item) { Fabricate(:line_item, artwork_id: 'gravity-id') }
     context 'with successful artwork fetch call' do
       before do
-        allow(Adapters::GravityV1).to receive(:request).with('/artwork/gravity-id').and_return(artwork)
+        allow(Adapters::GravityV1).to receive(:get).with('/artwork/gravity-id').and_return(artwork)
       end
       context 'with pickup fulfillment type' do
         it 'returns 0' do
@@ -50,7 +50,7 @@ describe ShippingService, type: :services do
 
     context 'with failed artwork fetch call' do
       before do
-        allow(Adapters::GravityV1).to receive(:request).with('/artwork/gravity-id').and_raise(Adapters::GravityError.new('unknown artwork'))
+        allow(Adapters::GravityV1).to receive(:get).with('/artwork/gravity-id').and_raise(Adapters::GravityError.new('unknown artwork'))
       end
       it 'raises Errors::OrderError' do
         expect do

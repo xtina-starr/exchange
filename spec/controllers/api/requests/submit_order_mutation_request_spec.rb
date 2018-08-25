@@ -103,7 +103,7 @@ describe Api::GraphqlController, type: :request do
       it 'submits the order' do
         expect(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
         expect(GravityService).to receive(:get_credit_card).and_return(credit_card)
-        expect(Adapters::GravityV1).to receive(:request).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
+        expect(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order.order.id).to eq order.id.to_s
         expect(response.data.submit_order.order.state).to eq 'SUBMITTED'

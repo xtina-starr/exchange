@@ -9,12 +9,15 @@ module OrderSubmitService
     charge_params = construct_charge_params(order, credit_card, merchant_account)
 
     order.submit! do
+      # Try holding artwork and deduct inventory
+      order.line_items.each { |li| GravityService.deduct_inventory(li) }
       charge = PaymentService.authorize_charge(charge_params)
       order.external_charge_id = charge.id
       transaction = construct_transaction_success(charge)
       TransactionService.create!(order, transaction)
       order.update!(commission_fee_cents: calculate_commission(order), transaction_fee_cents: calculate_transaction_fee(order))
     end
+
     PostNotificationJob.perform_later(order.id, Order::SUBMITTED, by)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
