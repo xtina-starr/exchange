@@ -25,10 +25,12 @@ module OrderSubmitService
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
   rescue Errors::InventoryError => e
-    # deduct failed, undeduct all already deducted
+    # deduct failed for one of the line items, undeduct all already deducted inventory
     deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
     raise e
   rescue Errors::PaymentError => e
+    # there was an issue in processing charge, undeduct all already deducted inventory
+    deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
     TransactionService.create!(order, e.body)
     Rails.logger.error("Could not submit order #{order.id}: #{e.message}")
     raise e
