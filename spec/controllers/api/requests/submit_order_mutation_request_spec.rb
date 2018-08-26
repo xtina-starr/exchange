@@ -7,6 +7,7 @@ describe Api::GraphqlController, type: :request do
   describe 'submit_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
+    let(:partner) { { effective_commission_rate: 0.1 } }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
     let(:merchant_account) { { external_id: 'ma-1' } }
@@ -94,6 +95,7 @@ describe Api::GraphqlController, type: :request do
         it 'returns error' do
           allow(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
           allow(GravityService).to receive(:get_credit_card).and_return(credit_card)
+          allow(GravityService).to receive(:fetch_partner).and_return(partner)
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.errors).to include 'Invalid action on this approved order'
           expect(order.reload.state).to eq Order::APPROVED
