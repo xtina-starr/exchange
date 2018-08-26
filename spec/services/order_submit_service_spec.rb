@@ -42,14 +42,11 @@ describe OrderSubmitService, type: :services do
           edition_set_inventory_deduct_request
           artwork_inventory_undeduct_request
           edition_set_inventory_undeduct_request
-        end
-        it 'raises error and not stores transaction' do
           expect do
             service.process!
           end.to raise_error(Errors::InventoryError).and change(order.transactions, :count).by(0)
         end
         it 'does not call to update edition set inventory' do
-          expect { service.process! }.to raise_error(Errors::InventoryError)
           expect(artwork_inventory_deduct_request).to have_been_requested
           expect(edition_set_inventory_deduct_request).to_not have_been_requested
           expect(artwork_inventory_undeduct_request).not_to have_been_requested
@@ -63,14 +60,11 @@ describe OrderSubmitService, type: :services do
           edition_set_inventory_deduct_request
           artwork_inventory_undeduct_request
           edition_set_inventory_undeduct_request
-        end
-        it 'raises error and does not create transaction' do
           expect do
             service.process!
           end.to raise_error(Errors::InventoryError).and change(order.transactions, :count).by(0)
         end
         it 'deducts and then undeducts artwork inventory' do
-          expect { service.process! }.to raise_error(Errors::InventoryError)
           expect(artwork_inventory_deduct_request).to have_been_requested
           expect(edition_set_inventory_deduct_request).to have_been_requested
           expect(artwork_inventory_undeduct_request).to have_been_requested
@@ -137,19 +131,15 @@ describe OrderSubmitService, type: :services do
           StripeMock.prepare_card_error(:card_declined, :new_charge)
           allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
           allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-        end
-        it 'raises PaymentError' do
           expect { service.process! }.to raise_error(Errors::PaymentError)
         end
         it 'deducts and then undeducts the inventory for both artwork and edition set' do
-          expect { service.process! }.to raise_error(Errors::PaymentError)
           expect(artwork_inventory_deduct_request).to have_been_requested
           expect(edition_set_inventory_deduct_request).to have_been_requested
           expect(artwork_inventory_undeduct_request).to have_been_requested
           expect(edition_set_inventory_undeduct_request).to have_been_requested
         end
         it 'records failed transaction' do
-          expect { service.process! }.to raise_error(Errors::PaymentError)
           expect(order.transactions.last.transaction_type).to eq Transaction::HOLD
           expect(order.transactions.last.status).to eq Transaction::FAILURE
         end
