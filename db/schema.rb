@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_08_15_204249) do
+ActiveRecord::Schema.define(version: 2018_08_22_200144) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -65,8 +65,8 @@ ActiveRecord::Schema.define(version: 2018_08_15_204249) do
     t.integer "transaction_fee_cents"
     t.integer "commission_fee_cents"
     t.string "currency_code", limit: 3
-    t.string "user_id"
-    t.string "partner_id"
+    t.string "buyer_id"
+    t.string "seller_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "state", null: false
@@ -82,10 +82,12 @@ ActiveRecord::Schema.define(version: 2018_08_15_204249) do
     t.string "shipping_region"
     t.string "external_charge_id"
     t.string "shipping_name"
+    t.string "buyer_type"
+    t.string "seller_type"
+    t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
-    t.index ["partner_id"], name: "index_orders_on_partner_id"
+    t.index ["seller_id"], name: "index_orders_on_seller_id"
     t.index ["state"], name: "index_orders_on_state"
-    t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
   create_table "transactions", force: :cascade do |t|

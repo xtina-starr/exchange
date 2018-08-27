@@ -9,16 +9,24 @@ describe Api::GraphqlController, type: :request do
     let(:second_user) { 'user2' }
     let(:state) { 'PENDING' }
     let(:created_at) { 2.days.ago }
-    let!(:user1_order1) { Fabricate(:order, partner_id: partner_id, user_id: user_id, created_at: created_at, updated_at: 1.day.ago, shipping_total_cents: 100_00, commission_fee_cents: 50_00) }
-    let!(:user2_order1) { Fabricate(:order, partner_id: second_partner_id, user_id: second_user) }
+    let!(:user1_order1) { Fabricate(:order, seller_id: partner_id, seller_type: 'partner', buyer_id: user_id, buyer_type: 'user', created_at: created_at, updated_at: 1.day.ago, shipping_total_cents: 100_00, commission_fee_cents: 50_00) }
+    let!(:user2_order1) { Fabricate(:order, seller_id: second_partner_id, seller_type: 'partner', buyer_id: second_user, buyer_type: 'user') }
 
     let(:query) do
       <<-GRAPHQL
         query($id: ID!) {
           order(id: $id) {
             id
-            userId
-            partnerId
+            buyer {
+              ... on User {
+                id
+              }
+            }
+            seller {
+              ... on Partner {
+                id
+              }
+            }
             state
             currencyCode
             itemsTotalCents
@@ -26,9 +34,9 @@ describe Api::GraphqlController, type: :request do
             sellerTotalCents
             buyerTotalCents
             createdAt
-            lineItems{
-              edges{
-                node{
+            lineItems {
+              edges {
+                node {
                   priceCents
                 }
               }
@@ -47,8 +55,8 @@ describe Api::GraphqlController, type: :request do
 
       it 'returns order when accessing correct order' do
         result = client.execute(query, id: user1_order1.id)
-        expect(result.data.order.user_id).to eq user_id
-        expect(result.data.order.partner_id).to eq partner_id
+        expect(result.data.order.buyer.id).to eq user_id
+        expect(result.data.order.seller.id).to eq partner_id
         expect(result.data.order.currency_code).to eq 'usd'
         expect(result.data.order.state).to eq 'PENDING'
         expect(result.data.order.items_total_cents).to eq 0
@@ -81,8 +89,8 @@ describe Api::GraphqlController, type: :request do
 
         it 'returns expected payload' do
           result = client.execute(query, id: user2_order1.id)
-          expect(result.data.order.user_id).to eq user2_order1.user_id
-          expect(result.data.order.partner_id).to eq user2_order1.partner_id
+          expect(result.data.order.buyer.id).to eq user2_order1.buyer_id
+          expect(result.data.order.seller.id).to eq user2_order1.seller_id
           expect(result.data.order.currency_code).to eq 'usd'
           expect(result.data.order.state).to eq 'PENDING'
           expect(result.data.order.items_total_cents).to eq 0
@@ -117,8 +125,8 @@ describe Api::GraphqlController, type: :request do
 
         it 'returns expected payload' do
           result = client.execute(query, id: user2_order1.id)
-          expect(result.data.order.user_id).to eq user2_order1.user_id
-          expect(result.data.order.partner_id).to eq user2_order1.partner_id
+          expect(result.data.order.buyer.id).to eq user2_order1.buyer_id
+          expect(result.data.order.seller.id).to eq user2_order1.seller_id
           expect(result.data.order.currency_code).to eq 'usd'
           expect(result.data.order.state).to eq 'PENDING'
           expect(result.data.order.items_total_cents).to eq 0
@@ -128,10 +136,10 @@ describe Api::GraphqlController, type: :request do
 
     context 'partner accessing order' do
       it 'returns order when accessing correct order' do
-        another_user_order = Fabricate(:order, partner_id: partner_id, user_id: 'someone-else-id')
+        another_user_order = Fabricate(:order, seller_id: partner_id, buyer_id: 'someone-else-id')
         result = client.execute(query, id: another_user_order.id)
-        expect(result.data.order.user_id).to eq 'someone-else-id'
-        expect(result.data.order.partner_id).to eq partner_id
+        expect(result.data.order.buyer.id).to eq 'someone-else-id'
+        expect(result.data.order.seller.id).to eq partner_id
         expect(result.data.order.currency_code).to eq 'usd'
         expect(result.data.order.state).to eq 'PENDING'
         expect(result.data.order.items_total_cents).to eq 0

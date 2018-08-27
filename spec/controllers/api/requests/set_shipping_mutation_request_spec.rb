@@ -7,7 +7,7 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
-    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
+    let(:order) { Fabricate(:order, seller_id: partner_id, buyer_id: user_id) }
     let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1'), Fabricate(:line_item, order: order, artwork_id: 'a-2')] }
     let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
     let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
@@ -23,8 +23,16 @@ describe Api::GraphqlController, type: :request do
           setShipping(input: $input) {
             order {
               id
-              userId
-              partnerId
+              buyer {
+                ... on Partner {
+                  id
+                }
+              }
+              seller {
+                ... on User {
+                  id
+                }
+              }
               state
               shippingTotalCents
               requestedFulfillment {

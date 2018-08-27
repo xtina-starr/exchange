@@ -9,7 +9,7 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
-    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
+    let(:order) { Fabricate(:order, seller_id: partner_id, buyer_id: user_id) }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -17,8 +17,16 @@ describe Api::GraphqlController, type: :request do
           approveOrder(input: $input) {
             order {
               id
-              userId
-              partnerId
+              buyer {
+                ... on Partner {
+                  id
+                }
+              }
+              seller {
+                ... on User {
+                  id
+                }
+              }
               state
             }
             errors

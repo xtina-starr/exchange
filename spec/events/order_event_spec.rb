@@ -18,8 +18,8 @@ describe OrderEvent, type: :events do
   end
   let(:order) do
     Fabricate(:order,
-              partner_id: partner_id,
-              user_id: user_id,
+              seller_id: partner_id,
+              buyer_id: user_id,
               currency_code: 'usd',
               shipping_total_cents: 50,
               tax_total_cents: 30,
@@ -57,7 +57,7 @@ describe OrderEvent, type: :events do
       order.submit!
       order.save!
       expect(event.properties[:code]).to eq order.code
-      expect(event.properties[:partner_id]).to eq partner_id
+      expect(event.properties[:seller_id]).to eq partner_id
       expect(event.properties[:currency_code]).to eq 'usd'
       expect(event.properties[:state]).to eq 'submitted'
       expect(event.properties[:items_total_cents]).to eq 300

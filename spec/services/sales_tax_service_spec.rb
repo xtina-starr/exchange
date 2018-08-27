@@ -44,12 +44,12 @@ describe SalesTaxService, type: :services do
 
   describe '#calculate_total_sales_tax' do
     before do
-      allow(GravityService).to receive(:fetch_partner_location).with(order.partner_id).and_return(partner_location)
+      allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
       allow(SalesTaxService).to receive(:calculate_line_item_sales_tax).twice.and_return(1000)
     end
     it "fetches the partner's location" do
       SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
-      expect(GravityService).to have_received(:fetch_partner_location).with(order.partner_id)
+      expect(GravityService).to have_received(:fetch_partner_location).with(order.seller_id)
     end
     it 'calculates sales tax for each line item and adds them together' do
       expect(SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)).to be 2000

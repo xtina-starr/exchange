@@ -23,8 +23,16 @@ describe Api::GraphqlController, type: :request do
               ... on OrderWithMutationSuccess {
                 order {
                   id
-                  userId
-                  partnerId
+                  buyer {
+                    ... on Partner {
+                      id
+                    }
+                  }
+                  seller {
+                    ... on User {
+                      id
+                    }
+                  }
                 }
               }
               ... on OrderWithMutationFailure {
@@ -75,8 +83,8 @@ describe Api::GraphqlController, type: :request do
               expect(response.data.create_order_with_artwork.order_or_error).not_to respond_to(:error)
               order = Order.find(response.data.create_order_with_artwork.order_or_error.order.id)
               expect(order.currency_code).to eq 'USD'
-              expect(order.user_id).to eq jwt_user_id
-              expect(order.partner_id).to eq partner_id
+              expect(order.buyer_id).to eq jwt_user_id
+              expect(order.seller_id).to eq partner_id
               expect(order.line_items.count).to eq 1
               expect(order.line_items.first.price_cents).to eq 5400_12
               expect(order.line_items.first.artwork_id).to eq 'artwork-id'
@@ -95,8 +103,8 @@ describe Api::GraphqlController, type: :request do
 
               order = Order.find(response.data.create_order_with_artwork.order_or_error.order.id)
               expect(order.currency_code).to eq 'USD'
-              expect(order.user_id).to eq jwt_user_id
-              expect(order.partner_id).to eq partner_id
+              expect(order.buyer_id).to eq jwt_user_id
+              expect(order.seller_id).to eq partner_id
               expect(order.line_items.count).to eq 1
               expect(order.line_items.first.price_cents).to eq 4200_42
               expect(order.line_items.first.artwork_id).to eq 'artwork-id'
@@ -115,8 +123,8 @@ describe Api::GraphqlController, type: :request do
 
               order = Order.find(response.data.create_order_with_artwork.order_or_error.order.id)
               expect(order.currency_code).to eq 'USD'
-              expect(order.user_id).to eq jwt_user_id
-              expect(order.partner_id).to eq partner_id
+              expect(order.buyer_id).to eq jwt_user_id
+              expect(order.seller_id).to eq partner_id
               expect(order.line_items.count).to eq 1
               expect(order.line_items.first.price_cents).to eq 5400_12
               expect(order.line_items.first.artwork_id).to eq 'artwork-id'
@@ -128,7 +136,7 @@ describe Api::GraphqlController, type: :request do
 
         context 'with existing pending order for artwork' do
           let!(:order) do
-            order = Fabricate(:order, user_id: jwt_user_id, state: Order::PENDING)
+            order = Fabricate(:order, buyer_id: jwt_user_id, state: Order::PENDING)
             order.line_items = [Fabricate(:line_item, artwork_id: artwork_id)]
             order
           end

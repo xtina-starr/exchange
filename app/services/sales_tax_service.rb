@@ -9,6 +9,7 @@ module SalesTaxService
   ].freeze
 
   def self.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
+    raise 'Dont know how to calculate tax for non-partner sellers' unless order.seller_type == Order::PARTNER
     shipping_address = {
       country: shipping[:country],
       postal_code: shipping[:postal_code],
@@ -16,7 +17,7 @@ module SalesTaxService
       city: shipping[:city],
       address: shipping[:address_line_1]
     }
-    seller_address = GravityService.fetch_partner_location(order.partner_id)
+    seller_address = GravityService.fetch_partner_location(order.seller_id)
     order.line_items.map { |li| calculate_line_item_sales_tax(li, seller_address, shipping_address, shipping_total_cents, fulfillment_type) }.sum
   end
 

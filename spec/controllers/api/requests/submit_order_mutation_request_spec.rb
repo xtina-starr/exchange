@@ -15,8 +15,8 @@ describe Api::GraphqlController, type: :request do
     let(:order) do
       Fabricate(
         :order,
-        partner_id: partner_id,
-        user_id: user_id,
+        seller_id: partner_id,
+        buyer_id: user_id,
         credit_card_id: credit_card_id,
         shipping_name: 'Fname Lname',
         shipping_address_line1: '12 Vanak St',
@@ -37,8 +37,16 @@ describe Api::GraphqlController, type: :request do
           submitOrder(input: $input) {
             order {
               id
-              userId
-              partnerId
+              buyer {
+                ... on Partner {
+                  id
+                }
+              }
+              seller {
+                ... on User {
+                  id
+                }
+              }
               state
               commissionFeeCents
             }

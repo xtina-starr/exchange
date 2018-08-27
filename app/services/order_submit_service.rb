@@ -47,8 +47,8 @@ class OrderSubmitService
   def pre_process!
     @credit_card = GravityService.get_credit_card(@order.credit_card_id)
     assert_credit_card!
-    @partner = GravityService.fetch_partner(@order.partner_id)
-    @merchant_account = GravityService.get_merchant_account(@order.partner_id)
+    @partner = GravityService.fetch_partner(@order.seller_id)
+    @merchant_account = GravityService.get_merchant_account(@order.seller_id)
   end
 
   def post_process!
