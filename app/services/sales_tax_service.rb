@@ -9,7 +9,7 @@ module SalesTaxService
   ].freeze
 
   def self.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
-    raise 'Dont know how to calculate tax for non-partner sellers' unless order.seller_type == 'partner'
+    raise 'Dont know how to calculate tax for non-partner sellers' unless order.seller_type == Order::PARTNER
     shipping_address = {
       country: shipping[:country],
       postal_code: shipping[:postal_code],

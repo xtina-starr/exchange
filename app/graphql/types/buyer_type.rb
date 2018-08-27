@@ -12,9 +12,9 @@ class Types::BuyerType < Types::BaseUnion
 
   def self.resolve_type(object, _context)
     case object.buyer_type
-    when 'user'
+    when Order::USER
       Types::User
-    when 'partner'
+    when Order::PARTNER
       Types::Partner
     else
       raise "Unexpected return value: #{object.inspect}"

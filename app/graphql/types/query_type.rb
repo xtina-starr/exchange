@@ -46,8 +46,8 @@ class Types::QueryType < Types::BaseObject
 
   def access?(order)
     context[:current_user][:roles].include?('sales_admin') ||
-      (order.buyer_type == 'user' && order.buyer_id == context[:current_user][:id]) ||
-      (order.seller_type == 'partner' && context[:current_user][:partner_ids].include?(order.seller_id))
+      (order.buyer_type == Order::USER && order.buyer_id == context[:current_user][:id]) ||
+      (order.seller_type == Order::PARTNER && context[:current_user][:partner_ids].include?(order.seller_id))
   end
 
   def validate_orders_params!(params)
