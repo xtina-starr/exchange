@@ -63,6 +63,6 @@ module GravityService
   rescue Adapters::GravityNotFoundError
     raise Errors::OrderError, 'Credit card not found'
   rescue Adapters::GravityError => e
-    raise Errors::OrderError, e.message
+    raise Errors::InventoryError.new(e.message, line_item)
   end
 end
