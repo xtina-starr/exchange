@@ -58,7 +58,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with failed artwork fetch' do
         before do
-          expect(Adapters::GravityV1).to receive(:request).with('/artwork/artwork-id').and_raise(Adapters::GravityError.new('Timeout'))
+          expect(Adapters::GravityV1).to receive(:get).with('/artwork/artwork-id').and_raise(Adapters::GravityError.new('Timeout'))
         end
         it 'does not create order and returns proper error' do
           expect do

@@ -104,5 +104,6 @@ module OrderService
       status: Transaction::SUCCESS
     }
     TransactionService.create!(order, transaction)
+    order.line_items.each { |li| GravityService.undeduct_inventory(li) }
   end
 end
