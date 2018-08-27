@@ -69,7 +69,7 @@ module OrderService
 
   def self.reject!(order, by)
     order.reject! do
-      release_inventory_refund(order)
+      refund(order)
     end
     PostNotificationJob.perform_later(order.id, Order::REJECTED, by)
     order
@@ -81,7 +81,7 @@ module OrderService
 
   def self.seller_lapse!(order)
     order.seller_lapse! do
-      release_inventory_refund(order)
+      refund(order)
     end
     PostNotificationJob.perform_later(order.id, Order::SELLER_LAPSED)
     order
@@ -95,7 +95,7 @@ module OrderService
     Order::SUPPORTED_CURRENCIES.include?(currency_code.downcase)
   end
 
-  def self.release_inventory_refund(order)
+  def self.refund(order)
     refund = PaymentService.refund_charge(order.external_charge_id)
     transaction = {
       external_id: refund.id,
