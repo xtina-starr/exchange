@@ -6,6 +6,6 @@ class LineItem < ApplicationRecord
   after_save :update_order_totals
 
   def update_order_totals
-    self.order.save!
+    order.save!
   end
 end
