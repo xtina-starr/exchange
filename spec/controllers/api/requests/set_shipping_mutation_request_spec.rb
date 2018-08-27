@@ -23,11 +23,15 @@ describe Api::GraphqlController, type: :request do
           setShipping(input: $input) {
             order {
               id
-              buyer{
-                id
+              buyer {
+                ... on Partner {
+                  id
+                }
               }
-              seller{
-                id
+              seller {
+                ... on User {
+                  id
+                }
               }
               state
               shippingTotalCents

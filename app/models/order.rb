@@ -33,6 +33,10 @@ class Order < ApplicationRecord
   ].freeze
 
   ACTIONS = %i[abandon submit approve reject fulfill seller_lapse].freeze
+  PARTY_TYPES = [
+    USER = 'user'.freeze,
+    PARTNER = 'partner'.freeze
+  ]
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
   has_many :transactions, dependent: :destroy

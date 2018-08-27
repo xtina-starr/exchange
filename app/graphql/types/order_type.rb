@@ -1,16 +1,11 @@
-class Types::Party < Types::BaseObject
-  field :id, String, null: false
-  field :type, String, null: false
-end
-
 class Types::OrderType < Types::BaseObject
   description 'An Order'
   graphql_name 'Order'
 
   field :id, ID, null: false
   field :code, String, null: false
-  field :buyer, Types::Party, null: false
-  field :seller, Types::Party, null: false
+  field :buyer, Types::OrderPartyUnionType, null: false
+  field :seller, Types::OrderPartyUnionType, null: false
   field :credit_card_id, String, null: true
   field :state, Types::OrderStateEnum, null: false
   field :currency_code, String, null: false
@@ -29,17 +24,17 @@ class Types::OrderType < Types::BaseObject
   field :line_items, Types::LineItemType.connection_type, null: true
 
   def buyer
-    {
+    OpenStruct.new(
       id: object.buyer_id,
       type: object.buyer_type
-    }
+    )
   end
 
   def seller
-    {
+    OpenStruct.new(
       id: object.seller_id,
       type: object.seller_type
-    }
+    )
   end
 
   def requested_fulfillment

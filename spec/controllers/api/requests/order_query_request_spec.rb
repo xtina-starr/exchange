@@ -18,12 +18,14 @@ describe Api::GraphqlController, type: :request do
           order(id: $id) {
             id
             buyer {
-              id
-              type
+              ... on User {
+                id
+              }
             }
             seller {
-              id
-              type
+              ... on Partner {
+                id
+              }
             }
             state
             currencyCode

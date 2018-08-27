@@ -18,11 +18,15 @@ describe Api::GraphqlController, type: :request do
             edges{
               node{
                 id
-                buyer{
-                  id
+                buyer {
+                  ... on Partner {
+                    id
+                  }
                 }
-                seller{
-                  id
+                seller {
+                  ... on User {
+                    id
+                  }
                 }
                 state
                 currencyCode
