@@ -14,21 +14,30 @@ describe Api::GraphqlController, type: :request do
       <<-GRAPHQL
         mutation($input: RejectOrderInput!) {
           rejectOrder(input: $input) {
-            order {
-              id
-              buyer {
-                ... on Partner {
+            orderOrError {
+              ... on OrderWithMutationSuccess {
+                order {
                   id
+                  state
+                  buyer {
+                    ... on Partner {
+                      id
+                    }
+                  }
+                  seller {
+                    ... on User {
+                      id
+                    }
+                  }
                 }
               }
-              seller {
-                ... on User {
-                  id
+              ... on OrderWithMutationFailure {
+                error {
+                  description
+                  code
                 }
               }
-              state
             }
-            errors
           }
         }
       GRAPHQL
@@ -45,7 +54,7 @@ describe Api::GraphqlController, type: :request do
       let(:partner_id) { 'another-partner-id' }
       it 'returns permission error' do
         response = client.execute(mutation, reject_order_input)
-        expect(response.data.reject_order.errors).to include 'Not permitted'
+        expect(response.data.reject_order.order_or_error.error.description).to include 'Not permitted'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -56,7 +65,7 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, reject_order_input)
-        expect(response.data.reject_order.errors).to include 'Invalid action on this pending order'
+        expect(response.data.reject_order.order_or_error.error.description).to include 'Invalid action on this pending order'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -67,9 +76,9 @@ describe Api::GraphqlController, type: :request do
       end
       it 'rejects the order' do
         response = client.execute(mutation, reject_order_input)
-        expect(response.data.reject_order.order.id).to eq order.id.to_s
-        expect(response.data.reject_order.order.state).to eq 'REJECTED'
-        expect(response.data.reject_order.errors).to match []
+        expect(response.data.reject_order.order_or_error.order.id).to eq order.id.to_s
+        expect(response.data.reject_order.order_or_error.order.state).to eq 'REJECTED'
+        expect(response.data.reject_order.order_or_error).not_to respond_to(:error)
         expect(order.reload.state).to eq Order::REJECTED
         expect(order.transactions.last.external_id).to_not eq nil
         expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
