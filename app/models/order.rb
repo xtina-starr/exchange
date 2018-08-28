@@ -45,6 +45,7 @@ class Order < ApplicationRecord
   validates :state, presence: true, inclusion: STATES
 
   after_create :set_code
+  after_create :create_state_history
   before_save :update_state_timestamps, if: :state_changed?
   before_save :set_currency_code
 
@@ -56,6 +57,7 @@ class Order < ApplicationRecord
       with_lock do
         state_machine.trigger!(action)
         save!
+        create_state_history
         block.call if block.present?
         self
       end
@@ -100,6 +102,10 @@ class Order < ApplicationRecord
   def update_state_timestamps
     self.state_updated_at = Time.now.utc
     self.state_expires_at = STATE_EXPIRATIONS.key?(state) ? state_updated_at + STATE_EXPIRATIONS[state] : nil
+  end
+
+  def create_state_history
+    self.state_histories.create!(state: state, updated_at: self.state_updated_at)
   end
 
   def set_currency_code

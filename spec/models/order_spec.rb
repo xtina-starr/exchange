@@ -133,4 +133,24 @@ RSpec.describe Order, type: :model do
       expect(order.code).to match(/^B\d{6}$/)
     end
   end
+
+  describe '#create_state_history' do
+    context 'when an order is first created' do
+      it 'creates a new state history object with its initial state' do
+        new_order = Order.create!(state: Order::PENDING)
+        expect(new_order.state_histories.count).to eq 1
+        expect(new_order.state_histories.last.state).to eq Order::PENDING
+        expect(new_order.state_histories.last.updated_at).to eq new_order.state_updated_at
+      end
+    end
+    context 'when an order changes state' do
+      it 'creates a new state history object with the new state' do
+        order.submit!
+        expect(order.state_histories.count).to eq 2 # PENDING and SUBMITTED
+        expect(order.state_histories.last.state).to eq Order::SUBMITTED
+        expect(order.state_histories.last.updated_at).to eq order.state_updated_at        
+      end
+    end
+  end
+
 end
