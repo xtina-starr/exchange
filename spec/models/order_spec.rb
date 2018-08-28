@@ -148,7 +148,36 @@ RSpec.describe Order, type: :model do
         order.submit!
         expect(order.state_histories.count).to eq 2 # PENDING and SUBMITTED
         expect(order.state_histories.last.state).to eq Order::SUBMITTED
-        expect(order.state_histories.last.updated_at).to eq order.state_updated_at        
+        expect(order.state_histories.last.updated_at).to eq order.state_updated_at
+      end
+    end
+  end
+
+  describe '#submitted_at' do
+    context 'with a submitted order' do
+      it 'returns the time at which the order was submitted' do
+        order.submit!
+        expect(order.submitted_at).to eq order.state_histories.find_by(state: Order::SUBMITTED).updated_at
+      end
+    end
+    context 'with an unsubmitted order' do
+      it 'returns nil' do
+        expect(order.submitted_at).to be_nil
+      end
+    end
+  end
+
+  describe '#approved_at' do
+    context 'with an approved order' do
+      it 'returns the time at which the order was approved' do
+        order.update!(state: Order::SUBMITTED)
+        order.approve!
+        expect(order.approved_at).to eq order.state_histories.find_by(state: Order::APPROVED).updated_at
+      end
+    end
+    context 'with an un-approved order' do
+      it 'returns nil' do
+        expect(order.approved_at).to be_nil
       end
     end
   end

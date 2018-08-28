@@ -93,6 +93,14 @@ class Order < ApplicationRecord
     "Order #{id}"
   end
 
+  def submitted_at
+    state_histories.find_by(state: Order::SUBMITTED)&.updated_at
+  end
+
+  def approved_at
+    state_histories.find_by(state: Order::APPROVED)&.updated_at
+  end
+
   private
 
   def set_code

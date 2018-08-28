@@ -21,6 +21,8 @@ class Types::OrderType < Types::BaseObject
   field :updated_at, Types::DateTimeType, null: false
   field :state_updated_at, Types::DateTimeType, null: true
   field :state_expires_at, Types::DateTimeType, null: true
+  field :submitted_at, Types::DateTimeType, null: true
+  field :approved_at, Types::DateTimeType, null: true
   field :line_items, Types::LineItemType.connection_type, null: true
 
   def buyer
