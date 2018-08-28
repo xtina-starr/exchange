@@ -113,7 +113,7 @@ class Order < ApplicationRecord
   end
 
   def create_state_history
-    self.state_histories.create!(state: state, updated_at: self.state_updated_at)
+    state_histories.create!(state: state, updated_at: state_updated_at)
   end
 
   def set_currency_code
