@@ -140,7 +140,7 @@ RSpec.describe Order, type: :model do
         new_order = Order.create!(state: Order::PENDING)
         expect(new_order.state_histories.count).to eq 1
         expect(new_order.state_histories.last.state).to eq Order::PENDING
-        expect(new_order.state_histories.last.updated_at).to eq new_order.state_updated_at
+        expect(new_order.state_histories.last.updated_at.to_i).to eq new_order.state_updated_at.to_i
       end
     end
     context 'when an order changes state' do
@@ -148,7 +148,7 @@ RSpec.describe Order, type: :model do
         order.submit!
         expect(order.state_histories.count).to eq 2 # PENDING and SUBMITTED
         expect(order.state_histories.last.state).to eq Order::SUBMITTED
-        expect(order.state_histories.last.updated_at).to eq order.state_updated_at
+        expect(order.state_histories.last.updated_at.to_i).to eq order.state_updated_at.to_i
       end
     end
   end
@@ -157,7 +157,7 @@ RSpec.describe Order, type: :model do
     context 'with a submitted order' do
       it 'returns the time at which the order was submitted' do
         order.submit!
-        expect(order.submitted_at).to eq order.state_histories.find_by(state: Order::SUBMITTED).updated_at
+        expect(order.submitted_at.to_i).to eq order.state_histories.find_by(state: Order::SUBMITTED).updated_at.to_i
       end
     end
     context 'with an unsubmitted order' do
@@ -172,7 +172,7 @@ RSpec.describe Order, type: :model do
       it 'returns the time at which the order was approved' do
         order.update!(state: Order::SUBMITTED)
         order.approve!
-        expect(order.approved_at).to eq order.state_histories.find_by(state: Order::APPROVED).updated_at
+        expect(order.approved_at.to_i).to eq order.state_histories.find_by(state: Order::APPROVED).updated_at.to_i
       end
     end
     context 'with an un-approved order' do
