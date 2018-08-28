@@ -171,13 +171,23 @@ For input:
 # submit order
 mutation($input: SubmitOrderInput!) {
   submitOrder(input: $input) {
-    order {
-      id
-      userId
-      partnerId
-      state
+    orderOrError {
+      ... on OrderWithMutationSuccess {
+        order {
+          id
+          userId
+          partnerId
+          state
+          commissionFeeCents
+        }
+      }
+      ... on OrderWithMutationFailure {
+        error {
+          description
+          code
+        }
+      }
     }
-    errors
   }
 }
 ```
