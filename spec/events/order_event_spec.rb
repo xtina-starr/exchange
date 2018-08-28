@@ -20,6 +20,8 @@ describe OrderEvent, type: :events do
     Fabricate(:order,
               seller_id: partner_id,
               buyer_id: user_id,
+              buyer_type: Order::USER,
+              seller_type: Order::PARTNER,
               currency_code: 'usd',
               shipping_total_cents: 50,
               tax_total_cents: 30,
@@ -56,10 +58,12 @@ describe OrderEvent, type: :events do
     it 'returns correct properties for a submitted order' do
       order.submit!
       order.save!
-      expect(event.properties[:code]).to eq order.code
       expect(event.properties[:seller_id]).to eq partner_id
+      expect(event.properties[:code]).to eq order.code
       expect(event.properties[:currency_code]).to eq 'usd'
       expect(event.properties[:state]).to eq 'submitted'
+      expect(event.properties[:seller_type]).to eq Order::PARTNER
+      expect(event.properties[:buyer_type]).to eq Order::USER
       expect(event.properties[:items_total_cents]).to eq 300
       expect(event.properties[:shipping_total_cents]).to eq 50
       expect(event.properties[:tax_total_cents]).to eq 30

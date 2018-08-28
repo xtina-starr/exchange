@@ -14,6 +14,7 @@ class OrderEvent < Events::BaseEvent
 
   def properties
     {
+      buyer_type: @object.buyer_type,
       code: @object.code,
       created_at: @object.created_at,
       currency_code: @object.currency_code,
