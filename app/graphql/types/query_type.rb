@@ -7,7 +7,7 @@ class Types::QueryType < Types::BaseObject
     argument :id, ID, required: true
   end
 
-  field :orders, Types::OrderType.connection_type, null: true do
+  field :orders, Types::OrderConnectionWithTotalCountType, null: true, connection: true do
     description 'Find list of orders'
     argument :seller_id, String, required: false
     argument :seller_type, String, required: false
