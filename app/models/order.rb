@@ -40,10 +40,12 @@ class Order < ApplicationRecord
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
   has_many :transactions, dependent: :destroy
+  has_many :state_histories, dependent: :destroy
 
   validates :state, presence: true, inclusion: STATES
 
   after_create :set_code
+  after_create :create_state_history
   before_save :update_state_timestamps, if: :state_changed?
   before_save :set_currency_code
 
@@ -55,6 +57,7 @@ class Order < ApplicationRecord
       with_lock do
         state_machine.trigger!(action)
         save!
+        create_state_history
         block.call if block.present?
         self
       end
@@ -90,6 +93,14 @@ class Order < ApplicationRecord
     "Order #{id}"
   end
 
+  def submitted_at
+    state_histories.find_by(state: Order::SUBMITTED)&.updated_at
+  end
+
+  def approved_at
+    state_histories.find_by(state: Order::APPROVED)&.updated_at
+  end
+
   private
 
   def set_code
@@ -99,6 +110,10 @@ class Order < ApplicationRecord
   def update_state_timestamps
     self.state_updated_at = Time.now.utc
     self.state_expires_at = STATE_EXPIRATIONS.key?(state) ? state_updated_at + STATE_EXPIRATIONS[state] : nil
+  end
+
+  def create_state_history
+    state_histories.create!(state: state, updated_at: state_updated_at)
   end
 
   def set_currency_code
