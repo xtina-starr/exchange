@@ -10,6 +10,7 @@ class OrderSubmitService
     @credit_card = nil
     @merchant_account = nil
     @partner = nil
+    @charge = nil
   end
 
   def process!
@@ -23,10 +24,10 @@ class OrderSubmitService
         GravityService.deduct_inventory(li)
         deducted_inventory << li
       end
-      charge = PaymentService.authorize_charge(construct_charge_params)
-      transaction = construct_transaction_success(charge)
-      TransactionService.create!(@order, transaction)
-      @order.update!(external_charge_id: charge.id, commission_fee_cents: calculate_commission_fee, transaction_fee_cents: calculate_transaction_fee)
+      @order.commission_fee_cents = calculate_commission_fee
+      @order.transaction_fee_cents = calculate_transaction_fee
+      @charge = PaymentService.authorize_charge(construct_charge_params)
+      @order.update!(external_charge_id: @charge.id)
     end
     post_process!
     @order
@@ -52,6 +53,7 @@ class OrderSubmitService
   end
 
   def post_process!
+    TransactionService.create!(@order, construct_transaction_success(@charge))
     PostNotificationJob.perform_later(@order.id, Order::SUBMITTED, @by)
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
   end
@@ -73,8 +75,9 @@ class OrderSubmitService
     {
       source_id: @credit_card[:external_id],
       customer_id: @credit_card[:customer_account][:external_id],
-      destination_id: @merchant_account[:external_id],
       amount: @order.buyer_total_cents,
+      destination_id: @merchant_account[:external_id],
+      destination_amount: @order.seller_total_cents,
       currency_code: @order.currency_code
     }
   end

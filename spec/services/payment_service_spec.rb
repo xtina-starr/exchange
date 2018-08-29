@@ -7,7 +7,8 @@ describe PaymentService, type: :services do
 
   let(:destination_id) { 'ma-1' }
   let(:currency_code) { 'usd' }
-  let(:charge_amount) { 2222 }
+  let(:charge_amount) { 22_22 }
+  let(:destination_amount) { 20_00 }
 
   describe '#authorize_charge' do
     it "authorizes a charge on the user's credit card" do
@@ -15,12 +16,14 @@ describe PaymentService, type: :services do
         source_id: stripe_customer.default_source,
         customer_id: stripe_customer.id,
         destination_id: destination_id,
+        destination_amount: destination_amount,
         currency_code: currency_code,
         amount: charge_amount
       }
       charge = PaymentService.authorize_charge(params)
       expect(charge.amount).to eq(charge_amount)
-      expect(charge.destination).to eq(destination_id)
+      expect(charge.destination.account).to eq(destination_id)
+      expect(charge.destination.amount).to eq(20_00)
       expect(charge.customer).to eq(stripe_customer.id)
       expect(charge.source.id).to eq(stripe_customer.default_source)
       expect(charge.currency).to eq(currency_code)
@@ -34,6 +37,7 @@ describe PaymentService, type: :services do
         source_id: stripe_customer.default_source,
         customer_id: stripe_customer.id,
         destination_id: destination_id,
+        destination_amount: destination_amount,
         currency_code: currency_code,
         amount: charge_amount
       }
