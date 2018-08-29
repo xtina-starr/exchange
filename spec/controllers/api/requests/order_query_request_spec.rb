@@ -9,7 +9,22 @@ describe Api::GraphqlController, type: :request do
     let(:second_user) { 'user2' }
     let(:state) { 'PENDING' }
     let(:created_at) { 2.days.ago }
-    let!(:user1_order1) { Fabricate(:order, seller_id: partner_id, seller_type: 'partner', buyer_id: user_id, buyer_type: 'user', created_at: created_at, updated_at: 1.day.ago, shipping_total_cents: 100_00, commission_fee_cents: 50_00, seller_total_cents: 50_00, buyer_total_cents: 100_00, items_total_cents: 0) }
+    let!(:user1_order1) do
+      Fabricate(
+        :order,
+        seller_id: partner_id,
+        seller_type: 'partner',
+        buyer_id: user_id,
+        buyer_type: 'user',
+        created_at: created_at,
+        updated_at: 1.day.ago,
+        shipping_total_cents: 100_00,
+        commission_fee_cents: 50_00,
+        seller_total_cents: 50_00,
+        buyer_total_cents: 100_00,
+        items_total_cents: 0
+      )
+    end
     let!(:user2_order1) { Fabricate(:order, seller_id: second_partner_id, seller_type: 'partner', buyer_id: second_user, buyer_type: 'user') }
 
     let(:query) do

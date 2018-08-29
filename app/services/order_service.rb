@@ -27,6 +27,7 @@ module OrderService
           shipping_postal_code: shipping[:postal_code]
         )
       )
+      update_totals!(order)
     end
     order
   end
