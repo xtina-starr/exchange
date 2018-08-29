@@ -12,6 +12,7 @@ describe Api::GraphqlController, type: :request do
     let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
     let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
     let(:shipping_country) { 'IR' }
+    let(:shipping_region) { 'Tehran' }
     let(:fulfillment_type) { 'SHIP' }
     let(:total_sales_tax) { 2222 }
     let(:partner) { { billing_location_id: '123abc' } }
@@ -66,7 +67,7 @@ describe Api::GraphqlController, type: :request do
             name: 'Fname Lname',
             country: shipping_country,
             city: 'Tehran',
-            region: 'Tehran',
+            region: shipping_region,
             postalCode: '02198912',
             addressLine1: 'Vanak',
             addressLine2: 'P 80'
@@ -149,6 +150,7 @@ describe Api::GraphqlController, type: :request do
 
           context 'with domestic shipping' do
             let(:shipping_country) { 'US' }
+            let(:shipping_region) { 'NY' }
             it 'sets total shipping cents properly' do
               response = client.execute(mutation, set_shipping_input)
               expect(response.data.set_shipping.order_or_error.order.shipping_total_cents).to eq 600_00

@@ -57,11 +57,13 @@ describe SalesTaxService, type: :services do
       expect(SalesTaxService).to have_received(:calculate_line_item_sales_tax).with(line_items[0], partner_location, shipping_address, shipping_total_cents, fulfillment_type)
       expect(SalesTaxService).to have_received(:calculate_line_item_sales_tax).with(line_items[1], partner_location, shipping_address, shipping_total_cents, fulfillment_type)
     end
-    it 'raises an error if it cannot parse a US or CA region' do
-      shipping[:region] = 'Floridada'
-      expect do
-        SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
-      end.to raise_error(Errors::OrderError, 'Could not identify shipping region')
+    context 'with an order to be shipped' do
+      it 'raises an error if it cannot parse a US or CA region' do
+        shipping[:region] = 'Floridada'
+        expect do
+          SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
+        end.to raise_error(Errors::OrderError, 'Could not identify shipping region')
+      end
     end
   end
 

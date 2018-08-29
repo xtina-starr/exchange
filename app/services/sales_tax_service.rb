@@ -11,8 +11,12 @@ module SalesTaxService
 
   def self.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
     raise 'Dont know how to calculate tax for non-partner sellers' unless order.seller_type == Order::PARTNER
-    region = parse_region(shipping[:country], shipping[:region])
-    raise Errors::OrderError, 'Could not identify shipping region' if region.nil?
+    if fulfillment_type == Order::SHIP
+      region = parse_region(shipping[:country], shipping[:region])
+      raise Errors::OrderError, 'Could not identify shipping region' if region.nil?
+    else
+      region = shipping[:region]
+    end
     shipping_address = {
       country: shipping[:country],
       postal_code: shipping[:postal_code],
