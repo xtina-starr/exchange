@@ -24,8 +24,6 @@ class OrderSubmitService
         GravityService.deduct_inventory(li)
         deducted_inventory << li
       end
-      @order.commission_fee_cents = calculate_commission_fee
-      @order.transaction_fee_cents = calculate_transaction_fee
       @charge = PaymentService.authorize_charge(construct_charge_params)
       @order.update!(external_charge_id: @charge.id)
     end
@@ -50,6 +48,9 @@ class OrderSubmitService
     assert_credit_card!
     @partner = GravityService.fetch_partner(@order.seller_id)
     @merchant_account = GravityService.get_merchant_account(@order.seller_id)
+    @order.commission_fee_cents = calculate_commission_fee
+    @order.transaction_fee_cents = calculate_transaction_fee
+    @order.save!
   end
 
   def post_process!

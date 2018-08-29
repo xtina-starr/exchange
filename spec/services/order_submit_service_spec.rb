@@ -122,6 +122,26 @@ describe OrderSubmitService, type: :services do
         end
       end
 
+      describe 'Stripe call' do
+        it 'calls stripe with expected params' do
+          expect(Stripe::Charge).to receive(:create).with(
+            amount: 10000_00,
+            currency: 'usd',
+            source: stripe_customer.default_source,
+            customer: stripe_customer.id,
+            description: 'Artsy',
+            destination: {
+              account: 'ma-1',
+              amount: 1709_70
+            },
+            capture: false
+          ).and_return(captured_charge)
+          artwork_inventory_deduct_request
+          edition_set_inventory_deduct_request
+          service.process!
+        end
+      end
+
       context 'with failed Stripe charge call' do
         before do
           artwork_inventory_deduct_request
