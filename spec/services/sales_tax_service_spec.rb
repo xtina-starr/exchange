@@ -1,4 +1,3 @@
-require 'carmen'
 require 'rails_helper'
 require 'support/taxjar_helper'
 require 'support/gravity_helper'
@@ -56,14 +55,6 @@ describe SalesTaxService, type: :services do
       expect(SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)).to be 2000
       expect(SalesTaxService).to have_received(:calculate_line_item_sales_tax).with(line_items[0], partner_location, shipping_address, shipping_total_cents, fulfillment_type)
       expect(SalesTaxService).to have_received(:calculate_line_item_sales_tax).with(line_items[1], partner_location, shipping_address, shipping_total_cents, fulfillment_type)
-    end
-    context 'with an order to be shipped' do
-      it 'raises an error if it cannot parse a US or CA region' do
-        shipping[:region] = 'Floridada'
-        expect do
-          SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
-        end.to raise_error(Errors::OrderError, 'Could not identify shipping region')
-      end
     end
   end
 
@@ -130,25 +121,6 @@ describe SalesTaxService, type: :services do
       allow(taxjar_client).to receive(:tax_for_order).with(params)
       SalesTaxService.fetch_sales_tax(line_items[0].price_cents, partner_location, artwork_location, shipping_address, shipping_total_cents)
       expect(taxjar_client).to have_received(:tax_for_order).with(params)
-    end
-  end
-
-  describe '#parse_region' do
-    context 'with a country that is not US or CA' do
-      it 'returns the region unmodified' do
-        expect(SalesTaxService.parse_region('AU', 'Northern Territory')).to eq 'Northern Territory'
-      end
-    end
-    context 'with a country that is US or CA' do
-      it 'returns the region code if the country is US or CA' do
-        expect(SalesTaxService.parse_region('US', 'Florida')).to eq 'FL'
-        expect(SalesTaxService.parse_region('US', 'FL')).to eq 'FL'
-        expect(SalesTaxService.parse_region('CA', 'Quebec')).to eq 'QC'
-        expect(SalesTaxService.parse_region('CA', 'QC')).to eq 'QC'
-      end
-      it 'returns nil if the region is not found' do
-        expect(SalesTaxService.parse_region('US', 'Floridada')).to be_nil
-      end
     end
   end
 end

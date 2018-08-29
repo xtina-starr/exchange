@@ -4,7 +4,7 @@ describe AddressParser do
   describe '#parse!' do
     it 'raises an error if it cannot parse a US or CA region' do
       expect do
-        AddressParser.parse!({country: 'US', region: 'Floridada'})
+        AddressParser.parse!(country: 'US', region: 'Floridada')
       end.to raise_error(Errors::ApplicationError, 'Could not identify shipping region')
     end
   end

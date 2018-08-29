@@ -1,7 +1,3 @@
-require 'carmen'
-require 'taxjar'
-require 'unit_converter'
-
 module SalesTaxService
   REMITTING_STATES = %w[
     wa
@@ -11,16 +7,10 @@ module SalesTaxService
 
   def self.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
     raise 'Dont know how to calculate tax for non-partner sellers' unless order.seller_type == Order::PARTNER
-    if fulfillment_type == Order::SHIP
-      region = parse_region(shipping[:country], shipping[:region])
-      raise Errors::OrderError, 'Could not identify shipping region' if region.nil?
-    else
-      region = shipping[:region]
-    end
     shipping_address = {
       country: shipping[:country],
       postal_code: shipping[:postal_code],
-      state: region,
+      state: shipping[:region],
       city: shipping[:city],
       address: shipping[:address_line_1]
     }
@@ -67,13 +57,5 @@ module SalesTaxService
 
   def self.artsy_should_remit_taxes?(destination_address)
     REMITTING_STATES.include? destination_address[:shipping_region].downcase
-  end
-
-  def self.parse_region(country, region)
-    # TaxJar requires region codes (e.g. "FL") instead of names for the US and Canada
-    country = Carmen::Country.coded(country)
-    return region unless country&.code == 'US' || country&.code == 'CA'
-    parsed_region = country.subregions.named(region) || country.subregions.coded(region)
-    parsed_region&.code
   end
 end
