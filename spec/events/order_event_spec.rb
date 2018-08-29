@@ -23,6 +23,8 @@ describe OrderEvent, type: :events do
               currency_code: 'usd',
               shipping_total_cents: 50,
               tax_total_cents: 30,
+              items_total_cents: 300,
+              buyer_total_cents: 380,
               **shipping_info)
   end
   let!(:line_items) do

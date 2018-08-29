@@ -41,7 +41,6 @@ class Order < ApplicationRecord
 
   after_create :set_code
   before_save :update_state_timestamps, if: :state_changed?
-  before_save :update_totals
   before_save :set_currency_code
 
   scope :pending, -> { where(state: PENDING) }
@@ -77,26 +76,6 @@ class Order < ApplicationRecord
 
   def set_code
     update!(code: format('B%06d', id))
-  end
-
-  def update_totals
-    self.items_total_cents = calculate_items_total_cents
-    self.buyer_total_cents = calculate_buyer_total_cents
-    self.seller_total_cents = calculate_seller_total_cents
-  end
-
-  def calculate_items_total_cents
-    line_items.sum(:price_cents)
-  end
-
-  # Total amount (in cents) that the buyer will pay
-  def calculate_buyer_total_cents
-    items_total_cents + shipping_total_cents.to_i + tax_total_cents.to_i
-  end
-
-  # Total amount (in cents) that the seller will receive
-  def calculate_seller_total_cents
-    buyer_total_cents - commission_fee_cents.to_i - transaction_fee_cents.to_i
   end
 
   def update_state_timestamps

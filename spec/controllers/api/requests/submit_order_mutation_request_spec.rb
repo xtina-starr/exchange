@@ -23,7 +23,9 @@ describe Api::GraphqlController, type: :request do
         shipping_city: 'Tehran',
         shipping_postal_code: '02198',
         shipping_country: 'IR',
-        fulfillment_type: Order::SHIP
+        fulfillment_type: Order::SHIP,
+        items_total_cents: 1000_00,
+        buyer_total_cents: 1000_00
       )
     end
     let(:line_item) do

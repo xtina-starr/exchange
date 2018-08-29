@@ -3,4 +3,5 @@ Fabricator(:order) do
   user_id { sequence(:user_id) { |i| "user-id-#{i}" } }
   partner_id { sequence(:partner_id) { |i| "partner-id-#{i}" } }
   state { Order::PENDING }
+  items_total_cents { 0 }
 end
