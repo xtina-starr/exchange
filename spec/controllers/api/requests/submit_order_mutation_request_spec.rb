@@ -7,6 +7,7 @@ describe Api::GraphqlController, type: :request do
   describe 'submit_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
+    let(:partner) { { effective_commission_rate: 0.1 } }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
     let(:merchant_account) { { external_id: 'ma-1' } }
@@ -14,8 +15,8 @@ describe Api::GraphqlController, type: :request do
     let(:order) do
       Fabricate(
         :order,
-        partner_id: partner_id,
-        user_id: user_id,
+        seller_id: partner_id,
+        buyer_id: user_id,
         credit_card_id: credit_card_id,
         shipping_name: 'Fname Lname',
         shipping_address_line1: '12 Vanak St',
@@ -29,21 +30,38 @@ describe Api::GraphqlController, type: :request do
       )
     end
     let(:line_item) do
-      Fabricate(:line_item, order: order, price_cents: 1000_00)
+      Fabricate(:line_item, order: order, price_cents: 1000_00, artwork_id: 'a-1')
     end
 
     let(:mutation) do
       <<-GRAPHQL
         mutation($input: SubmitOrderInput!) {
           submitOrder(input: $input) {
-            order {
-              id
-              userId
-              partnerId
-              state
-              commissionFeeCents
+            orderOrError {
+              ... on OrderWithMutationSuccess {
+                order {
+                  id
+                  state
+                  commissionFeeCents
+                  buyer {
+                    ... on Partner {
+                      id
+                    }
+                  }
+                  seller {
+                    ... on User {
+                      id
+                    }
+                  }
+                }
+              }
+              ... on OrderWithMutationFailure {
+                error {
+                  description
+                  code
+                }
+              }
             }
-            errors
           }
         }
       GRAPHQL
@@ -65,7 +83,9 @@ describe Api::GraphqlController, type: :request do
       let(:user_id) { 'random-user-id-on-another-order' }
       it 'returns permission error' do
         response = client.execute(mutation, submit_order_input)
-        expect(response.data.submit_order.errors).to include 'Not permitted'
+        expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
+        expect(response.data.submit_order.order_or_error.error).not_to be_nil
+        expect(response.data.submit_order.order_or_error.error.description).to eq 'Not permitted'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -77,7 +97,8 @@ describe Api::GraphqlController, type: :request do
         end
         it 'returns error' do
           response = client.execute(mutation, submit_order_input)
-          expect(response.data.submit_order.errors).to include "Missing info for submitting order(#{order.id})"
+          expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
+          expect(response.data.submit_order.order_or_error.error.description).to eq "Missing info for submitting order(#{order.id})"
           expect(order.reload.state).to eq Order::PENDING
         end
       end
@@ -85,7 +106,8 @@ describe Api::GraphqlController, type: :request do
         let(:credit_card_id) { nil }
         it 'returns error' do
           response = client.execute(mutation, submit_order_input)
-          expect(response.data.submit_order.errors).to include "Missing info for submitting order(#{order.id})"
+          expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
+          expect(response.data.submit_order.order_or_error.error.description).to eq "Missing info for submitting order(#{order.id})"
           expect(order.reload.state).to eq Order::PENDING
         end
       end
@@ -96,21 +118,32 @@ describe Api::GraphqlController, type: :request do
         it 'returns error' do
           allow(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
           allow(GravityService).to receive(:get_credit_card).and_return(credit_card)
+          allow(GravityService).to receive(:fetch_partner).and_return(partner)
           response = client.execute(mutation, submit_order_input)
-          expect(response.data.submit_order.errors).to include 'Invalid action on this approved order'
+          expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
+          expect(response.data.submit_order.order_or_error.error.description).to eq 'Invalid action on this approved order'
           expect(order.reload.state).to eq Order::APPROVED
         end
       end
 
       it 'submits the order' do
+        inventory_request = stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json)
         expect(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
         expect(GravityService).to receive(:get_credit_card).and_return(credit_card)
-        expect(Adapters::GravityV1).to receive(:request).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
+        expect(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
         response = client.execute(mutation, submit_order_input)
-        expect(response.data.submit_order.order.id).to eq order.id.to_s
-        expect(response.data.submit_order.order.state).to eq 'SUBMITTED'
-        expect(response.data.submit_order.order.commission_fee_cents).to eq 800_00
-        expect(response.data.submit_order.errors).to match []
+
+        expect(inventory_request).to have_been_requested
+
+        expect(response.data.submit_order.order_or_error).to respond_to(:order)
+        expect(response.data.submit_order.order_or_error.order).not_to be_nil
+
+        response_order = response.data.submit_order.order_or_error.order
+        expect(response_order.id).to eq order.id.to_s
+        expect(response_order.state).to eq 'SUBMITTED'
+        expect(response_order.commission_fee_cents).to eq 800_00
+
+        expect(response.data.submit_order.order_or_error).not_to respond_to(:error)
         expect(order.reload.state).to eq Order::SUBMITTED
         expect(order.commission_fee_cents).to eq 800_00
         expect(order.state_updated_at).not_to be_nil

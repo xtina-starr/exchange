@@ -9,15 +9,17 @@ class Types::QueryType < Types::BaseObject
 
   field :orders, Types::OrderType.connection_type, null: true do
     description 'Find list of orders'
-    argument :user_id, String, required: false
-    argument :partner_id, String, required: false
+    argument :seller_id, String, required: false
+    argument :seller_type, String, required: false
+    argument :buyer_id, String, required: false
+    argument :buyer_type, String, required: false
     argument :state, Types::OrderStateEnum, required: false
     argument :sort, Types::OrderConnectionSortEnum, required: false
   end
 
   def order(id:)
     order = Order.find(id)
-    raise GraphQL::ExecutionError, 'Not permitted' unless trusted? || user_permitted?(order.user_id) || partner_permitted?(order.partner_id)
+    raise GraphQL::ExecutionError, 'Not permitted' unless trusted? || access?(order)
     order
   end
 
@@ -42,30 +44,20 @@ class Types::QueryType < Types::BaseObject
     context[:current_user][:roles].include?('trusted')
   end
 
-  def user_permitted?(id)
-    id == context[:current_user][:id]
-  end
-
-  def partner_permitted?(id)
-    context[:current_user][:partner_ids].include?(id) || context[:current_user][:roles].include?('sales_admin')
-  end
-
-  def validate_user(id)
-    raise GraphQL::ExecutionError, 'Not permitted' unless user_permitted?(id)
-  end
-
-  def validate_partner(id)
-    raise GraphQL::ExecutionError, 'Not permitted' unless partner_permitted?(id)
+  def access?(order)
+    context[:current_user][:roles].include?('sales_admin') ||
+      (order.buyer_type == Order::USER && order.buyer_id == context[:current_user][:id]) ||
+      (order.seller_type == Order::PARTNER && context[:current_user][:partner_ids].include?(order.seller_id))
   end
 
   def validate_orders_params!(params)
     return if trusted?
-    if params[:user_id].present?
-      validate_user(params[:user_id])
-    elsif params[:partner_id].present?
-      validate_partner(params[:partner_id])
+    if params[:buyer_id].present?
+      raise GraphQL::ExecutionError, 'Not permitted' unless params[:buyer_id] == context[:current_user][:id]
+    elsif params[:seller_id].present?
+      raise GraphQL::ExecutionError, 'Not permitted' unless context[:current_user][:partner_ids].include?(params[:seller_id])
     else
-      raise GraphQL::ExecutionError, 'requires one of userId or partnerId'
+      raise GraphQL::ExecutionError, 'requires one of sellerId or buyerId'
     end
   end
 end

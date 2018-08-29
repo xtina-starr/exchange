@@ -14,6 +14,7 @@ class OrderEvent < Events::BaseEvent
 
   def properties
     {
+      buyer_type: @object.buyer_type,
       code: @object.code,
       created_at: @object.created_at,
       currency_code: @object.currency_code,
@@ -25,7 +26,8 @@ class OrderEvent < Events::BaseEvent
       transaction_fee_cents: @object.transaction_fee_cents,
       seller_total_cents: @object.seller_total_cents,
       line_items: @object.line_items.map { |li| line_item_detail(li) },
-      partner_id: @object.partner_id,
+      seller_id: @object.seller_id,
+      seller_type: @object.seller_type,
       shipping_name: @object.shipping_name,
       shipping_address_line1: @object.shipping_address_line1,
       shipping_address_line2: @object.shipping_address_line2,

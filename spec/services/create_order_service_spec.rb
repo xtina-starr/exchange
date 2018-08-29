@@ -6,15 +6,15 @@ describe CreateOrderService, type: :services do
     let(:user_id) { 'user-id' }
     context 'with known artwork' do
       before do
-        expect(Adapters::GravityV1).to receive(:request).and_return(gravity_v1_artwork)
+        expect(Adapters::GravityV1).to receive(:get).and_return(gravity_v1_artwork)
       end
       context 'without edition set' do
         it 'create order with proper data' do
           expect do
             order = CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: nil, quantity: 2)
             expect(order.currency_code).to eq 'USD'
-            expect(order.user_id).to eq user_id
-            expect(order.partner_id).to eq 'gravity-partner-id'
+            expect(order.buyer_id).to eq user_id
+            expect(order.seller_id).to eq 'gravity-partner-id'
             expect(order.line_items.count).to eq 1
             expect(order.line_items.first.price_cents).to eq 5400_12
             expect(order.line_items.first.artwork_id).to eq 'artwork-id'
@@ -29,8 +29,8 @@ describe CreateOrderService, type: :services do
           expect do
             order = CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: 'edition-set-id', quantity: 2)
             expect(order.currency_code).to eq 'USD'
-            expect(order.user_id).to eq user_id
-            expect(order.partner_id).to eq 'gravity-partner-id'
+            expect(order.buyer_id).to eq user_id
+            expect(order.seller_id).to eq 'gravity-partner-id'
             expect(order.line_items.count).to eq 1
             expect(order.line_items.first.price_cents).to eq 4200_42
             expect(order.line_items.first.artwork_id).to eq 'artwork-id'
@@ -47,7 +47,7 @@ describe CreateOrderService, type: :services do
     end
     context 'with unknown artwork' do
       before do
-        expect(Adapters::GravityV1).to receive(:request).and_raise(Adapters::GravityError.new('unknown artwork'))
+        expect(Adapters::GravityV1).to receive(:get).and_raise(Adapters::GravityError.new('unknown artwork'))
       end
       it 'raises Errors::OrderError' do
         expect { CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'random-artwork', quantity: 2) }.to raise_error(Errors::OrderError)

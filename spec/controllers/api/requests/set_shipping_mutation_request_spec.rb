@@ -7,7 +7,7 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
-    let(:order) { Fabricate(:order, partner_id: partner_id, user_id: user_id) }
+    let(:order) { Fabricate(:order, seller_id: partner_id, buyer_id: user_id) }
     let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1'), Fabricate(:line_item, order: order, artwork_id: 'a-2')] }
     let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
     let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
@@ -23,8 +23,16 @@ describe Api::GraphqlController, type: :request do
           setShipping(input: $input) {
             order {
               id
-              userId
-              partnerId
+              buyer {
+                ... on Partner {
+                  id
+                }
+              }
+              seller {
+                ... on User {
+                  id
+                }
+              }
               state
               shippingTotalCents
               requestedFulfillment {
@@ -84,8 +92,8 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'sets shipping info and sales tax on the order' do
-        allow(Adapters::GravityV1).to receive(:request).twice.with('/artwork/a-1').and_return(artwork1)
-        allow(Adapters::GravityV1).to receive(:request).twice.with('/artwork/a-2').and_return(artwork2)
+        allow(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
+        allow(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-2').and_return(artwork2)
         allow(GravityService).to receive(:fetch_partner).and_return(partner)
         allow(GravityService).to receive(:fetch_partner_location).and_return(partner_location)
         response = client.execute(mutation, set_shipping_input)
@@ -108,8 +116,8 @@ describe Api::GraphqlController, type: :request do
 
       describe '#shipping_total_cents' do
         before do
-          expect(Adapters::GravityV1).to receive(:request).twice.with('/artwork/a-1').and_return(artwork1)
-          expect(Adapters::GravityV1).to receive(:request).twice.with('/artwork/a-2').and_return(artwork2)
+          expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
+          expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-2').and_return(artwork2)
           allow(GravityService).to receive(:fetch_partner).and_return(partner)
           allow(GravityService).to receive(:fetch_partner_location).and_return(partner_location)
         end

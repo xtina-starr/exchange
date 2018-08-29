@@ -4,8 +4,8 @@ class Types::OrderType < Types::BaseObject
 
   field :id, ID, null: false
   field :code, String, null: false
-  field :user_id, String, null: false
-  field :partner_id, String, null: false
+  field :buyer, Types::OrderPartyUnionType, null: false
+  field :seller, Types::OrderPartyUnionType, null: false
   field :credit_card_id, String, null: true
   field :state, Types::OrderStateEnum, null: false
   field :currency_code, String, null: false
@@ -22,6 +22,20 @@ class Types::OrderType < Types::BaseObject
   field :state_updated_at, Types::DateTimeType, null: true
   field :state_expires_at, Types::DateTimeType, null: true
   field :line_items, Types::LineItemType.connection_type, null: true
+
+  def buyer
+    OpenStruct.new(
+      id: object.buyer_id,
+      type: object.buyer_type
+    )
+  end
+
+  def seller
+    OpenStruct.new(
+      id: object.seller_id,
+      type: object.seller_type
+    )
+  end
 
   def requested_fulfillment
     # fulfillment is not a field on order so we have to resolve it here
