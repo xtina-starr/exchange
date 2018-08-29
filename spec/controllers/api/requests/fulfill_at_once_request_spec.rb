@@ -15,36 +15,45 @@ describe Api::GraphqlController, type: :request do
       <<-GRAPHQL
         mutation($input: FulfillAtOnceInput!) {
           fulfillAtOnce(input: $input) {
-            order {
-              id
-              buyer {
-                ... on Partner {
+            orderOrError {
+              ... on OrderWithMutationSuccess {
+                order {
                   id
-                }
-              }
-              seller {
-                ... on User {
-                  id
-                }
-              }
-              state
-              lineItems{
-                edges{
-                  node{
-                    fulfillments{
-                      edges{
-                        node{
-                          courier
-                          trackingId
-                          estimatedDelivery
+                  buyer {
+                    ... on Partner {
+                      id
+                    }
+                  }
+                  seller {
+                    ... on User {
+                      id
+                    }
+                  }
+                  state
+                  lineItems{
+                    edges{
+                      node{
+                        fulfillments{
+                          edges{
+                            node{
+                              courier
+                              trackingId
+                              estimatedDelivery
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
               }
+              ... on OrderWithMutationFailure {
+                error {
+                  description
+                  code
+                }
+              }
             }
-            errors
           }
         }
       GRAPHQL
@@ -67,7 +76,7 @@ describe Api::GraphqlController, type: :request do
       let(:partner_id) { 'another-partner-id' }
       it 'returns permission error' do
         response = client.execute(mutation, fulfill_at_once_input)
-        expect(response.data.fulfill_at_once.errors).to include 'Not permitted'
+        expect(response.data.fulfill_at_once.order_or_error.error.description).to include 'Not permitted'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -78,7 +87,7 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, fulfill_at_once_input)
-        expect(response.data.fulfill_at_once.errors).to include 'Invalid action on this submitted order'
+        expect(response.data.fulfill_at_once.order_or_error.error.description).to include 'Invalid action on this submitted order'
         expect(order.reload.state).to eq Order::SUBMITTED
       end
     end
@@ -90,16 +99,16 @@ describe Api::GraphqlController, type: :request do
       it 'fulfills the order' do
         expect do
           response = client.execute(mutation, fulfill_at_once_input)
-          expect(response.data.fulfill_at_once.order.id).to eq order.id.to_s
-          expect(response.data.fulfill_at_once.order.state).to eq 'FULFILLED'
-          response.data.fulfill_at_once.order.line_items.edges.each do |li|
+          expect(response.data.fulfill_at_once.order_or_error.order.id).to eq order.id.to_s
+          expect(response.data.fulfill_at_once.order_or_error.order.state).to eq 'FULFILLED'
+          response.data.fulfill_at_once.order_or_error.order.line_items.edges.each do |li|
             li.node.fulfillments.edges.each do |f|
               expect(f.node.courier).to eq 'FedEx'
               expect(f.node.tracking_id).to eq 'fedx-123'
               expect(f.node.estimated_delivery).to eq '2018-12-15'
             end
           end
-          expect(response.data.fulfill_at_once.errors).to match []
+          expect(response.data.fulfill_at_once.order_or_error).not_to respond_to(:error)
           expect(order.reload.state).to eq Order::FULFILLED
           order.line_items.each do |li|
             expect(li.fulfillments.count).to eq 1

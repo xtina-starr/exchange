@@ -15,21 +15,30 @@ describe Api::GraphqlController, type: :request do
       <<-GRAPHQL
         mutation($input: ApproveOrderInput!) {
           approveOrder(input: $input) {
-            order {
-              id
-              buyer {
-                ... on Partner {
+            orderOrError {
+              ... on OrderWithMutationSuccess {
+                order {
                   id
+                  state
+                  buyer {
+                    ... on Partner {
+                      id
+                    }
+                  }
+                  seller {
+                    ... on User {
+                      id
+                    }
+                  }
                 }
               }
-              seller {
-                ... on User {
-                  id
+              ... on OrderWithMutationFailure {
+                error {
+                  description
+                  code
                 }
               }
-              state
             }
-            errors
           }
         }
       GRAPHQL
@@ -47,7 +56,7 @@ describe Api::GraphqlController, type: :request do
       let(:partner_id) { 'another-partner-id' }
       it 'returns permission error' do
         response = client.execute(mutation, approve_order_input)
-        expect(response.data.approve_order.errors).to include 'Not permitted'
+        expect(response.data.approve_order.order_or_error.error.description).to include 'Not permitted'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -58,7 +67,7 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, approve_order_input)
-        expect(response.data.approve_order.errors).to include 'Invalid action on this pending order'
+        expect(response.data.approve_order.order_or_error.error.description).to include 'Invalid action on this pending order'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -71,9 +80,9 @@ describe Api::GraphqlController, type: :request do
       it 'approves the order' do
         expect do
           response = client.execute(mutation, approve_order_input)
-          expect(response.data.approve_order.order.id).to eq order.id.to_s
-          expect(response.data.approve_order.order.state).to eq 'APPROVED'
-          expect(response.data.approve_order.errors).to match []
+          expect(response.data.approve_order.order_or_error.order.id).to eq order.id.to_s
+          expect(response.data.approve_order.order_or_error.order.state).to eq 'APPROVED'
+          expect(response.data.approve_order.order_or_error).not_to respond_to(:error)
           expect(order.reload.state).to eq Order::APPROVED
           expect(order.reload.transactions.last.external_id).to eq uncaptured_charge.id
           expect(order.reload.transactions.last.transaction_type).to eq Transaction::CAPTURE

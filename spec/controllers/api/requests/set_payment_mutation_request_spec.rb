@@ -12,22 +12,31 @@ describe Api::GraphqlController, type: :request do
       <<-GRAPHQL
         mutation($input: SetPaymentInput!) {
           setPayment(input: $input) {
-            order {
-              id
-              buyer {
-                ... on Partner {
+            orderOrError {
+              ... on OrderWithMutationSuccess {
+                order {
                   id
+                  state
+                  creditCardId
+                  buyer {
+                    ... on Partner {
+                      id
+                    }
+                  }
+                  seller {
+                    ... on User {
+                      id
+                    }
+                  }
                 }
               }
-              seller {
-                ... on User {
-                  id
+              ... on OrderWithMutationFailure {
+                error {
+                  description
+                  code
                 }
               }
-              state
-              creditCardId
             }
-            errors
           }
         }
       GRAPHQL
@@ -45,7 +54,7 @@ describe Api::GraphqlController, type: :request do
       let(:user_id) { 'random-user-id-on-another-order' }
       it 'returns permission error' do
         response = client.execute(mutation, set_payment_input)
-        expect(response.data.set_payment.errors).to include 'Not permitted'
+        expect(response.data.set_payment.order_or_error.error.description).to include 'Not permitted'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -57,17 +66,17 @@ describe Api::GraphqlController, type: :request do
         end
         it 'returns error' do
           response = client.execute(mutation, set_payment_input)
-          expect(response.data.set_payment.errors).to include 'Cannot set payment info on non-pending orders'
+          expect(response.data.set_payment.order_or_error.error.description).to include 'Cannot set payment info on non-pending orders'
           expect(order.reload.state).to eq Order::APPROVED
         end
       end
 
       it 'sets payments on the order' do
         response = client.execute(mutation, set_payment_input)
-        expect(response.data.set_payment.order.id).to eq order.id.to_s
-        expect(response.data.set_payment.order.state).to eq 'PENDING'
-        expect(response.data.set_payment.order.credit_card_id).to eq 'gravity-cc-1'
-        expect(response.data.set_payment.errors).to match []
+        expect(response.data.set_payment.order_or_error.order.id).to eq order.id.to_s
+        expect(response.data.set_payment.order_or_error.order.state).to eq 'PENDING'
+        expect(response.data.set_payment.order_or_error.order.credit_card_id).to eq 'gravity-cc-1'
+        expect(response.data.set_payment.order_or_error).not_to respond_to(:error)
         expect(order.reload.credit_card_id).to eq credit_card_id
         expect(order.state).to eq Order::PENDING
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
