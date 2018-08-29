@@ -107,9 +107,9 @@ module OrderService
   end
 
   def self.update_totals!(order)
-    order.items_total_cents = OrderTotalCalculatorService.calculate_items_total_cents(order)
-    order.buyer_total_cents = OrderTotalCalculatorService.calculate_buyer_total_cents(order)
-    order.seller_total_cents = OrderTotalCalculatorService.calculate_seller_total_cents(order)
+    order.items_total_cents = OrderTotalCalculatorService.items_total_cents(order.line_items)
+    order.buyer_total_cents = OrderTotalCalculatorService.buyer_total_cents(order)
+    order.seller_total_cents = OrderTotalCalculatorService.seller_total_cents(order)
     order.save!
   end
 end

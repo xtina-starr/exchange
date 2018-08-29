@@ -20,6 +20,7 @@ describe CreateOrderService, type: :services do
             expect(order.line_items.first.artwork_id).to eq 'artwork-id'
             expect(order.line_items.first.edition_set_id).to be_nil
             expect(order.line_items.first.quantity).to eq 2
+            expect(order.items_total_cents).to eq 1080024
           end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
         end
       end
