@@ -93,12 +93,12 @@ class Order < ApplicationRecord
     "Order #{id}"
   end
 
-  def submitted_at
-    state_histories.find_by(state: Order::SUBMITTED)&.updated_at
+  def last_submitted_at
+    get_last_state_timestamp(Order::SUBMITTED)
   end
 
-  def approved_at
-    state_histories.find_by(state: Order::APPROVED)&.updated_at
+  def last_approved_at
+    get_last_state_timestamp(Order::APPROVED)
   end
 
   private
@@ -110,6 +110,10 @@ class Order < ApplicationRecord
   def update_state_timestamps
     self.state_updated_at = Time.now.utc
     self.state_expires_at = STATE_EXPIRATIONS.key?(state) ? state_updated_at + STATE_EXPIRATIONS[state] : nil
+  end
+
+  def get_last_state_timestamp(state)
+    state_histories.where(state: state).order(:updated_at).last&.updated_at
   end
 
   def create_state_history
