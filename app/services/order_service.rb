@@ -13,7 +13,11 @@ module OrderService
       shipping_total_cents = order.line_items.map { |li| ShippingService.calculate_shipping(li, shipping_country: shipping[:country], fulfillment_type: fulfillment_type) }.sum
       attrs = {
         shipping_total_cents: shipping_total_cents,
-        tax_total_cents: SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
+        tax_total_cents: order.line_items.map do |li|
+          sales_tax = SalesTaxService.new(li, fulfillment_type, shipping, shipping_total_cents).sales_tax
+          li.update!(sales_tax_cents: sales_tax)
+          sales_tax
+        end.sum
       }
       order.update!(
         attrs.merge(
