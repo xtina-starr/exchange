@@ -112,8 +112,8 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'sets shipping info and sales tax on the order' do
-        allow(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
-        allow(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-2').and_return(artwork2)
+        allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+        allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
         allow(GravityService).to receive(:fetch_partner).and_return(partner)
         allow(GravityService).to receive(:fetch_partner_location).and_return(partner_location)
         response = client.execute(mutation, set_shipping_input)
@@ -137,12 +137,14 @@ describe Api::GraphqlController, type: :request do
 
       describe '#shipping_total_cents' do
         before do
-          expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
-          expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-2').and_return(artwork2)
           allow(GravityService).to receive(:fetch_partner).and_return(partner)
           allow(GravityService).to receive(:fetch_partner_location).and_return(partner_location)
         end
         context 'with PICKUP as fulfillment type' do
+          before do
+            expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
+            expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-2').and_return(artwork2)
+          end
           let(:fulfillment_type) { 'PICKUP' }
           it 'sets total shipping cents to 0' do
             response = client.execute(mutation, set_shipping_input)
@@ -151,6 +153,10 @@ describe Api::GraphqlController, type: :request do
           end
         end
         context 'with SHIP as fulfillment type' do
+          before do
+            expect(Adapters::GravityV1).to receive(:get).once.with('/artwork/a-1').and_return(artwork1)
+            expect(Adapters::GravityV1).to receive(:get).once.with('/artwork/a-2').and_return(artwork2)
+          end
           context 'with international shipping' do
             it 'sets total shipping cents properly' do
               response = client.execute(mutation, set_shipping_input)
