@@ -1,4 +1,4 @@
-class ArtsyAuthHelper
+class ArtsyAuthToken
   ADMIN_ROLE = 'sales_admin'.freeze
   def initialize(jwt)
     @jwt = jwt

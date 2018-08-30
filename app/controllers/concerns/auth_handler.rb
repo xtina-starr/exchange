@@ -5,14 +5,14 @@ module AuthHandler
 
       def authenticate_request!
         jwt = get_jwt(request.headers)
-        auth_helper = ArtsyAuthHelper.new(jwt)
+        auth_helper = ArtsyAuthToken.new(jwt)
         @current_user = auth_helper.current_user
       rescue JWT::DecodeError # includes verification error too
         render json: { errors: ['Not Authenticated'] }, status: :unauthorized
       end
 
       def valid_admin?(token)
-        auth_helper = ArtsyAuthHelper.new(token)
+        auth_helper = ArtsyAuthToken.new(token)
         if auth_helper.admin?
           @current_user = auth_helper.current_user
           true
