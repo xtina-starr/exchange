@@ -52,6 +52,7 @@ module OrderService
       }
       TransactionService.create!(order, transaction)
     end
+    order.line_items.each { |li| RecordSalesTaxJob.perform_later(li.id) }
     PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order

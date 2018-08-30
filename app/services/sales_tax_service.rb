@@ -46,9 +46,10 @@ class SalesTaxService
   end
 
   def post_transaction
+    transaction_date = @line_item.order.approved_at.iso8601
     @tax_client.create_order(
-      transaction_id: '',
-      transaction_date: '',
+      transaction_id: @line_item.id,
+      transaction_date: transaction_date,
       amount: UnitConverter.convert_cents_to_dollars(@line_item.total_amount_cents),
       from_country: origin_address[:country],
       from_zip: origin_address[:postal_code],
@@ -82,8 +83,8 @@ class SalesTaxService
   end
 
   def artsy_should_remit_taxes?
-    return false unless @destination_address[:country] == 'US'
+    return false unless destination_address[:country] == 'US'
     remitting_states = %w[wa nj pa].freeze
-    remitting_states.include? @destination_address[:region].downcase
+    remitting_states.include? destination_address[:state].downcase
   end
 end
