@@ -1,11 +1,10 @@
 require 'rails_helper'
-require 'support/taxjar_helper'
 require 'support/gravity_helper'
 
 describe SalesTaxService, type: :services do
   let(:taxjar_client) { double }
   let(:order) { Fabricate(:order) }
-  let!(:line_item) { Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: 'gravity_artwork_1') }
+  let!(:line_item) { Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: 'gravity_artwork_1', sales_tax_cents: 100) }
   let(:shipping_total_cents) { 2222 }
   let(:shipping) do
     {
@@ -39,10 +38,17 @@ describe SalesTaxService, type: :services do
   end
 
   before do
-    stub_tax_for_order
     allow(Taxjar::Client).to receive(:new).with(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key']).and_return(taxjar_client)
     @service_ship = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents)
     @service_pickup = SalesTaxService.new(line_item, Order::PICKUP, shipping, shipping_total_cents)
+  end
+
+  describe '#sales_tax' do
+    it 'calls fetch_sales_tax and returns the sales tax in cents' do
+      allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
+      expect(@service_ship).to receive(:fetch_sales_tax).and_return(double(amount_to_collect: 1.00))
+      expect(@service_ship.sales_tax).to eq 100
+    end
   end
 
   describe '#seller_address' do
@@ -131,6 +137,36 @@ describe SalesTaxService, type: :services do
   end
 
   describe '#post_transaction' do
+    let(:params) do
+      {
+        transaction_id: line_item.id,
+        transaction_date: line_item.order.last_approved_at.iso8601,
+        amount: UnitConverter.convert_cents_to_dollars(line_item.price_cents),
+        from_country: partner_location[:country],
+        from_zip: partner_location[:postal_code],
+        from_state: partner_location[:state],
+        from_city: partner_location[:city],
+        from_street: partner_location[:address],
+        to_country: shipping_address[:country],
+        to_zip: shipping_address[:postal_code],
+        to_state: shipping_address[:state],
+        to_city: shipping_address[:city],
+        to_street: shipping_address[:address],
+        sales_tax: UnitConverter.convert_cents_to_dollars(line_item.sales_tax_cents),
+        shipping: UnitConverter.convert_cents_to_dollars(shipping_total_cents)
+      }
+    end
+    before do
+      # We need to trigger the state actions to generate the state history
+      # necessary for `last_updated_at`
+      order.submit!
+      order.approve!
+    end
+    it 'calls the Taxjar API with the correct parameters' do
+      allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
+      expect(taxjar_client).to receive(:create_order).with(params)
+      @service_ship.send(:post_transaction)
+    end
   end
 
   describe '#artsy_should_remit_taxes?' do
