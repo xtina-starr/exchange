@@ -59,7 +59,6 @@ class Order < ApplicationRecord
         save!
         create_state_history
         block.call if block.present?
-        self
       end
     rescue MicroMachine::InvalidState
       raise Errors::OrderError, "Invalid action on this #{state} order"

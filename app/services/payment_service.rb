@@ -13,9 +13,9 @@ module PaymentService
       metadata: metadata,
       capture: false
     )
-    Transaction.new(external_id: charge.id, source_id: charge.source, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::HOLD, status: Transaction::SUCCESS)
+    Transaction.new(external_id: charge.id, source_id: charge.source.id, destination_id: charge.destination.account, amount_cents: charge.amount, transaction_type: Transaction::HOLD, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
-    transaction = generate_transaction_from_exception(e, Transaction::HOLD, credit_card, merchant_account, buyer_amount)
+    transaction = generate_transaction_from_exception(e, Transaction::HOLD, credit_card: credit_card, merchant_account: merchant_account, buyer_amount: buyer_amount)
     raise Errors::PaymentError.new(e.message, transaction)
   end
 
@@ -24,7 +24,7 @@ module PaymentService
     charge.capture
     Transaction.new(external_id: charge.id, source_id: charge.source, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::CAPTURE, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
-    transaction = generate_transaction_from_exception(e, Transaction::CAPTURE, credit_card: credit_card, merchant_account: merchant_account, buyer_amount: buyer_amount)
+    transaction = generate_transaction_from_exception(e, Transaction::CAPTURE, charge_id: charge_id)
     raise Errors::PaymentError.new(e.message, transaction)
   end
 
@@ -36,11 +36,11 @@ module PaymentService
     raise Errors::PaymentError.new(e.message, transaction)
   end
 
-  def self.generate_transaction_from_exception(e, type, credit_card:nil, merchant_account:nil, buyer_amount:nil, charge_id: nil)
-    body = e.json_body[:error]
-    transaction = Transaction.new(
+  def self.generate_transaction_from_exception(exc, type, credit_card: nil, merchant_account: nil, buyer_amount: nil, charge_id: nil)
+    body = exc.json_body[:error]
+    Transaction.new(
       external_id: charge_id || body[:charge],
-      source_id: (credit_card.present? ? credit_card[:external_id] : nil ),
+      source_id: (credit_card.present? ? credit_card[:external_id] : nil),
       destination_id: (merchant_account.present? ? merchant_account[:external_id] : nil),
       amount_cents: buyer_amount,
       failure_code: body[:code],

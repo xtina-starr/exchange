@@ -35,7 +35,7 @@ class OrderSubmitService
   rescue Errors::PaymentError => e
     # there was an issue in processing charge, undeduct all already deducted inventory
     deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
-    e.transaction.update_attributes! order: @order if e.transaction.present?
+    e.transaction.update! order: @order if e.transaction.present?
     Rails.logger.error("Could not submit order #{@order.id}: #{e.message}")
     raise e
   end

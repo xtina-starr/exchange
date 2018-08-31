@@ -126,10 +126,9 @@ describe OrderSubmitService, type: :services do
         it 'calls stripe with expected params' do
           expect(Stripe::Charge).to receive(:create).with(
             amount: 10000_00,
-            currency: 'usd',
             source: stripe_customer.default_source,
+            currency: 'usd',
             customer: stripe_customer.id,
-            description: 'Artsy',
             destination: {
               account: 'ma-1',
               amount: 1709_70
