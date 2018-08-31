@@ -66,8 +66,8 @@ class OrderSubmitService
       merchant_account: @merchant_account,
       seller_amount: @order.seller_total_cents,
       currency_code: @order.currency_code,
-      metadata: {},
-      description: ''
+      metadata: charge_metadata,
+      description: charge_description
     }
   end
 
@@ -88,5 +88,20 @@ class OrderSubmitService
   def calculate_transaction_fee
     # This is based on Stripe US fee, it will be different for other countries
     (Money.new(@order.buyer_total_cents * 2.9 / 100, 'USD') + Money.new(30, 'USD')).cents
+  end
+
+  def charge_description
+    "#{(@partner[:name] || '').parameterize[0...12].upcase} via Artsy"
+  end
+
+  def charge_metadata
+    {
+      exchange_order_id: @order.id,
+      buyer_id: @order.buyer_id,
+      buyer_type: @order.buyer_type,
+      seller_id: @order.seller_id,
+      seller_type: @order.seller_type,
+      type: 'bn-mo'
+    }
   end
 end

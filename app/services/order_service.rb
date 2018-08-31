@@ -33,7 +33,7 @@ module OrderService
 
   def self.approve!(order, by: nil)
     transaction = order.approve! do
-      transaction = PaymentService.capture_charge(order.external_charge_id)
+      PaymentService.capture_charge(order.external_charge_id)
     end
     order.transactions << transaction
     PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
