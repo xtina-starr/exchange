@@ -126,14 +126,22 @@ describe OrderSubmitService, type: :services do
         it 'calls stripe with expected params' do
           expect(Stripe::Charge).to receive(:create).with(
             amount: 10000_00,
-            currency: 'usd',
             source: stripe_customer.default_source,
+            currency: 'usd',
             customer: stripe_customer.id,
-            description: 'Artsy',
+            metadata: {
+              exchange_order_id: order.id,
+              buyer_id: order.buyer_id,
+              buyer_type: 'user',
+              seller_id: 'partner-1',
+              seller_type: 'partner',
+              type: 'bn-mo'
+            },
             destination: {
               account: 'ma-1',
               amount: 1709_70
             },
+            description: 'INVOICING-DE via Artsy',
             capture: false
           ).and_return(captured_charge)
           artwork_inventory_deduct_request
