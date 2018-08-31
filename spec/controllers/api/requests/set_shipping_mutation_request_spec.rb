@@ -132,6 +132,8 @@ describe Api::GraphqlController, type: :request do
         expect(order.shipping_address_line1).to eq 'Vanak'
         expect(order.shipping_address_line2).to eq 'P 80'
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
+        expect(line_items[0].reload.sales_tax_cents).to eq 116
+        expect(line_items[1].reload.sales_tax_cents).to eq 116
         expect(order.tax_total_cents).to eq 232
       end
 
