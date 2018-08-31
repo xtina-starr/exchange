@@ -71,6 +71,8 @@ GEM
     bunny (2.11.0)
       amq-protocol (~> 2.3.0)
     byebug (10.0.2)
+    carmen (1.1.1)
+      activesupport (>= 3.0.0)
     coffee-rails (4.2.2)
       coffee-script (>= 2.2.0)
       railties (>= 4.0.0)
@@ -331,6 +333,7 @@ DEPENDENCIES
   artsy-auth
   artsy-eventservice
   byebug
+  carmen
   dalli
   fabrication
   faraday
