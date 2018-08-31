@@ -134,6 +134,8 @@ describe OrderSubmitService, type: :services do
               account: 'ma-1',
               amount: 1709_70
             },
+            description: '',
+            metadata: {},
             capture: false
           ).and_return(captured_charge)
           artwork_inventory_deduct_request

@@ -38,8 +38,10 @@ describe OrderService, type: :services do
       before do
         artwork_inventory_undeduct_request
         edition_set_inventory_undeduct_request
-        StripeMock.prepare_card_error(:card_declined, :new_refund)
-        expect { OrderService.reject!(order, user_id) }.to raise_error(Errors::PaymentError)
+        allow(Stripe::Refund).to receive(:create)
+          .with(hash_including(charge: captured_charge.id))
+          .and_raise(Stripe::StripeError.new('too late to refund buddy...', json_body: {error: { code: 'something', message: 'refund failed' }}))
+        expect { OrderService.reject!(order, user_id) }.to raise_error(Errors::PaymentError).and change(order.transactions, :count).by(1)
       end
       it 'raises a PaymentError and records the transaction' do
         expect(order.transactions.last.external_id).to eq captured_charge.id

@@ -13,7 +13,7 @@ describe PaymentService, type: :services do
   describe '#authorize_charge' do
     it "authorizes a charge on the user's credit card" do
       params = {
-        source_id: stripe_customer.default_source,
+        credit_card: stripe_customer.default_source,
         customer_id: stripe_customer.id,
         destination_id: destination_id,
         destination_amount: destination_amount,

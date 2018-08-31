@@ -74,7 +74,7 @@ module OrderService
     PostNotificationJob.perform_later(order.id, Order::REJECTED, by)
     order
   rescue Errors::PaymentError => e
-    TransactionService.create!(order, e.body)
+    order.transactions << e.transaction
     Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
     raise e
   end
@@ -96,14 +96,8 @@ module OrderService
   end
 
   def self.refund(order)
-    refund = PaymentService.refund_charge(order.external_charge_id)
-    transaction = {
-      external_id: refund.id,
-      amount_cents: refund.amount,
-      transaction_type: Transaction::REFUND,
-      status: Transaction::SUCCESS
-    }
-    TransactionService.create!(order, transaction)
+    transaction = PaymentService.refund_charge(order.external_charge_id)
     order.line_items.each { |li| GravityService.undeduct_inventory(li) }
+    order.transactions << transaction
   end
 end
