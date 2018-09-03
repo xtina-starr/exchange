@@ -35,6 +35,7 @@ class OrderEvent < Events::BaseEvent
       shipping_city: @object.shipping_city,
       shipping_country: @object.shipping_country,
       shipping_postal_code: @object.shipping_postal_code,
+      shipping_phone_number: @object.shipping_phone_number,
       shipping_region: @object.shipping_region,
       state: @object.state,
       updated_at: @object.updated_at,

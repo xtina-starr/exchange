@@ -66,17 +66,17 @@ RSpec.describe Order, type: :model do
   describe '#shipping_info' do
     context 'with Ship fulfillment type' do
       it 'returns true when all required shipping data available' do
-        order.update!(fulfillment_type: Order::PICKUP, shipping_name: 'Fname Lname', shipping_country: 'IR', shipping_address_line1: 'Vanak', shipping_address_line2: nil, shipping_postal_code: '09821', shipping_city: 'Tehran')
+        order.update!(fulfillment_type: Order::PICKUP, shipping_name: 'Fname Lname', shipping_country: 'IR', shipping_address_line1: 'Vanak', shipping_address_line2: nil, shipping_postal_code: '09821', shipping_phone_number: '0923', shipping_city: 'Tehran')
         expect(order.shipping_info?).to be true
       end
       it 'returns false if missing any shipping data' do
-        order.update!(fulfillment_type: Order::SHIP, shipping_name: 'Fname Lname', shipping_country: 'IR', shipping_address_line1: nil, shipping_postal_code: nil)
+        order.update!(fulfillment_type: Order::SHIP, shipping_name: 'Fname Lname', shipping_country: 'IR', shipping_address_line1: nil, shipping_postal_code: nil, shipping_phone_number: nil)
         expect(order.shipping_info?).to be false
       end
     end
     context 'with Pickup fulfillment type' do
       it 'returns true' do
-        order.update!(fulfillment_type: Order::PICKUP, shipping_name: 'Fname Lname', shipping_country: nil, shipping_address_line1: nil, shipping_postal_code: nil)
+        order.update!(fulfillment_type: Order::PICKUP, shipping_name: 'Fname Lname', shipping_country: nil, shipping_address_line1: nil, shipping_postal_code: nil, shipping_phone_number: nil)
         expect(order.shipping_info?).to be true
       end
     end

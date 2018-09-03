@@ -24,7 +24,8 @@ module OrderService
           shipping_city: shipping[:city],
           shipping_region: shipping[:region],
           shipping_country: shipping[:country],
-          shipping_postal_code: shipping[:postal_code]
+          shipping_postal_code: shipping[:postal_code],
+          shipping_phone_number: shipping[:phone_number]
         )
       )
     end

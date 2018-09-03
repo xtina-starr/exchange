@@ -69,6 +69,7 @@ describe Api::GraphqlController, type: :request do
             city: 'Tehran',
             region: shipping_region,
             postalCode: '02198912',
+            phoneNumber: '00123456789',
             addressLine1: 'Vanak',
             addressLine2: 'P 80'
           }
@@ -117,6 +118,7 @@ describe Api::GraphqlController, type: :request do
         expect(order.shipping_city).to eq 'Tehran'
         expect(order.shipping_region).to eq 'Tehran'
         expect(order.shipping_postal_code).to eq '02198912'
+        expect(order.shipping_phone_number).to eq '00123456789'
         expect(order.shipping_name).to eq 'Fname Lname'
         expect(order.shipping_address_line1).to eq 'Vanak'
         expect(order.shipping_address_line2).to eq 'P 80'

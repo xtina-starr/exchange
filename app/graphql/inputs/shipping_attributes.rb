@@ -8,4 +8,5 @@ class Inputs::ShippingAttributes < Types::BaseInputObject
   argument :region, String, required: false
   argument :country, String, required: false
   argument :postal_code, String, required: false
+  argument :phone_number, String, required: false
 end
