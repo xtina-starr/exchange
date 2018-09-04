@@ -11,8 +11,8 @@ class Mutations::SetShipping < Mutations::BaseMutation
   def resolve(id:, fulfillment_type:, phone_number:, shipping: {})
     order = Order.find(id)
     validate_buyer_request!(order)
-    
-    raise Errors::AuthError, 'Phone number is required' if  fulfillment_type == Order::SHIP && phone_number == nil
+
+    raise Errors::AuthError, 'Phone number is required' if fulfillment_type == Order::SHIP && phone_number.nil?
 
     shipping = AddressParser.parse!(shipping.to_h) if fulfillment_type == Order::SHIP
     {
