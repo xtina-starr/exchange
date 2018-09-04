@@ -11,7 +11,8 @@ module CreateOrderService
         seller_type: Order::PARTNER,
         currency_code: artwork[:price_currency],
         state: Order::PENDING,
-        state_expires_at: Order::STATE_EXPIRATIONS[Order::PENDING]
+        state_updated_at: Time.now.utc,
+        state_expires_at: Order::STATE_EXPIRATIONS[Order::PENDING].from_now
       )
       order.line_items.create!(
         artwork_id: artwork_id,
