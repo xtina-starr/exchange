@@ -1,6 +1,6 @@
 module OrderTotalCalculatorService
   def self.items_total_cents(line_items)
-    raise Errors::OrderError, 'Missing price info on line items' if line_items.where(price_cents: nil).exists?
+    raise Errors::OrderError, 'Missing price info on line items' if line_items.any? { |li| li.price_cents.nil? }
     line_items.pluck(:price_cents, :quantity).map { |a| a.inject(:*) }.sum
   end
 
