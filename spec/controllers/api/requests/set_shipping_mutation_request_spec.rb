@@ -133,7 +133,7 @@ describe Api::GraphqlController, type: :request do
             set_shipping_input.deep_merge(input: { phoneNumber: nil })
           )
           expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Phone number is required' 
+          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Phone number is required'
         end
       end
 
@@ -152,7 +152,7 @@ describe Api::GraphqlController, type: :request do
             expect(order.reload.shipping_total_cents).to eq 0
           end
         end
-        context 'with SHIP as fulfillment type' do 
+        context 'with SHIP as fulfillment type' do
           context 'with international shipping' do
             it 'sets total shipping cents properly' do
               response = client.execute(mutation, set_shipping_input)
