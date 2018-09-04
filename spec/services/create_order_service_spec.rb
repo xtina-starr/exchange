@@ -26,6 +26,7 @@ describe CreateOrderService, type: :services do
           Timecop.freeze(Time.now.utc) do
             order = CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: nil, quantity: 2)
             expect(order.state).to eq Order::PENDING
+            expect(order.state_updated_at).to eq Time.now.utc
             expect(order.state_expires_at).to eq 2.days.from_now
           end
         end
