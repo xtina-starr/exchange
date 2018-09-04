@@ -66,20 +66,6 @@ class Order < ApplicationRecord
     end
   end
 
-  def items_total_cents
-    line_items.sum(:price_cents)
-  end
-
-  # Total amount (in cents) that the buyer will pay
-  def buyer_total_cents
-    items_total_cents + shipping_total_cents.to_i + tax_total_cents.to_i
-  end
-
-  # Total amount (in cents) that the seller will receive
-  def seller_total_cents
-    buyer_total_cents - commission_fee_cents.to_i - transaction_fee_cents.to_i
-  end
-
   def shipping_info?
     fulfillment_type == PICKUP ||
       (fulfillment_type == SHIP && complete_shipping_details?)

@@ -7,7 +7,7 @@ describe OrderSubmitService, type: :services do
   let(:partner_id) { 'partner-1' }
   let(:credit_card_id) { 'cc-1' }
   let(:user_id) { 'dr-collector' }
-  let(:order) { Fabricate(:order, seller_id: partner_id, credit_card_id: credit_card_id, fulfillment_type: Order::PICKUP) }
+  let(:order) { Fabricate(:order, seller_id: partner_id, credit_card_id: credit_card_id, fulfillment_type: Order::PICKUP, items_total_cents: 10000_00, buyer_total_cents: 10000_00) }
   let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: 'a-1', quantity: 1), Fabricate(:line_item, order: order, price_cents: 8000_00, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2)] }
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }

@@ -5,8 +5,20 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner_id) { 'partner-1' }
     let(:user_id) { 'user-i' }
-    let!(:order) { Fabricate(:order, seller_id: partner_id, buyer_id: user_id, updated_at: 1.day.ago, shipping_total_cents: 100_00, commission_fee_cents: 30_00, transaction_fee_cents: 20_00) }
-    let!(:line_item) { Fabricate(:line_item, price_cents: 1000_00, order: order) }
+    let!(:order) do
+      Fabricate(
+        :order,
+        seller_id: partner_id,
+        buyer_id: user_id,
+        updated_at: 1.day.ago,
+        shipping_total_cents: 100_00,
+        commission_fee_cents: 30_00,
+        transaction_fee_cents: 20_00,
+        items_total_cents: 1000_00,
+        buyer_total_cents: 1100_00,
+        seller_total_cents: 1050_00
+      )
+    end
     context 'as buyer' do
       let(:jwt_partner_ids) { [] }
       let(:jwt_user_id) { user_id }
