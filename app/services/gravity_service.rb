@@ -39,7 +39,7 @@ module GravityService
     location = Rails.cache.fetch("gravity_partner_location_#{partner[:billing_location_id]}", expire_in: Rails.application.config_for(:gravity)['partner_cache_in_seconds']) do
       Adapters::GravityV1.get("/partner/#{partner_id}/location/#{partner[:billing_location_id]}")
     end
-    location.slice(:address, :address_2, :city, :state, :country, :postal_code, :phone_number)
+    location.slice(:address, :address_2, :city, :state, :country, :postal_code)
   end
 
   def self.deduct_inventory(line_item)

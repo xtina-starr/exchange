@@ -13,7 +13,6 @@ describe OrderEvent, type: :events do
       shipping_city: 'Chicago',
       shipping_country: 'USA',
       shipping_postal_code: '60618',
-      shipping_phone_number: '00123459876',
       shipping_region: 'IL'
     }
   end
@@ -21,6 +20,7 @@ describe OrderEvent, type: :events do
     Fabricate(:order,
               buyer_id: user_id,
               buyer_type: Order::USER,
+              buyer_phone_number: '00123459876',
               seller_id: partner_id,
               seller_type: Order::PARTNER,
               currency_code: 'usd',
@@ -79,7 +79,7 @@ describe OrderEvent, type: :events do
       expect(event.properties[:shipping_city]).to eq 'Chicago'
       expect(event.properties[:shipping_country]).to eq 'USA'
       expect(event.properties[:shipping_postal_code]).to eq '60618'
-      expect(event.properties[:shipping_phone_number]).to eq '00123459876'
+      expect(event.properties[:buyer_phone_number]).to eq '00123459876'
       expect(event.properties[:shipping_region]).to eq 'IL'
       expect(event.properties[:state_expires_at]).to eq Time.parse('2018-08-18 15:48:00 -0400')
     end

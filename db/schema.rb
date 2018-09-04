@@ -84,7 +84,7 @@ ActiveRecord::Schema.define(version: 2018_09_03_104007) do
     t.string "shipping_name"
     t.string "buyer_type"
     t.string "seller_type"
-    t.string "shipping_phone_number"
+    t.string "buyer_phone_number"
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["seller_id"], name: "index_orders_on_seller_id"
