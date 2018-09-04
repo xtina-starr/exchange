@@ -1,9 +1,10 @@
 class SalesTaxService
-  def initialize(line_item, fulfillment_type, shipping, shipping_total_cents, tax_client = Taxjar::Client.new(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key']))
+  def initialize(line_item, fulfillment_type, shipping, shipping_total_cents, artwork_location, tax_client = Taxjar::Client.new(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key']))
     @line_item = line_item
     @fulfillment_type = fulfillment_type
     @shipping_total_cents = shipping_total_cents
     @tax_client = tax_client
+    @artwork_location = artwork_location
     @shipping_address = {
       country: shipping[:country],
       postal_code: shipping[:postal_code],
@@ -66,7 +67,7 @@ class SalesTaxService
   end
 
   def origin_address
-    @origin_address ||= @fulfillment_type == Order::SHIP ? seller_address : artwork_location
+    @origin_address ||= @fulfillment_type == Order::SHIP ? seller_address : @artwork_location
   end
 
   def destination_address
@@ -75,10 +76,6 @@ class SalesTaxService
 
   def seller_address
     @seller_address ||= GravityService.fetch_partner_location(@line_item.order.seller_id)
-  end
-
-  def artwork_location
-    @artwork_location ||= GravityService.get_artwork(@line_item.artwork_id)[:location]
   end
 
   def artsy_should_remit_taxes?

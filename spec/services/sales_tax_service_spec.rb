@@ -33,14 +33,12 @@ describe SalesTaxService, type: :services do
       postal_code: 10013
     }
   end
-  let(:artwork_location) do
-    gravity_v1_artwork[:location]
-  end
+  let(:artwork_location) { gravity_v1_artwork[:location] }
 
   before do
     allow(Taxjar::Client).to receive(:new).with(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key']).and_return(taxjar_client)
-    @service_ship = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents)
-    @service_pickup = SalesTaxService.new(line_item, Order::PICKUP, shipping, shipping_total_cents)
+    @service_ship = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents, artwork_location)
+    @service_pickup = SalesTaxService.new(line_item, Order::PICKUP, shipping, shipping_total_cents, artwork_location)
   end
 
   describe '#sales_tax' do
@@ -67,7 +65,6 @@ describe SalesTaxService, type: :services do
     end
     context 'with a fulfillment_type of PICKUP' do
       it 'returns the artwork location' do
-        expect(@service_pickup).to receive(:artwork_location).and_return(artwork_location)
         expect(@service_pickup.send(:origin_address)).to eq artwork_location
       end
     end
@@ -84,13 +81,6 @@ describe SalesTaxService, type: :services do
         expect(@service_pickup).to receive(:origin_address).and_return(artwork_location)
         expect(@service_pickup.send(:destination_address)).to eq artwork_location
       end
-    end
-  end
-
-  describe '#artwork_location' do
-    it 'returns the artwork location' do
-      expect(GravityService).to receive(:get_artwork).with(line_item.artwork_id).and_return(gravity_v1_artwork)
-      expect(@service_ship.send(:artwork_location)).to eq artwork_location
     end
   end
 
@@ -175,7 +165,7 @@ describe SalesTaxService, type: :services do
         it 'returns true' do
           %w[wa nj pa].each do |state|
             shipping[:region] = state
-            service = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents)
+            service = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents, artwork_location)
             expect(service.send(:artsy_should_remit_taxes?)).to be true
           end
         end
@@ -189,7 +179,7 @@ describe SalesTaxService, type: :services do
     context 'with an order that has a non-US destination address' do
       it 'returns false' do
         shipping[:country] = 'FR'
-        service = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents)
+        service = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents, artwork_location)
         expect(service.send(:artsy_should_remit_taxes?)).to be false
       end
     end
