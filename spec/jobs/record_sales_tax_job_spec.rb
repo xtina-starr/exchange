@@ -8,7 +8,7 @@ describe RecordSalesTaxJob, type: :job do
       postal_code: order.shipping_postal_code,
       region: order.shipping_region,
       city: order.shipping_city,
-      address_line_1: order.shipping_address_line1
+      address_line1: order.shipping_address_line1
     }
   end
   let!(:line_item) { Fabricate(:line_item, order: order) }

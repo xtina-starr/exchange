@@ -12,7 +12,7 @@ describe SalesTaxService, type: :services do
       postal_code: 10013,
       region: 'NY',
       city: 'New York',
-      address_line_1: '123 Fake St'
+      address_line1: '123 Fake St'
     }
   end
   let(:shipping_address) do
@@ -21,7 +21,7 @@ describe SalesTaxService, type: :services do
       postal_code: shipping[:postal_code],
       state: shipping[:region],
       city: shipping[:city],
-      address: shipping[:address_line_1]
+      address: shipping[:address_line1]
     }
   end
   let(:partner_location) do

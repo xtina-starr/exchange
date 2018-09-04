@@ -10,7 +10,7 @@ class RecordSalesTaxJob < ApplicationJob
       postal_code: order.shipping_postal_code,
       region: order.shipping_region,
       city: order.shipping_city,
-      address_line_1: order.shipping_address_line1
+      address_line1: order.shipping_address_line1
     }
     SalesTaxService.new(line_item, order.fulfillment_type, shipping, order.shipping_total_cents, artwork[:location]).record_tax_collected
   end

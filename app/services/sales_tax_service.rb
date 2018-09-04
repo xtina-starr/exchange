@@ -10,7 +10,7 @@ class SalesTaxService
       postal_code: shipping[:postal_code],
       state: shipping[:region],
       city: shipping[:city],
-      address: shipping[:address_line_1]
+      address: shipping[:address_line1]
     }
   end
 
