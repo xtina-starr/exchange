@@ -63,6 +63,7 @@ describe Api::GraphqlController, type: :request do
         input: {
           id: order.id.to_s,
           fulfillmentType: fulfillment_type,
+          phoneNumber: '00123456789',
           shipping: {
             name: 'Fname Lname',
             country: shipping_country,
@@ -117,11 +118,23 @@ describe Api::GraphqlController, type: :request do
         expect(order.shipping_city).to eq 'Tehran'
         expect(order.shipping_region).to eq 'Tehran'
         expect(order.shipping_postal_code).to eq '02198912'
+        expect(order.buyer_phone_number).to eq '00123456789'
         expect(order.shipping_name).to eq 'Fname Lname'
         expect(order.shipping_address_line1).to eq 'Vanak'
         expect(order.shipping_address_line2).to eq 'P 80'
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
         expect(order.tax_total_cents).to eq 232
+      end
+
+      context 'without phone number' do
+        it 'fails' do
+          response = client.execute(
+            mutation,
+            set_shipping_input.deep_merge(input: { phoneNumber: nil })
+          )
+          expect(response.data.set_shipping.order_or_error).to respond_to(:error)
+          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Phone number is required'
+        end
       end
 
       describe '#shipping_total_cents' do

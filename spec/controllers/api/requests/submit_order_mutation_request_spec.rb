@@ -23,6 +23,7 @@ describe Api::GraphqlController, type: :request do
         shipping_address_line2: 'P 80',
         shipping_city: 'Tehran',
         shipping_postal_code: '02198',
+        buyer_phone_number: '00123456',
         shipping_country: 'IR',
         fulfillment_type: Order::SHIP
       )
