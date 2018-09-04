@@ -1,4 +1,6 @@
 class SalesTaxService
+  REMITTING_STATES = %w[wa nj pa].freeze
+
   def initialize(line_item, fulfillment_type, shipping, shipping_total_cents, artwork_location, tax_client = Taxjar::Client.new(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key']))
     @line_item = line_item
     @fulfillment_type = fulfillment_type
@@ -80,7 +82,6 @@ class SalesTaxService
 
   def artsy_should_remit_taxes?
     return false unless destination_address[:country] == 'US'
-    remitting_states = %w[wa nj pa].freeze
-    remitting_states.include? destination_address[:state].downcase
+    REMITTING_STATES.include? destination_address[:state].downcase
   end
 end
