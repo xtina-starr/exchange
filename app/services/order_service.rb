@@ -110,9 +110,10 @@ module OrderService
   end
 
   def self.update_totals!(order)
-    order.items_total_cents = OrderTotalCalculatorService.items_total_cents(order.line_items)
-    order.buyer_total_cents = OrderTotalCalculatorService.buyer_total_cents(order)
-    order.seller_total_cents = OrderTotalCalculatorService.seller_total_cents(order)
+    raise Errors::OrderError, 'Missing price info on line items' if order.line_items.any? { |li| li.price_cents.nil? }
+    order.items_total_cents = order.line_items.pluck(:price_cents, :quantity).map { |a| a.inject(:*) }.sum
+    order.buyer_total_cents = order.items_total_cents + order.shipping_total_cents.to_i + order.tax_total_cents.to_i
+    order.seller_total_cents = order.buyer_total_cents - order.commission_fee_cents.to_i - order.transaction_fee_cents.to_i
     order.save!
   end
 end
