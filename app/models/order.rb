@@ -40,10 +40,12 @@ class Order < ApplicationRecord
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
   has_many :transactions, dependent: :destroy
+  has_many :state_histories, dependent: :destroy
 
   validates :state, presence: true, inclusion: STATES
 
   after_create :set_code
+  after_create :create_state_history
   before_save :update_state_timestamps, if: :state_changed?
   before_save :set_currency_code
 
@@ -55,6 +57,7 @@ class Order < ApplicationRecord
       with_lock do
         state_machine.trigger!(action)
         save!
+        create_state_history
         block.call if block.present?
         self
       end
@@ -76,6 +79,14 @@ class Order < ApplicationRecord
     "Order #{id}"
   end
 
+  def last_submitted_at
+    get_last_state_timestamp(Order::SUBMITTED)
+  end
+
+  def last_approved_at
+    get_last_state_timestamp(Order::APPROVED)
+  end
+
   private
 
   def set_code
@@ -85,6 +96,14 @@ class Order < ApplicationRecord
   def update_state_timestamps
     self.state_updated_at = Time.now.utc
     self.state_expires_at = STATE_EXPIRATIONS.key?(state) ? state_updated_at + STATE_EXPIRATIONS[state] : nil
+  end
+
+  def get_last_state_timestamp(state)
+    state_histories.where(state: state).order(:updated_at).last&.updated_at
+  end
+
+  def create_state_history
+    state_histories.create!(state: state, updated_at: state_updated_at)
   end
 
   def set_currency_code
@@ -110,6 +129,6 @@ class Order < ApplicationRecord
   end
 
   def complete_shipping_details?
-    [shipping_name, shipping_address_line1, shipping_city, shipping_country, shipping_postal_code].all?(&:present?)
+    [shipping_name, shipping_address_line1, shipping_city, shipping_country, shipping_postal_code, buyer_phone_number].all?(&:present?)
   end
 end

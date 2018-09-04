@@ -4,17 +4,15 @@ class Mutations::SetPayment < Mutations::BaseMutation
   argument :id, ID, required: true
   argument :credit_card_id, String, required: true
 
-  field :order, Types::OrderType, null: true
-  field :errors, [String], null: false
+  field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
   def resolve(args)
     order = Order.find(args[:id])
     validate_buyer_request!(order)
     {
-      order: OrderService.set_payment!(order, args.except(:id)),
-      errors: []
+      order_or_error: { order: OrderService.set_payment!(order, args.except(:id)) }
     }
   rescue Errors::ApplicationError => e
-    { order: nil, errors: [e.message] }
+    { order_or_error: { error: Types::MutationErrorType.from_application(e) } }
   end
 end

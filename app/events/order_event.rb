@@ -14,6 +14,7 @@ class OrderEvent < Events::BaseEvent
 
   def properties
     {
+      buyer_id: @object.buyer_id,
       buyer_type: @object.buyer_type,
       code: @object.code,
       created_at: @object.created_at,
@@ -34,6 +35,7 @@ class OrderEvent < Events::BaseEvent
       shipping_city: @object.shipping_city,
       shipping_country: @object.shipping_country,
       shipping_postal_code: @object.shipping_postal_code,
+      buyer_phone_number: @object.buyer_phone_number,
       shipping_region: @object.shipping_region,
       state: @object.state,
       updated_at: @object.updated_at,

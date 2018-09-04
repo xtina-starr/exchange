@@ -37,17 +37,17 @@ RSpec.describe Order, type: :model do
   describe '#shipping_info' do
     context 'with Ship fulfillment type' do
       it 'returns true when all required shipping data available' do
-        order.update!(fulfillment_type: Order::PICKUP, shipping_name: 'Fname Lname', shipping_country: 'IR', shipping_address_line1: 'Vanak', shipping_address_line2: nil, shipping_postal_code: '09821', shipping_city: 'Tehran')
+        order.update!(fulfillment_type: Order::PICKUP, shipping_name: 'Fname Lname', shipping_country: 'IR', shipping_address_line1: 'Vanak', shipping_address_line2: nil, shipping_postal_code: '09821', buyer_phone_number: '0923', shipping_city: 'Tehran')
         expect(order.shipping_info?).to be true
       end
       it 'returns false if missing any shipping data' do
-        order.update!(fulfillment_type: Order::SHIP, shipping_name: 'Fname Lname', shipping_country: 'IR', shipping_address_line1: nil, shipping_postal_code: nil)
+        order.update!(fulfillment_type: Order::SHIP, shipping_name: 'Fname Lname', shipping_country: 'IR', shipping_address_line1: nil, shipping_postal_code: nil, buyer_phone_number: nil)
         expect(order.shipping_info?).to be false
       end
     end
     context 'with Pickup fulfillment type' do
       it 'returns true' do
-        order.update!(fulfillment_type: Order::PICKUP, shipping_name: 'Fname Lname', shipping_country: nil, shipping_address_line1: nil, shipping_postal_code: nil)
+        order.update!(fulfillment_type: Order::PICKUP, shipping_name: 'Fname Lname', shipping_country: nil, shipping_address_line1: nil, shipping_postal_code: nil, buyer_phone_number: nil)
         expect(order.shipping_info?).to be true
       end
     end
@@ -56,6 +56,54 @@ RSpec.describe Order, type: :model do
   describe '#code' do
     it 'sets code in proper format' do
       expect(order.code).to match(/^B\d{6}$/)
+    end
+  end
+
+  describe '#create_state_history' do
+    context 'when an order is first created' do
+      it 'creates a new state history object with its initial state' do
+        new_order = Order.create!(state: Order::PENDING)
+        expect(new_order.state_histories.count).to eq 1
+        expect(new_order.state_histories.last.state).to eq Order::PENDING
+        expect(new_order.state_histories.last.updated_at.to_i).to eq new_order.state_updated_at.to_i
+      end
+    end
+    context 'when an order changes state' do
+      it 'creates a new state history object with the new state' do
+        order.submit!
+        expect(order.state_histories.count).to eq 2 # PENDING and SUBMITTED
+        expect(order.state_histories.last.state).to eq Order::SUBMITTED
+        expect(order.state_histories.last.updated_at.to_i).to eq order.state_updated_at.to_i
+      end
+    end
+  end
+
+  describe '#last_submitted_at' do
+    context 'with a submitted order' do
+      it 'returns the time at which the order was submitted' do
+        order.submit!
+        expect(order.last_submitted_at.to_i).to eq order.state_histories.find_by(state: Order::SUBMITTED).updated_at.to_i
+      end
+    end
+    context 'with an unsubmitted order' do
+      it 'returns nil' do
+        expect(order.last_submitted_at).to be_nil
+      end
+    end
+  end
+
+  describe '#last_approved_at' do
+    context 'with an approved order' do
+      it 'returns the time at which the order was approved' do
+        order.update!(state: Order::SUBMITTED)
+        order.approve!
+        expect(order.last_approved_at.to_i).to eq order.state_histories.find_by(state: Order::APPROVED).updated_at.to_i
+      end
+    end
+    context 'with an un-approved order' do
+      it 'returns nil' do
+        expect(order.last_approved_at).to be_nil
+      end
     end
   end
 end

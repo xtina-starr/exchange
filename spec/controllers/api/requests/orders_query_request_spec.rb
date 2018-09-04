@@ -15,8 +15,8 @@ describe Api::GraphqlController, type: :request do
       <<-GRAPHQL
         query($sellerId: String, $buyerId: String, $state: OrderStateEnum, $sort: OrderConnectionSortEnum) {
           orders(sellerId: $sellerId, buyerId: $buyerId, state: $state, sort: $sort) {
-            edges{
-              node{
+            edges {
+              node {
                 id
                 buyer {
                   ... on Partner {
@@ -62,6 +62,11 @@ describe Api::GraphqlController, type: :request do
           client.execute(query, sellerId: 'someone-elses-partnerid')
         end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: Not permitted')
       end
+      it 'returns partners orders' do
+        results = client.execute(query, sellerId: partner_id)
+        expect(results.data.orders.edges.count).to eq 2
+        expect(results.data.orders.edges.map(&:node).map(&:id)).to match_array([user1_order1.id, user2_order1.id].map(&:to_s))
+      end
     end
 
     context 'query with buyerId' do
@@ -69,12 +74,6 @@ describe Api::GraphqlController, type: :request do
         results = client.execute(query, buyerId: user_id)
         expect(results.data.orders.edges.count).to eq 2
         expect(results.data.orders.edges.map(&:node).map(&:id)).to match_array([user1_order1.id, user1_order2.id].map(&:to_s))
-      end
-
-      it 'returns partners orders' do
-        results = client.execute(query, sellerId: partner_id)
-        expect(results.data.orders.edges.count).to eq 2
-        expect(results.data.orders.edges.map(&:node).map(&:id)).to match_array([user1_order1.id, user2_order1.id].map(&:to_s))
       end
 
       it 'sorts by updated_at in ascending order' do
@@ -107,6 +106,31 @@ describe Api::GraphqlController, type: :request do
             client.execute(query, buyerId: 'someone-elses-userid')
           end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: Not permitted')
         end
+      end
+    end
+
+    describe 'total_count' do
+      let(:query_with_total_count) do
+        <<-GRAPHQL
+          query($sellerId: String, $buyerId: String, $state: OrderStateEnum, $sort: OrderConnectionSortEnum) {
+            orders(sellerId: $sellerId, buyerId: $buyerId, state: $state, sort: $sort, first: 2) {
+              totalCount
+              edges {
+                node {
+                  id
+                }
+              }
+            }
+          }
+        GRAPHQL
+      end
+      before do
+        Fabricate.times(10, :order, seller_type: 'partner', seller_id: partner_id)
+      end
+      it 'returns proper total count' do
+        results = client.execute(query_with_total_count, sellerId: partner_id)
+        expect(results.data.orders.total_count).to eq 12
+        expect(results.data.orders.edges.count).to eq 2
       end
     end
   end

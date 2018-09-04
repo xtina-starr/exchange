@@ -1,6 +1,3 @@
-require 'taxjar'
-require 'unit_converter'
-
 module SalesTaxService
   REMITTING_STATES = %w[
     wa

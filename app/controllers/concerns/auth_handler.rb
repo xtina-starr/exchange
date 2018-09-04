@@ -5,16 +5,16 @@ module AuthHandler
 
       def authenticate_request!
         jwt = get_jwt(request.headers)
-        decoded_jwt = decode_token(jwt).with_indifferent_access
-        @current_user = get_current_user(decoded_jwt)
+        auth_helper = ArtsyAuthToken.new(jwt)
+        @current_user = auth_helper.current_user
       rescue JWT::DecodeError # includes verification error too
         render json: { errors: ['Not Authenticated'] }, status: :unauthorized
       end
 
       def valid_admin?(token)
-        decoded_jwt = decode_token(token).with_indifferent_access
-        if admin_access?(decoded_jwt)
-          @current_user = get_current_user(decoded_jwt)
+        auth_helper = ArtsyAuthToken.new(token)
+        if auth_helper.admin?
+          @current_user = auth_helper.current_user
           true
         else
           false
@@ -25,18 +25,6 @@ module AuthHandler
 
       def get_jwt(headers)
         headers['Authorization']&.split(' ')&.last
-      end
-
-      def get_current_user(token)
-        token.merge(id: token[:sub])
-      end
-
-      def decode_token(jwt)
-        JWT.decode(jwt, Rails.application.config_for(:jwt)['hmac_secret'], true, algorithm: 'HS256')[0]
-      end
-
-      def admin_access?(decoded_token)
-        decoded_token[:roles].include? 'sales_admin'
       end
     end
   end

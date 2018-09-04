@@ -18,9 +18,10 @@ describe OrderEvent, type: :events do
   end
   let(:order) do
     Fabricate(:order,
-              seller_id: partner_id,
               buyer_id: user_id,
               buyer_type: Order::USER,
+              buyer_phone_number: '00123459876',
+              seller_id: partner_id,
               seller_type: Order::PARTNER,
               currency_code: 'usd',
               shipping_total_cents: 50,
@@ -60,12 +61,13 @@ describe OrderEvent, type: :events do
     it 'returns correct properties for a submitted order' do
       order.submit!
       order.save!
-      expect(event.properties[:seller_id]).to eq partner_id
       expect(event.properties[:code]).to eq order.code
       expect(event.properties[:currency_code]).to eq 'usd'
       expect(event.properties[:state]).to eq 'submitted'
-      expect(event.properties[:seller_type]).to eq Order::PARTNER
+      expect(event.properties[:buyer_id]).to eq user_id
       expect(event.properties[:buyer_type]).to eq Order::USER
+      expect(event.properties[:seller_id]).to eq partner_id
+      expect(event.properties[:seller_type]).to eq Order::PARTNER
       expect(event.properties[:items_total_cents]).to eq 300
       expect(event.properties[:shipping_total_cents]).to eq 50
       expect(event.properties[:tax_total_cents]).to eq 30
@@ -79,6 +81,7 @@ describe OrderEvent, type: :events do
       expect(event.properties[:shipping_city]).to eq 'Chicago'
       expect(event.properties[:shipping_country]).to eq 'USA'
       expect(event.properties[:shipping_postal_code]).to eq '60618'
+      expect(event.properties[:buyer_phone_number]).to eq '00123459876'
       expect(event.properties[:shipping_region]).to eq 'IL'
       expect(event.properties[:state_expires_at]).to eq Time.parse('2018-08-18 15:48:00 -0400')
     end

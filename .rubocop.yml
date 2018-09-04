@@ -21,6 +21,9 @@ Metrics/MethodLength:
   Exclude:
     - 'db/migrate/*'
 
+Metrics/ClassLength:
+  Max: 150
+
 Rails/ReversibleMigration:
   Enabled: false
 
