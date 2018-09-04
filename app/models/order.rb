@@ -89,7 +89,15 @@ class Order < ApplicationRecord
   private
 
   def set_code
-    update!(code: format('B%06d', id))
+    update!(code: generate_code)
+  end
+
+  def generate_code(size = 8, num_chars = 3)
+    nums = %w{ 2 3 4 6 7 9 }
+    chars = %w{ A C D E F G H J K M N P Q R T V W X Y Z}
+    random_nums = (0..(size - num_chars - 1)).map { nums.to_a[rand(nums.size)] }.join
+    random_chars = (0..(num_chars - 1)).map { chars.to_a[rand(chars.size)] }.join
+    random_nums + random_chars
   end
 
   def update_state_timestamps
