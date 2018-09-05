@@ -9,20 +9,16 @@ module OrderService
 
   def self.set_shipping!(order, fulfillment_type:, phone_number:, shipping: {})
     raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
-    artworks = Hash[order.line_items.map do |li|
-      artwork = GravityService.get_artwork(li.artwork_id)
+    artworks = Hash[order.line_items.pluck(:artwork_id).uniq.map do |artwork_id|
+      artwork = GravityService.get_artwork(artwork_id)
       validate_artwork!(artwork)
       [artwork[:_id], artwork]
     end]
     Order.transaction do
-      shipping_total_cents = artworks.map { |_, artwork| ShippingService.calculate_shipping(artwork: artwork, shipping_country: shipping[:country], fulfillment_type: fulfillment_type) }.sum
+      shipping_total_cents = order.line_items.map { |li| ShippingService.calculate_shipping(artwork: artworks[li.artwork_id], shipping_country: shipping[:country], fulfillment_type: fulfillment_type) }.sum
       attrs = {
         shipping_total_cents: shipping_total_cents,
-        tax_total_cents: order.line_items.map do |li|
-          sales_tax = SalesTaxService.new(li, fulfillment_type, shipping, shipping_total_cents, artworks[li.artwork_id][:location]).sales_tax
-          li.update!(sales_tax_cents: sales_tax)
-          sales_tax
-        end.sum
+        tax_total_cents: calculate_total_tax_cents(order, fulfillment_type, shipping, shipping_total_cents, artworks)
       }
       order.update!(
         attrs.merge(
@@ -121,7 +117,7 @@ module OrderService
 
   def self.update_totals!(order)
     raise Errors::OrderError, 'Missing price info on line items' if order.line_items.any? { |li| li.price_cents.nil? }
-    order.items_total_cents = order.line_items.pluck(:price_cents, :quantity).map { |a| a.inject(:*) }.sum
+    order.items_total_cents = order.line_items.map(&:total_amount_cents).sum
     order.buyer_total_cents = order.items_total_cents + order.shipping_total_cents.to_i + order.tax_total_cents.to_i
     order.seller_total_cents = order.buyer_total_cents - order.commission_fee_cents.to_i - order.transaction_fee_cents.to_i
     order.save!
@@ -130,5 +126,13 @@ module OrderService
   def self.validate_artwork!(artwork)
     raise Errors::OrderError, 'Cannot set shipping, unknown artwork' unless artwork
     raise Errors::OrderError, 'Cannot set shipping, missing artwork location' if artwork[:location].blank?
+  end
+
+  def self.calculate_total_tax_cents(order, fulfillment_type, shipping, shipping_total_cents, artworks)
+    order.line_items.map do |li|
+      sales_tax = SalesTaxService.new(li, fulfillment_type, shipping, shipping_total_cents, artworks[li.artwork_id][:location]).sales_tax
+      li.update!(sales_tax_cents: sales_tax)
+      sales_tax
+    end.sum
   end
 end
