@@ -8,11 +8,11 @@ class Mutations::SetShipping < Mutations::BaseMutation
 
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
-  def resolve(id:, fulfillment_type:, phone_number:, shipping: {})
+  def resolve(id:, fulfillment_type:, phone_number: nil, shipping: {})
     order = Order.find(id)
     validate_buyer_request!(order)
 
-    raise Errors::AuthError, 'Phone number is required' if fulfillment_type == Order::SHIP && phone_number.nil?
+    raise Errors::OrderError, 'Phone number is required' if fulfillment_type == Order::SHIP && phone_number.nil?
 
     shipping = AddressParser.parse!(shipping.to_h) if fulfillment_type == Order::SHIP
     {
