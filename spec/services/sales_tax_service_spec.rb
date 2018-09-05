@@ -41,6 +41,21 @@ describe SalesTaxService, type: :services do
     @service_pickup = SalesTaxService.new(line_item, Order::PICKUP, shipping, shipping_total_cents, artwork_location)
   end
 
+  describe '#initialize' do
+    context 'with a destination address in a remitting state' do
+      it 'sets shipping_total_cents to the passed in value' do
+        shipping[:region] = 'NJ'
+        service = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents, artwork_location)
+        expect(service.instance_variable_get(:@shipping_total_cents)).to eq shipping_total_cents
+      end
+    end
+    context 'with a destination address in a non-remitting state' do
+      it 'sets shipping_total_cents to 0' do
+        expect(@service_ship.instance_variable_get(:@shipping_total_cents)).to eq 0
+      end
+    end
+  end
+
   describe '#sales_tax' do
     it 'calls fetch_sales_tax and returns the sales tax in cents' do
       allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
@@ -78,7 +93,6 @@ describe SalesTaxService, type: :services do
     end
     context 'with a fulfillment_type of PICKUP' do
       it 'returns the origin address' do
-        expect(@service_pickup).to receive(:origin_address).and_return(artwork_location)
         expect(@service_pickup.send(:destination_address)).to eq artwork_location
       end
     end
@@ -98,7 +112,7 @@ describe SalesTaxService, type: :services do
         to_state: shipping_address[:state],
         to_city: shipping_address[:city],
         to_street: shipping_address[:address],
-        shipping: UnitConverter.convert_cents_to_dollars(shipping_total_cents)
+        shipping: 0
       }
     end
     it 'calls the Taxjar API with the correct parameters' do
@@ -143,7 +157,7 @@ describe SalesTaxService, type: :services do
         to_city: shipping_address[:city],
         to_street: shipping_address[:address],
         sales_tax: UnitConverter.convert_cents_to_dollars(line_item.sales_tax_cents),
-        shipping: UnitConverter.convert_cents_to_dollars(shipping_total_cents)
+        shipping: 0
       }
     end
     before do
