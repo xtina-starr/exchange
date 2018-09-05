@@ -9,8 +9,8 @@ describe Api::GraphqlController, type: :request do
     let(:user_id) { jwt_user_id }
     let(:order) { Fabricate(:order, seller_id: partner_id, buyer_id: user_id) }
     let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1'), Fabricate(:line_item, order: order, artwork_id: 'a-2')] }
-    let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
-    let(:artwork2) { gravity_v1_artwork(domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
+    let(:artwork1) { gravity_v1_artwork(_id: 'a-1', domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
+    let(:artwork2) { gravity_v1_artwork(_id: 'a-2', domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
     let(:shipping_country) { 'IR' }
     let(:shipping_region) { 'Tehran' }
     let(:fulfillment_type) { 'SHIP' }
@@ -111,9 +111,25 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
+      context 'with artwork with missing location' do
+        it 'returns an error' do
+          allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(id: 'missing-location')
+          response = client.execute(mutation, set_shipping_input)
+          expect(response.data.set_shipping.order_or_error.error.description).to include 'Cannot set shipping, missing artwork location'
+        end
+      end
+
+      context 'with failed artwork fetch call' do
+        it 'returns an error' do
+          allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_raise(Adapters::GravityError.new('unknown artwork'))
+          response = client.execute(mutation, set_shipping_input)
+          expect(response.data.set_shipping.order_or_error.error.description).to include 'Cannot set shipping, unknown artwork'
+        end
+      end
+
       it 'sets shipping info and sales tax on the order' do
-        allow(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
-        allow(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-2').and_return(artwork2)
+        allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+        allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
         allow(GravityService).to receive(:fetch_partner).and_return(partner)
         allow(GravityService).to receive(:fetch_partner_location).and_return(partner_location)
         response = client.execute(mutation, set_shipping_input)
@@ -132,17 +148,21 @@ describe Api::GraphqlController, type: :request do
         expect(order.shipping_address_line1).to eq 'Vanak'
         expect(order.shipping_address_line2).to eq 'P 80'
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
+        expect(line_items[0].reload.sales_tax_cents).to eq 116
+        expect(line_items[1].reload.sales_tax_cents).to eq 116
         expect(order.tax_total_cents).to eq 232
       end
 
       describe '#shipping_total_cents' do
         before do
-          expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
-          expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-2').and_return(artwork2)
           allow(GravityService).to receive(:fetch_partner).and_return(partner)
           allow(GravityService).to receive(:fetch_partner_location).and_return(partner_location)
         end
         context 'with PICKUP as fulfillment type' do
+          before do
+            expect(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+            expect(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
+          end
           let(:fulfillment_type) { 'PICKUP' }
           it 'sets total shipping cents to 0' do
             response = client.execute(mutation, set_shipping_input)
@@ -151,6 +171,10 @@ describe Api::GraphqlController, type: :request do
           end
         end
         context 'with SHIP as fulfillment type' do
+          before do
+            expect(Adapters::GravityV1).to receive(:get).once.with('/artwork/a-1').and_return(artwork1)
+            expect(Adapters::GravityV1).to receive(:get).once.with('/artwork/a-2').and_return(artwork2)
+          end
           context 'with international shipping' do
             it 'sets total shipping cents properly' do
               response = client.execute(mutation, set_shipping_input)
@@ -170,7 +194,7 @@ describe Api::GraphqlController, type: :request do
           end
 
           context 'with one free shipping artwork' do
-            let(:artwork1) { gravity_v1_artwork(domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 0) }
+            let(:artwork1) { gravity_v1_artwork(_id: 'a-1', domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 0) }
             it 'sets total shipping cents only based on non-free shipping artwork' do
               response = client.execute(mutation, set_shipping_input)
               expect(response.data.set_shipping.order_or_error.order.shipping_total_cents).to eq 500_00

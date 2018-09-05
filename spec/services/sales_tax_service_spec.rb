@@ -1,11 +1,10 @@
 require 'rails_helper'
-require 'support/taxjar_helper'
 require 'support/gravity_helper'
 
 describe SalesTaxService, type: :services do
+  let(:taxjar_client) { double }
   let(:order) { Fabricate(:order) }
-  let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: 'gravity_artwork_1'), Fabricate(:line_item, order: order, price_cents: 8000_00)] }
-  let(:fulfillment_type) { Order::SHIP }
+  let!(:line_item) { Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: 'gravity_artwork_1', sales_tax_cents: 100) }
   let(:shipping_total_cents) { 2222 }
   let(:shipping) do
     {
@@ -13,7 +12,7 @@ describe SalesTaxService, type: :services do
       postal_code: 10013,
       region: 'NY',
       city: 'New York',
-      address_line_1: '123 Fake St'
+      address_line1: '123 Fake St'
     }
   end
   let(:shipping_address) do
@@ -22,7 +21,7 @@ describe SalesTaxService, type: :services do
       postal_code: shipping[:postal_code],
       state: shipping[:region],
       city: shipping[:city],
-      address: shipping[:address_line_1]
+      address: shipping[:address_line1]
     }
   end
   let(:partner_location) do
@@ -34,93 +33,169 @@ describe SalesTaxService, type: :services do
       postal_code: 10013
     }
   end
-  let(:artwork_location) do
-    gravity_v1_artwork[:location]
-  end
+  let(:artwork_location) { gravity_v1_artwork[:location] }
 
   before do
-    stub_tax_for_order
+    allow(Taxjar::Client).to receive(:new).with(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key']).and_return(taxjar_client)
+    @service_ship = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents, artwork_location)
+    @service_pickup = SalesTaxService.new(line_item, Order::PICKUP, shipping, shipping_total_cents, artwork_location)
   end
 
-  describe '#calculate_total_sales_tax' do
-    before do
+  describe '#initialize' do
+    context 'with a destination address in a remitting state' do
+      it 'sets shipping_total_cents to the passed in value' do
+        shipping[:region] = 'NJ'
+        service = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents, artwork_location)
+        expect(service.instance_variable_get(:@shipping_total_cents)).to eq shipping_total_cents
+      end
+    end
+    context 'with a destination address in a non-remitting state' do
+      it 'sets shipping_total_cents to 0' do
+        expect(@service_ship.instance_variable_get(:@shipping_total_cents)).to eq 0
+      end
+    end
+  end
+
+  describe '#sales_tax' do
+    it 'calls fetch_sales_tax and returns the sales tax in cents' do
       allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
-      allow(SalesTaxService).to receive(:calculate_line_item_sales_tax).twice.and_return(1000)
-    end
-    it "fetches the partner's location" do
-      SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
-      expect(GravityService).to have_received(:fetch_partner_location).with(order.seller_id)
-    end
-    it 'calculates sales tax for each line item and adds them together' do
-      expect(SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)).to be 2000
-      expect(SalesTaxService).to have_received(:calculate_line_item_sales_tax).with(line_items[0], partner_location, shipping_address, shipping_total_cents, fulfillment_type)
-      expect(SalesTaxService).to have_received(:calculate_line_item_sales_tax).with(line_items[1], partner_location, shipping_address, shipping_total_cents, fulfillment_type)
+      expect(@service_ship).to receive(:fetch_sales_tax).and_return(double(amount_to_collect: 1.00))
+      expect(@service_ship.sales_tax).to eq 100
     end
   end
 
-  describe '#calculate_line_item_sales_tax' do
-    let(:sales_tax_double) { double(amount_to_collect: 1.16) }
-    before do
-      allow(GravityService).to receive(:get_artwork).with('gravity_artwork_1').and_return(gravity_v1_artwork)
+  describe '#seller_address' do
+    it "returns the partner's location" do
+      expect(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
+      expect(@service_ship.send(:seller_address)).to eq partner_location
     end
-    it 'fetches the artwork on the line item' do
-      SalesTaxService.calculate_line_item_sales_tax(line_items[0], partner_location, shipping_address, shipping_total_cents, fulfillment_type)
-      expect(GravityService).to have_received(:get_artwork).with(line_items[0].artwork_id)
-    end
-    context 'with an order to be picked up' do
-      it 'sets the destination address to the origin address and calls fetch_sale_tax' do
-        allow(SalesTaxService).to receive(:fetch_sales_tax).with(line_items[0].price_cents, partner_location, artwork_location, artwork_location, shipping_total_cents).and_return(sales_tax_double)
-        SalesTaxService.calculate_line_item_sales_tax(line_items[0], partner_location, shipping_address, shipping_total_cents, Order::PICKUP)
-        expect(SalesTaxService).to have_received(:fetch_sales_tax).with(line_items[0].price_cents, partner_location, artwork_location, artwork_location, shipping_total_cents)
+  end
+
+  describe '#origin_address' do
+    context 'with a fulfillment_type of SHIP' do
+      it 'returns the seller address' do
+        expect(@service_ship).to receive(:seller_address).and_return(partner_location)
+        expect(@service_ship.send(:origin_address)).to eq partner_location
       end
     end
-    context 'with an order to be shipped' do
-      it 'sets the destination address to the shipping address and calls fetch_sales_tax' do
-        allow(SalesTaxService).to receive(:fetch_sales_tax).with(line_items[0].price_cents, partner_location, artwork_location, shipping_address, shipping_total_cents).and_return(sales_tax_double)
-        SalesTaxService.calculate_line_item_sales_tax(line_items[0], partner_location, shipping_address, shipping_total_cents, Order::SHIP)
-        expect(SalesTaxService).to have_received(:fetch_sales_tax).with(line_items[0].price_cents, partner_location, artwork_location, shipping_address, shipping_total_cents)
+    context 'with a fulfillment_type of PICKUP' do
+      it 'returns the artwork location' do
+        expect(@service_pickup.send(:origin_address)).to eq artwork_location
       end
     end
-    it 'returns the amount of sales tax to be collected in cents' do
-      line_item_sales_tax = SalesTaxService.calculate_line_item_sales_tax(line_items[0], partner_location, shipping_address, shipping_total_cents, fulfillment_type)
-      expect(line_item_sales_tax).to eq 116
+  end
+
+  describe '#destination_address' do
+    context 'with a fulfillment_type of SHIP' do
+      it 'returns the shipping address' do
+        expect(@service_ship.send(:destination_address)).to eq shipping_address
+      end
+    end
+    context 'with a fulfillment_type of PICKUP' do
+      it 'returns the origin address' do
+        expect(@service_pickup.send(:destination_address)).to eq artwork_location
+      end
     end
   end
 
   describe '#fetch_sales_tax' do
-    let(:taxjar_client) { double }
     let(:params) do
       {
-        amount: UnitConverter.convert_cents_to_dollars(line_items[0].price_cents),
-        from_country: artwork_location[:country],
-        from_zip: artwork_location[:postal_code],
-        from_state: artwork_location[:state],
-        from_city: artwork_location[:city],
-        from_street: artwork_location[:address],
+        amount: UnitConverter.convert_cents_to_dollars(line_item.price_cents),
+        from_country: partner_location[:country],
+        from_zip: partner_location[:postal_code],
+        from_state: partner_location[:state],
+        from_city: partner_location[:city],
+        from_street: partner_location[:address],
         to_country: shipping_address[:country],
         to_zip: shipping_address[:postal_code],
         to_state: shipping_address[:state],
         to_city: shipping_address[:city],
         to_street: shipping_address[:address],
-        nexus_addresses: [
-          {
-            country: partner_location[:country],
-            zip: partner_location[:postal_code],
-            state: partner_location[:state],
-            city: partner_location[:city],
-            street: partner_location[:address]
-          }
-        ],
-        shipping: UnitConverter.convert_cents_to_dollars(shipping_total_cents)
+        shipping: 0
+      }
+    end
+    it 'calls the Taxjar API with the correct parameters' do
+      allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
+      allow(taxjar_client).to receive(:tax_for_order).with(params)
+      @service_ship.send(:fetch_sales_tax)
+      expect(taxjar_client).to have_received(:tax_for_order).with(params)
+    end
+  end
+
+  describe '#record_tax_collected' do
+    context 'when Artsy needs to remit taxes' do
+      it 'calls post_transaction' do
+        expect(@service_ship).to receive(:artsy_should_remit_taxes?).and_return(true)
+        expect(@service_ship).to receive(:post_transaction)
+        @service_ship.record_tax_collected
+      end
+    end
+    context 'when Artsy does not need to remit taxes' do
+      it 'does nothing' do
+        expect(@service_ship).to receive(:artsy_should_remit_taxes?).and_return(false)
+        expect(@service_ship).to_not receive(:post_transaction)
+        @service_ship.record_tax_collected
+      end
+    end
+  end
+
+  describe '#post_transaction' do
+    let(:params) do
+      {
+        transaction_id: line_item.id,
+        transaction_date: line_item.order.last_approved_at.iso8601,
+        amount: UnitConverter.convert_cents_to_dollars(line_item.price_cents),
+        from_country: partner_location[:country],
+        from_zip: partner_location[:postal_code],
+        from_state: partner_location[:state],
+        from_city: partner_location[:city],
+        from_street: partner_location[:address],
+        to_country: shipping_address[:country],
+        to_zip: shipping_address[:postal_code],
+        to_state: shipping_address[:state],
+        to_city: shipping_address[:city],
+        to_street: shipping_address[:address],
+        sales_tax: UnitConverter.convert_cents_to_dollars(line_item.sales_tax_cents),
+        shipping: 0
       }
     end
     before do
-      allow(Taxjar::Client).to receive(:new).with(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key']).and_return(taxjar_client)
+      # We need to trigger the state actions to generate the state history
+      # necessary for `last_updated_at`
+      order.submit!
+      order.approve!
     end
     it 'calls the Taxjar API with the correct parameters' do
-      allow(taxjar_client).to receive(:tax_for_order).with(params)
-      SalesTaxService.fetch_sales_tax(line_items[0].price_cents, partner_location, artwork_location, shipping_address, shipping_total_cents)
-      expect(taxjar_client).to have_received(:tax_for_order).with(params)
+      allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
+      expect(taxjar_client).to receive(:create_order).with(params)
+      @service_ship.send(:post_transaction)
+    end
+  end
+
+  describe '#artsy_should_remit_taxes?' do
+    context 'with an order that has a US-based destination address' do
+      context 'with a state of WA, NJ or PA' do
+        it 'returns true' do
+          %w[wa nj pa].each do |state|
+            shipping[:region] = state
+            service = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents, artwork_location)
+            expect(service.send(:artsy_should_remit_taxes?)).to be true
+          end
+        end
+      end
+      context 'with a state other than WA, NJ or PA' do
+        it 'returns false' do
+          expect(@service_ship.send(:artsy_should_remit_taxes?)).to be false
+        end
+      end
+    end
+    context 'with an order that has a non-US destination address' do
+      it 'returns false' do
+        shipping[:country] = 'FR'
+        service = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents, artwork_location)
+        expect(service.send(:artsy_should_remit_taxes?)).to be false
+      end
     end
   end
 end

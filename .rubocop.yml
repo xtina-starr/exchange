@@ -7,6 +7,9 @@ AllCops:
     - 'spec/support/gravity_helper.rb'
     - 'spec/support/taxjar_helper.rb'
     - 'app/admin/**'
+  
+Metrics/ParameterLists:
+  Max: 7
 
 Metrics/AbcSize:
   Max: 40
@@ -22,6 +25,9 @@ Metrics/MethodLength:
     - 'db/migrate/*'
 
 Metrics/ClassLength:
+  Max: 150
+
+Metrics/ModuleLength:
   Max: 150
 
 Rails/ReversibleMigration:
