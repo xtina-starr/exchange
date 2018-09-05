@@ -15,6 +15,7 @@ describe Api::GraphqlController, type: :request do
     let(:shipping_region) { 'Tehran' }
     let(:fulfillment_type) { 'SHIP' }
     let(:total_sales_tax) { 2222 }
+    let(:phone_number) { '00123456789' }
     let(:partner) { { billing_location_id: '123abc' } }
     let(:partner_location) { { address: '123 Main St', address_2: nil, city: 'New York', state: 'NY', country: 'US', postal_code: 10_001 } }
 
@@ -57,13 +58,12 @@ describe Api::GraphqlController, type: :request do
         }
       GRAPHQL
     end
-
     let(:set_shipping_input) do
       {
         input: {
           id: order.id.to_s,
           fulfillmentType: fulfillment_type,
-          phoneNumber: '00123456789',
+          phoneNumber: phone_number,
           shipping: {
             name: 'Fname Lname',
             country: shipping_country,
@@ -73,7 +73,7 @@ describe Api::GraphqlController, type: :request do
             addressLine1: 'Vanak',
             addressLine2: 'P 80'
           }
-        }
+        }.compact
       }
     end
 
@@ -102,6 +102,15 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
+      context 'without passing phone number' do
+        let(:phone_number) { nil }
+        it 'returns proper error' do
+          response = client.execute(mutation, set_shipping_input)
+          expect(response.data.set_shipping.order_or_error).to respond_to(:error)
+          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Phone number is required'
+        end
+      end
+
       it 'sets shipping info and sales tax on the order' do
         allow(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
         allow(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-2').and_return(artwork2)
@@ -124,17 +133,6 @@ describe Api::GraphqlController, type: :request do
         expect(order.shipping_address_line2).to eq 'P 80'
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
         expect(order.tax_total_cents).to eq 232
-      end
-
-      context 'without phone number' do
-        it 'fails' do
-          response = client.execute(
-            mutation,
-            set_shipping_input.deep_merge(input: { phoneNumber: nil })
-          )
-          expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Phone number is required'
-        end
       end
 
       describe '#shipping_total_cents' do
