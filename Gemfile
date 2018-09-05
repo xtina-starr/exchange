@@ -18,6 +18,7 @@ gem 'jwt'
 gem 'micromachine'
 gem 'money' # Library for dealing with money and currency conversion
 gem 'paper_trail'
+gem 'sentry-raven'
 gem 'sidekiq'
 gem 'stripe'
 gem 'taxjar-ruby', require: 'taxjar'
