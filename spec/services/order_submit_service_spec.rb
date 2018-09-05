@@ -120,6 +120,49 @@ describe OrderSubmitService, type: :services do
         end
       end
 
+      describe 'Stripe call' do
+        let(:order) do
+          Fabricate(
+            :order,
+            seller_id: partner_id,
+            credit_card_id: credit_card_id,
+            fulfillment_type: Order::PICKUP,
+            items_total_cents: 18000_00,
+            tax_total_cents: 200_00,
+            shipping_total_cents: 100_00,
+            commission_fee_cents: 100_00,
+            transaction_fee_cents: 50_00,
+            buyer_total_cents: 18300_00,
+            seller_total_cents: 18150_00
+          )
+        end
+        it 'calls stripe with expected params' do
+          expect(Stripe::Charge).to receive(:create).with(
+            amount: 18300_00,
+            currency: 'usd',
+            description: 'INVOICING-DE via Artsy',
+            source: stripe_customer.default_source,
+            customer: stripe_customer.id,
+            metadata: {
+              exchange_order_id: order.id,
+              buyer_id: order.buyer_id,
+              buyer_type: 'user',
+              seller_id: 'partner-1',
+              seller_type: 'partner',
+              type: 'bn-mo'
+            },
+            destination: {
+              account: 'ma-1',
+              amount: 18150_00
+            },
+            capture: false
+          ).and_return(captured_charge)
+          artwork_inventory_deduct_request
+          edition_set_inventory_deduct_request
+          service.process!
+        end
+      end
+
       context 'with failed Stripe charge call' do
         before do
           artwork_inventory_deduct_request
