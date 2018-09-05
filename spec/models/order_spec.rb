@@ -53,9 +53,15 @@ RSpec.describe Order, type: :model do
     end
   end
 
-  describe '#code' do
-    it 'sets code in proper format' do
-      expect(order.code).to match(/^B\d{6}$/)
+  describe '#update_code' do
+    it 'raises an error if it is unable to set a code within specified attempts' do
+      expect do
+        order.send(:update_code, 0)
+      end.to raise_error(Errors::OrderError, 'Failed to set order code')
+    end
+
+    it 'sets code on order creation' do
+      expect(order.code).not_to be_nil
     end
   end
 

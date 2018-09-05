@@ -44,7 +44,7 @@ class Order < ApplicationRecord
 
   validates :state, presence: true, inclusion: STATES
 
-  after_create :set_code
+  after_create :update_code
   after_create :create_state_history
   before_save :update_state_timestamps, if: :state_changed?
   before_save :set_currency_code
@@ -88,15 +88,23 @@ class Order < ApplicationRecord
 
   private
 
-  def set_code
-    update!(code: generate_code)
+  def update_code(attempts = 10)
+    while attempts.positive?
+      code = generate_code
+      unless Order.where(code: code).exists?
+        update!(code: code)
+        break
+      end
+      attempts -= 1
+    end
+    raise Errors::OrderError, 'Failed to set order code' if attempts.zero?
   end
 
   def generate_code(size = 8, num_chars = 3)
-    nums = %w{ 2 3 4 6 7 9 }
-    chars = %w{ A C D E F G H J K M N P Q R T V W X Y Z}
-    random_nums = (0..(size - num_chars - 1)).map { nums.to_a[rand(nums.size)] }.join
-    random_chars = (0..(num_chars - 1)).map { chars.to_a[rand(chars.size)] }.join
+    nums = %w[2 3 4 6 7 9]
+    chars = %w[A C D E F G H J K M N P Q R T V W X Y Z]
+    random_nums = Array.new(size - num_chars).map { nums.sample }.join
+    random_chars = Array.new(num_chars).map { chars.sample }.join
     random_nums + random_chars
   end
 
