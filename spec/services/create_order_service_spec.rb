@@ -18,6 +18,7 @@ describe CreateOrderService, type: :services do
             expect(order.line_items.count).to eq 1
             expect(order.line_items.first.price_cents).to eq 5400_12
             expect(order.line_items.first.artwork_id).to eq 'artwork-id'
+            expect(order.line_items.first.artwork_version_id).to eq 'current-version-id'
             expect(order.line_items.first.edition_set_id).to be_nil
             expect(order.line_items.first.quantity).to eq 2
             expect(order.items_total_cents).to eq 1080024
@@ -42,6 +43,7 @@ describe CreateOrderService, type: :services do
             expect(order.line_items.count).to eq 1
             expect(order.line_items.first.price_cents).to eq 4200_42
             expect(order.line_items.first.artwork_id).to eq 'artwork-id'
+            expect(order.line_items.first.artwork_version_id).to eq 'current-version-id'
             expect(order.line_items.first.edition_set_id).to eq 'edition-set-id'
             expect(order.line_items.first.quantity).to eq 2
             job = ActiveJob::Base.queue_adapter.enqueued_jobs.detect { |j| j[:job] == OrderFollowUpJob }
