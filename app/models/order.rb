@@ -65,20 +65,6 @@ class Order < ApplicationRecord
     end
   end
 
-  def items_total_cents
-    line_items.sum(:price_cents)
-  end
-
-  # Total amount (in cents) that the buyer will pay
-  def buyer_total_cents
-    items_total_cents + shipping_total_cents.to_i + tax_total_cents.to_i
-  end
-
-  # Total amount (in cents) that the seller will receive
-  def seller_total_cents
-    buyer_total_cents - commission_fee_cents.to_i - transaction_fee_cents.to_i
-  end
-
   def shipping_info?
     fulfillment_type == PICKUP ||
       (fulfillment_type == SHIP && complete_shipping_details?)
@@ -92,12 +78,12 @@ class Order < ApplicationRecord
     "Order #{id}"
   end
 
-  def submitted_at
-    state_histories.find_by(state: Order::SUBMITTED)&.updated_at
+  def last_submitted_at
+    get_last_state_timestamp(Order::SUBMITTED)
   end
 
-  def approved_at
-    state_histories.find_by(state: Order::APPROVED)&.updated_at
+  def last_approved_at
+    get_last_state_timestamp(Order::APPROVED)
   end
 
   private
@@ -109,6 +95,10 @@ class Order < ApplicationRecord
   def update_state_timestamps
     self.state_updated_at = Time.now.utc
     self.state_expires_at = STATE_EXPIRATIONS.key?(state) ? state_updated_at + STATE_EXPIRATIONS[state] : nil
+  end
+
+  def get_last_state_timestamp(state)
+    state_histories.where(state: state).order(:updated_at).last&.updated_at
   end
 
   def create_state_history
@@ -138,6 +128,6 @@ class Order < ApplicationRecord
   end
 
   def complete_shipping_details?
-    [shipping_name, shipping_address_line1, shipping_city, shipping_country, shipping_postal_code].all?(&:present?)
+    [shipping_name, shipping_address_line1, shipping_city, shipping_country, shipping_postal_code, buyer_phone_number].all?(&:present?)
   end
 end

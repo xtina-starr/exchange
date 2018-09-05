@@ -20,12 +20,14 @@ describe CreateOrderService, type: :services do
             expect(order.line_items.first.artwork_id).to eq 'artwork-id'
             expect(order.line_items.first.edition_set_id).to be_nil
             expect(order.line_items.first.quantity).to eq 2
+            expect(order.items_total_cents).to eq 1080024
           end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
         end
         it 'sets state_expires_at for newly pending order' do
           Timecop.freeze(Time.now.utc) do
             order = CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: nil, quantity: 2)
             expect(order.state).to eq Order::PENDING
+            expect(order.state_updated_at).to eq Time.now.utc
             expect(order.state_expires_at).to eq 2.days.from_now
           end
         end

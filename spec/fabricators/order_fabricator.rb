@@ -5,4 +5,5 @@ Fabricator(:order) do
   seller_id { sequence(:partner_id) { |i| "partner-id-#{i}" } }
   seller_type { 'partner' }
   state { Order::PENDING }
+  items_total_cents { 0 }
 end

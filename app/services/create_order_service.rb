@@ -11,7 +11,8 @@ module CreateOrderService
         seller_type: Order::PARTNER,
         currency_code: artwork[:price_currency],
         state: Order::PENDING,
-        state_expires_at: Order::STATE_EXPIRATIONS[Order::PENDING]
+        state_updated_at: Time.now.utc,
+        state_expires_at: Order::STATE_EXPIRATIONS[Order::PENDING].from_now
       )
       order.line_items.create!(
         artwork_id: artwork_id,
@@ -19,6 +20,7 @@ module CreateOrderService
         price_cents: artwork_price(artwork, edition_set_id: edition_set_id),
         quantity: quantity
       )
+      OrderService.update_totals!(order)
       OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
       order
     end

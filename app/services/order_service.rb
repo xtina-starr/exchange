@@ -7,17 +7,23 @@ module OrderService
     order
   end
 
-  def self.set_shipping!(order, fulfillment_type:, shipping: {})
+  def self.set_shipping!(order, fulfillment_type:, phone_number:, shipping: {})
     raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
+    artworks = Hash[order.line_items.pluck(:artwork_id).uniq.map do |artwork_id|
+      artwork = GravityService.get_artwork(artwork_id)
+      validate_artwork!(artwork)
+      [artwork[:_id], artwork]
+    end]
     Order.transaction do
-      shipping_total_cents = order.line_items.map { |li| ShippingService.calculate_shipping(li, shipping_country: shipping[:country], fulfillment_type: fulfillment_type) }.sum
+      shipping_total_cents = order.line_items.map { |li| ShippingService.calculate_shipping(artwork: artworks[li.artwork_id], shipping_country: shipping[:country], fulfillment_type: fulfillment_type) }.sum
       attrs = {
         shipping_total_cents: shipping_total_cents,
-        tax_total_cents: SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
+        tax_total_cents: calculate_total_tax_cents(order, fulfillment_type, shipping, shipping_total_cents, artworks)
       }
       order.update!(
         attrs.merge(
           fulfillment_type: fulfillment_type,
+          buyer_phone_number: phone_number,
           shipping_name: shipping[:name],
           shipping_address_line1: shipping[:address_line1],
           shipping_address_line2: shipping[:address_line2],
@@ -27,6 +33,7 @@ module OrderService
           shipping_postal_code: shipping[:postal_code]
         )
       )
+      update_totals!(order)
     end
     order
   end
@@ -36,6 +43,7 @@ module OrderService
       PaymentService.capture_charge(order.external_charge_id)
     end
     order.transactions << transaction
+    order.line_items.each { |li| RecordSalesTaxJob.perform_later(li.id) }
     PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
@@ -91,5 +99,26 @@ module OrderService
     transaction = PaymentService.refund_charge(order.external_charge_id)
     order.line_items.each { |li| GravityService.undeduct_inventory(li) }
     transaction
+  end
+
+  def self.update_totals!(order)
+    raise Errors::OrderError, 'Missing price info on line items' if order.line_items.any? { |li| li.price_cents.nil? }
+    order.items_total_cents = order.line_items.map(&:total_amount_cents).sum
+    order.buyer_total_cents = order.items_total_cents + order.shipping_total_cents.to_i + order.tax_total_cents.to_i
+    order.seller_total_cents = order.buyer_total_cents - order.commission_fee_cents.to_i - order.transaction_fee_cents.to_i
+    order.save!
+  end
+
+  def self.validate_artwork!(artwork)
+    raise Errors::OrderError, 'Cannot set shipping, unknown artwork' unless artwork
+    raise Errors::OrderError, 'Cannot set shipping, missing artwork location' if artwork[:location].blank?
+  end
+
+  def self.calculate_total_tax_cents(order, fulfillment_type, shipping, shipping_total_cents, artworks)
+    order.line_items.map do |li|
+      sales_tax = SalesTaxService.new(li, fulfillment_type, shipping, shipping_total_cents, artworks[li.artwork_id][:location]).sales_tax
+      li.update!(sales_tax_cents: sales_tax)
+      sales_tax
+    end.sum
   end
 end

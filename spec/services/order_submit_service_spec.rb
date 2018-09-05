@@ -7,7 +7,7 @@ describe OrderSubmitService, type: :services do
   let(:partner_id) { 'partner-1' }
   let(:credit_card_id) { 'cc-1' }
   let(:user_id) { 'dr-collector' }
-  let(:order) { Fabricate(:order, seller_id: partner_id, credit_card_id: credit_card_id, fulfillment_type: Order::PICKUP) }
+  let(:order) { Fabricate(:order, seller_id: partner_id, credit_card_id: credit_card_id, fulfillment_type: Order::PICKUP, items_total_cents: 10000_00, buyer_total_cents: 10000_00) }
   let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: 'a-1', quantity: 1), Fabricate(:line_item, order: order, price_cents: 8000_00, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2)] }
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
@@ -21,12 +21,10 @@ describe OrderSubmitService, type: :services do
       currency_code: order.currency_code
     }
   end
-  let(:artwork_inventory_deduct_request_status) { 200 }
-  let(:edition_set_inventory_deduct_request_status) { 200 }
-  let(:artwork_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: artwork_inventory_deduct_request_status, body: {}.to_json) }
-  let(:edition_set_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { deduct: 2 }).to_return(status: edition_set_inventory_deduct_request_status, body: {}.to_json) }
-  let(:artwork_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }).to_return(status: artwork_inventory_deduct_request_status, body: {}.to_json) }
-  let(:edition_set_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { undeduct: 2 }).to_return(status: edition_set_inventory_deduct_request_status, body: {}.to_json) }
+  let(:artwork_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json) }
+  let(:edition_set_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { deduct: 2 }).to_return(status: 200, body: {}.to_json) }
+  let(:artwork_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }).to_return(status: 200, body: {}.to_json) }
+  let(:edition_set_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { undeduct: 2 }).to_return(status: 200, body: {}.to_json) }
   let(:service) { OrderSubmitService.new(order, user_id) }
   describe '#process!' do
     context 'with a partner with a merchant account' do
@@ -36,7 +34,7 @@ describe OrderSubmitService, type: :services do
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
       end
       context 'with failed artwork inventory deduct' do
-        let(:artwork_inventory_deduct_request_status) { 400 }
+        let(:artwork_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 400, body: { message: 'could not deduct' }.to_json) }
         before do
           artwork_inventory_deduct_request
           edition_set_inventory_deduct_request
@@ -54,7 +52,7 @@ describe OrderSubmitService, type: :services do
         end
       end
       context 'with failed edition_set inventory deduct' do
-        let(:edition_set_inventory_deduct_request_status) { 400 }
+        let(:edition_set_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { deduct: 2 }).to_return(status: 400, body: { message: 'could not deduct edition' }.to_json) }
         before do
           artwork_inventory_deduct_request
           edition_set_inventory_deduct_request
@@ -123,11 +121,27 @@ describe OrderSubmitService, type: :services do
       end
 
       describe 'Stripe call' do
+        let(:order) do
+          Fabricate(
+            :order,
+            seller_id: partner_id,
+            credit_card_id: credit_card_id,
+            fulfillment_type: Order::PICKUP,
+            items_total_cents: 18000_00,
+            tax_total_cents: 200_00,
+            shipping_total_cents: 100_00,
+            commission_fee_cents: 100_00,
+            transaction_fee_cents: 50_00,
+            buyer_total_cents: 18300_00,
+            seller_total_cents: 18150_00
+          )
+        end
         it 'calls stripe with expected params' do
           expect(Stripe::Charge).to receive(:create).with(
-            amount: 10000_00,
-            source: stripe_customer.default_source,
+            amount: 18300_00,
             currency: 'usd',
+            description: 'INVOICING-DE via Artsy',
+            source: stripe_customer.default_source,
             customer: stripe_customer.id,
             metadata: {
               exchange_order_id: order.id,
@@ -139,9 +153,8 @@ describe OrderSubmitService, type: :services do
             },
             destination: {
               account: 'ma-1',
-              amount: 1709_70
+              amount: 18150_00
             },
-            description: 'INVOICING-DE via Artsy',
             capture: false
           ).and_return(captured_charge)
           artwork_inventory_deduct_request

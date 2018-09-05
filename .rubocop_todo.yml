@@ -22,6 +22,11 @@ Metrics/MethodLength:
 Metrics/ParameterLists:
   Max: 7
 
+# Offense count: 1
+# Configuration parameters: CountComments.
+Metrics/ModuleLength:
+  Max: 108
+
 # Offense count: 7
 # Cop supports --auto-correct.
 Rails/ActiveRecordAliases:
