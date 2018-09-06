@@ -124,7 +124,7 @@ describe SalesTaxService, type: :services do
   end
 
   describe '#record_tax_collected' do
-    context 'when Artsy needs to remit taxes' do
+    context 'when Artsy needs to remit taxes and line item has sales tax' do
       it 'calls post_transaction' do
         expect(@service_ship).to receive(:artsy_should_remit_taxes?).and_return(true)
         expect(@service_ship).to receive(:post_transaction)
@@ -138,12 +138,22 @@ describe SalesTaxService, type: :services do
         @service_ship.record_tax_collected
       end
     end
+    context 'when line item does not have sales tax' do
+      it 'does nothing' do
+        line_item.sales_tax_cents = 0
+        service = SalesTaxService.new(line_item, Order::SHIP, shipping, shipping_total_cents, artwork_location)
+        allow(service).to receive(:artsy_should_remit_taxes?).and_return(true)
+        allow(service).to receive(:post_transaction)
+        service.record_tax_collected
+        expect(service).to_not have_received(:post_transaction)
+      end
+    end
   end
 
   describe '#post_transaction' do
     let(:params) do
       {
-        transaction_id: line_item.id,
+        transaction_id: "#{line_item.order_id}-#{line_item.id}",
         transaction_date: line_item.order.last_approved_at.iso8601,
         amount: UnitConverter.convert_cents_to_dollars(line_item.price_cents),
         from_country: partner_location[:country],
