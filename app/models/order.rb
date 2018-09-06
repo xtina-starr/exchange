@@ -63,6 +63,11 @@ class Order < ApplicationRecord
     rescue MicroMachine::InvalidState
       raise Errors::OrderError, "Invalid action on this #{state} order"
     end
+
+    define_method "assert_#{action}!" do
+      order.lock!
+      raise Errors::OrderError, "Invalid action on this #{state} order" unless state_machine.trigger?(action)
+    end
   end
 
   def shipping_info?

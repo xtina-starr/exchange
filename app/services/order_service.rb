@@ -38,21 +38,6 @@ module OrderService
     order
   end
 
-  def self.approve!(order, by: nil)
-    transaction = order.approve! do
-      PaymentService.capture_charge(order.external_charge_id)
-    end
-    order.transactions << transaction
-    order.line_items.each { |li| RecordSalesTaxJob.perform_later(li.id) }
-    PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
-    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
-    order
-  rescue Errors::PaymentError => e
-    TransactionService.create!(order, e.body)
-    Rails.logger.error("Could not approve order #{order.id}: #{e.message}")
-    raise e
-  end
-
   def self.fulfill_at_once!(order, fulfillment, by)
     Order.transaction do
       fulfillment = Fulfillment.create!(fulfillment.slice(:courier, :tracking_id, :estimated_delivery))
