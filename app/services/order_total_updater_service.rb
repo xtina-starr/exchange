@@ -16,6 +16,7 @@ class OrderTotalUpdaterService
   def self.calculate_transaction_fee(order)
     return 0 unless order.buyer_total_cents.positive?
     # This is based on Stripe US fee, it will be different for other countries
+    # https://stripe.com/us/pricing
     (Money.new(order.buyer_total_cents * 2.9 / 100, 'USD') + Money.new(30, 'USD')).cents
   end
 end
