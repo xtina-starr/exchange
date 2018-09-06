@@ -13,7 +13,7 @@ module PaymentService
       metadata: metadata,
       capture: false
     )
-    Transaction.new(external_id: charge.id, source_id: charge.source.id, destination_id: charge.destination.account, amount_cents: charge.amount, transaction_type: Transaction::HOLD, status: Transaction::SUCCESS)
+    Transaction.new(external_id: charge.id, source_id: charge.source.id, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::HOLD, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
     transaction = generate_transaction_from_exception(e, Transaction::HOLD, credit_card: credit_card, merchant_account: merchant_account, buyer_amount: buyer_amount)
     raise Errors::PaymentError.new(e.message, transaction)
