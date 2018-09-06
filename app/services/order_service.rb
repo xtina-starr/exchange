@@ -33,7 +33,7 @@ module OrderService
           shipping_postal_code: shipping[:postal_code]
         )
       )
-      update_totals!(order)
+      OrderTotalUpdaterService.update_totals!(order)
     end
     order
   end
@@ -99,14 +99,6 @@ module OrderService
     transaction = PaymentService.refund_charge(order.external_charge_id)
     order.line_items.each { |li| GravityService.undeduct_inventory(li) }
     transaction
-  end
-
-  def self.update_totals!(order)
-    raise Errors::OrderError, 'Missing price info on line items' if order.line_items.any? { |li| li.price_cents.nil? }
-    order.items_total_cents = order.line_items.map(&:total_amount_cents).sum
-    order.buyer_total_cents = order.items_total_cents + order.shipping_total_cents.to_i + order.tax_total_cents.to_i
-    order.seller_total_cents = order.buyer_total_cents - order.commission_fee_cents.to_i - order.transaction_fee_cents.to_i
-    order.save!
   end
 
   def self.validate_artwork!(artwork)

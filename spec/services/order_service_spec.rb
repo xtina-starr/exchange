@@ -70,34 +70,4 @@ describe OrderService, type: :services do
       end
     end
   end
-
-  describe '#update_totals!' do
-    before do
-      order.update!(tax_total_cents: 50_00, shipping_total_cents: 50_00, commission_fee_cents: 10_00, transaction_fee_cents: 10_00)
-      OrderService.update_totals!(order)
-    end
-    context 'with no line items' do
-      let!(:line_items) { nil }
-      it 'updates total fields' do
-        expect(order.items_total_cents).to eq 0
-        expect(order.buyer_total_cents).to eq 100_00
-        expect(order.seller_total_cents).to eq 80_00
-      end
-    end
-
-    context 'with one line item quantity of 2' do
-      it 'returns the sum of the prices of those line items' do
-        expect(order.items_total_cents).to eq 371_00
-        expect(order.buyer_total_cents).to eq 471_00
-        expect(order.seller_total_cents).to eq 451_00
-      end
-    end
-
-    context 'with a line item that has no price' do
-      it 'raises error' do
-        order.line_items << Fabricate(:line_item, price_cents: nil)
-        expect { OrderService.update_totals!(order) }.to raise_error(Errors::OrderError, 'Missing price info on line items')
-      end
-    end
-  end
 end
