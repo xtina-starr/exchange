@@ -108,9 +108,9 @@ module OrderService
 
   def self.calculate_total_tax_cents(order, fulfillment_type, shipping, shipping_total_cents, artworks)
     order.line_items.map do |li|
-      sales_tax = SalesTaxService.new(li, fulfillment_type, shipping, shipping_total_cents, artworks[li.artwork_id][:location]).sales_tax
-      li.update!(sales_tax_cents: sales_tax)
-      sales_tax
+      service = SalesTaxService.new(li, fulfillment_type, shipping, shipping_total_cents, artworks[li.artwork_id][:location])
+      li.update!(sales_tax_cents: service.sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
+      service.sales_tax
     end.sum
   end
 end

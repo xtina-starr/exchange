@@ -28,6 +28,11 @@ class SalesTaxService
     raise Errors::OrderError, e.message
   end
 
+  def artsy_should_remit_taxes?
+    return false unless destination_address[:country] == 'US'
+    REMITTING_STATES.include? destination_address[:state].downcase
+  end
+
   private
 
   def fetch_sales_tax
@@ -78,10 +83,5 @@ class SalesTaxService
 
   def seller_address
     @seller_address ||= GravityService.fetch_partner_location(@line_item.order.seller_id)
-  end
-
-  def artsy_should_remit_taxes?
-    return false unless destination_address[:country] == 'US'
-    REMITTING_STATES.include? destination_address[:state].downcase
   end
 end
