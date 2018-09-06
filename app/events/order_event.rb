@@ -40,7 +40,7 @@ class OrderEvent < Events::BaseEvent
       state_expires_at: @object.state_expires_at,
       tax_total_cents: @object.tax_total_cents,
       transaction_fee_cents: @object.transaction_fee_cents,
-      updated_at: @object.updated_at,
+      updated_at: @object.updated_at
     }
   end
 
