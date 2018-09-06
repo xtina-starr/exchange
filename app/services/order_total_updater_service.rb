@@ -1,4 +1,4 @@
-class OrderTotalUpdaterService
+module OrderTotalUpdaterService
   def self.update_totals!(order, commission_rate = nil)
     raise Errors::OrderError, 'Missing price info on line items' if order.line_items.any? { |li| li.price_cents.nil? }
     order.items_total_cents = order.line_items.map(&:total_amount_cents).sum
