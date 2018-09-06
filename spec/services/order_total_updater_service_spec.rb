@@ -7,7 +7,7 @@ describe OrderTotalUpdaterService, type: :service do
   describe '#update_order_totals!' do
     context 'without line items' do
       it 'returns 0 for everything' do
-        OrderTotalUpdaterService.update_totals!(order)
+        OrderTotalUpdaterService.new(order).update_totals!
         expect(order.reload.items_total_cents).to eq 0
         expect(order.buyer_total_cents).to eq 0
         expect(order.seller_total_cents).to eq 0
@@ -20,7 +20,7 @@ describe OrderTotalUpdaterService, type: :service do
         let(:tax_total_cents) { 60_00 }
         context 'without commission rate' do
           it 'sets correct totals on the order' do
-            OrderTotalUpdaterService.update_totals!(order)
+            OrderTotalUpdaterService.new(order).update_totals!
             expect(order.items_total_cents).to eq 500_00
             expect(order.buyer_total_cents).to eq(500_00 + 50_00 + 60_00)
             expect(order.transaction_fee_cents).to eq 17_99
@@ -29,8 +29,14 @@ describe OrderTotalUpdaterService, type: :service do
           end
         end
         context 'with commission rate' do
+          it 'raises error for commission rate > 1' do
+            expect { OrderTotalUpdaterService.new(order, 2) }.to raise_error(StandardError, 'Commission rate should be a value between 0 and 1')
+          end
+          it 'raises error for commission rate < 0' do
+            expect { OrderTotalUpdaterService.new(order, -0.2) }.to raise_error(StandardError, 'Commission rate should be a value between 0 and 1')
+          end
           it 'sets correct totals on the order' do
-            OrderTotalUpdaterService.update_totals!(order, 0.40)
+            OrderTotalUpdaterService.new(order, 0.40).update_totals!
             expect(order.items_total_cents).to eq 500_00
             expect(order.buyer_total_cents).to eq(500_00 + 50_00 + 60_00)
             expect(order.transaction_fee_cents).to eq 17_99

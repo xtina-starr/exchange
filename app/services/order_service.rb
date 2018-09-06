@@ -33,7 +33,7 @@ module OrderService
           shipping_postal_code: shipping[:postal_code]
         )
       )
-      OrderTotalUpdaterService.update_totals!(order)
+      OrderTotalUpdaterService.new(order).update_totals!
     end
     order
   end

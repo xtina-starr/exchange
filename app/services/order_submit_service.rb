@@ -47,7 +47,7 @@ class OrderSubmitService
     assert_credit_card!
     @partner = GravityService.fetch_partner(@order.seller_id)
     @merchant_account = GravityService.get_merchant_account(@order.seller_id)
-    OrderTotalUpdaterService.update_totals!(@order, @partner[:effective_commission_rate])
+    OrderTotalUpdaterService.new(@order, @partner[:effective_commission_rate]).update_totals!
   end
 
   def post_process!
