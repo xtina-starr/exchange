@@ -47,9 +47,7 @@ class OrderSubmitService
     assert_credit_card!
     @partner = GravityService.fetch_partner(@order.seller_id)
     @merchant_account = GravityService.get_merchant_account(@order.seller_id)
-    @order.commission_fee_cents = calculate_commission_fee
-    @order.transaction_fee_cents = calculate_transaction_fee
-    @order.save!
+    OrderTotalUpdaterService.new(@order, @partner[:effective_commission_rate]).update_totals!
   end
 
   def post_process!
@@ -79,15 +77,6 @@ class OrderSubmitService
 
   def can_submit?
     @order.shipping_info? && @order.payment_info?
-  end
-
-  def calculate_commission_fee
-    @order.items_total_cents * @partner[:effective_commission_rate]
-  end
-
-  def calculate_transaction_fee
-    # This is based on Stripe US fee, it will be different for other countries
-    (Money.new(@order.buyer_total_cents * 2.9 / 100, 'USD') + Money.new(30, 'USD')).cents
   end
 
   def charge_description
