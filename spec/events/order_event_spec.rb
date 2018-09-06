@@ -7,6 +7,7 @@ describe OrderEvent, type: :events do
   let(:user_id) { 'user-1' }
   let(:shipping_info) do
     {
+      fulfillment_type: Order::SHIP,
       shipping_name: 'Fname Lname',
       shipping_address_line1: '123 Main St',
       shipping_address_line2: 'Apt 2',
@@ -66,6 +67,7 @@ describe OrderEvent, type: :events do
       expect(event.properties[:state]).to eq 'submitted'
       expect(event.properties[:buyer_id]).to eq user_id
       expect(event.properties[:buyer_type]).to eq Order::USER
+      expect(event.properties[:fulfillment_type]).to eq Order::SHIP
       expect(event.properties[:seller_id]).to eq partner_id
       expect(event.properties[:seller_type]).to eq Order::PARTNER
       expect(event.properties[:items_total_cents]).to eq 300
