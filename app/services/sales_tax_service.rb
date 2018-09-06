@@ -23,7 +23,7 @@ class SalesTaxService
   end
 
   def record_tax_collected
-    post_transaction if artsy_should_remit_taxes?
+    post_transaction if artsy_should_remit_taxes? && @line_item.sales_tax_cents&.positive?
   rescue Taxjar::Error => e
     raise Errors::OrderError, e.message
   end
@@ -50,7 +50,7 @@ class SalesTaxService
   def post_transaction
     transaction_date = @line_item.order.last_approved_at.iso8601
     @tax_client.create_order(
-      transaction_id: @line_item.id,
+      transaction_id: "#{@line_item.order_id}-#{@line_item.id}",
       transaction_date: transaction_date,
       amount: UnitConverter.convert_cents_to_dollars(@line_item.total_amount_cents),
       from_country: origin_address[:country],
