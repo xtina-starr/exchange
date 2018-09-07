@@ -6,19 +6,6 @@ describe OrderService, type: :services do
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
 
-  describe '#approve!' do
-    before do
-      order.submit!
-    end
-    context 'with a successful order approval' do
-      it 'enqueues a RecordSalesTaxJob for each line item' do
-        ActiveJob::Base.queue_adapter = :test
-        OrderService.approve!(order)
-        line_items.each { |li| expect(RecordSalesTaxJob).to have_been_enqueued.with(li.id) }
-      end
-    end
-  end
-
   describe '#reject!' do
     let(:artwork_inventory_deduct_request_status) { 200 }
     let(:edition_set_inventory_deduct_request_status) { 200 }
