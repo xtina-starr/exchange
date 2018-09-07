@@ -104,10 +104,10 @@ describe Api::GraphqlController, type: :request do
 
       context 'without passing phone number' do
         let(:phone_number) { nil }
-        it 'returns proper error' do
-          response = client.execute(mutation, set_shipping_input)
-          expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Phone number is required'
+        it 'fails' do
+          expect do
+            client.execute(mutation, set_shipping_input)
+          end.to raise_error(/phoneNumber: Expected value to not be null/)
         end
       end
 
@@ -151,17 +151,6 @@ describe Api::GraphqlController, type: :request do
         expect(line_items[0].reload.sales_tax_cents).to eq 116
         expect(line_items[1].reload.sales_tax_cents).to eq 116
         expect(order.tax_total_cents).to eq 232
-      end
-
-      context 'without phone number' do
-        it 'fails' do
-          expect do
-            client.execute(
-              mutation,
-              set_shipping_input.deep_merge(input: { shipping: { phoneNumber: nil } })
-            )
-          end.to raise_error(/phoneNumber: Expected value to not be null/)
-        end
       end
 
       describe '#shipping_total_cents' do
