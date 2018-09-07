@@ -7,7 +7,7 @@ module OrderService
     order
   end
 
-  def self.set_shipping!(order, fulfillment_type:, phone_number:, shipping: {})
+  def self.set_shipping!(order, fulfillment_type:, shipping: {})
     raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
     artworks = Hash[order.line_items.pluck(:artwork_id).uniq.map do |artwork_id|
       artwork = GravityService.get_artwork(artwork_id)
@@ -23,7 +23,7 @@ module OrderService
       order.update!(
         attrs.merge(
           fulfillment_type: fulfillment_type,
-          buyer_phone_number: phone_number,
+          buyer_phone_number: shipping[:phone_number],
           shipping_name: shipping[:name],
           shipping_address_line1: shipping[:address_line1],
           shipping_address_line2: shipping[:address_line2],

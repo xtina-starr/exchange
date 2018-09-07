@@ -63,13 +63,13 @@ describe Api::GraphqlController, type: :request do
         input: {
           id: order.id.to_s,
           fulfillmentType: fulfillment_type,
-          phoneNumber: phone_number,
           shipping: {
             name: 'Fname Lname',
             country: shipping_country,
             city: 'Tehran',
             region: shipping_region,
             postalCode: '02198912',
+            phoneNumber: phone_number,
             addressLine1: 'Vanak',
             addressLine2: 'P 80'
           }
@@ -151,6 +151,17 @@ describe Api::GraphqlController, type: :request do
         expect(line_items[0].reload.sales_tax_cents).to eq 116
         expect(line_items[1].reload.sales_tax_cents).to eq 116
         expect(order.tax_total_cents).to eq 232
+      end
+
+      context 'without phone number' do
+        it 'fails' do
+          expect do
+            client.execute(
+              mutation,
+              set_shipping_input.deep_merge(input: { shipping: { phoneNumber: nil } })
+            )
+          end.to raise_error(/phoneNumber: Expected value to not be null/)
+        end
       end
 
       describe '#shipping_total_cents' do
