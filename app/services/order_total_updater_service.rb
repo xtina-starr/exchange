@@ -11,11 +11,15 @@ class OrderTotalUpdaterService
     @order.buyer_total_cents = @order.items_total_cents + @order.shipping_total_cents.to_i + @order.tax_total_cents.to_i
     @order.commission_fee_cents = calculate_commission_fee if @commission_rate.present?
     @order.transaction_fee_cents = calculate_transaction_fee
-    @order.seller_total_cents = @order.buyer_total_cents - @order.commission_fee_cents.to_i - @order.transaction_fee_cents.to_i
+    @order.seller_total_cents = @order.buyer_total_cents - @order.commission_fee_cents.to_i - @order.transaction_fee_cents.to_i - calculate_remittable_sales_tax
     @order.save!
   end
 
   private
+
+  def calculate_remittable_sales_tax
+    @order.line_items.select(&:should_remit_sales_tax).sum(&:sales_tax_cents)
+  end
 
   def calculate_commission_fee
     @order.items_total_cents * @commission_rate
