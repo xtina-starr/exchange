@@ -90,7 +90,7 @@ class Order < ApplicationRecord
 
   def update_code(attempts = 10)
     while attempts.positive?
-      code = generate_code
+      code = SecureRandom.rand(100000000..999999999)
       unless Order.where(code: code).exists?
         update!(code: code)
         break
@@ -98,14 +98,6 @@ class Order < ApplicationRecord
       attempts -= 1
     end
     raise Errors::OrderError, 'Failed to set order code' if attempts.zero?
-  end
-
-  def generate_code(size = 8, num_chars = 3)
-    nums = %w[2 3 4 6 7 9]
-    chars = %w[A C D E F G H J K M N P Q R T V W X Y Z]
-    random_nums = Array.new(size - num_chars).map { nums.sample }.join
-    random_chars = Array.new(num_chars).map { chars.sample }.join
-    random_nums + random_chars
   end
 
   def update_state_timestamps
