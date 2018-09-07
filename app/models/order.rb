@@ -64,8 +64,8 @@ class Order < ApplicationRecord
       raise Errors::OrderError, "Invalid action on this #{state} order"
     end
 
-    define_method "assert_#{action}!" do
-      order.lock!
+    define_method "prepare_#{action}!" do
+      lock!
       raise Errors::OrderError, "Invalid action on this #{state} order" unless state_machine.trigger?(action)
     end
   end

@@ -13,7 +13,7 @@ class Transaction < ApplicationRecord
   ].freeze
 
   def to_s
-    failed? ? "#{id}: #{failure_code} - #{failure_message}" : "#{id}"
+    failed? ? "#{id}: #{failure_code} - #{failure_message}" : id
   end
 
   def failed?
