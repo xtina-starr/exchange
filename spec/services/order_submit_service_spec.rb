@@ -174,7 +174,7 @@ describe OrderSubmitService, type: :services do
         it 'calls stripe with expected params' do
           expect(Stripe::Charge).to receive(:create).with(
             amount: 18300_00,
-            currency: 'usd',
+            currency: 'USD',
             description: 'INVOICING-DE via Artsy',
             source: stripe_customer.default_source,
             customer: stripe_customer.id,

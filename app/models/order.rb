@@ -1,6 +1,6 @@
 class Order < ApplicationRecord
   has_paper_trail
-  SUPPORTED_CURRENCIES = %w[usd].freeze
+  SUPPORTED_CURRENCIES = %w[USD].freeze
   # For more docs about states go to:
   # https://www.notion.so/artsy/37c311363ef046c3aa546047e60cc58a?v=de68d5bbc30748f88b0d92a059bc0ba8
   STATES = [
@@ -42,7 +42,10 @@ class Order < ApplicationRecord
   has_many :transactions, dependent: :destroy
   has_many :state_histories, dependent: :destroy
 
+  before_validation { self.currency_code = currency_code.upcase if currency_code.present? }
+
   validates :state, presence: true, inclusion: STATES
+  validates :currency_code, inclusion: SUPPORTED_CURRENCIES, allow_nil: true
 
   after_create :set_code
   after_create :create_state_history
@@ -61,7 +64,7 @@ class Order < ApplicationRecord
         block.call if block.present?
       end
     rescue MicroMachine::InvalidState
-      raise Errors::OrderError, "Invalid action on this #{state} order"
+      raise Errors::OrderError, "Invalid transition for #{state} order: #{id}"
     end
   end
 
@@ -106,7 +109,7 @@ class Order < ApplicationRecord
   end
 
   def set_currency_code
-    self.currency_code ||= 'usd'
+    self.currency_code ||= 'USD'
   end
 
   def state_machine

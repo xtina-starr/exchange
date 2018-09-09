@@ -3,6 +3,12 @@ require 'rails_helper'
 RSpec.describe Order, type: :model do
   let(:order) { Fabricate(:order) }
 
+  describe 'validate currency' do
+    it 'raises invalid record for unsupported currencies' do
+      expect { order.update!(currency_code: 'CAD') }.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: Currency code is not included in the list')
+    end
+  end
+
   describe 'update_state_timestamps' do
     it 'sets state timestamps in create' do
       expect(order.state_updated_at).not_to be_nil
@@ -11,7 +17,7 @@ RSpec.describe Order, type: :model do
 
     it 'does not update timestamps if state did not change' do
       current_timestamp = order.state_updated_at
-      order.update!(currency_code: 'CAD')
+      order.update!(shipping_total_cents: 12313)
       expect(order.state_updated_at).to eq current_timestamp
     end
 

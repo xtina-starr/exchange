@@ -63,7 +63,7 @@ describe OrderEvent, type: :events do
       order.submit!
       order.save!
       expect(event.properties[:code]).to eq order.code
-      expect(event.properties[:currency_code]).to eq 'usd'
+      expect(event.properties[:currency_code]).to eq 'USD'
       expect(event.properties[:state]).to eq 'submitted'
       expect(event.properties[:buyer_id]).to eq user_id
       expect(event.properties[:buyer_type]).to eq Order::USER

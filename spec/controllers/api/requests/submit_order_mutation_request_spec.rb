@@ -122,7 +122,7 @@ describe Api::GraphqlController, type: :request do
           allow(GravityService).to receive(:fetch_partner).and_return(partner)
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
-          expect(response.data.submit_order.order_or_error.error.description).to eq 'Invalid action on this approved order'
+          expect(response.data.submit_order.order_or_error.error.description).to eq "Invalid transition for approved order: #{order.id}"
           expect(order.reload.state).to eq Order::APPROVED
         end
       end

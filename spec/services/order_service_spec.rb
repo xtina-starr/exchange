@@ -2,58 +2,101 @@ require 'rails_helper'
 
 describe OrderService, type: :services do
   include_context 'use stripe mock'
-  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id) }
+  let(:state) { Order::PENDING }
+  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state) }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
 
-  describe '#reject!' do
-    let(:artwork_inventory_deduct_request_status) { 200 }
-    let(:edition_set_inventory_deduct_request_status) { 200 }
-    let(:artwork_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }).to_return(status: artwork_inventory_deduct_request_status, body: {}.to_json) }
-    let(:edition_set_inventory_undeduct_request) do
-      stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { undeduct: 2 }).to_return(status: edition_set_inventory_deduct_request_status, body: {}.to_json)
-    end
-    before do
-      order.update! state: Order::SUBMITTED
-    end
-    context 'with a successful refund' do
-      before do
-        artwork_inventory_undeduct_request
-        edition_set_inventory_undeduct_request
-      end
-      it 'calls to undeduct inventory' do
-        OrderService.reject!(order, user_id)
-        expect(artwork_inventory_undeduct_request).to have_been_requested
-        expect(edition_set_inventory_undeduct_request).to have_been_requested
-      end
-      it 'records the transaction' do
-        OrderService.reject!(order, user_id)
-        expect(order.transactions.last.external_id).to_not eq nil
-        expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
-        expect(order.transactions.last.status).to eq Transaction::SUCCESS
-      end
-      it 'updates the order state' do
-        OrderService.reject!(order, user_id)
-        expect(order.state).to eq Order::REJECTED
+  describe 'set_payment!' do
+    let(:credit_card_id) { 'gravity-cc-1' }
+    context 'order in pending state' do
+      let(:state) { Order::PENDING }
+      it 'sets credit_card_id on the order' do
+        OrderService.set_payment!(order, credit_card_id)
+        expect(order.reload.credit_card_id).to eq 'gravity-cc-1'
       end
     end
-    context 'with an unsuccessful refund' do
-      before do
-        artwork_inventory_undeduct_request
-        edition_set_inventory_undeduct_request
-        allow(Stripe::Refund).to receive(:create)
-          .with(hash_including(charge: captured_charge.id))
-          .and_raise(Stripe::StripeError.new('too late to refund buddy...', json_body: { error: { code: 'something', message: 'refund failed' } }))
-        expect { OrderService.reject!(order, user_id) }.to raise_error(Errors::PaymentError).and change(order.transactions, :count).by(1)
+    Order::STATES.reject { |s| s == Order::PENDING }.each do |state|
+      context "order in #{state}" do
+        let(:state) { state }
+        it 'raises error' do
+          expect { OrderService.set_payment!(order, credit_card_id) }.to raise_error(Errors::OrderError, 'Cannot set payment info on non-pending orders')
+        end
       end
-      it 'raises a PaymentError and records the transaction' do
-        expect(order.transactions.last.external_id).to eq captured_charge.id
-        expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
-        expect(order.transactions.last.status).to eq Transaction::FAILURE
+    end
+  end
+
+  describe 'set_shipping!' do
+  end
+
+  describe 'fulfill_at_once!' do
+    let(:fulfillment_params) { { courier: 'usps', tracking_id: 'track_this_id', estimated_delivery: 10.days.from_now } }
+    context 'with order in approved state' do
+      let(:state) { Order::APPROVED }
+      it 'changes order state to fulfilled' do
+        OrderService.fulfill_at_once!(order, fulfillment_params, user_id)
+        expect(order.reload.state).to eq Order::FULFILLED
       end
-      it 'does not undeduct inventory' do
-        expect(artwork_inventory_undeduct_request).not_to have_been_requested
-        expect(edition_set_inventory_undeduct_request).not_to have_been_requested
+      it 'creates one fulfillment model' do
+        Timecop.freeze do
+          expect { OrderService.fulfill_at_once!(order, fulfillment_params, user_id) }.to change(Fulfillment, :count).by(1)
+          fulfillment = Fulfillment.last
+          expect(fulfillment.courier).to eq 'usps'
+          expect(fulfillment.tracking_id).to eq 'track_this_id'
+          expect(fulfillment.estimated_delivery.to_date).to eq 10.days.from_now.to_date
+        end
+      end
+      it 'sets all line items fulfillment to one fulfillment' do
+        OrderService.fulfill_at_once!(order, fulfillment_params, user_id)
+        fulfillment = Fulfillment.last
+        line_items.each do |li|
+          expect(li.fulfillments.first.id).to eq fulfillment.id
+        end
+      end
+      it 'queues job to post fulfillment event' do
+        OrderService.fulfill_at_once!(order, fulfillment_params, user_id)
+        expect(PostNotificationJob).to have_been_enqueued.with(order.id, Order::FULFILLED, user_id)
+      end
+    end
+    Order::STATES.reject { |s| s == Order::APPROVED }.each do |state|
+      context "order in #{state}" do
+        let(:state) { state }
+        it 'raises error' do
+          expect do
+            OrderService.fulfill_at_once!(order, fulfillment_params, user_id)
+          end.to raise_error(Errors::OrderError, "Invalid transition for #{state} order: #{order.id}").and change(Fulfillment, :count).by(0)
+        end
+      end
+    end
+  end
+
+  describe 'abandon!' do
+    context 'order in pending state' do
+      let(:state) { Order::PENDING }
+      it 'abandons the order' do
+        OrderService.abandon!(order)
+        expect(order.reload.state).to eq Order::ABANDONED
+      end
+      it 'updates state_update_at' do
+        Timecop.freeze do
+          OrderService.abandon!(order)
+          expect(order.reload.state_updated_at).to eq Time.now
+        end
+      end
+      it 'creates state history' do
+        expect { OrderService.abandon!(order) }.to change(order.state_histories, :count).by(1)
+      end
+    end
+    Order::STATES.reject { |s| s == Order::PENDING }.each do |state|
+      context "order in #{state}" do
+        let(:state) { state }
+        it 'does not change state' do
+          expect { OrderService.abandon!(order) }.to raise_error(Errors::OrderError)
+          expect(order.reload.state).to eq state
+        end
+        it 'raises error' do
+          expect { OrderService.abandon!(order) }.to raise_error(Errors::OrderError, "Invalid transition for #{state} order: #{order.id}")
+        end
       end
     end
   end

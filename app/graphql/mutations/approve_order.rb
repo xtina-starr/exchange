@@ -10,7 +10,7 @@ class Mutations::ApproveOrder < Mutations::BaseMutation
     validate_seller_request!(order)
     OrderApproveService.new(order, context[:current_user]['id']).process!
     {
-      order_or_error: { order:  order.reload}
+      order_or_error: { order: order.reload }
     }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::MutationErrorType.from_application(e) } }

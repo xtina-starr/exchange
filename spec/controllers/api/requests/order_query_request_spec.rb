@@ -72,7 +72,7 @@ describe Api::GraphqlController, type: :request do
         result = client.execute(query, id: user1_order1.id)
         expect(result.data.order.buyer.id).to eq user_id
         expect(result.data.order.seller.id).to eq partner_id
-        expect(result.data.order.currency_code).to eq 'usd'
+        expect(result.data.order.currency_code).to eq 'USD'
         expect(result.data.order.state).to eq 'PENDING'
         expect(result.data.order.items_total_cents).to eq 0
         expect(result.data.order.seller_total_cents).to eq 50_00
@@ -106,7 +106,7 @@ describe Api::GraphqlController, type: :request do
           result = client.execute(query, id: user2_order1.id)
           expect(result.data.order.buyer.id).to eq user2_order1.buyer_id
           expect(result.data.order.seller.id).to eq user2_order1.seller_id
-          expect(result.data.order.currency_code).to eq 'usd'
+          expect(result.data.order.currency_code).to eq 'USD'
           expect(result.data.order.state).to eq 'PENDING'
           expect(result.data.order.items_total_cents).to eq 0
         end
@@ -142,7 +142,7 @@ describe Api::GraphqlController, type: :request do
           result = client.execute(query, id: user2_order1.id)
           expect(result.data.order.buyer.id).to eq user2_order1.buyer_id
           expect(result.data.order.seller.id).to eq user2_order1.seller_id
-          expect(result.data.order.currency_code).to eq 'usd'
+          expect(result.data.order.currency_code).to eq 'USD'
           expect(result.data.order.state).to eq 'PENDING'
           expect(result.data.order.items_total_cents).to eq 0
         end
@@ -155,7 +155,7 @@ describe Api::GraphqlController, type: :request do
         result = client.execute(query, id: another_user_order.id)
         expect(result.data.order.buyer.id).to eq 'someone-else-id'
         expect(result.data.order.seller.id).to eq partner_id
-        expect(result.data.order.currency_code).to eq 'usd'
+        expect(result.data.order.currency_code).to eq 'USD'
         expect(result.data.order.state).to eq 'PENDING'
         expect(result.data.order.items_total_cents).to eq 0
       end

@@ -1,9 +1,7 @@
 module OrderService
-  def self.set_payment!(order, credit_card_id:)
+  def self.set_payment!(order, credit_card_id)
     raise Errors::OrderError, 'Cannot set payment info on non-pending orders' unless order.state == Order::PENDING
-    Order.transaction do
-      order.update!(credit_card_id: credit_card_id)
-    end
+    order.update!(credit_card_id: credit_card_id)
     order
   end
 
@@ -39,51 +37,18 @@ module OrderService
   end
 
   def self.fulfill_at_once!(order, fulfillment, by)
-    Order.transaction do
+    order.fulfill! do
       fulfillment = Fulfillment.create!(fulfillment.slice(:courier, :tracking_id, :estimated_delivery))
       order.line_items.each do |li|
         li.line_item_fulfillments.create!(fulfillment_id: fulfillment.id)
       end
-      order.fulfill!
-      PostNotificationJob.perform_later(order.id, Order::FULFILLED, by)
     end
-    order
-  end
-
-  def self.reject!(order, by)
-    transaction = order.reject! do
-      refund(order)
-    end
-    order.transactions << transaction
-    PostNotificationJob.perform_later(order.id, Order::REJECTED, by)
-    order
-  rescue Errors::PaymentError => e
-    order.transactions << e.transaction
-    Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
-    raise e
-  end
-
-  def self.seller_lapse!(order)
-    transaction = order.seller_lapse! do
-      refund(order)
-    end
-    order.transactions << transaction
-    PostNotificationJob.perform_later(order.id, Order::SELLER_LAPSED)
+    PostNotificationJob.perform_later(order.id, Order::FULFILLED, by)
     order
   end
 
   def self.abandon!(order)
     order.abandon!
-  end
-
-  def self.valid_currency_code?(currency_code)
-    Order::SUPPORTED_CURRENCIES.include?(currency_code.downcase)
-  end
-
-  def self.refund(order)
-    transaction = PaymentService.refund_charge(order.external_charge_id)
-    order.line_items.each { |li| GravityService.undeduct_inventory(li) }
-    transaction
   end
 
   def self.validate_artwork!(artwork)
