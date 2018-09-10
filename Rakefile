@@ -3,7 +3,7 @@ require 'graphql/rake_task'
 
 Rails.application.load_tasks
 
-GraphQL::RakeTask.new(schema_name: 'ExchangeSchema')
+GraphQL::RakeTask.new(schema_name: 'ExchangeSchema', idl_outfile: '_schema.graphql')
 
 if %w[development test].include? Rails.env
   require 'rubocop/rake_task'
