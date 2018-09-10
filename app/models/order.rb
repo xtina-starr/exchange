@@ -45,7 +45,7 @@ class Order < ApplicationRecord
   before_validation { self.currency_code = currency_code.upcase if currency_code.present? }
 
   validates :state, presence: true, inclusion: STATES
-  validates :currency_code, inclusion: SUPPORTED_CURRENCIES, allow_nil: true
+  validates :currency_code, inclusion: SUPPORTED_CURRENCIES
 
   after_create :set_code
   after_create :create_state_history
