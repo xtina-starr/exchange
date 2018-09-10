@@ -35,9 +35,9 @@ group :development do
 end
 
 group :test do
+  gem 'danger'
   gem 'fabrication'
   gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
   gem 'timecop'
   gem 'webmock'
-  gem "danger", "~> 5.6"
 end
