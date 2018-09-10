@@ -90,7 +90,7 @@ class Order < ApplicationRecord
 
   def update_code(attempts = 10)
     while attempts.positive?
-      code = SecureRandom.rand(100000000..999999999)
+      code = format('%09d', SecureRandom.rand(999999999))
       unless Order.where(code: code).exists?
         update!(code: code)
         break

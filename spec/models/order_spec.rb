@@ -60,8 +60,9 @@ RSpec.describe Order, type: :model do
       end.to raise_error(Errors::OrderError, 'Failed to set order code')
     end
 
-    it 'sets code on order creation' do
-      expect(order.code).not_to be_nil
+    it 'sets a 0-padded 9 digit number for the code on order creation' do
+      expect(order.code.length).to eq 9
+      expect(order.code).to eq format('%09d', order.code.to_i)
     end
   end
 
