@@ -15,7 +15,9 @@ describe OrderSubmitService, type: :services do
       fulfillment_type: Order::PICKUP
     )
   end
-  let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: 'a-1', quantity: 1), Fabricate(:line_item, order: order, price_cents: 8000_00, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2)] }
+  let(:artwork1) { { _id: 'a-1', 'current_version_id': '1' }}
+  let(:artwork2) { { _id: 'a-2', 'current_version_id': '1' }}
+  let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: artwork1[:_id], quantity: 1), Fabricate(:line_item, order: order, price_cents: 8000_00, artwork_id: artwork2[:_id], edition_set_id: 'es-1', quantity: 2)] }
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
   let(:partner_merchant_accounts) { [{ external_id: 'ma-1' }, { external_id: 'some_account' }] }
@@ -38,6 +40,8 @@ describe OrderSubmitService, type: :services do
       before do
         allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
         allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+        allow(GravityService).to receive(:get_artwork).with(artwork1[:_id]).and_return(artwork1)
+        allow(GravityService).to receive(:get_artwork).with(artwork2[:_id]).and_return(artwork2)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
       end
       context 'with failed artwork inventory deduct' do
