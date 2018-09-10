@@ -10,6 +10,7 @@ jobs:
       - run:
           name: Test
           command: hokusai test
+      - run: danger
   push:
     docker:
       - image: artsy/hokusai:0.4.4
