@@ -1,7 +1,18 @@
 class SalesTaxService
   REMITTING_STATES = %w[wa nj pa].freeze
 
-  def initialize(line_item, fulfillment_type, shipping, shipping_total_cents, artwork_location, tax_client = Taxjar::Client.new(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key']))
+  def initialize(
+    line_item,
+    fulfillment_type,
+    shipping,
+    shipping_total_cents,
+    artwork_location,
+    tax_client = Taxjar::Client.new(
+      api_key: Rails.application.config_for(:taxjar)['taxjar_api_key'],
+      api_url: Rails.application.config_for(:taxjar)['taxjar_api_url'].presence
+    )
+  )
+
     @line_item = line_item
     @fulfillment_type = fulfillment_type
     @tax_client = tax_client

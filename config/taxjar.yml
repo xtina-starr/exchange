@@ -1,5 +1,6 @@
 development: &default
   taxjar_api_key: <%= ENV['TAXJAR_API_KEY'] || '' %>
+  taxjar_api_url: <%= ENV['TAXJAR_API_URL'] || '' %>
 test:
   <<: *default
 production:
