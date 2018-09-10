@@ -30,7 +30,7 @@ describe OrderRefundService, type: :services do
         expect(order.transactions.last.status).to eq Transaction::SUCCESS
       end
       it 'updates the order state' do
-        expect(order.state).to eq Order::REJECTED
+        expect(order.state).to eq Order::CANCELED
       end
     end
     context 'with an unsuccessful refund' do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_09_03_104007) do
+ActiveRecord::Schema.define(version: 2018_09_10_194118) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -89,6 +89,7 @@ ActiveRecord::Schema.define(version: 2018_09_03_104007) do
     t.integer "buyer_total_cents"
     t.integer "seller_total_cents"
     t.string "buyer_phone_number"
+    t.string "state_reason"
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["seller_id"], name: "index_orders_on_seller_id"
@@ -100,6 +101,7 @@ ActiveRecord::Schema.define(version: 2018_09_03_104007) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "state"
+    t.string "reason"
     t.index ["order_id"], name: "index_state_histories_on_order_id"
   end
 
