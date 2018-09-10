@@ -25,7 +25,9 @@ class OrderSubmitService
         deducted_inventory << li
       end
       @transaction = PaymentService.authorize_charge(construct_charge_params)
+      raise Errors::PaymentError, "Could not submit this order. #{@transaction}" if @transaction.failed?
     end
+    @order.update!(external_charge_id: @transaction.external_id)
     post_process!
     @order
   rescue Errors::InventoryError => e
@@ -35,9 +37,9 @@ class OrderSubmitService
   rescue Errors::PaymentError => e
     # there was an issue in processing charge, undeduct all already deducted inventory
     deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
-    e.transaction.update! order: @order if e.transaction.present?
-    Rails.logger.error("Could not submit order #{@order.id}: #{e.message}")
     raise e
+  ensure
+    @order.transactions << @transaction if @transaction.present?
   end
 
   private
@@ -51,8 +53,6 @@ class OrderSubmitService
   end
 
   def post_process!
-    @order.update!(external_charge_id: @transaction.external_id)
-    @order.transactions << @transaction
     PostNotificationJob.perform_later(@order.id, Order::SUBMITTED, @by)
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
   end

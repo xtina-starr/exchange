@@ -8,8 +8,9 @@ class Mutations::ApproveOrder < Mutations::BaseMutation
   def resolve(id:)
     order = Order.find(id)
     validate_seller_request!(order)
+    OrderApproveService.new(order, context[:current_user]['id']).process!
     {
-      order_or_error: { order: OrderService.approve!(order, by: context[:current_user]['id']) }
+      order_or_error: { order: order.reload }
     }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::MutationErrorType.from_application(e) } }

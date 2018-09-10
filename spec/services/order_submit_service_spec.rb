@@ -127,6 +127,38 @@ describe OrderSubmitService, type: :services do
         end
       end
 
+      context 'with failed Stripe transaction' do
+        before do
+          artwork_inventory_deduct_request
+          edition_set_inventory_deduct_request
+          artwork_inventory_undeduct_request
+          edition_set_inventory_undeduct_request
+          StripeMock.prepare_card_error(:card_declined, :new_charge)
+          allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
+          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+          expect(PostNotificationJob).not_to receive(:perform_later)
+          expect(OrderFollowUpJob).not_to receive(:perform_later)
+          expect { service.process! }.to raise_error(Errors::PaymentError)
+        end
+        it 'deducts and then undeducts the inventory for both artwork and edition set' do
+          expect(artwork_inventory_deduct_request).to have_been_requested
+          expect(edition_set_inventory_deduct_request).to have_been_requested
+          expect(artwork_inventory_undeduct_request).to have_been_requested
+          expect(edition_set_inventory_undeduct_request).to have_been_requested
+        end
+        it 'records failed transaction' do
+          expect(order.transactions.last.transaction_type).to eq Transaction::HOLD
+          expect(order.transactions.last.status).to eq Transaction::FAILURE
+          expect(order.transactions.last.failure_code).to eq 'card_declined'
+        end
+        it 'keeps order in pending' do
+          expect(order.reload.state).to eq Order::PENDING
+        end
+        it 'does not update order external_charge_id' do
+          expect(order.reload.external_charge_id).to be_nil
+        end
+      end
+
       describe 'Stripe call' do
         let(:order) do
           Fabricate(
@@ -142,7 +174,7 @@ describe OrderSubmitService, type: :services do
         it 'calls stripe with expected params' do
           expect(Stripe::Charge).to receive(:create).with(
             amount: 18300_00,
-            currency: 'usd',
+            currency: 'USD',
             description: 'INVOICING-DE via Artsy',
             source: stripe_customer.default_source,
             customer: stripe_customer.id,
@@ -163,29 +195,6 @@ describe OrderSubmitService, type: :services do
           artwork_inventory_deduct_request
           edition_set_inventory_deduct_request
           service.process!
-        end
-      end
-
-      context 'with failed Stripe charge call' do
-        before do
-          artwork_inventory_deduct_request
-          edition_set_inventory_deduct_request
-          artwork_inventory_undeduct_request
-          edition_set_inventory_undeduct_request
-          StripeMock.prepare_card_error(:card_declined, :new_charge)
-          allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
-          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-          expect { service.process! }.to raise_error(Errors::PaymentError)
-        end
-        it 'deducts and then undeducts the inventory for both artwork and edition set' do
-          expect(artwork_inventory_deduct_request).to have_been_requested
-          expect(edition_set_inventory_deduct_request).to have_been_requested
-          expect(artwork_inventory_undeduct_request).to have_been_requested
-          expect(edition_set_inventory_undeduct_request).to have_been_requested
-        end
-        it 'records failed transaction' do
-          expect(order.transactions.last.transaction_type).to eq Transaction::HOLD
-          expect(order.transactions.last.status).to eq Transaction::FAILURE
         end
       end
     end

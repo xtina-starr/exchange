@@ -6,4 +6,5 @@ Fabricator(:order) do
   seller_type { 'partner' }
   state { Order::PENDING }
   items_total_cents { 0 }
+  currency_code { 'USD' }
 end

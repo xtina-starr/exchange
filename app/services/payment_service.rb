@@ -15,8 +15,7 @@ module PaymentService
     )
     Transaction.new(external_id: charge.id, source_id: charge.source.id, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::HOLD, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
-    transaction = generate_transaction_from_exception(e, Transaction::HOLD, credit_card: credit_card, merchant_account: merchant_account, buyer_amount: buyer_amount)
-    raise Errors::PaymentError.new(e.message, transaction)
+    generate_transaction_from_exception(e, Transaction::HOLD, credit_card: credit_card, merchant_account: merchant_account, buyer_amount: buyer_amount)
   end
 
   def self.capture_charge(charge_id)
@@ -24,16 +23,14 @@ module PaymentService
     charge.capture
     Transaction.new(external_id: charge.id, source_id: charge.source, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::CAPTURE, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
-    transaction = generate_transaction_from_exception(e, Transaction::CAPTURE, charge_id: charge_id)
-    raise Errors::PaymentError.new(e.message, transaction)
+    generate_transaction_from_exception(e, Transaction::CAPTURE, charge_id: charge_id)
   end
 
   def self.refund_charge(charge_id)
     refund = Stripe::Refund.create(charge: charge_id)
     Transaction.new(external_id: refund.id, transaction_type: Transaction::REFUND, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
-    transaction = generate_transaction_from_exception(e, Transaction::REFUND, charge_id: charge_id)
-    raise Errors::PaymentError.new(e.message, transaction)
+    generate_transaction_from_exception(e, Transaction::REFUND, charge_id: charge_id)
   end
 
   def self.generate_transaction_from_exception(exc, type, credit_card: nil, merchant_account: nil, buyer_amount: nil, charge_id: nil)

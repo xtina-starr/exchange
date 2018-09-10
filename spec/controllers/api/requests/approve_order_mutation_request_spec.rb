@@ -67,7 +67,7 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, approve_order_input)
-        expect(response.data.approve_order.order_or_error.error.description).to include 'Invalid action on this pending order'
+        expect(response.data.approve_order.order_or_error.error.description).to include 'Invalid transition for pending order'
         expect(order.reload.state).to eq Order::PENDING
       end
     end

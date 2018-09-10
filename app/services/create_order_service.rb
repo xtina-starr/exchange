@@ -46,7 +46,6 @@ module CreateOrderService
   def self.price_in_cents(price_in_dollars, currency)
     raise Errors::OrderError, 'No price found' unless price_in_dollars&.positive?
     raise Errors::OrderError, 'Missing currency' if currency.blank?
-    raise Errors::OrderError, 'Invalid currency' unless Order::SUPPORTED_CURRENCIES.include?(currency.downcase)
     (price_in_dollars * 100).round
   end
 end

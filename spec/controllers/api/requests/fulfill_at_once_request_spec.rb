@@ -87,7 +87,7 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, fulfill_at_once_input)
-        expect(response.data.fulfill_at_once.order_or_error.error.description).to include 'Invalid action on this submitted order'
+        expect(response.data.fulfill_at_once.order_or_error.error.description).to include 'Invalid transition for submitted order'
         expect(order.reload.state).to eq Order::SUBMITTED
       end
     end
