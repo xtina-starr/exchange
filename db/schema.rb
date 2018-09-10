@@ -56,6 +56,7 @@ ActiveRecord::Schema.define(version: 2018_09_06_205600) do
     t.datetime "updated_at", null: false
     t.integer "quantity", default: 1, null: false
     t.integer "sales_tax_cents"
+    t.string "artwork_version_id"
     t.boolean "should_remit_sales_tax"
     t.index ["order_id"], name: "index_line_items_on_order_id"
   end

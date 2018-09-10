@@ -116,6 +116,7 @@ def gravity_v1_artwork(options={})
       },
     _id: 'artwork-id',
     id: 'artwork-slug',
+    current_version_id: 'current-version-id',
     title: 'Untitled Pl. 13 (from Men in the Cities)',
     display: 'BNMOsy, Untitled Pl. 13 (from Men in the Cities) (2005)',
     manufacturer: nil,
