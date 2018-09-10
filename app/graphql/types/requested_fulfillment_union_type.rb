@@ -1,4 +1,8 @@
 class Types::Ship < Types::BaseObject
+  field :phone_number, String, null: true
+  def phone_number
+    object.buyer_phone_number
+  end
   # generate methods for shipping fields to field name on the model (add shipping_)
   %w[name address_line1 address_line2 city region country postal_code].each do |field_name|
     field field_name.to_sym, String, null: true
@@ -7,6 +11,7 @@ class Types::Ship < Types::BaseObject
     end
   end
 end
+
 class Types::Pickup < Types::BaseObject
   field :fulfillment_type, String, null: false
   def fulfillment_type

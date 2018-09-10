@@ -63,13 +63,13 @@ describe Api::GraphqlController, type: :request do
         input: {
           id: order.id.to_s,
           fulfillmentType: fulfillment_type,
-          phoneNumber: phone_number,
           shipping: {
             name: 'Fname Lname',
             country: shipping_country,
             city: 'Tehran',
             region: shipping_region,
             postalCode: '02198912',
+            phoneNumber: phone_number,
             addressLine1: 'Vanak',
             addressLine2: 'P 80'
           }
@@ -104,10 +104,10 @@ describe Api::GraphqlController, type: :request do
 
       context 'without passing phone number' do
         let(:phone_number) { nil }
-        it 'returns proper error' do
-          response = client.execute(mutation, set_shipping_input)
-          expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Phone number is required'
+        it 'fails' do
+          expect do
+            client.execute(mutation, set_shipping_input)
+          end.to raise_error(/phoneNumber: Expected value to not be null/)
         end
       end
 
