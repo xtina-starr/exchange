@@ -10,6 +10,7 @@ class OrderSubmitService
     @credit_card = nil
     @merchant_account = nil
     @partner = nil
+    @transaction = nil
   end
 
   def process!
@@ -23,10 +24,7 @@ class OrderSubmitService
         GravityService.deduct_inventory(li)
         deducted_inventory << li
       end
-      charge = PaymentService.authorize_charge(construct_charge_params)
-      transaction = construct_transaction_success(charge)
-      TransactionService.create!(@order, transaction)
-      @order.update!(external_charge_id: charge.id, commission_fee_cents: calculate_commission_fee, transaction_fee_cents: calculate_transaction_fee)
+      @transaction = PaymentService.authorize_charge(construct_charge_params)
     end
     post_process!
     @order
@@ -37,7 +35,7 @@ class OrderSubmitService
   rescue Errors::PaymentError => e
     # there was an issue in processing charge, undeduct all already deducted inventory
     deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
-    TransactionService.create!(@order, e.body)
+    e.transaction.update! order: @order if e.transaction.present?
     Rails.logger.error("Could not submit order #{@order.id}: #{e.message}")
     raise e
   end
@@ -49,33 +47,25 @@ class OrderSubmitService
     assert_credit_card!
     @partner = GravityService.fetch_partner(@order.seller_id)
     @merchant_account = GravityService.get_merchant_account(@order.seller_id)
+    OrderTotalUpdaterService.new(@order, @partner[:effective_commission_rate]).update_totals!
   end
 
   def post_process!
+    @order.update!(external_charge_id: @transaction.external_id)
+    @order.transactions << @transaction
     PostNotificationJob.perform_later(@order.id, Order::SUBMITTED, @by)
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
   end
 
-  def construct_transaction_success(charge)
-    {
-      external_id: charge.id,
-      source_id: charge.source,
-      destination_id: charge.destination,
-      amount_cents: charge.amount,
-      failure_code: charge.failure_code,
-      failure_message: charge.failure_message,
-      transaction_type: charge.transaction_type,
-      status: Transaction::SUCCESS
-    }
-  end
-
   def construct_charge_params
     {
-      source_id: @credit_card[:external_id],
-      customer_id: @credit_card[:customer_account][:external_id],
-      destination_id: @merchant_account[:external_id],
-      amount: @order.buyer_total_cents,
-      currency_code: @order.currency_code
+      credit_card: @credit_card,
+      buyer_amount: @order.buyer_total_cents,
+      merchant_account: @merchant_account,
+      seller_amount: @order.seller_total_cents,
+      currency_code: @order.currency_code,
+      metadata: charge_metadata,
+      description: charge_description
     }
   end
 
@@ -89,12 +79,18 @@ class OrderSubmitService
     @order.shipping_info? && @order.payment_info?
   end
 
-  def calculate_commission_fee
-    @order.items_total_cents * @partner[:effective_commission_rate]
+  def charge_description
+    "#{(@partner[:name] || '').parameterize[0...12].upcase} via Artsy"
   end
 
-  def calculate_transaction_fee
-    # This is based on Stripe US fee, it will be different for other countries
-    (Money.new(@order.buyer_total_cents * 2.9 / 100, 'USD') + Money.new(30, 'USD')).cents
+  def charge_metadata
+    {
+      exchange_order_id: @order.id,
+      buyer_id: @order.buyer_id,
+      buyer_type: @order.buyer_type,
+      seller_id: @order.seller_id,
+      seller_type: @order.seller_type,
+      type: 'bn-mo'
+    }
   end
 end

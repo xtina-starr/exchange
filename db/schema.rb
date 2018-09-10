@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_09_05_191659) do
+ActiveRecord::Schema.define(version: 2018_09_06_205600) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -55,7 +55,9 @@ ActiveRecord::Schema.define(version: 2018_09_05_191659) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "quantity", default: 1, null: false
+    t.integer "sales_tax_cents"
     t.string "artwork_version_id"
+    t.boolean "should_remit_sales_tax"
     t.index ["order_id"], name: "index_line_items_on_order_id"
   end
 
@@ -85,10 +87,10 @@ ActiveRecord::Schema.define(version: 2018_09_05_191659) do
     t.string "shipping_name"
     t.string "buyer_type"
     t.string "seller_type"
-    t.string "buyer_phone_number"
     t.integer "items_total_cents"
     t.integer "buyer_total_cents"
     t.integer "seller_total_cents"
+    t.string "buyer_phone_number"
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["seller_id"], name: "index_orders_on_seller_id"

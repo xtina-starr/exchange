@@ -196,7 +196,7 @@ def gravity_v1_partner(options={})
     contract_type: "Subscription",
     billing_location_id: '581b46959c18db1dee001f50',
     payments_enabled: true,
-    commission_rate: 0.8,
+    commission_rate: 0.7,
     effective_commission_rate: 0.8,
   }.merge(options).with_indifferent_access
 end

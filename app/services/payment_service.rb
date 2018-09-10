@@ -1,61 +1,52 @@
 module PaymentService
-  def self.authorize_charge(source_id:, customer_id:, destination_id:, amount:, currency_code:)
+  def self.authorize_charge(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {})
     charge = Stripe::Charge.create(
-      amount: amount,
+      amount: buyer_amount,
       currency: currency_code,
-      description: 'Artsy',
-      source: source_id,
-      customer: customer_id,
-      destination: destination_id,
+      description: description,
+      source: credit_card[:external_id],
+      customer: credit_card[:customer_account][:external_id],
+      destination: {
+        account: merchant_account[:external_id],
+        amount: seller_amount
+      },
+      metadata: metadata,
       capture: false
     )
-    charge.transaction_type = Transaction::HOLD
-    charge
+    Transaction.new(external_id: charge.id, source_id: charge.source.id, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::HOLD, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
-    body = e.json_body[:error]
-    failed_charge = {
-      amount: amount,
-      external_id: body[:charge],
-      source_id: source_id,
-      destination_id: destination_id,
-      failure_code: body[:code],
-      failure_message: body[:message],
-      transaction_type: Transaction::HOLD,
-      status: Transaction::FAILURE
-    }
-    raise Errors::PaymentError.new(e.message, failed_charge)
+    transaction = generate_transaction_from_exception(e, Transaction::HOLD, credit_card: credit_card, merchant_account: merchant_account, buyer_amount: buyer_amount)
+    raise Errors::PaymentError.new(e.message, transaction)
   end
 
   def self.capture_charge(charge_id)
     charge = Stripe::Charge.retrieve(charge_id)
     charge.capture
-    charge.transaction_type = Transaction::CAPTURE
-    charge
+    Transaction.new(external_id: charge.id, source_id: charge.source, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::CAPTURE, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
-    body = e.json_body[:error]
-    failed_charge = {
-      external_id: charge_id,
-      failure_code: body[:code],
-      failure_message: body[:message],
-      transaction_type: Transaction::CAPTURE,
-      status: Transaction::FAILURE
-    }
-    raise Errors::PaymentError.new(e.message, failed_charge)
+    transaction = generate_transaction_from_exception(e, Transaction::CAPTURE, charge_id: charge_id)
+    raise Errors::PaymentError.new(e.message, transaction)
   end
 
   def self.refund_charge(charge_id)
     refund = Stripe::Refund.create(charge: charge_id)
-    refund.transaction_type = Transaction::REFUND
-    refund
+    Transaction.new(external_id: refund.id, transaction_type: Transaction::REFUND, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
-    body = e.json_body[:error]
-    failed_refund = {
-      external_id: charge_id,
+    transaction = generate_transaction_from_exception(e, Transaction::REFUND, charge_id: charge_id)
+    raise Errors::PaymentError.new(e.message, transaction)
+  end
+
+  def self.generate_transaction_from_exception(exc, type, credit_card: nil, merchant_account: nil, buyer_amount: nil, charge_id: nil)
+    body = exc.json_body[:error]
+    Transaction.new(
+      external_id: charge_id || body[:charge],
+      source_id: (credit_card.present? ? credit_card[:external_id] : nil),
+      destination_id: (merchant_account.present? ? merchant_account[:external_id] : nil),
+      amount_cents: buyer_amount,
       failure_code: body[:code],
       failure_message: body[:message],
-      transaction_type: Transaction::REFUND,
+      transaction_type: type,
       status: Transaction::FAILURE
-    }
-    raise Errors::PaymentError.new(e.message, failed_refund)
+    )
   end
 end

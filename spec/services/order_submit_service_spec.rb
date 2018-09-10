@@ -7,7 +7,14 @@ describe OrderSubmitService, type: :services do
   let(:partner_id) { 'partner-1' }
   let(:credit_card_id) { 'cc-1' }
   let(:user_id) { 'dr-collector' }
-  let(:order) { Fabricate(:order, seller_id: partner_id, credit_card_id: credit_card_id, fulfillment_type: Order::PICKUP, items_total_cents: 10000_00, buyer_total_cents: 10000_00) }
+  let(:order) do
+    Fabricate(
+      :order,
+      seller_id: partner_id,
+      credit_card_id: credit_card_id,
+      fulfillment_type: Order::PICKUP
+    )
+  end
   let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: 'a-1', quantity: 1), Fabricate(:line_item, order: order, price_cents: 8000_00, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2)] }
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
@@ -112,11 +119,50 @@ describe OrderSubmitService, type: :services do
         end
 
         it 'sets commission_fee_cents' do
-          expect(order.commission_fee_cents).to eq 8000_00
+          expect(order.commission_fee_cents).to eq 14400_00
         end
 
         it 'sets transaction_fee_cents' do
-          expect(order.transaction_fee_cents).to eq 290_30
+          expect(order.transaction_fee_cents).to eq 522_30
+        end
+      end
+
+      describe 'Stripe call' do
+        let(:order) do
+          Fabricate(
+            :order,
+            seller_id: partner_id,
+            credit_card_id: credit_card_id,
+            fulfillment_type: Order::PICKUP,
+            items_total_cents: 18000_00,
+            tax_total_cents: 200_00,
+            shipping_total_cents: 100_00
+          )
+        end
+        it 'calls stripe with expected params' do
+          expect(Stripe::Charge).to receive(:create).with(
+            amount: 18300_00,
+            currency: 'usd',
+            description: 'INVOICING-DE via Artsy',
+            source: stripe_customer.default_source,
+            customer: stripe_customer.id,
+            metadata: {
+              exchange_order_id: order.id,
+              buyer_id: order.buyer_id,
+              buyer_type: 'user',
+              seller_id: 'partner-1',
+              seller_type: 'partner',
+              type: 'bn-mo'
+            },
+            destination: {
+              account: 'ma-1',
+              amount: 3369_00
+            },
+            capture: false
+          ).and_return(captured_charge)
+          artwork_inventory_deduct_request
+          edition_set_inventory_deduct_request
+          service.process!
         end
       end
 
@@ -164,19 +210,6 @@ describe OrderSubmitService, type: :services do
     it 'raises an error if the card is deactivated' do
       service.credit_card = { external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago }
       expect { service.send(:assert_credit_card!) }.to raise_error(Errors::OrderError, 'Credit card is deactivated')
-    end
-  end
-
-  describe '#calculate_commission_fee' do
-    it 'returns calculated commission fee' do
-      service.partner = gravity_v1_partner
-      expect(service.send(:calculate_commission_fee)).to eq 8000_00.0
-    end
-  end
-
-  describe '#calculate_transaction_fee' do
-    it 'returns proper transaction fee' do
-      expect(service.send(:calculate_transaction_fee)).to eq 290_30
     end
   end
 end

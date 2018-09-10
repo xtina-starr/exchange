@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 ruby File.read('.ruby-version')
 
-gem 'rails', '5.2.0'
+gem 'rails', '5.2.1'
 
 gem 'pg'
 gem 'puma'
@@ -18,6 +18,7 @@ gem 'jwt'
 gem 'micromachine'
 gem 'money' # Library for dealing with money and currency conversion
 gem 'paper_trail'
+gem 'sentry-raven'
 gem 'sidekiq'
 gem 'stripe'
 gem 'taxjar-ruby', require: 'taxjar'

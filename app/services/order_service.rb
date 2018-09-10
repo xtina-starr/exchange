@@ -9,11 +9,16 @@ module OrderService
 
   def self.set_shipping!(order, fulfillment_type:, phone_number:, shipping: {})
     raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
+    artworks = Hash[order.line_items.pluck(:artwork_id).uniq.map do |artwork_id|
+      artwork = GravityService.get_artwork(artwork_id)
+      validate_artwork!(artwork)
+      [artwork[:_id], artwork]
+    end]
     Order.transaction do
-      shipping_total_cents = order.line_items.map { |li| ShippingService.calculate_shipping(li, shipping_country: shipping[:country], fulfillment_type: fulfillment_type) }.sum
+      shipping_total_cents = order.line_items.map { |li| ShippingService.calculate_shipping(artwork: artworks[li.artwork_id], shipping_country: shipping[:country], fulfillment_type: fulfillment_type) }.sum
       attrs = {
         shipping_total_cents: shipping_total_cents,
-        tax_total_cents: SalesTaxService.calculate_total_sales_tax(order, fulfillment_type, shipping, shipping_total_cents)
+        tax_total_cents: calculate_total_tax_cents(order, fulfillment_type, shipping, shipping_total_cents, artworks)
       }
       order.update!(
         attrs.merge(
@@ -28,26 +33,17 @@ module OrderService
           shipping_postal_code: shipping[:postal_code]
         )
       )
-      update_totals!(order)
+      OrderTotalUpdaterService.new(order).update_totals!
     end
     order
   end
 
   def self.approve!(order, by: nil)
-    order.approve! do
-      charge = PaymentService.capture_charge(order.external_charge_id)
-      transaction = {
-        external_id: charge.id,
-        source_id: charge.source,
-        destination_id: charge.destination,
-        amount_cents: charge.amount,
-        failure_code: charge.failure_code,
-        failure_message: charge.failure_message,
-        transaction_type: charge.transaction_type,
-        status: Transaction::SUCCESS
-      }
-      TransactionService.create!(order, transaction)
+    transaction = order.approve! do
+      PaymentService.capture_charge(order.external_charge_id)
     end
+    order.transactions << transaction
+    order.line_items.each { |li| RecordSalesTaxJob.perform_later(li.id) }
     PostNotificationJob.perform_later(order.id, Order::APPROVED, by)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     order
@@ -70,21 +66,23 @@ module OrderService
   end
 
   def self.reject!(order, by)
-    order.reject! do
+    transaction = order.reject! do
       refund(order)
     end
+    order.transactions << transaction
     PostNotificationJob.perform_later(order.id, Order::REJECTED, by)
     order
   rescue Errors::PaymentError => e
-    TransactionService.create!(order, e.body)
+    order.transactions << e.transaction
     Rails.logger.error("Could not reject order #{order.id}: #{e.message}")
     raise e
   end
 
   def self.seller_lapse!(order)
-    order.seller_lapse! do
+    transaction = order.seller_lapse! do
       refund(order)
     end
+    order.transactions << transaction
     PostNotificationJob.perform_later(order.id, Order::SELLER_LAPSED)
     order
   end
@@ -98,22 +96,21 @@ module OrderService
   end
 
   def self.refund(order)
-    refund = PaymentService.refund_charge(order.external_charge_id)
-    transaction = {
-      external_id: refund.id,
-      amount_cents: refund.amount,
-      transaction_type: Transaction::REFUND,
-      status: Transaction::SUCCESS
-    }
-    TransactionService.create!(order, transaction)
+    transaction = PaymentService.refund_charge(order.external_charge_id)
     order.line_items.each { |li| GravityService.undeduct_inventory(li) }
+    transaction
   end
 
-  def self.update_totals!(order)
-    raise Errors::OrderError, 'Missing price info on line items' if order.line_items.any? { |li| li.price_cents.nil? }
-    order.items_total_cents = order.line_items.pluck(:price_cents, :quantity).map { |a| a.inject(:*) }.sum
-    order.buyer_total_cents = order.items_total_cents + order.shipping_total_cents.to_i + order.tax_total_cents.to_i
-    order.seller_total_cents = order.buyer_total_cents - order.commission_fee_cents.to_i - order.transaction_fee_cents.to_i
-    order.save!
+  def self.validate_artwork!(artwork)
+    raise Errors::OrderError, 'Cannot set shipping, unknown artwork' unless artwork
+    raise Errors::OrderError, 'Cannot set shipping, missing artwork location' if artwork[:location].blank?
+  end
+
+  def self.calculate_total_tax_cents(order, fulfillment_type, shipping, shipping_total_cents, artworks)
+    order.line_items.map do |li|
+      service = SalesTaxService.new(li, fulfillment_type, shipping, shipping_total_cents, artworks[li.artwork_id][:location])
+      li.update!(sales_tax_cents: service.sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
+      service.sales_tax
+    end.sum
   end
 end

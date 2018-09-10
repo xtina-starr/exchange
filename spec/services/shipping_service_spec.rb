@@ -18,6 +18,7 @@ describe ShippingService, type: :services do
   end
   let(:artwork) { gravity_v1_artwork(artwork_shipping_setting) }
   describe '#calculate_shipping' do
+    let(:artwork) { gravity_v1_artwork }
     let(:line_item) { Fabricate(:line_item, artwork_id: 'gravity-id') }
     context 'with successful artwork fetch call' do
       before do
@@ -25,37 +26,18 @@ describe ShippingService, type: :services do
       end
       context 'with pickup fulfillment type' do
         it 'returns 0' do
-          expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::PICKUP, shipping_country: 'US')).to eq 0
+          expect(ShippingService.calculate_shipping(artwork: artwork, fulfillment_type: Order::PICKUP, shipping_country: 'US')).to eq 0
         end
       end
       context 'with domestic address' do
         it 'returns domestic cost' do
-          expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::SHIP, shipping_country: 'US')).to eq 100_00
+          expect(ShippingService.calculate_shipping(artwork: artwork, fulfillment_type: Order::SHIP, shipping_country: 'US')).to eq 100_00
         end
       end
-      context 'with internaitonal address' do
+      context 'with international address' do
         it 'returns international cost' do
-          expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::SHIP, shipping_country: 'Iran')).to eq 500_00
+          expect(ShippingService.calculate_shipping(artwork: artwork, fulfillment_type: Order::SHIP, shipping_country: 'Iran')).to eq 500_00
         end
-      end
-      context 'without artwork location' do
-        let(:artwork_location) { nil }
-        it 'raises Errors::OrderError' do
-          expect do
-            expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::SHIP, shipping_country: 'US'))
-          end.to raise_error(Errors::OrderError, 'Cannot calculate shipping, missing artwork location')
-        end
-      end
-    end
-
-    context 'with failed artwork fetch call' do
-      before do
-        allow(Adapters::GravityV1).to receive(:get).with('/artwork/gravity-id').and_raise(Adapters::GravityError.new('unknown artwork'))
-      end
-      it 'raises Errors::OrderError' do
-        expect do
-          expect(ShippingService.calculate_shipping(line_item, fulfillment_type: Order::SHIP, shipping_country: 'US'))
-        end.to raise_error(Errors::OrderError, 'Cannot calculate shipping, unknown artwork')
       end
     end
   end
