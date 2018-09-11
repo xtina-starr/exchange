@@ -10,7 +10,11 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
+<<<<<<< HEAD
 ActiveRecord::Schema.define(version: 2018_09_10_194118) do
+=======
+ActiveRecord::Schema.define(version: 2018_09_06_205600) do
+>>>>>>> master
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -56,6 +60,8 @@ ActiveRecord::Schema.define(version: 2018_09_10_194118) do
     t.datetime "updated_at", null: false
     t.integer "quantity", default: 1, null: false
     t.integer "sales_tax_cents"
+    t.string "artwork_version_id"
+    t.boolean "should_remit_sales_tax"
     t.index ["order_id"], name: "index_line_items_on_order_id"
   end
 

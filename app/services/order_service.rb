@@ -5,7 +5,7 @@ module OrderService
     order
   end
 
-  def self.set_shipping!(order, fulfillment_type:, phone_number:, shipping: {})
+  def self.set_shipping!(order, fulfillment_type:, shipping: {})
     raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
     artworks = Hash[order.line_items.pluck(:artwork_id).uniq.map do |artwork_id|
       artwork = GravityService.get_artwork(artwork_id)
@@ -21,7 +21,7 @@ module OrderService
       order.update!(
         attrs.merge(
           fulfillment_type: fulfillment_type,
-          buyer_phone_number: phone_number,
+          buyer_phone_number: shipping[:phone_number],
           shipping_name: shipping[:name],
           shipping_address_line1: shipping[:address_line1],
           shipping_address_line2: shipping[:address_line2],
@@ -58,9 +58,9 @@ module OrderService
 
   def self.calculate_total_tax_cents(order, fulfillment_type, shipping, shipping_total_cents, artworks)
     order.line_items.map do |li|
-      sales_tax = SalesTaxService.new(li, fulfillment_type, shipping, shipping_total_cents, artworks[li.artwork_id][:location]).sales_tax
-      li.update!(sales_tax_cents: sales_tax)
-      sales_tax
+      service = SalesTaxService.new(li, fulfillment_type, shipping, shipping_total_cents, artworks[li.artwork_id][:location])
+      li.update!(sales_tax_cents: service.sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
+      service.sales_tax
     end.sum
   end
 end

@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 ruby File.read('.ruby-version')
 
-gem 'rails', '5.2.0'
+gem 'rails', '5.2.1'
 
 gem 'pg'
 gem 'puma'
@@ -35,6 +35,7 @@ group :development do
 end
 
 group :test do
+  gem 'danger'
   gem 'fabrication'
   gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
   gem 'timecop'

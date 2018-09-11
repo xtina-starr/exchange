@@ -16,6 +16,7 @@ module CreateOrderService
       )
       order.line_items.create!(
         artwork_id: artwork_id,
+        artwork_version_id: artwork[:current_version_id],
         edition_set_id: edition_set_id,
         price_cents: artwork_price(artwork, edition_set_id: edition_set_id),
         quantity: quantity

@@ -60,7 +60,7 @@ class Order < ApplicationRecord
   validate :state_reason_inclusion
   validates :currency_code, inclusion: SUPPORTED_CURRENCIES
 
-  after_create :set_code
+  after_create :update_code
   after_create :create_state_history
   before_save :update_state_timestamps, if: :state_changed?
   before_save :set_currency_code
@@ -110,8 +110,16 @@ class Order < ApplicationRecord
     errors.add(:state_reason, "Invalid state reason: #{state_reason}") if REASONS[state] && !REASONS[state].value?(state_reason)
   end
 
-  def set_code
-    update!(code: format('B%06d', id))
+  def update_code(attempts = 10)
+    while attempts.positive?
+      code = format('%09d', SecureRandom.rand(999999999))
+      unless Order.where(code: code).exists?
+        update!(code: code)
+        break
+      end
+      attempts -= 1
+    end
+    raise Errors::OrderError, 'Failed to set order code' if attempts.zero?
   end
 
   def update_state_timestamps
