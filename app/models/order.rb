@@ -39,16 +39,15 @@ class Order < ApplicationRecord
   ].freeze
 
   ACTIONS = %i[abandon submit approve reject fulfill seller_lapse].freeze
+  ACTION_REASONS = {
+    seller_lapse: REASONS[CANCELED][:seller_lapsed],
+    reject: REASONS[CANCELED][:seller_rejected]
+  }.freeze
 
   PARTY_TYPES = [
     USER = 'user'.freeze,
     PARTNER = 'partner'.freeze
   ].freeze
-
-  ACTION_REASONS = {
-    seller_lapse: REASONS[CANCELED][:seller_lapsed],
-    reject: REASONS[CANCELED][:seller_rejected]
-  }.freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
   has_many :transactions, dependent: :destroy
@@ -107,7 +106,7 @@ class Order < ApplicationRecord
 
   def state_reason_inclusion
     errors.add(:state_reason, "Current state not expecting reason: #{state}") if state_reason.present? && !REASONS.key?(state)
-    errors.add(:state_reason, "Invalid state reason: #{state_reason}") if REASONS[state] && !REASONS[state].value?(state_reason)
+    errors.add(:state_reason, 'Invalid state reason') if REASONS[state] && !REASONS[state].value?(state_reason)
   end
 
   def update_code(attempts = 10)
