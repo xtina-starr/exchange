@@ -13,7 +13,7 @@ class Mutations::SetShipping < Mutations::BaseMutation
 
     shipping = AddressParser.parse(shipping.to_h) if fulfillment_type == Order::SHIP
     {
-      order_or_error: { order: OrderService.set_shipping!(order, fulfillment_type: fulfillment_type, shipping: shipping) }
+      order_or_error: { order: OrderShippingService.new(order, fulfillment_type: fulfillment_type, shipping: shipping).process! }
     }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::MutationErrorType.from_application(e) } }
