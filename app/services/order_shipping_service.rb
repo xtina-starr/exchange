@@ -3,16 +3,14 @@ class OrderShippingService
     @order = order
     @fulfillment_type = fulfillment_type
     @shipping = shipping
-    @shipping_total_cents = nil
     validate_shipping! if @fulfillment_type == Order::SHIP
   end
 
   def process!
     raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless @order.state == Order::PENDING
-    @shipping_total_cents = @order.line_items.map { |li| ShippingService.calculate_shipping(artwork: artworks[li.artwork_id], shipping_country: @shipping[:country], fulfillment_type: @fulfillment_type) }.sum
     Order.transaction do
       attrs = {
-        shipping_total_cents: @shipping_total_cents,
+        shipping_total_cents: shipping_total_cents,
         tax_total_cents: tax_total_cents
       }
       @order.update!(
@@ -45,7 +43,7 @@ class OrderShippingService
 
   def tax_total_cents
     @tax_total_cents ||= @order.line_items.map do |li|
-      service = SalesTaxService.new(li, @fulfillment_type, @shipping, @shipping_total_cents, artworks[li.artwork_id][:location])
+      service = SalesTaxService.new(li, @fulfillment_type, @shipping, shipping_total_cents, artworks[li.artwork_id][:location])
       li.update!(sales_tax_cents: service.sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
       service.sales_tax
     end.sum
@@ -69,5 +67,31 @@ class OrderShippingService
 
   def validate_ca_shipping!
     raise Errors::OrderError, 'Valid province or territory required for Canadian shipping address' if @shipping[:region].nil?
+  end
+
+  def shipping_total_cents
+    @shipping_total_cents ||= @order.line_items.map { |li| artwork_shipping_fee(artworks[li.artwork_id]) }.sum
+  end
+
+  def artwork_shipping_fee(artwork)
+    if @fulfillment_type == Order::PICKUP
+      0
+    elsif domestic?(artwork[:location])
+      calculate_domestic_shipping_fee(artwork)
+    else
+      calculate_international_shipping_fee(artwork)
+    end
+  end
+
+  def domestic?(artwork_location)
+    artwork_location[:country].casecmp(@shipping[:country]).zero?
+  end
+
+  def calculate_domestic_shipping_fee(artwork)
+    artwork[:domestic_shipping_fee_cents] || raise(Errors::OrderError, 'Artwork is missing shipping fee.')
+  end
+
+  def calculate_international_shipping_fee(artwork)
+    artwork[:international_shipping_fee_cents] || raise(Errors::OrderError, 'Artwork is missing shipping fee.')
   end
 end
