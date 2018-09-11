@@ -35,7 +35,8 @@ group :development do
 end
 
 group :test do
-  gem 'danger'
+  gem 'danger' # general culture rules using the file system
+  gem 'diffy' # used in generating danger messages for graphql
   gem 'fabrication'
   gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
   gem 'timecop'
