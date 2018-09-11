@@ -82,7 +82,7 @@ describe OrderService, type: :services do
         Timecop.freeze do
           order.update!(state_updated_at: 10.days.ago)
           OrderService.abandon!(order)
-          expect(order.reload.state_updated_at.to_date).to eq Time.now.to_date
+          expect(order.reload.state_updated_at.to_date).to eq Time.now.utc.to_date
         end
       end
       it 'creates state history' do
