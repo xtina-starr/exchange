@@ -11,7 +11,7 @@ class Mutations::SetShipping < Mutations::BaseMutation
     order = Order.find(id)
     validate_buyer_request!(order)
 
-    shipping = AddressParser.parse!(shipping.to_h) if fulfillment_type == Order::SHIP
+    shipping = AddressParser.parse(shipping.to_h) if fulfillment_type == Order::SHIP
     {
       order_or_error: { order: OrderService.set_shipping!(order, fulfillment_type: fulfillment_type, shipping: shipping) }
     }
