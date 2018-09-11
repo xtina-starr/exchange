@@ -4,6 +4,7 @@ class OrderShippingService
     @fulfillment_type = fulfillment_type
     @shipping = shipping
     @shipping_total_cents = nil
+    validate_shipping! if @fulfillment_type == Order::SHIP
   end
 
   def process!
@@ -53,5 +54,20 @@ class OrderShippingService
   def validate_artwork!(artwork)
     raise Errors::OrderError, 'Cannot set shipping, unknown artwork' unless artwork
     raise Errors::OrderError, 'Cannot set shipping, missing artwork location' if artwork[:location].blank?
+  end
+
+  def validate_shipping!
+    raise Errors::OrderError, 'Valid country required for shipping address' if @shipping[:country].nil?
+    validate_us_shipping! if @shipping[:country] == 'US'
+    validate_ca_shipping! if @shipping[:country] == 'CA'
+  end
+
+  def validate_us_shipping!
+    raise Errors::OrderError, 'Valid state required for US shipping address' if @shipping[:region].nil?
+    raise Errors::OrderError, 'Valid postal code required for US shipping address' if @shipping[:postal_code].nil?
+  end
+
+  def validate_ca_shipping!
+    raise Errors::OrderError, 'Valid province or territory required for Canadian shipping address' if @shipping[:region].nil?
   end
 end
