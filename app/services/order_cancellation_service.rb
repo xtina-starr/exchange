@@ -1,4 +1,4 @@
-class OrderRefundService
+class OrderCancellationService
   def initialize(order, by = nil)
     @order = order
     @by = by
