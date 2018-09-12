@@ -44,8 +44,8 @@ class OrderSubmitService
 
   def pre_process!
     @order.line_items.map do |li|
-      artwork = GravityService.get_artwork(li.artwork_id)
-      raise Errors::OrderError, 'Artwork version out of date' if artwork[:current_version_id] != li.artwork_version_id
+      artwork = GravityService.get_artwork(li[:artwork_id])
+      raise Errors::OrderError, 'Artwork version out of date' if artwork[:current_version_id] != li[:artwork_version_id]
     end
     @credit_card = GravityService.get_credit_card(@order.credit_card_id)
     assert_credit_card!
