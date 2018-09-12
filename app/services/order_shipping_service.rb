@@ -28,7 +28,6 @@ class OrderShippingService
       )
       OrderTotalUpdaterService.new(@order).update_totals!
     end
-    @order
   end
 
   private
