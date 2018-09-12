@@ -82,7 +82,10 @@ describe OrderShippingService, type: :services do
     context 'with nil domestic shipping' do
       it 'raises error' do
         artwork[:domestic_shipping_fee_cents] = nil
-        expect { @service_domestic_shipping.send(:calculate_domestic_shipping_fee, artwork) }.to raise_error(Errors::OrderError, /Artwork is missing shipping fee/)
+        expect { @service_domestic_shipping.send(:calculate_domestic_shipping_fee, artwork) }.to raise_error do |error|
+          expect(error).to be_a(Errors::ValidationError)
+          expect(error.code).to eq :missing_domestic_shipping_fee
+        end
       end
     end
   end
@@ -94,7 +97,10 @@ describe OrderShippingService, type: :services do
     context 'with nil domestic shipping' do
       it 'raises error' do
         artwork[:international_shipping_fee_cents] = nil
-        expect { @service_domestic_shipping.send(:calculate_international_shipping_fee, artwork) }.to raise_error(Errors::OrderError, /Artwork is missing shipping fee/)
+        expect { @service_domestic_shipping.send(:calculate_international_shipping_fee, artwork) }.to raise_error do |error|
+          expect(error).to be_a(Errors::ValidationError)
+          expect(error.code).to eq :missing_international_shipping_fee
+        end
       end
     end
   end

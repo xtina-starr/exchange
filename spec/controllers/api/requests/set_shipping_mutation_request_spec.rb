@@ -120,7 +120,8 @@ describe Api::GraphqlController, type: :request do
         it 'returns proper error' do
           response = client.execute(mutation, set_shipping_input)
           expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Valid country required for shipping address'
+          expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+          expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_country'
         end
       end
 
@@ -131,7 +132,8 @@ describe Api::GraphqlController, type: :request do
           it 'returns proper error' do
             response = client.execute(mutation, set_shipping_input)
             expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-            expect(response.data.set_shipping.order_or_error.error.description).to eq 'Valid state required for US shipping address'
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_region'
           end
         end
         context 'without a postal code' do
@@ -140,7 +142,8 @@ describe Api::GraphqlController, type: :request do
           it 'returns proper error' do
             response = client.execute(mutation, set_shipping_input)
             expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-            expect(response.data.set_shipping.order_or_error.error.description).to eq 'Valid postal code required for US shipping address'
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_postal_code'
           end
         end
       end
@@ -152,7 +155,8 @@ describe Api::GraphqlController, type: :request do
           it 'returns proper error' do
             response = client.execute(mutation, set_shipping_input)
             expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-            expect(response.data.set_shipping.order_or_error.error.description).to eq 'Valid province or territory required for Canadian shipping address'
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_region'
           end
         end
       end
@@ -162,7 +166,7 @@ describe Api::GraphqlController, type: :request do
           allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(id: 'missing-location')
           response = client.execute(mutation, set_shipping_input)
           expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
-          expect(response.data.set_shipping.order_or_error.error.code).to eq 'artwork_missing_location'
+          expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_artwork_location'
         end
       end
 
