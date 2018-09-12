@@ -13,6 +13,7 @@ describe Api::GraphqlController, type: :request do
     let(:artwork2) { gravity_v1_artwork(_id: 'a-2', domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
     let(:shipping_country) { 'IR' }
     let(:shipping_region) { 'Tehran' }
+    let(:shipping_postal_code) { '02198912' }
     let(:fulfillment_type) { 'SHIP' }
     let(:total_sales_tax) { 2222 }
     let(:phone_number) { '00123456789' }
@@ -68,7 +69,7 @@ describe Api::GraphqlController, type: :request do
             country: shipping_country,
             city: 'Tehran',
             region: shipping_region,
-            postalCode: '02198912',
+            postalCode: shipping_postal_code,
             phoneNumber: phone_number,
             addressLine1: 'Vanak',
             addressLine2: 'P 80'
@@ -108,6 +109,48 @@ describe Api::GraphqlController, type: :request do
           expect do
             client.execute(mutation, set_shipping_input)
           end.to raise_error(/phoneNumber: Expected value to not be null/)
+        end
+      end
+
+      context 'with a shipping address with an unrecognized country' do
+        let(:shipping_country) { 'ASDF' }
+        it 'returns proper error' do
+          response = client.execute(mutation, set_shipping_input)
+          expect(response.data.set_shipping.order_or_error).to respond_to(:error)
+          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Valid country required for shipping address'
+        end
+      end
+
+      context 'with a US-based shipping address' do
+        let(:shipping_country) { 'US' }
+        context 'without a state' do
+          let(:shipping_region) { nil }
+          it 'returns proper error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error).to respond_to(:error)
+            expect(response.data.set_shipping.order_or_error.error.description).to eq 'Valid state required for US shipping address'
+          end
+        end
+        context 'without a postal code' do
+          let(:shipping_region) { 'FL' }
+          let(:shipping_postal_code) { nil }
+          it 'returns proper error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error).to respond_to(:error)
+            expect(response.data.set_shipping.order_or_error.error.description).to eq 'Valid postal code required for US shipping address'
+          end
+        end
+      end
+
+      context 'with a Canada based shipping address' do
+        let(:shipping_country) { 'CA' }
+        context 'without a province or territory' do
+          let(:shipping_region) { nil }
+          it 'returns proper error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error).to respond_to(:error)
+            expect(response.data.set_shipping.order_or_error.error.description).to eq 'Valid province or territory required for Canadian shipping address'
+          end
         end
       end
 

@@ -10,10 +10,10 @@ class Mutations::SetShipping < Mutations::BaseMutation
   def resolve(id:, fulfillment_type:, shipping: {})
     order = Order.find(id)
     validate_buyer_request!(order)
-
-    shipping = AddressParser.parse!(shipping.to_h) if fulfillment_type == Order::SHIP
+    shipping = AddressParser.parse(shipping.to_h) if fulfillment_type == Order::SHIP
+    OrderShippingService.new(order, fulfillment_type: fulfillment_type, shipping: shipping).process!
     {
-      order_or_error: { order: OrderService.set_shipping!(order, fulfillment_type: fulfillment_type, shipping: shipping) }
+      order_or_error: { order: order.reload }
     }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::MutationErrorType.from_application(e) } }
