@@ -76,7 +76,7 @@ describe CreateOrderService, type: :services do
         expect(CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'edition-set-id')).to eq 4200_42
       end
       it 'raises Errors::OrderError for unknown edition set id' do
-        expect { CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'random-id') }.to raise_error(Errors::OrderError, /Unknown edition set/)
+        expect { CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'random-id') }.to raise_error(Errors::ValidationError, /Unknown edition set/)
       end
     end
   end

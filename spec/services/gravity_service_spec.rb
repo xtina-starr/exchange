@@ -17,7 +17,7 @@ describe GravityService, type: :services do
       it 'raises OrderError' do
         expect do
           GravityService.fetch_partner(partner_id)
-        end.to raise_error(Errors::OrderError, /Unable to find partner/)
+        end.to raise_error(Errors::ValidationError, /Unable to find partner/)
       end
     end
   end
@@ -50,7 +50,7 @@ describe GravityService, type: :services do
       it 'raises OrderError' do
         expect do
           GravityService.get_merchant_account(partner_id)
-        end.to raise_error(Errors::OrderError, /Unable to find partner or merchant account/)
+        end.to raise_error(Errors::ValidationError, /Unable to find partner or merchant account/)
       end
     end
   end
@@ -71,7 +71,7 @@ describe GravityService, type: :services do
       it 'raises OrderError' do
         expect do
           GravityService.get_credit_card(credit_card_id)
-        end.to raise_error(Errors::OrderError, /Credit card not found/)
+        end.to raise_error(Errors::ValidationError, /Credit card not found/)
       end
     end
   end

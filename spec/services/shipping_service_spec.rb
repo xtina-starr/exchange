@@ -66,7 +66,7 @@ describe ShippingService, type: :services do
         }
       end
       it 'raises error' do
-        expect { ShippingService.calculate_domestic(artwork) }.to raise_error(Errors::OrderError, /Artwork is missing shipping fee/)
+        expect { ShippingService.calculate_domestic(artwork) }.to raise_error(Errors::ValidationError, /Artwork is missing shipping fee/)
       end
     end
   end
@@ -84,7 +84,7 @@ describe ShippingService, type: :services do
         }
       end
       it 'raises error' do
-        expect { ShippingService.calculate_international(artwork) }.to raise_error(Errors::OrderError, /Artwork is missing shipping fee/)
+        expect { ShippingService.calculate_international(artwork) }.to raise_error(Errors::ValidationError, /Artwork is missing shipping fee/)
       end
     end
   end

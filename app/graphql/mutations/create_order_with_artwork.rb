@@ -12,6 +12,6 @@ class Mutations::CreateOrderWithArtwork < Mutations::BaseMutation
       order_or_error: { order: CreateOrderService.with_artwork!(user_id: context[:current_user][:id], artwork_id: artwork_id, edition_set_id: edition_set_id, quantity: quantity) }
     }
   rescue Errors::ApplicationError => e
-    { order_or_error: { error: Types::MutationErrorType.from_application(e) } }
+    { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end
 end

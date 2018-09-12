@@ -56,7 +56,7 @@ describe Api::GraphqlController, type: :request do
       let(:partner_id) { 'another-partner-id' }
       it 'returns permission error' do
         response = client.execute(mutation, approve_order_input)
-        expect(response.data.approve_order.order_or_error.error.description).to include 'Not permitted'
+        expect(response.data.approve_order.order_or_error.error.description).to include 'Not found'
         expect(order.reload.state).to eq Order::PENDING
       end
     end

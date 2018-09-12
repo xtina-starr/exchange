@@ -9,7 +9,7 @@ class OrderApproveService
   def process!
     @order.approve! do
       @transaction = PaymentService.capture_charge(@order.external_charge_id)
-      raise Errors::PaymentError, "Could not approve this order. #{@transaction}" if @transaction.failed?
+      raise Errors::ProcessingError.new("Could not approve this order. #{@transaction}", '4b5f9d') if @transaction.failed?
     end
     post_process
   ensure

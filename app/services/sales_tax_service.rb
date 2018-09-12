@@ -30,13 +30,13 @@ class SalesTaxService
   def sales_tax
     @sales_tax ||= UnitConverter.convert_dollars_to_cents(fetch_sales_tax.amount_to_collect)
   rescue Taxjar::Error => e
-    raise Errors::OrderError, e.message
+    raise Errors::ValidationError.new(e.message, '868cfc')
   end
 
   def record_tax_collected
     post_transaction if artsy_should_remit_taxes? && @line_item.sales_tax_cents&.positive?
   rescue Taxjar::Error => e
-    raise Errors::OrderError, e.message
+    raise Errors::ValidationError.new(e.message, '35a5cf')
   end
 
   def artsy_should_remit_taxes?

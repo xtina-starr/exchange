@@ -20,7 +20,7 @@ describe OrderService, type: :services do
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do
-          expect { OrderService.set_payment!(order, credit_card_id) }.to raise_error(Errors::OrderError, 'Cannot set payment info on non-pending orders')
+          expect { OrderService.set_payment!(order, credit_card_id) }.to raise_error(Errors::ValidationError, 'Cannot set payment info on non-pending orders')
         end
       end
     end
@@ -64,7 +64,7 @@ describe OrderService, type: :services do
         it 'raises error' do
           expect do
             OrderService.fulfill_at_once!(order, fulfillment_params, user_id)
-          end.to raise_error(Errors::OrderError, "Invalid transition for #{state} order: #{order.id}").and change(Fulfillment, :count).by(0)
+          end.to raise_error(Errors::ValidationError, "Invalid transition for #{state} order: #{order.id}").and change(Fulfillment, :count).by(0)
         end
       end
     end
@@ -96,7 +96,7 @@ describe OrderService, type: :services do
           expect(order.reload.state).to eq state
         end
         it 'raises error' do
-          expect { OrderService.abandon!(order) }.to raise_error(Errors::OrderError, "Invalid transition for #{state} order: #{order.id}")
+          expect { OrderService.abandon!(order) }.to raise_error(Errors::ValidationError, "Invalid transition for #{state} order: #{order.id}")
         end
       end
     end

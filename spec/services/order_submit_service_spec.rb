@@ -138,7 +138,7 @@ describe OrderSubmitService, type: :services do
           allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
           expect(PostNotificationJob).not_to receive(:perform_later)
           expect(OrderFollowUpJob).not_to receive(:perform_later)
-          expect { service.process! }.to raise_error(Errors::PaymentError)
+          expect { service.process! }.to raise_error(Errors::ProcessingError)
         end
         it 'deducts and then undeducts the inventory for both artwork and edition set' do
           expect(artwork_inventory_deduct_request).to have_been_requested
@@ -203,22 +203,22 @@ describe OrderSubmitService, type: :services do
   describe '#assert_credit_card!' do
     it 'raises an error if the credit card does not have an external id' do
       service.credit_card = { customer_account: { external_id: 'cust-1' }, deactivated_at: nil }
-      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::OrderError, 'Credit card does not have external id')
+      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::ValidationError, 'Credit card does not have external id')
     end
 
     it 'raises an error if the credit card does not have a customer account' do
       service.credit_card = { external_id: 'cc-1' }
-      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::OrderError, 'Credit card does not have customer')
+      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::ValidationError, 'Credit card does not have customer')
     end
 
     it 'raises an error if the credit card does not have a customer account external id' do
       service.credit_card = { external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil }
-      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::OrderError, 'Credit card does not have customer')
+      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::ValidationError, 'Credit card does not have customer')
     end
 
     it 'raises an error if the card is deactivated' do
       service.credit_card = { external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago }
-      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::OrderError, 'Credit card is deactivated')
+      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::ValidationError, 'Credit card is deactivated')
     end
   end
 end

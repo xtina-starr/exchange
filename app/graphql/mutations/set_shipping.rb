@@ -16,6 +16,6 @@ class Mutations::SetShipping < Mutations::BaseMutation
       order_or_error: { order: OrderService.set_shipping!(order, fulfillment_type: fulfillment_type, shipping: shipping) }
     }
   rescue Errors::ApplicationError => e
-    { order_or_error: { error: Types::MutationErrorType.from_application(e) } }
+    { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end
 end

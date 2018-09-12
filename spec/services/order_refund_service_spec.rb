@@ -40,9 +40,9 @@ describe OrderRefundService, type: :services do
         allow(Stripe::Refund).to receive(:create)
           .with(hash_including(charge: captured_charge.id))
           .and_raise(Stripe::StripeError.new('too late to refund buddy...', json_body: { error: { code: 'something', message: 'refund failed' } }))
-        expect { service.reject! }.to raise_error(Errors::PaymentError).and change(order.transactions, :count).by(1)
+        expect { service.reject! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
       end
-      it 'raises a PaymentError and records the transaction' do
+      it 'raises a ProcessingError and records the transaction' do
         expect(order.transactions.last.external_id).to eq captured_charge.id
         expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
         expect(order.transactions.last.status).to eq Transaction::FAILURE

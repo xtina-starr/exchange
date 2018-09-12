@@ -14,7 +14,7 @@ class OrderSubmitService
   end
 
   def process!
-    raise Errors::OrderError, "Missing info for submitting order(#{@order.id})" unless can_submit?
+    raise Errors::ValidationError.new("Missing info for submitting order(#{@order.id})", 'acaf8b') unless can_submit?
     # verify price change?
     pre_process!
     deducted_inventory = []
@@ -25,7 +25,7 @@ class OrderSubmitService
         deducted_inventory << li
       end
       @transaction = PaymentService.authorize_charge(construct_charge_params)
-      raise Errors::PaymentError, "Could not submit this order. #{@transaction}" if @transaction.failed?
+      raise Errors::ProcessingError.new("Could not submit this order. #{@transaction}", '827f9b') if @transaction.failed?
     end
     @order.update!(external_charge_id: @transaction.external_id)
     post_process!
@@ -34,7 +34,7 @@ class OrderSubmitService
     # deduct failed for one of the line items, undeduct all already deducted inventory
     deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
     raise e
-  rescue Errors::PaymentError => e
+  rescue Errors::ProcessingError => e
     # there was an issue in processing charge, undeduct all already deducted inventory
     deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
     raise e
@@ -70,9 +70,9 @@ class OrderSubmitService
   end
 
   def assert_credit_card!
-    raise Errors::OrderError, 'Credit card does not have external id' if @credit_card[:external_id].blank?
-    raise Errors::OrderError, 'Credit card does not have customer' if @credit_card.dig(:customer_account, :external_id).blank?
-    raise Errors::OrderError, 'Credit card is deactivated' unless @credit_card[:deactivated_at].nil?
+    raise Errors::ValidationError.new('Credit card does not have external id', '287913') if @credit_card[:external_id].blank?
+    raise Errors::ValidationError.new('Credit card does not have customer', 'd85efe') if @credit_card.dig(:customer_account, :external_id).blank?
+    raise Errors::ValidationError.new('Credit card is deactivated', '77af80') unless @credit_card[:deactivated_at].nil?
   end
 
   def can_submit?

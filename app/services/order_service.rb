@@ -1,12 +1,12 @@
 module OrderService
   def self.set_payment!(order, credit_card_id)
-    raise Errors::OrderError, 'Cannot set payment info on non-pending orders' unless order.state == Order::PENDING
+    raise Errors::ValidationError.new('Cannot set payment info on non-pending orders', '77b004') unless order.state == Order::PENDING
     order.update!(credit_card_id: credit_card_id)
     order
   end
 
   def self.set_shipping!(order, fulfillment_type:, shipping: {})
-    raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless order.state == Order::PENDING
+    raise Errors::ValidationError.new('Cannot set shipping info on non-pending orders', '8d0abf') unless order.state == Order::PENDING
     artworks = Hash[order.line_items.pluck(:artwork_id).uniq.map do |artwork_id|
       artwork = GravityService.get_artwork(artwork_id)
       validate_artwork!(artwork)
@@ -52,8 +52,8 @@ module OrderService
   end
 
   def self.validate_artwork!(artwork)
-    raise Errors::OrderError, 'Cannot set shipping, unknown artwork' unless artwork
-    raise Errors::OrderError, 'Cannot set shipping, missing artwork location' if artwork[:location].blank?
+    raise Errors::ValidationError.new('Cannot set shipping, unknown artwork', '3b1c06') unless artwork
+    raise Errors::ValidationError.new('Cannot set shipping, missing artwork location', 'c5e95b') if artwork[:location].blank?
   end
 
   def self.calculate_total_tax_cents(order, fulfillment_type, shipping, shipping_total_cents, artworks)

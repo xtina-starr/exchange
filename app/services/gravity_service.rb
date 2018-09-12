@@ -4,27 +4,27 @@ module GravityService
       Adapters::GravityV1.get("/partner/#{partner_id}/all")
     end
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Unable to find partner'
+    raise Errors::ValidationError.new('Unable to find partner', 'c029e5')
   rescue Adapters::GravityError, StandardError => e
-    raise Errors::OrderError, e.message
+    raise Errors::ValidationError.new(e.message, 'b84436')
   end
 
   def self.get_merchant_account(partner_id)
     merchant_account = Adapters::GravityV1.get('/merchant_accounts', params: { partner_id: partner_id }).first
-    raise Errors::OrderError, 'Partner does not have merchant account' if merchant_account.nil?
+    raise Errors::ValidationError.new('Partner does not have merchant account', 'ffbf1c') if merchant_account.nil?
     merchant_account
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Unable to find partner or merchant account'
+    raise Errors::ValidationError.new('Unable to find partner or merchant account', 'ffe069')
   rescue Adapters::GravityError, StandardError => e
-    raise Errors::OrderError, e.message
+    raise Errors::ValidationError.new(e.message, 'd74361')
   end
 
   def self.get_credit_card(credit_card_id)
     Adapters::GravityV1.get("/credit_card/#{credit_card_id}")
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Credit card not found'
+    raise Errors::ValidationError.new('Credit card not found', '8a7936')
   rescue Adapters::GravityError, StandardError => e
-    raise Errors::OrderError, e.message
+    raise Errors::ValidationError.new(e.message, '6dbc7f')
   end
 
   def self.get_artwork(artwork_id)
@@ -49,7 +49,7 @@ module GravityService
       Adapters::GravityV1.put("/artwork/#{line_item.artwork_id}/inventory", params: { deduct: line_item.quantity })
     end
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Credit card not found'
+    raise Errors::ValidationError.new('Credit card not found', 'ed8425')
   rescue Adapters::GravityError => e
     raise Errors::InventoryError.new(e.message, line_item)
   end
@@ -61,7 +61,7 @@ module GravityService
       Adapters::GravityV1.put("/artwork/#{line_item.artwork_id}/inventory", params: { undeduct: line_item.quantity })
     end
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Credit card not found'
+    raise Errors::ValidationError.new('Credit card not found', '7c63fb')
   rescue Adapters::GravityError => e
     raise Errors::InventoryError.new(e.message, line_item)
   end
