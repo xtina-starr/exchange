@@ -1,7 +1,7 @@
 module Errors
   class ValidationError < ApplicationError
-    def initialize(message, code)
-      super(message, :validation, code)
+    def initialize(code, data = {})
+      super(:validation, code, data)
     end
   end
 end

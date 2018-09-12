@@ -10,7 +10,11 @@ module ErrorHandler
       end
 
       rescue_from ::Errors::AuthError do |exception|
-        render json: { errors: ['failed_request' => exception.to_s] }, status: :unauthorized
+        render json: { errors: [Types::ApplicationErrorType.from_application(exception)] }, status: :unauthorized
+      end
+
+      rescue_from ::Errors::ValidationError do |exception|
+        render json: { errors: [Types::ApplicationErrorType.from_application(exception)] }, status: :bad_request
       end
     end
   end

@@ -1,7 +1,7 @@
 class OrderTotalUpdaterService
   def initialize(order, commission_rate = nil)
     @order = order
-    raise 'Commission rate should be a value between 0 and 1' if commission_rate.present? && (commission_rate > 1 || commission_rate.negative?)
+    raise Errors::ValidationError, :invalid_commission_rate if commission_rate.present? && (commission_rate > 1 || commission_rate.negative?)
     @commission_rate = commission_rate
   end
 

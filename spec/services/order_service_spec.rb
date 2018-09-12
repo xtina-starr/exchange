@@ -20,7 +20,10 @@ describe OrderService, type: :services do
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do
-          expect { OrderService.set_payment!(order, credit_card_id) }.to raise_error(Errors::ValidationError, 'Cannot set payment info on non-pending orders')
+          expect { OrderService.set_payment!(order, credit_card_id) }.to raise_error do |error|
+            expect(error).to be_a Errors::ValidationError
+            expect(error.code).to eq :invalid_state
+          end
         end
       end
     end
@@ -64,7 +67,15 @@ describe OrderService, type: :services do
         it 'raises error' do
           expect do
             OrderService.fulfill_at_once!(order, fulfillment_params, user_id)
-          end.to raise_error(Errors::ValidationError, "Invalid transition for #{state} order: #{order.id}").and change(Fulfillment, :count).by(0)
+          end.to raise_error do |error|
+            expect(error).to be_a Errors::ValidationError
+            expect(error.code).to eq :invalid_state
+          end
+        end
+        it 'does not add fulfillments' do
+          expect do
+            OrderService.fulfill_at_once!(order, fulfillment_params, user_id)
+          end.to raise_error(Errors::ValidationError).and change(Fulfillment, :count).by(0)
         end
       end
     end
@@ -92,11 +103,16 @@ describe OrderService, type: :services do
       context "order in #{state}" do
         let(:state) { state }
         it 'does not change state' do
-          expect { OrderService.abandon!(order) }.to raise_error(Errors::OrderError)
+          expect { OrderService.abandon!(order) }.to raise_error(Errors::ValidationError)
           expect(order.reload.state).to eq state
         end
         it 'raises error' do
-          expect { OrderService.abandon!(order) }.to raise_error(Errors::ValidationError, "Invalid transition for #{state} order: #{order.id}")
+          expect { OrderService.abandon!(order) }.to raise_error do |error|
+            expect(error).to be_a Errors::ValidationError
+            expect(error.type).to eq :validation
+            expect(error.code).to eq :invalid_state
+            expect(error.data).to match(state: state)
+          end
         end
       end
     end

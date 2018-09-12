@@ -1,7 +1,7 @@
 module Errors
   class ProcessingError < ApplicationError
-    def initialize(message, code)
-      super(message, :processing, code)
+    def initialize(code, data = {})
+      super(:processing, code, data)
     end
   end
 end

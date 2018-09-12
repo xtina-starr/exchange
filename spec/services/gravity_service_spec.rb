@@ -14,10 +14,13 @@ describe GravityService, type: :services do
       before do
         stub_request(:get, %r{partner\/#{partner_id}}).to_return(status: 404, body: { error: 'not found' }.to_json)
       end
-      it 'raises OrderError' do
+      it 'raises error' do
         expect do
           GravityService.fetch_partner(partner_id)
-        end.to raise_error(Errors::ValidationError, /Unable to find partner/)
+        end.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.code).to eq :unknown_partner
+        end
       end
     end
   end
@@ -40,17 +43,20 @@ describe GravityService, type: :services do
 
     it 'raises an error if the partner does not have a merchant account' do
       allow(Adapters::GravityV1).to receive(:get).with('/merchant_accounts', params: { partner_id: partner_id }).and_return([])
-      expect { GravityService.get_merchant_account(partner_id) }.to raise_error(Errors::OrderError)
+      expect { GravityService.get_merchant_account(partner_id) }.to raise_error(Errors::ValidationError)
     end
 
     context 'with failed gravity call' do
       before do
         stub_request(:get, /merchant_accounts\?partner_id=#{partner_id}/).to_return(status: 404, body: { error: 'not found' }.to_json)
       end
-      it 'raises OrderError' do
+      it 'raises error' do
         expect do
           GravityService.get_merchant_account(partner_id)
-        end.to raise_error(Errors::ValidationError, /Unable to find partner or merchant account/)
+        end.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.code).to eq :missing_merchant_account
+        end
       end
     end
   end
@@ -68,10 +74,13 @@ describe GravityService, type: :services do
       before do
         stub_request(:get, %r{credit_card\/#{credit_card_id}}).to_return(status: 404, body: { error: 'not found' }.to_json)
       end
-      it 'raises OrderError' do
+      it 'raises error' do
         expect do
           GravityService.get_credit_card(credit_card_id)
-        end.to raise_error(Errors::ValidationError, /Credit card not found/)
+        end.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.code).to eq :credit_card_not_found
+        end
       end
     end
   end

@@ -64,7 +64,7 @@ class Order < ApplicationRecord
         block.call if block.present?
       end
     rescue MicroMachine::InvalidState
-      raise Errors::ValidationError.new("Invalid transition for #{state} order: #{id}", '8f0448')
+      raise Errors::ValidationError.new(:invalid_state, state: state)
     end
   end
 
@@ -100,7 +100,7 @@ class Order < ApplicationRecord
       end
       attempts -= 1
     end
-    raise Errors::ValidationError.new('Failed to set order code', 'e19be0') if attempts.zero?
+    raise Errors::ValidationError, :failed_order_code_generation if attempts.zero?
   end
 
   def update_state_timestamps

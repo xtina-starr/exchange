@@ -1,7 +1,7 @@
 module CreateOrderService
   def self.with_artwork!(user_id:, artwork_id:, edition_set_id: nil, quantity:)
     artwork = GravityService.get_artwork(artwork_id)
-    raise Errors::ValidationError.new("Unknown artwork #{artwork_id}", 'c3b251') if artwork.nil? || (edition_set_id && !find_edition_set(artwork, edition_set_id))
+    raise Errors::ValidationError.new(:unknown_artwork, artwork_id: artwork_id) if artwork.nil? || (edition_set_id && !find_edition_set(artwork, edition_set_id))
 
     Order.transaction do
       order = Order.create!(
@@ -28,13 +28,17 @@ module CreateOrderService
   end
 
   def self.artwork_price(external_artwork, edition_set_id: nil)
-    if edition_set_id
-      edition_set = find_edition_set(external_artwork, edition_set_id)
-      raise Errors::ValidationError.new('Unknown edition set.', '944fce') unless edition_set
-      price_in_cents(edition_set[:price_listed], edition_set[:price_currency])
-    else
-      price_in_cents(external_artwork[:price_listed], external_artwork[:price_currency])
-    end
+    item =
+      if edition_set_id
+        edition_set = find_edition_set(external_artwork, edition_set_id)
+        raise Errors::ValidationError.new(:unknown_edition_set, artwork_id: external_artwork[:id], edition_set_id: edition_set_id) unless edition_set
+        edition_set
+      else
+        external_artwork
+      end
+    raise Errors::ValidationError, :missing_price unless item[:price_listed]&.positive?
+    raise Errors::ValidationError, :missing_currency if item[:price_currency].blank?
+    price_in_cents(item[:price_listed])
   end
 
   def self.find_edition_set(external_artwork, edition_set_id)
@@ -43,9 +47,7 @@ module CreateOrderService
 
   # TODO: 🚨 update gravity to expose amount in cents and remove this duplicate logic
   # https://github.com/artsy/gravity/blob/65e398e3648d61175e7a8f4403a2d379b5aa2107/app/models/util/for_sale.rb#L221
-  def self.price_in_cents(price_in_dollars, currency)
-    raise Errors::ValidationError.new('No price found',  '891c8e') unless price_in_dollars&.positive?
-    raise Errors::ValidationError.new('Missing currency', '77739e') if currency.blank?
+  def self.price_in_cents(price_in_dollars)
     (price_in_dollars * 100).round
   end
 end

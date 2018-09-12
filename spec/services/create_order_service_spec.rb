@@ -59,8 +59,12 @@ describe CreateOrderService, type: :services do
       before do
         expect(Adapters::GravityV1).to receive(:get).and_raise(Adapters::GravityError.new('unknown artwork'))
       end
-      it 'raises Errors::OrderError' do
-        expect { CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'random-artwork', quantity: 2) }.to raise_error(Errors::OrderError)
+      it 'raises error' do
+        expect { CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'random-artwork', quantity: 2) }.to raise_error do |error|
+          expect(error).to be_a(Errors::ValidationError)
+          expect(error.code).to eq :unknown_artwork
+          expect(error.type).to eq :validation
+        end
       end
     end
   end
@@ -75,8 +79,14 @@ describe CreateOrderService, type: :services do
       it 'returns edition_set_price for known edition set id' do
         expect(CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'edition-set-id')).to eq 4200_42
       end
-      it 'raises Errors::OrderError for unknown edition set id' do
-        expect { CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'random-id') }.to raise_error(Errors::ValidationError, /Unknown edition set/)
+      it 'raises error for unknown edition set id' do
+        expect do
+          CreateOrderService.artwork_price(gravity_v1_artwork, edition_set_id: 'random-id')
+        end.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.type).to eq :validation
+          expect(error.code).to eq :unknown_edition_set
+        end
       end
     end
   end

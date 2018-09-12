@@ -1,10 +1,11 @@
 module Errors
   class ApplicationError < StandardError
-    attr_reader :type, :code, :message
-    def initialize(message, type, code)
+    attr_reader :type, :code, :data
+    def initialize(type, code, data = {})
       @type = type
       @code = code
-      super(message)
+      @data = data
+      super(type)
     end
   end
 end

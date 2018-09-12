@@ -17,10 +17,10 @@ module ShippingService
   end
 
   def self.calculate_domestic(artwork)
-    artwork[:domestic_shipping_fee_cents] || raise(Errors::ValidationError.new('Artwork is missing shipping fee.', 'e803b6'))
+    artwork[:domestic_shipping_fee_cents] || raise(Errors::ValidationError.new(:missing_domestic_shipping_fee, artwork_id: artwork[:id]))
   end
 
   def self.calculate_international(artwork)
-    artwork[:international_shipping_fee_cents] || raise(Errors::ValidationError.new('Artwork is missing shipping fee.', 'd6401c'))
+    artwork[:international_shipping_fee_cents] || raise(Errors::ValidationError.new(:missing_international_shipping_fee, artwork_id: artwork[:id]))
   end
 end

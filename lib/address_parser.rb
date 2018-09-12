@@ -1,7 +1,7 @@
 module AddressParser
   def self.parse!(address)
     region = parse_region(address[:country], address[:region])
-    raise Errors::ApplicationError, 'Could not identify shipping region' if region.nil?
+    raise Errors::ValidationError, :unknown_region if region.nil?
     address[:region] = region
     address
   end

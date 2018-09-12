@@ -19,4 +19,12 @@ class Transaction < ApplicationRecord
   def failed?
     status == FAILURE
   end
+
+  def failure_data
+    {
+      id: id,
+      failure_code: failure_code,
+      failure_message: failure_message
+    }
+  end
 end
