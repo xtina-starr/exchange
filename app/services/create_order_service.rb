@@ -38,16 +38,12 @@ module CreateOrderService
       end
     raise Errors::ValidationError, :missing_price unless item[:price_listed]&.positive?
     raise Errors::ValidationError, :missing_currency if item[:price_currency].blank?
-    price_in_cents(item[:price_listed])
+    # TODO: 🚨 update gravity to expose amount in cents and remove this duplicate logic
+    # https://github.com/artsy/gravity/blob/65e398e3648d61175e7a8f4403a2d379b5aa2107/app/models/util/for_sale.rb#L221
+    UnitConverter.convert_dollars_to_cents(item[:price_listed])
   end
 
   def self.find_edition_set(external_artwork, edition_set_id)
     external_artwork[:edition_sets].find { |e| e[:id] == edition_set_id }
-  end
-
-  # TODO: 🚨 update gravity to expose amount in cents and remove this duplicate logic
-  # https://github.com/artsy/gravity/blob/65e398e3648d61175e7a8f4403a2d379b5aa2107/app/models/util/for_sale.rb#L221
-  def self.price_in_cents(price_in_dollars)
-    (price_in_dollars * 100).round
   end
 end

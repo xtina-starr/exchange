@@ -138,7 +138,11 @@ describe OrderSubmitService, type: :services do
           allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
           expect(PostNotificationJob).not_to receive(:perform_later)
           expect(OrderFollowUpJob).not_to receive(:perform_later)
-          expect { service.process! }.to raise_error(Errors::ProcessingError)
+          expect { service.process! }.to raise_error do |error|
+            expect(error).to be_a(Errors::ProcessingError)
+            expect(error.code).to eq :failed_charge_authorization
+            expect(error.data[:failure_code]).to eq 'card_declined'
+          end
         end
         it 'deducts and then undeducts the inventory for both artwork and edition set' do
           expect(artwork_inventory_deduct_request).to have_been_requested
