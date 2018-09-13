@@ -7,7 +7,7 @@ describe Api::GraphqlController, type: :request do
     let(:second_partner_id) { 'partner-2' }
     let(:user_id) { jwt_user_id }
     let(:second_user) { 'user2' }
-    let(:state) { 'PENDING' }
+    let(:state) { Order::PENDING }
     let(:created_at) { 2.days.ago }
     let!(:user1_order1) do
       Fabricate(
@@ -22,7 +22,9 @@ describe Api::GraphqlController, type: :request do
         commission_fee_cents: 50_00,
         seller_total_cents: 50_00,
         buyer_total_cents: 100_00,
-        items_total_cents: 0
+        items_total_cents: 0,
+        state: state,
+        state_reason: state == Order::CANCELED ? 'seller_lapsed' : nil
       )
     end
     let!(:user2_order1) { Fabricate(:order, seller_id: second_partner_id, seller_type: 'partner', buyer_id: second_user, buyer_type: 'user') }
@@ -82,10 +84,12 @@ describe Api::GraphqlController, type: :request do
 
       Order::STATES.each do |state|
         # https://github.com/artsy/exchange/issues/88
-        it 'returns proper state' do
-          user1_order1.update!(state: state)
-          result = client.execute(query, id: user1_order1.id)
-          expect(result.data.order.state).to eq state.upcase
+        context "order in #{state} state" do
+          let(:state) { state }
+          it 'returns proper state' do
+            result = client.execute(query, id: user1_order1.id)
+            expect(result.data.order.state).to eq state.upcase
+          end
         end
       end
     end

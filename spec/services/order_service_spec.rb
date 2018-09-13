@@ -3,7 +3,8 @@ require 'rails_helper'
 describe OrderService, type: :services do
   include_context 'use stripe mock'
   let(:state) { Order::PENDING }
-  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state) }
+  let(:state_reason) { state == Order::CANCELED ? 'seller_lapsed' : nil }
+  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state, state_reason: state_reason) }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
 
@@ -81,7 +82,7 @@ describe OrderService, type: :services do
         Timecop.freeze do
           order.update!(state_updated_at: 10.days.ago)
           OrderService.abandon!(order)
-          expect(order.reload.state_updated_at.to_date).to eq Time.now.to_date
+          expect(order.reload.state_updated_at.to_date).to eq Time.now.utc.to_date
         end
       end
       it 'creates state history' do

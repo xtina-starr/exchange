@@ -9,6 +9,49 @@ RSpec.describe Order, type: :model do
     end
   end
 
+  describe 'validates state_reason' do
+    context 'state requiring reasons' do
+      it 'raises error when missing reason for states with required reason' do
+        expect do
+          order.update!(state: Order::CANCELED)
+        end.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: State reason Invalid state reason')
+      end
+      it 'raises error when providing unknown reasons' do
+        expect do
+          order.update!(state: Order::CANCELED, state_reason: 'random reason')
+        end.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: State reason Invalid state reason')
+      end
+      it 'sets state and reason with correct state and reason' do
+        order.update!(state: Order::CANCELED, state_reason: Order::REASONS[Order::CANCELED][:seller_lapsed])
+        expect(order.reload.state).to eq Order::CANCELED
+        expect(order.reload.state_reason).to eq Order::REASONS[Order::CANCELED][:seller_lapsed]
+      end
+      it 'sets state reason on state history records' do
+        order.update!(state: Order::SUBMITTED)
+        expect { order.seller_lapse! }.to change(order.state_histories, :count).by(1)
+        expect(order.state_histories.last.state).to eq Order::CANCELED
+        expect(order.state_histories.last.reason).to eq Order::REASONS[Order::CANCELED][:seller_lapsed]
+      end
+    end
+    context 'state not requiring reason' do
+      it 'sets the state' do
+        order.update!(state: Order::ABANDONED)
+        expect(order.state).to eq Order::ABANDONED
+        expect(order.state_reason).to be_nil
+      end
+      it 'adds proper state history' do
+        expect { order.submit! }.to change(order.state_histories, :count).by(1)
+        expect(order.state_histories.last.state).to eq Order::SUBMITTED
+        expect(order.state_histories.last.reason).to be_nil
+      end
+      it 'raises error when setting reason' do
+        expect do
+          order.update!(state: Order::SUBMITTED, state_reason: Order::REASONS[Order::CANCELED][:seller_lapsed])
+        end.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: State reason Current state not expecting reason: submitted')
+      end
+    end
+  end
+
   describe 'update_state_timestamps' do
     it 'sets state timestamps in create' do
       expect(order.state_updated_at).not_to be_nil
