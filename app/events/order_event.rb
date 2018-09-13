@@ -37,6 +37,7 @@ class OrderEvent < Events::BaseEvent
       shipping_region: @object.shipping_region,
       shipping_total_cents: @object.shipping_total_cents,
       state: @object.state,
+      state_reason: @object.state_reason,
       state_expires_at: @object.state_expires_at,
       tax_total_cents: @object.tax_total_cents,
       transaction_fee_cents: @object.transaction_fee_cents,
