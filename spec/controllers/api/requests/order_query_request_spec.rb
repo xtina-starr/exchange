@@ -24,7 +24,7 @@ describe Api::GraphqlController, type: :request do
         buyer_total_cents: 100_00,
         items_total_cents: 0,
         state: state,
-        state_reason: state == 'canceled' ? 'seller_lapsed' : nil
+        state_reason: state == Order::CANCELED ? 'seller_lapsed' : nil
       )
     end
     let!(:user2_order1) { Fabricate(:order, seller_id: second_partner_id, seller_type: 'partner', buyer_id: second_user, buyer_type: 'user') }

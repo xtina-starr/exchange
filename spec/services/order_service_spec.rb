@@ -3,7 +3,7 @@ require 'rails_helper'
 describe OrderService, type: :services do
   include_context 'use stripe mock'
   let(:state) { Order::PENDING }
-  let(:state_reason) { state == 'canceled' ? 'seller_lapsed' : nil }
+  let(:state_reason) { state == Order::CANCELED ? 'seller_lapsed' : nil }
   let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state, state_reason: state_reason) }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
