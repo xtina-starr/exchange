@@ -19,7 +19,7 @@ class Types::QueryType < Types::BaseObject
 
   def order(id:)
     order = Order.find(id)
-    raise GraphQL::ExecutionError, 'Not permitted' unless trusted? || access?(order)
+    raise Errors::AuthError, :not_found unless trusted? || access?(order)
     order
   end
 
@@ -53,11 +53,11 @@ class Types::QueryType < Types::BaseObject
   def validate_orders_params!(params)
     return if trusted?
     if params[:buyer_id].present?
-      raise GraphQL::ExecutionError, 'Not permitted' unless params[:buyer_id] == context[:current_user][:id]
+      raise Errors::AuthError, :not_found unless params[:buyer_id] == context[:current_user][:id]
     elsif params[:seller_id].present?
-      raise GraphQL::ExecutionError, 'Not permitted' unless context[:current_user][:partner_ids].include?(params[:seller_id])
+      raise Errors::AuthError, :not_found unless context[:current_user][:partner_ids].include?(params[:seller_id])
     else
-      raise GraphQL::ExecutionError, 'requires one of sellerId or buyerId'
+      raise Errors::ValidationError, :missing_params
     end
   end
 end

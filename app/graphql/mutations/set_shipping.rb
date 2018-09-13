@@ -16,6 +16,6 @@ class Mutations::SetShipping < Mutations::BaseMutation
       order_or_error: { order: order.reload }
     }
   rescue Errors::ApplicationError => e
-    { order_or_error: { error: Types::MutationErrorType.from_application(e) } }
+    { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end
 end

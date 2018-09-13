@@ -30,10 +30,16 @@ describe OrderTotalUpdaterService, type: :service do
         end
         context 'with commission rate' do
           it 'raises error for commission rate > 1' do
-            expect { OrderTotalUpdaterService.new(order, 2) }.to raise_error(StandardError, 'Commission rate should be a value between 0 and 1')
+            expect { OrderTotalUpdaterService.new(order, 2) }.to raise_error do |error|
+              expect(error).to be_a(Errors::ValidationError)
+              expect(error.code).to eq :invalid_commission_rate
+            end
           end
           it 'raises error for commission rate < 0' do
-            expect { OrderTotalUpdaterService.new(order, -0.2) }.to raise_error(StandardError, 'Commission rate should be a value between 0 and 1')
+            expect { OrderTotalUpdaterService.new(order, -0.2) }.to raise_error do |error|
+              expect(error).to be_a(Errors::ValidationError)
+              expect(error.code).to eq :invalid_commission_rate
+            end
           end
           it 'sets correct totals on the order' do
             OrderTotalUpdaterService.new(order, 0.40).update_totals!

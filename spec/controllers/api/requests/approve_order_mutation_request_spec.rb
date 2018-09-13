@@ -34,8 +34,9 @@ describe Api::GraphqlController, type: :request do
               }
               ... on OrderWithMutationFailure {
                 error {
-                  description
                   code
+                  data
+                  type
                 }
               }
             }
@@ -56,7 +57,8 @@ describe Api::GraphqlController, type: :request do
       let(:partner_id) { 'another-partner-id' }
       it 'returns permission error' do
         response = client.execute(mutation, approve_order_input)
-        expect(response.data.approve_order.order_or_error.error.description).to include 'Not permitted'
+        expect(response.data.approve_order.order_or_error.error.type).to eq 'validation'
+        expect(response.data.approve_order.order_or_error.error.code).to eq 'not_found'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -67,7 +69,8 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, approve_order_input)
-        expect(response.data.approve_order.order_or_error.error.description).to include 'Invalid transition for pending order'
+        expect(response.data.approve_order.order_or_error.error.type).to eq 'validation'
+        expect(response.data.approve_order.order_or_error.error.code).to eq 'invalid_state'
         expect(order.reload.state).to eq Order::PENDING
       end
     end

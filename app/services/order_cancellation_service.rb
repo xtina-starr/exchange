@@ -27,7 +27,7 @@ class OrderCancellationService
 
   def refund
     @transaction = PaymentService.refund_charge(@order.external_charge_id)
-    raise Errors::PaymentError, "Could not refund this order. #{@transaction}" if @transaction.failed?
+    raise Errors::ProcessingError.new(:refund_failed, @transaction.failure_data) if @transaction.failed?
     @order.line_items.each { |li| GravityService.undeduct_inventory(li) }
   end
 end

@@ -13,13 +13,13 @@ describe OrderApproveService, type: :services do
         StripeMock.prepare_card_error(:card_declined, :capture_charge)
       end
       it 'adds failed transaction' do
-        expect { service.process! }.to raise_error(Errors::PaymentError).and change(order.transactions, :count).by(1)
+        expect { service.process! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
         expect(order.transactions.first.status).to eq Transaction::FAILURE
         expect(order.transactions.first.failure_code).to eq 'card_declined'
         expect(order.transactions.first.failure_message).to eq 'The card was declined'
       end
       it 'keeps order in submitted state' do
-        expect { service.process! }.to raise_error(Errors::PaymentError)
+        expect { service.process! }.to raise_error(Errors::ProcessingError)
         expect(order.reload.state).to eq Order::SUBMITTED
       end
       it 'does not queue any followup job' do

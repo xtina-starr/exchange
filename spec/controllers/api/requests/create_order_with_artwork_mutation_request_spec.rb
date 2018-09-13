@@ -37,8 +37,9 @@ describe Api::GraphqlController, type: :request do
               }
               ... on OrderWithMutationFailure {
                 error {
-                  description
                   code
+                  data
+                  type
                 }
               }
             }
@@ -66,7 +67,8 @@ describe Api::GraphqlController, type: :request do
             expect(response.data.create_order_with_artwork.order_or_error).not_to respond_to(:order)
             expect(response.data.create_order_with_artwork.order_or_error.error).not_to be_nil
 
-            expect(response.data.create_order_with_artwork.order_or_error.error.description).to eq 'Unknown artwork artwork-id'
+            expect(response.data.create_order_with_artwork.order_or_error.error.type).to eq 'validation'
+            expect(response.data.create_order_with_artwork.order_or_error.error.code).to eq 'unknown_artwork'
           end.to change(Order, :count).by(0).and change(LineItem, :count).by(0)
         end
       end

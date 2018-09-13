@@ -14,10 +14,8 @@ class OrderSubmitService
   end
 
   def process!
-    raise Errors::OrderError, "Missing info for submitting order(#{@order.id})" unless can_submit?
-    # verify price change?
-    pre_process!
     deducted_inventory = []
+    pre_process!
     @order.submit! do
       # Try holding artwork and deduct inventory
       @order.line_items.each do |li|
@@ -25,17 +23,13 @@ class OrderSubmitService
         deducted_inventory << li
       end
       @transaction = PaymentService.authorize_charge(construct_charge_params)
-      raise Errors::PaymentError, "Could not submit this order. #{@transaction}" if @transaction.failed?
+      raise Errors::ProcessingError.new(:failed_charge_authorization, @transaction) if @transaction.failed?
     end
     @order.update!(external_charge_id: @transaction.external_id)
     post_process!
     @order
-  rescue Errors::InventoryError => e
-    # deduct failed for one of the line items, undeduct all already deducted inventory
-    deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
-    raise e
-  rescue Errors::PaymentError => e
-    # there was an issue in processing charge, undeduct all already deducted inventory
+  rescue Errors::ValidationError, Errors::ProcessingError => e
+    # undeduct all already deducted inventory
     deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
     raise e
   ensure
@@ -45,9 +39,11 @@ class OrderSubmitService
   private
 
   def pre_process!
+    raise Errors::ValidationError, :missing_info unless can_submit?
     @credit_card = GravityService.get_credit_card(@order.credit_card_id)
     assert_credit_card!
     @partner = GravityService.fetch_partner(@order.seller_id)
+    raise Errors::ValidationError.new(:missing_commission_rate, partner_id: @partner[:id]) if @partner[:effective_commission_rate].blank?
     @merchant_account = GravityService.get_merchant_account(@order.seller_id)
     OrderTotalUpdaterService.new(@order, @partner[:effective_commission_rate]).update_totals!
   end
@@ -70,9 +66,9 @@ class OrderSubmitService
   end
 
   def assert_credit_card!
-    raise Errors::OrderError, 'Credit card does not have external id' if @credit_card[:external_id].blank?
-    raise Errors::OrderError, 'Credit card does not have customer' if @credit_card.dig(:customer_account, :external_id).blank?
-    raise Errors::OrderError, 'Credit card is deactivated' unless @credit_card[:deactivated_at].nil?
+    raise Errors::ValidationError.new(:credit_card_missing_external_id, credit_card_id: @credit_card[:id]) if @credit_card[:external_id].blank?
+    raise Errors::ValidationError.new(:credit_card_missing_customer, credit_card_id: @credit_card[:id]) if @credit_card.dig(:customer_account, :external_id).blank?
+    raise Errors::ValidationError.new(:credit_card_deactivated, credit_card_id: @credit_card[:id]) unless @credit_card[:deactivated_at].nil?
   end
 
   def can_submit?

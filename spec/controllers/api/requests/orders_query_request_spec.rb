@@ -53,14 +53,14 @@ describe Api::GraphqlController, type: :request do
     it 'returns error when missing both buyerId and sellerId' do
       expect do
         client.execute(query, state: 'PENDING')
-      end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: requires one of sellerId or buyerId')
+      end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 400')
     end
 
     context 'query with sellerId' do
       it 'returns permission error when query for sellerId not in jwt' do
         expect do
           client.execute(query, sellerId: 'someone-elses-partnerid')
-        end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: Not permitted')
+        end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
       end
       it 'returns partners orders' do
         results = client.execute(query, sellerId: partner_id)
@@ -104,7 +104,7 @@ describe Api::GraphqlController, type: :request do
         it 'raises error' do
           expect do
             client.execute(query, buyerId: 'someone-elses-userid')
-          end.to raise_error(Graphlient::Errors::ExecutionError, 'orders: Not permitted')
+          end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
         end
       end
     end

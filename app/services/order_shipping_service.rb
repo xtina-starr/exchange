@@ -7,7 +7,7 @@ class OrderShippingService
   end
 
   def process!
-    raise Errors::OrderError, 'Cannot set shipping info on non-pending orders' unless @order.state == Order::PENDING
+    raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
     Order.transaction do
       attrs = {
         shipping_total_cents: shipping_total_cents,
@@ -49,23 +49,23 @@ class OrderShippingService
   end
 
   def validate_artwork!(artwork)
-    raise Errors::OrderError, 'Cannot set shipping, unknown artwork' unless artwork
-    raise Errors::OrderError, 'Cannot set shipping, missing artwork location' if artwork[:location].blank?
+    raise Errors::ValidationError, :unknown_artwork unless artwork
+    raise Errors::ValidationError, :missing_artwork_location if artwork[:location].blank?
   end
 
   def validate_shipping!
-    raise Errors::OrderError, 'Valid country required for shipping address' if @shipping[:country].nil?
+    raise Errors::ValidationError, :missing_country if @shipping[:country].nil?
     validate_us_shipping! if @shipping[:country] == 'US'
     validate_ca_shipping! if @shipping[:country] == 'CA'
   end
 
   def validate_us_shipping!
-    raise Errors::OrderError, 'Valid state required for US shipping address' if @shipping[:region].nil?
-    raise Errors::OrderError, 'Valid postal code required for US shipping address' if @shipping[:postal_code].nil?
+    raise Errors::ValidationError, :missing_region if @shipping[:region].nil?
+    raise Errors::ValidationError, :missing_postal_code if @shipping[:postal_code].nil?
   end
 
   def validate_ca_shipping!
-    raise Errors::OrderError, 'Valid province or territory required for Canadian shipping address' if @shipping[:region].nil?
+    raise Errors::ValidationError, :missing_region if @shipping[:region].nil?
   end
 
   def shipping_total_cents
@@ -87,10 +87,10 @@ class OrderShippingService
   end
 
   def calculate_domestic_shipping_fee(artwork)
-    artwork[:domestic_shipping_fee_cents] || raise(Errors::OrderError, 'Artwork is missing shipping fee.')
+    artwork[:domestic_shipping_fee_cents] || raise(Errors::ValidationError, :missing_domestic_shipping_fee)
   end
 
   def calculate_international_shipping_fee(artwork)
-    artwork[:international_shipping_fee_cents] || raise(Errors::OrderError, 'Artwork is missing shipping fee.')
+    artwork[:international_shipping_fee_cents] || raise(Errors::ValidationError, :missing_international_shipping_fee)
   end
 end

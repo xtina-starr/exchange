@@ -58,8 +58,9 @@ describe Api::GraphqlController, type: :request do
               }
               ... on OrderWithMutationFailure {
                 error {
-                  description
                   code
+                  data
+                  type
                 }
               }
             }
@@ -86,7 +87,8 @@ describe Api::GraphqlController, type: :request do
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
         expect(response.data.submit_order.order_or_error.error).not_to be_nil
-        expect(response.data.submit_order.order_or_error.error.description).to eq 'Not permitted'
+        expect(response.data.submit_order.order_or_error.error.code).to eq 'not_found'
+        expect(response.data.submit_order.order_or_error.error.type).to eq 'validation'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -99,7 +101,8 @@ describe Api::GraphqlController, type: :request do
         it 'returns error' do
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
-          expect(response.data.submit_order.order_or_error.error.description).to eq "Missing info for submitting order(#{order.id})"
+          expect(response.data.submit_order.order_or_error.error.code).to eq 'missing_info'
+          expect(response.data.submit_order.order_or_error.error.type).to eq 'validation'
           expect(order.reload.state).to eq Order::PENDING
         end
       end
@@ -108,7 +111,8 @@ describe Api::GraphqlController, type: :request do
         it 'returns error' do
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
-          expect(response.data.submit_order.order_or_error.error.description).to eq "Missing info for submitting order(#{order.id})"
+          expect(response.data.submit_order.order_or_error.error.code).to eq 'missing_info'
+          expect(response.data.submit_order.order_or_error.error.type).to eq 'validation'
           expect(order.reload.state).to eq Order::PENDING
         end
       end
@@ -122,7 +126,8 @@ describe Api::GraphqlController, type: :request do
           allow(GravityService).to receive(:fetch_partner).and_return(partner)
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
-          expect(response.data.submit_order.order_or_error.error.description).to eq "Invalid transition for approved order: #{order.id}"
+          expect(response.data.submit_order.order_or_error.error.code).to eq 'invalid_state'
+          expect(response.data.submit_order.order_or_error.error.type).to eq 'validation'
           expect(order.reload.state).to eq Order::APPROVED
         end
       end

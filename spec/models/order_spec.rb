@@ -106,7 +106,10 @@ RSpec.describe Order, type: :model do
     it 'raises an error if it is unable to set a code within specified attempts' do
       expect do
         order.send(:update_code, 0)
-      end.to raise_error(Errors::OrderError, 'Failed to set order code')
+      end.to raise_error do |error|
+        expect(error).to be_a(Errors::ValidationError)
+        expect(error.code).to eq :failed_order_code_generation
+      end
     end
 
     it 'sets a 0-padded 9 digit number for the code on order creation' do

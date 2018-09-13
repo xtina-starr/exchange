@@ -67,7 +67,7 @@ describe Api::GraphqlController, type: :request do
       it 'returns permission error when query for orders by user not in jwt' do
         expect do
           client.execute(query, id: user2_order1.id)
-        end.to raise_error(Graphlient::Errors::ExecutionError, 'order: Not permitted')
+        end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
       end
 
       it 'returns order when accessing correct order' do
@@ -129,7 +129,7 @@ describe Api::GraphqlController, type: :request do
         it 'raises error' do
           expect do
             client.execute(query, id: user2_order1.id)
-          end.to raise_error(Graphlient::Errors::ExecutionError, 'order: Not permitted')
+          end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
         end
       end
 
