@@ -20,7 +20,7 @@ describe OrderShippingService, type: :services do
       city: 'Whitechapel',
       region: 'London',
       postal_code: 'E1 8PY',
-      country: 'UK'
+      country: 'GB'
     }
   end
   let(:domestic_artwork_config) do
