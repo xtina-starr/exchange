@@ -11,7 +11,7 @@ describe Address do
     }
   end
   let(:address) { Address.new(address_params) }
-  let(:address_attributes) { [:country, :region, :city, :street_line1, :street_line2, :postal_code] }
+  let(:address_attributes) { %i[country region city street_line1 street_line2 postal_code] }
   describe '#initialize' do
     context 'with an empty address' do
       it 'sets the address attributes to nil' do
