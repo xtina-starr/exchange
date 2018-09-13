@@ -4,7 +4,7 @@ class SalesTaxService
   def initialize(
     line_item,
     fulfillment_type,
-    shipping,
+    shipping_address,
     shipping_total_cents,
     artwork_location,
     tax_client = Taxjar::Client.new(
@@ -17,13 +17,7 @@ class SalesTaxService
     @fulfillment_type = fulfillment_type
     @tax_client = tax_client
     @artwork_location = artwork_location
-    @shipping_address = {
-      country: shipping[:country],
-      postal_code: shipping[:postal_code],
-      state: shipping[:region],
-      city: shipping[:city],
-      address: shipping[:address_line1]
-    }
+    @shipping_address = shipping_address
     @shipping_total_cents = artsy_should_remit_taxes? ? shipping_total_cents : 0
   end
 
@@ -40,8 +34,8 @@ class SalesTaxService
   end
 
   def artsy_should_remit_taxes?
-    return false unless destination_address[:country] == 'US'
-    REMITTING_STATES.include? destination_address[:state].downcase
+    return false unless destination_address.country == Carmen::Country.coded('US').code
+    REMITTING_STATES.include? destination_address.region.downcase
   end
 
   private
@@ -49,16 +43,16 @@ class SalesTaxService
   def fetch_sales_tax
     @tax_client.tax_for_order(
       amount: UnitConverter.convert_cents_to_dollars(@line_item.total_amount_cents),
-      from_country: origin_address[:country],
-      from_zip: origin_address[:postal_code],
-      from_state: origin_address[:state],
-      from_city: origin_address[:city],
-      from_street: origin_address[:address],
-      to_country: destination_address[:country],
-      to_zip: destination_address[:postal_code],
-      to_state: destination_address[:state],
-      to_city: destination_address[:city],
-      to_street: destination_address[:address],
+      from_country: origin_address.country,
+      from_zip: origin_address.postal_code,
+      from_state: origin_address.region,
+      from_city: origin_address.city,
+      from_street: origin_address.street_line1,
+      to_country: destination_address.country,
+      to_zip: destination_address.postal_code,
+      to_state: destination_address.region,
+      to_city: destination_address.city,
+      to_street: destination_address.street_line1,
       shipping: UnitConverter.convert_cents_to_dollars(@shipping_total_cents)
     )
   end
@@ -69,16 +63,16 @@ class SalesTaxService
       transaction_id: "#{@line_item.order_id}-#{@line_item.id}",
       transaction_date: transaction_date,
       amount: UnitConverter.convert_cents_to_dollars(@line_item.total_amount_cents),
-      from_country: origin_address[:country],
-      from_zip: origin_address[:postal_code],
-      from_state: origin_address[:state],
-      from_city: origin_address[:city],
-      from_street: origin_address[:address],
-      to_country: destination_address[:country],
-      to_zip: destination_address[:postal_code],
-      to_state: destination_address[:state],
-      to_city: destination_address[:city],
-      to_street: destination_address[:address],
+      from_country: origin_address.country,
+      from_zip: origin_address.postal_code,
+      from_state: origin_address.region,
+      from_city: origin_address.city,
+      from_street: origin_address.street_line1,
+      to_country: destination_address.country,
+      to_zip: destination_address.postal_code,
+      to_state: destination_address.region,
+      to_city: destination_address.city,
+      to_street: destination_address.street_line1,
       sales_tax: UnitConverter.convert_cents_to_dollars(@line_item.sales_tax_cents),
       shipping: UnitConverter.convert_cents_to_dollars(@shipping_total_cents)
     )
@@ -93,6 +87,6 @@ class SalesTaxService
   end
 
   def seller_address
-    @seller_address ||= GravityService.fetch_partner_location(@line_item.order.seller_id)
+    @seller_address ||= Address.new(GravityService.fetch_partner_location(@line_item.order.seller_id))
   end
 end

@@ -2,8 +2,9 @@ class OrderShippingService
   def initialize(order, fulfillment_type:, shipping:)
     @order = order
     @fulfillment_type = fulfillment_type
-    @shipping = shipping
-    validate_shipping! if @fulfillment_type == Order::SHIP
+    @shipping_address = Address.new(shipping)
+    @buyer_name = shipping[:name]
+    @buyer_phone_number = shipping[:phone_number]
   end
 
   def process!
@@ -16,14 +17,14 @@ class OrderShippingService
       @order.update!(
         attrs.merge(
           fulfillment_type: @fulfillment_type,
-          buyer_phone_number: @shipping[:phone_number],
-          shipping_name: @shipping[:name],
-          shipping_address_line1: @shipping[:address_line1],
-          shipping_address_line2: @shipping[:address_line2],
-          shipping_city: @shipping[:city],
-          shipping_region: @shipping[:region],
-          shipping_country: @shipping[:country],
-          shipping_postal_code: @shipping[:postal_code]
+          buyer_phone_number: @buyer_phone_number,
+          shipping_name: @buyer_name,
+          shipping_address_line1: @shipping_address.street_line1,
+          shipping_address_line2: @shipping_address.street_line2,
+          shipping_city: @shipping_address.city,
+          shipping_region: @shipping_address.region,
+          shipping_country: @shipping_address.country,
+          shipping_postal_code: @shipping_address.postal_code
         )
       )
       OrderTotalUpdaterService.new(@order).update_totals!
@@ -42,7 +43,8 @@ class OrderShippingService
 
   def tax_total_cents
     @tax_total_cents ||= @order.line_items.map do |li|
-      service = SalesTaxService.new(li, @fulfillment_type, @shipping, shipping_total_cents, artworks[li.artwork_id][:location])
+      artwork_address = Address.new(artworks[li.artwork_id][:location])
+      service = SalesTaxService.new(li, @fulfillment_type, @shipping_address, shipping_total_cents, artwork_address)
       li.update!(sales_tax_cents: service.sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
       service.sales_tax
     end.sum
@@ -51,21 +53,6 @@ class OrderShippingService
   def validate_artwork!(artwork)
     raise Errors::ValidationError, :unknown_artwork unless artwork
     raise Errors::ValidationError, :missing_artwork_location if artwork[:location].blank?
-  end
-
-  def validate_shipping!
-    raise Errors::ValidationError, :missing_country if @shipping[:country].nil?
-    validate_us_shipping! if @shipping[:country] == 'US'
-    validate_ca_shipping! if @shipping[:country] == 'CA'
-  end
-
-  def validate_us_shipping!
-    raise Errors::ValidationError, :missing_region if @shipping[:region].nil?
-    raise Errors::ValidationError, :missing_postal_code if @shipping[:postal_code].nil?
-  end
-
-  def validate_ca_shipping!
-    raise Errors::ValidationError, :missing_region if @shipping[:region].nil?
   end
 
   def shipping_total_cents
@@ -83,7 +70,7 @@ class OrderShippingService
   end
 
   def domestic?(artwork_location)
-    artwork_location[:country].casecmp(@shipping[:country]).zero?
+    artwork_location[:country].casecmp(@shipping_address.country).zero?
   end
 
   def calculate_domestic_shipping_fee(artwork)

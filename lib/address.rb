@@ -3,7 +3,7 @@ class Address
 
   def initialize(address)
     @address = parse(address)
-    validate!
+    validate! if address.present?
     @country = @address[:country]
     @region = @address[:region]
     @city = @address[:city]
@@ -35,17 +35,17 @@ class Address
   end
 
   def validate!
-    raise Errors::OrderError, 'Valid country required for address' if @address[:country].nil?
+    raise Errors::ValidationError, :missing_country if @address[:country].nil?
     validate_us_address! if @address[:country] == Carmen::Country.coded('US').code
     validate_ca_address! if @address[:country] == Carmen::Country.coded('CA').code
   end
 
   def validate_us_address!
-    raise Errors::OrderError, 'Valid state required for US address' if @address[:region].nil?
-    raise Errors::OrderError, 'Valid postal code required for US address' if @address[:postal_code].nil?
+    raise Errors::ValidationError, :missing_region if @address[:region].nil?
+    raise Errors::ValidationError, :missing_postal_code if @address[:postal_code].nil?
   end
 
   def validate_ca_address!
-    raise Errors::OrderError, 'Valid province or territory required for Canadian address' if @address[:region].nil?
+    raise Errors::ValidationError, :missing_region if @address[:region].nil?
   end
 end
