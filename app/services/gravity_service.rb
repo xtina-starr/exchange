@@ -1,8 +1,6 @@
 module GravityService
   def self.fetch_partner(partner_id)
-    Rails.cache.fetch("gravity_partner_#{partner_id}", expire_in: Rails.application.config_for(:gravity)['partner_cache_in_seconds']) do
-      Adapters::GravityV1.get("/partner/#{partner_id}/all")
-    end
+    Adapters::GravityV1.get("/partner/#{partner_id}/all")
   rescue Adapters::GravityNotFoundError
     raise Errors::ValidationError.new(:unknown_partner, partner_id: partner_id)
   rescue Adapters::GravityError, StandardError => e
@@ -36,9 +34,7 @@ module GravityService
 
   def self.fetch_partner_location(partner_id)
     partner = fetch_partner(partner_id)
-    location = Rails.cache.fetch("gravity_partner_location_#{partner[:billing_location_id]}", expire_in: Rails.application.config_for(:gravity)['partner_cache_in_seconds']) do
-      Adapters::GravityV1.get("/partner/#{partner_id}/location/#{partner[:billing_location_id]}")
-    end
+    location = Adapters::GravityV1.get("/partner/#{partner_id}/location/#{partner[:billing_location_id]}")
     location.slice(:address, :address_2, :city, :state, :country, :postal_code)
   end
 
