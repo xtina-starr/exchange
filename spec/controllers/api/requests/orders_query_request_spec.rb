@@ -99,7 +99,7 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      context 'untrusted account accessing another account\'s order' do
+      context 'un-trusted account accessing another account\'s order' do
         let(:jwt_roles) { 'foobar' }
         it 'raises error' do
           expect do
