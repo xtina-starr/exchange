@@ -1,9 +1,10 @@
 ActiveAdmin.register Order do
   actions :all, except: %i[create update destroy new edit]
 
-  scope('Active', default: true) { |scope| scope.active }
-  scope('Pending') { |scope| scope.pending }
-  scope('Submitted') { |scope| scope.where(state: Order::SUBMITTED) }
+  scope('Active Orders', default: true) { |scope| scope.where.not(state: [ Order::APPROVED, Order::PENDING ]) }
+  scope('Pickup Orders') { |scope| scope.where(state: [ Order::APPROVED, Order::FULFILLED ], fulfillment_type: Order::PICKUP ) }
+  scope('Fulfillment Overdue') { |scope| scope.where(state: Order::APPROVED) }
+  scope('Pending & Abandoned Orders') { |scope| scope.where(state: [ Order::ABANDONED, Order::PENDING ]) }
 
   filter :seller_id_eq, label: 'Seller Id'
   filter :buyer_id_eq, label: 'User Id'
