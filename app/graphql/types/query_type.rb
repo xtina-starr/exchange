@@ -19,12 +19,12 @@ class Types::QueryType < Types::BaseObject
 
   def order(id:)
     order = Order.find(id)
-    raise Errors::AuthError, :not_found unless trusted? || access?(order)
+    validate_order_request!(order)
     order
   end
 
   def orders(params)
-    validate_orders_params!(params)
+    validate_orders_request!(params)
     sort = params.delete(:sort)
     query = Order.where(params)
 
@@ -48,13 +48,14 @@ class Types::QueryType < Types::BaseObject
     context[:current_user][:roles].include?('sales_admin')
   end
 
-  def access?(order)
-    sales_admin? ||
-      (order.buyer_type == Order::USER && order.buyer_id == context[:current_user][:id]) ||
-      (order.seller_type == Order::PARTNER && context[:current_user][:partner_ids].include?(order.seller_id))
+  def validate_order_request!(order)
+    return if trusted? || sales_admin? ||
+              (order.buyer_type == Order::USER && order.buyer_id == context[:current_user][:id]) ||
+              (order.seller_type == Order::PARTNER && context[:current_user][:partner_ids].include?(order.seller_id))
+    raise Errors::AuthError, :not_found
   end
 
-  def validate_orders_params!(params)
+  def validate_orders_request!(params)
     return if trusted? || sales_admin?
     if params[:buyer_id].present?
       raise Errors::AuthError, :not_found unless params[:buyer_id] == context[:current_user][:id]
