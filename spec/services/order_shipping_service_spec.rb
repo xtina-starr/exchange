@@ -104,4 +104,17 @@ describe OrderShippingService, type: :services do
       end
     end
   end
+
+  describe '#tax_total_cents' do
+    context 'with an invalid artwork location' do
+      it 'rescues AddressError and raises ValidationError with a code of invalid_artwork_address' do
+        artwork[:region] = 'Floridada'
+        allow(GravityService).to receive(:get_artwork).and_return(artwork)
+        expect { @service_domestic_shipping.send(:tax_total_cents) }.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.code).to eq :invalid_artwork_address
+        end
+      end
+    end
+  end
 end

@@ -48,6 +48,8 @@ class OrderShippingService
       li.update!(sales_tax_cents: service.sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
       service.sales_tax
     end.sum
+  rescue Errors::AddressError
+    raise Errors::ValidationError, :invalid_artwork_address
   end
 
   def validate_artwork!(artwork)

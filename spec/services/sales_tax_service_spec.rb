@@ -59,13 +59,8 @@ describe SalesTaxService, type: :services do
 
   describe '#seller_address' do
     it "returns the partner's location" do
-      expect(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
-      returned_address = @service_ship.send(:seller_address)
-      expect(returned_address.country).to eq partner_address.country
-      expect(returned_address.region).to eq partner_address.region
-      expect(returned_address.city).to eq partner_address.city
-      expect(returned_address.street_line1).to eq partner_address.street_line1
-      expect(returned_address.postal_code).to eq partner_address.postal_code
+      expect(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_address)
+      expect(@service_ship.send(:seller_address)).to eq partner_address
     end
   end
 
@@ -114,7 +109,7 @@ describe SalesTaxService, type: :services do
       }
     end
     it 'calls the Taxjar API with the correct parameters' do
-      allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
+      allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_address)
       allow(taxjar_client).to receive(:tax_for_order).with(params)
       @service_ship.send(:fetch_sales_tax)
       expect(taxjar_client).to have_received(:tax_for_order).with(params)
@@ -175,7 +170,7 @@ describe SalesTaxService, type: :services do
       order.approve!
     end
     it 'calls the Taxjar API with the correct parameters' do
-      allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_location)
+      allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_address)
       expect(taxjar_client).to receive(:create_order).with(params)
       @service_ship.send(:post_transaction)
     end
