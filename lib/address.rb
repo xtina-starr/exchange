@@ -23,7 +23,7 @@ class Address
       region: region,
       city: address[:city],
       street_line1: address[:address_line1] || address[:address],
-      street_line2: address[:address_line2],
+      street_line2: address[:address_line2] || address[:address_2],
       postal_code: address[:postal_code] || address[:zip]
     }
   end
@@ -35,17 +35,17 @@ class Address
   end
 
   def validate!
-    raise Errors::ValidationError, :missing_country if @address[:country].nil?
+    raise Errors::AddressError, :missing_country if @address[:country].nil?
     validate_us_address! if @address[:country] == Carmen::Country.coded('US').code
     validate_ca_address! if @address[:country] == Carmen::Country.coded('CA').code
   end
 
   def validate_us_address!
-    raise Errors::ValidationError, :missing_region if @address[:region].nil?
-    raise Errors::ValidationError, :missing_postal_code if @address[:postal_code].nil?
+    raise Errors::AddressError, :missing_region if @address[:region].nil?
+    raise Errors::AddressError, :missing_postal_code if @address[:postal_code].nil?
   end
 
   def validate_ca_address!
-    raise Errors::ValidationError, :missing_region if @address[:region].nil?
+    raise Errors::AddressError, :missing_region if @address[:region].nil?
   end
 end

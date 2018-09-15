@@ -65,6 +65,7 @@ describe Address do
       it 'raises an error' do
         address_params[:country] = nil
         expect { Address.new(address_params) }.to raise_error do |error|
+          expect(error).to be_a Errors::AddressError
           expect(error.type).to eq :validation
           expect(error.code).to eq :missing_country
         end
@@ -76,6 +77,7 @@ describe Address do
       it 'raises an error' do
         address_params[:region] = nil
         expect { Address.new(address_params) }.to raise_error do |error|
+          expect(error).to be_a Errors::AddressError
           expect(error.type).to eq :validation
           expect(error.code).to eq :missing_region
         end
@@ -85,6 +87,7 @@ describe Address do
       it 'raises an error' do
         address_params[:postal_code] = nil
         expect { Address.new(address_params) }.to raise_error do |error|
+          expect(error).to be_a Errors::AddressError
           expect(error.type).to eq :validation
           expect(error.code).to eq :missing_postal_code
         end
@@ -97,6 +100,7 @@ describe Address do
         address_params[:region] = nil
         address_params[:country] = 'CA'
         expect { Address.new(address_params) }.to raise_error do |error|
+          expect(error).to be_a Errors::AddressError
           expect(error.type).to eq :validation
           expect(error.code).to eq :missing_region
         end
