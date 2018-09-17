@@ -133,7 +133,7 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      context "sale_admin accessing another account's order" do
+      context "sales admin accessing another account's order" do
         let(:jwt_roles) { 'sales_admin' }
 
         it 'allows action' do
