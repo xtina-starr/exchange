@@ -165,4 +165,25 @@ RSpec.describe Order, type: :model do
       end
     end
   end
+
+  describe 'scope_validate' do
+    Order::STATES.reject { |state| state == Order::CANCELED }.each do |state|
+      let!("#{state}_order".to_sym) { Fabricate(:order, state: state) }
+    end
+    let!(:canceled_order) { Fabricate(:order, state: Order::CANCELED, state_reason: 'seller_lapsed') }
+    describe 'active' do
+      it 'returns only active order' do
+        orders = Order.active
+        expect(orders.count).to eq 2
+        expect(orders).to match_array([approved_order, submitted_order])
+      end
+    end
+    describe 'approved' do
+      it 'returns only approved order' do
+        orders = Order.approved
+        expect(orders.count).to eq 1
+        expect(orders.first).to eq approved_order
+      end
+    end
+  end
 end

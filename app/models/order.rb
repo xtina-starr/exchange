@@ -65,9 +65,8 @@ class Order < ApplicationRecord
   before_save :set_currency_code
 
   scope :pending, -> { where(state: PENDING) }
-  scope :active, -> { where.not(state: [ Order::ABANDONED, Order::PENDING, Order::CANCELED ]) }
+  scope :active, -> { where(state: [Order::APPROVED, Order::SUBMITTED]) }
   scope :approved, -> { where(state: APPROVED) }
-
 
   ACTIONS.each do |action|
     define_method "#{action}!" do |state_reason = nil, &block|
