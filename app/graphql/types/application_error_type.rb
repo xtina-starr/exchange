@@ -14,7 +14,7 @@ class Types::ApplicationErrorType < Types::BaseObject
     error_type(type: :internal, code: :server, data: { message: err.message })
   end
 
-  def self.error_type(type:, code:, data: {})
+  def self.error_type(type:, code:, data: nil)
     {
       code: code,
       data: data,
