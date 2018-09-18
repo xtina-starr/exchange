@@ -70,6 +70,17 @@ In order to talk to Exchange GraphQL endpoint:
 ### Working at Artsy?
 We share our GraphQL sample queries using [Insomnia](https://insomnia.rest/) shared workspace. You can import latest queries from [environments_and_requests.json](https://github.com/artsy/potential/tree/master/insomnia)
 
+### Debugging
+Something went wrong? Ideally in the JSON response returned from Exchange there will be enough info to describe what went wrong. In case that was not useful, you can:
+
+1) Check [Sentry](https://sentry.io) (password in 1Pass) and look for Exchange (staging or production) and see the error.
+2) Follow exchange logs by doing
+```shell
+hokusai staging logs -f
+```
+
+If you think there is something we could improve in this error case, feel free to [open an issue](https://github.com/artsy/exchange/issues/new) with details about what you did and what went wrong.
+
 
 [ashkan18]: https://github.com/ashkan18
 [williardx]: https://github.com/williardx
