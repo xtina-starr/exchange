@@ -1,6 +1,6 @@
 class Order < ApplicationRecord
   has_paper_trail
-  SUPPORTED_CURRENCIES = %w[usd].freeze
+  SUPPORTED_CURRENCIES = %w[USD].freeze
   # For more docs about states go to:
   # https://www.notion.so/artsy/37c311363ef046c3aa546047e60cc58a?v=de68d5bbc30748f88b0d92a059bc0ba8
   STATES = [
@@ -15,11 +15,17 @@ class Order < ApplicationRecord
     # Availability has been manually confirmed and hold has been "captured" (debited).
     APPROVED = 'approved'.freeze,
     # Items have been deemed unavailable and hold is voided.
-    REJECTED = 'rejected'.freeze,
-    # Seller didn't approve order in time
-    SELLER_LAPSED = 'seller_lapsed'.freeze,
+    CANCELED = 'canceled'.freeze,
+    # Order is completly fulfilled by the seller
     FULFILLED = 'fulfilled'.freeze
   ].freeze
+
+  REASONS = {
+    CANCELED => {
+      seller_lapsed: 'seller_lapsed'.freeze,
+      seller_rejected: 'seller_rejected'.freeze
+    }
+  }.freeze
 
   STATE_EXPIRATIONS = {
     'pending' => 2.days,
@@ -33,6 +39,11 @@ class Order < ApplicationRecord
   ].freeze
 
   ACTIONS = %i[abandon submit approve reject fulfill seller_lapse].freeze
+  ACTION_REASONS = {
+    seller_lapse: REASONS[CANCELED][:seller_lapsed],
+    reject: REASONS[CANCELED][:seller_rejected]
+  }.freeze
+
   PARTY_TYPES = [
     USER = 'user'.freeze,
     PARTNER = 'partner'.freeze
@@ -42,9 +53,13 @@ class Order < ApplicationRecord
   has_many :transactions, dependent: :destroy
   has_many :state_histories, dependent: :destroy
 
-  validates :state, presence: true, inclusion: STATES
+  before_validation { self.currency_code = currency_code.upcase if currency_code.present? }
 
-  after_create :set_code
+  validates :state, presence: true, inclusion: STATES
+  validate :state_reason_inclusion
+  validates :currency_code, inclusion: SUPPORTED_CURRENCIES
+
+  after_create :update_code
   after_create :create_state_history
   before_save :update_state_timestamps, if: :state_changed?
   before_save :set_currency_code
@@ -53,15 +68,16 @@ class Order < ApplicationRecord
   scope :active, -> { where(state: [SUBMITTED, APPROVED]) }
 
   ACTIONS.each do |action|
-    define_method "#{action}!" do |&block|
+    define_method "#{action}!" do |state_reason = nil, &block|
       with_lock do
         state_machine.trigger!(action)
+        self.state_reason = state_reason || ACTION_REASONS[action]
         save!
         create_state_history
         block.call if block.present?
       end
     rescue MicroMachine::InvalidState
-      raise Errors::OrderError, "Invalid action on this #{state} order"
+      raise Errors::ValidationError.new(:invalid_state, state: state)
     end
   end
 
@@ -88,8 +104,21 @@ class Order < ApplicationRecord
 
   private
 
-  def set_code
-    update!(code: format('B%06d', id))
+  def state_reason_inclusion
+    errors.add(:state_reason, "Current state not expecting reason: #{state}") if state_reason.present? && !REASONS.key?(state)
+    errors.add(:state_reason, 'Invalid state reason') if REASONS[state] && !REASONS[state].value?(state_reason)
+  end
+
+  def update_code(attempts = 10)
+    while attempts.positive?
+      code = format('%09d', SecureRandom.rand(999999999))
+      unless Order.where(code: code).exists?
+        update!(code: code)
+        break
+      end
+      attempts -= 1
+    end
+    raise Errors::ValidationError, :failed_order_code_generation if attempts.zero?
   end
 
   def update_state_timestamps
@@ -102,11 +131,11 @@ class Order < ApplicationRecord
   end
 
   def create_state_history
-    state_histories.create!(state: state, updated_at: state_updated_at)
+    state_histories.create!(state: state, reason: state_reason, updated_at: state_updated_at)
   end
 
   def set_currency_code
-    self.currency_code ||= 'usd'
+    self.currency_code ||= 'USD'
   end
 
   def state_machine
@@ -118,8 +147,9 @@ class Order < ApplicationRecord
     machine.when(:abandon, PENDING => ABANDONED)
     machine.when(:submit, PENDING => SUBMITTED)
     machine.when(:approve, SUBMITTED => APPROVED)
-    machine.when(:reject, SUBMITTED => REJECTED)
-    machine.when(:seller_lapse, SUBMITTED => SELLER_LAPSED)
+    machine.when(:reject, SUBMITTED => CANCELED)
+    machine.when(:seller_lapse, SUBMITTED => CANCELED)
+    machine.when(:cancel, SUBMITTED => CANCELED)
     machine.when(:fulfill, APPROVED => FULFILLED)
     machine.on(:any) do
       self.state = machine.state

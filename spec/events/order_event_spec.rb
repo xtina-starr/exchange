@@ -61,9 +61,8 @@ describe OrderEvent, type: :events do
   describe '#properties' do
     it 'returns correct properties for a submitted order' do
       order.submit!
-      order.save!
       expect(event.properties[:code]).to eq order.code
-      expect(event.properties[:currency_code]).to eq 'usd'
+      expect(event.properties[:currency_code]).to eq 'USD'
       expect(event.properties[:state]).to eq 'submitted'
       expect(event.properties[:buyer_id]).to eq user_id
       expect(event.properties[:buyer_type]).to eq Order::USER
@@ -87,5 +86,10 @@ describe OrderEvent, type: :events do
       expect(event.properties[:shipping_region]).to eq 'IL'
       expect(event.properties[:state_expires_at]).to eq Time.parse('2018-08-18 15:48:00 -0400')
     end
+  end
+  it 'returns state_reason when available' do
+    order.update!(state: Order::SUBMITTED)
+    order.reject!
+    expect(event.properties[:state_reason]).to eq 'seller_rejected'
   end
 end

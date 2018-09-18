@@ -8,7 +8,7 @@ class OrderFollowUpJob < ApplicationJob
     when Order::PENDING
       OrderService.abandon!(order)
     when Order::SUBMITTED
-      OrderService.seller_lapse!(order)
+      OrderCancellationService.new(order).seller_lapse!
     when Order::APPROVED
       # Order was approved but has not yet fulfilled,
       # post an event so we can contact partner

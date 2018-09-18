@@ -32,8 +32,9 @@ describe Api::GraphqlController, type: :request do
               }
               ... on OrderWithMutationFailure {
                 error {
-                  description
                   code
+                  data
+                  type
                 }
               }
             }
@@ -54,7 +55,8 @@ describe Api::GraphqlController, type: :request do
       let(:user_id) { 'random-user-id-on-another-order' }
       it 'returns permission error' do
         response = client.execute(mutation, set_payment_input)
-        expect(response.data.set_payment.order_or_error.error.description).to include 'Not permitted'
+        expect(response.data.set_payment.order_or_error.error.type).to eq 'validation'
+        expect(response.data.set_payment.order_or_error.error.code).to eq 'not_found'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -66,7 +68,8 @@ describe Api::GraphqlController, type: :request do
         end
         it 'returns error' do
           response = client.execute(mutation, set_payment_input)
-          expect(response.data.set_payment.order_or_error.error.description).to include 'Cannot set payment info on non-pending orders'
+          expect(response.data.set_payment.order_or_error.error.type).to eq 'validation'
+          expect(response.data.set_payment.order_or_error.error.code).to eq 'invalid_state'
           expect(order.reload.state).to eq Order::APPROVED
         end
       end

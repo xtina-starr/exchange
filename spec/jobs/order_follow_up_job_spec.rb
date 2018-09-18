@@ -18,7 +18,7 @@ describe OrderFollowUpJob, type: :job do
         let(:state) { Order::SUBMITTED }
         it 'transitions a submitted order to seller_lapsed' do
           Timecop.freeze(order.state_expires_at + 1.second) do
-            expect(OrderService).to receive(:seller_lapse!).with(order)
+            expect_any_instance_of(OrderCancellationService).to receive(:seller_lapse!)
             OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
           end
         end
@@ -38,7 +38,7 @@ describe OrderFollowUpJob, type: :job do
         order.update!(state: Order::SUBMITTED)
         Timecop.freeze(order.state_expires_at + 1.second) do
           expect(OrderService).to_not receive(:abandon!)
-          expect(OrderService).to_not receive(:seller_lapse!)
+          expect_any_instance_of(OrderCancellationService).to_not receive(:seller_lapse!)
           OrderFollowUpJob.perform_now(order.id, Order::PENDING)
         end
       end
@@ -46,7 +46,7 @@ describe OrderFollowUpJob, type: :job do
     context 'with an order in the same state before its expiration time' do
       it 'does nothing' do
         expect(OrderService).to_not receive(:abandon!)
-        expect(OrderService).to_not receive(:seller_lapse!)
+        expect_any_instance_of(OrderCancellationService).to_not receive(:seller_lapse!)
         OrderFollowUpJob.perform_now(order.id, Order::PENDING)
       end
     end

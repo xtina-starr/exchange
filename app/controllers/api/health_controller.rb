@@ -1,9 +1,15 @@
 module Api
   class HealthController < Api::BaseApiController
     skip_before_action :authenticate_request!
+    SIDEKIQ_ALERT_THRESHOLD = 100
 
     def index
-      render json: { healthy: true }
+      sidekiq_default_queue_size = Sidekiq::Queue.new.size
+      render json: {
+        api_healthy: true,
+        worker_health:  sidekiq_default_queue_size < SIDEKIQ_ALERT_THRESHOLD ? 'OK' : 'OY',
+        worker_default_queue_size: sidekiq_default_queue_size
+      }
     end
   end
 end

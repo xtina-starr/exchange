@@ -13,6 +13,7 @@ describe Api::GraphqlController, type: :request do
     let(:artwork2) { gravity_v1_artwork(_id: 'a-2', domestic_shipping_fee_cents: 400_00, international_shipping_fee_cents: 500_00) }
     let(:shipping_country) { 'IR' }
     let(:shipping_region) { 'Tehran' }
+    let(:shipping_postal_code) { '02198912' }
     let(:fulfillment_type) { 'SHIP' }
     let(:total_sales_tax) { 2222 }
     let(:phone_number) { '00123456789' }
@@ -49,8 +50,9 @@ describe Api::GraphqlController, type: :request do
               }
               ... on OrderWithMutationFailure {
                 error {
-                  description
                   code
+                  data
+                  type
                 }
               }
             }
@@ -63,13 +65,13 @@ describe Api::GraphqlController, type: :request do
         input: {
           id: order.id.to_s,
           fulfillmentType: fulfillment_type,
-          phoneNumber: phone_number,
           shipping: {
             name: 'Fname Lname',
             country: shipping_country,
             city: 'Tehran',
             region: shipping_region,
-            postalCode: '02198912',
+            postalCode: shipping_postal_code,
+            phoneNumber: phone_number,
             addressLine1: 'Vanak',
             addressLine2: 'P 80'
           }
@@ -85,7 +87,8 @@ describe Api::GraphqlController, type: :request do
       let(:user_id) { 'random-user-id-on-another-order' }
       it 'returns permission error' do
         response = client.execute(mutation, set_shipping_input)
-        expect(response.data.set_shipping.order_or_error.error.description).to include 'Not permitted'
+        expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+        expect(response.data.set_shipping.order_or_error.error.code).to eq 'not_found'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -97,17 +100,64 @@ describe Api::GraphqlController, type: :request do
         end
         it 'returns error' do
           response = client.execute(mutation, set_shipping_input)
-          expect(response.data.set_shipping.order_or_error.error.description).to include 'Cannot set shipping info on non-pending orders'
+          expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+          expect(response.data.set_shipping.order_or_error.error.code).to eq 'invalid_state'
           expect(order.reload.state).to eq Order::APPROVED
         end
       end
 
       context 'without passing phone number' do
         let(:phone_number) { nil }
+        it 'fails' do
+          expect do
+            client.execute(mutation, set_shipping_input)
+          end.to raise_error(/phoneNumber: Expected value to not be null/)
+        end
+      end
+
+      context 'with a shipping address with an unrecognized country' do
+        let(:shipping_country) { 'ASDF' }
         it 'returns proper error' do
           response = client.execute(mutation, set_shipping_input)
           expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-          expect(response.data.set_shipping.order_or_error.error.description).to eq 'Phone number is required'
+          expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+          expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_country'
+        end
+      end
+
+      context 'with a US-based shipping address' do
+        let(:shipping_country) { 'US' }
+        context 'without a state' do
+          let(:shipping_region) { nil }
+          it 'returns proper error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error).to respond_to(:error)
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_region'
+          end
+        end
+        context 'without a postal code' do
+          let(:shipping_region) { 'FL' }
+          let(:shipping_postal_code) { nil }
+          it 'returns proper error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error).to respond_to(:error)
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_postal_code'
+          end
+        end
+      end
+
+      context 'with a Canada based shipping address' do
+        let(:shipping_country) { 'CA' }
+        context 'without a province or territory' do
+          let(:shipping_region) { nil }
+          it 'returns proper error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error).to respond_to(:error)
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_region'
+          end
         end
       end
 
@@ -115,7 +165,8 @@ describe Api::GraphqlController, type: :request do
         it 'returns an error' do
           allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(id: 'missing-location')
           response = client.execute(mutation, set_shipping_input)
-          expect(response.data.set_shipping.order_or_error.error.description).to include 'Cannot set shipping, missing artwork location'
+          expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+          expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_artwork_location'
         end
       end
 
@@ -123,7 +174,8 @@ describe Api::GraphqlController, type: :request do
         it 'returns an error' do
           allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_raise(Adapters::GravityError.new('unknown artwork'))
           response = client.execute(mutation, set_shipping_input)
-          expect(response.data.set_shipping.order_or_error.error.description).to include 'Cannot set shipping, unknown artwork'
+          expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+          expect(response.data.set_shipping.order_or_error.error.code).to eq 'unknown_artwork'
         end
       end
 

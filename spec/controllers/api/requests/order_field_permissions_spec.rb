@@ -66,5 +66,29 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.commission_fee_cents).to eq 30_00
       end
     end
+
+    context 'as trusted app' do
+      let(:jwt_user_id) { nil }
+      let(:jwt_partner_ids) { nil }
+      let(:jwt_roles) { 'artsy,trusted' }
+      let(:order_query_with_buyer_fields) do
+        <<-GRAPHQL
+          query($id: ID!) {
+            order(id: $id) {
+              id
+              buyerTotalCents
+              commissionFeeCents
+              sellerTotalCents
+            }
+          }
+        GRAPHQL
+      end
+      it 'returns seller_only and buyer_only fields' do
+        result = client.execute(order_query_with_buyer_fields, id: order.id)
+        expect(result.data.order.buyer_total_cents).to eq 1100_00
+        expect(result.data.order.seller_total_cents).to eq 1050_00
+        expect(result.data.order.commission_fee_cents).to eq 30_00
+      end
+    end
   end
 end

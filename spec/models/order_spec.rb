@@ -3,6 +3,55 @@ require 'rails_helper'
 RSpec.describe Order, type: :model do
   let(:order) { Fabricate(:order) }
 
+  describe 'validate currency' do
+    it 'raises invalid record for unsupported currencies' do
+      expect { order.update!(currency_code: 'CAD') }.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: Currency code is not included in the list')
+    end
+  end
+
+  describe 'validates state_reason' do
+    context 'state requiring reasons' do
+      it 'raises error when missing reason for states with required reason' do
+        expect do
+          order.update!(state: Order::CANCELED)
+        end.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: State reason Invalid state reason')
+      end
+      it 'raises error when providing unknown reasons' do
+        expect do
+          order.update!(state: Order::CANCELED, state_reason: 'random reason')
+        end.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: State reason Invalid state reason')
+      end
+      it 'sets state and reason with correct state and reason' do
+        order.update!(state: Order::CANCELED, state_reason: Order::REASONS[Order::CANCELED][:seller_lapsed])
+        expect(order.reload.state).to eq Order::CANCELED
+        expect(order.reload.state_reason).to eq Order::REASONS[Order::CANCELED][:seller_lapsed]
+      end
+      it 'sets state reason on state history records' do
+        order.update!(state: Order::SUBMITTED)
+        expect { order.seller_lapse! }.to change(order.state_histories, :count).by(1)
+        expect(order.state_histories.last.state).to eq Order::CANCELED
+        expect(order.state_histories.last.reason).to eq Order::REASONS[Order::CANCELED][:seller_lapsed]
+      end
+    end
+    context 'state not requiring reason' do
+      it 'sets the state' do
+        order.update!(state: Order::ABANDONED)
+        expect(order.state).to eq Order::ABANDONED
+        expect(order.state_reason).to be_nil
+      end
+      it 'adds proper state history' do
+        expect { order.submit! }.to change(order.state_histories, :count).by(1)
+        expect(order.state_histories.last.state).to eq Order::SUBMITTED
+        expect(order.state_histories.last.reason).to be_nil
+      end
+      it 'raises error when setting reason' do
+        expect do
+          order.update!(state: Order::SUBMITTED, state_reason: Order::REASONS[Order::CANCELED][:seller_lapsed])
+        end.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: State reason Current state not expecting reason: submitted')
+      end
+    end
+  end
+
   describe 'update_state_timestamps' do
     it 'sets state timestamps in create' do
       expect(order.state_updated_at).not_to be_nil
@@ -11,7 +60,7 @@ RSpec.describe Order, type: :model do
 
     it 'does not update timestamps if state did not change' do
       current_timestamp = order.state_updated_at
-      order.update!(currency_code: 'CAD')
+      order.update!(shipping_total_cents: 12313)
       expect(order.state_updated_at).to eq current_timestamp
     end
 
@@ -53,16 +102,26 @@ RSpec.describe Order, type: :model do
     end
   end
 
-  describe '#code' do
-    it 'sets code in proper format' do
-      expect(order.code).to match(/^B\d{6}$/)
+  describe '#update_code' do
+    it 'raises an error if it is unable to set a code within specified attempts' do
+      expect do
+        order.send(:update_code, 0)
+      end.to raise_error do |error|
+        expect(error).to be_a(Errors::ValidationError)
+        expect(error.code).to eq :failed_order_code_generation
+      end
+    end
+
+    it 'sets a 0-padded 9 digit number for the code on order creation' do
+      expect(order.code.length).to eq 9
+      expect(order.code).to eq format('%09d', order.code.to_i)
     end
   end
 
   describe '#create_state_history' do
     context 'when an order is first created' do
       it 'creates a new state history object with its initial state' do
-        new_order = Order.create!(state: Order::PENDING)
+        new_order = Order.create!(state: Order::PENDING, currency_code: 'USD')
         expect(new_order.state_histories.count).to eq 1
         expect(new_order.state_histories.last.state).to eq Order::PENDING
         expect(new_order.state_histories.last.updated_at.to_i).to eq new_order.state_updated_at.to_i

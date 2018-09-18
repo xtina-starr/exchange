@@ -7,7 +7,7 @@ describe Api::GraphqlController, type: :request do
     let(:second_partner_id) { 'partner-2' }
     let(:user_id) { jwt_user_id }
     let(:second_user) { 'user2' }
-    let(:state) { 'PENDING' }
+    let(:state) { Order::PENDING }
     let(:created_at) { 2.days.ago }
     let!(:user1_order1) do
       Fabricate(
@@ -22,7 +22,9 @@ describe Api::GraphqlController, type: :request do
         commission_fee_cents: 50_00,
         seller_total_cents: 50_00,
         buyer_total_cents: 100_00,
-        items_total_cents: 0
+        items_total_cents: 0,
+        state: state,
+        state_reason: state == Order::CANCELED ? 'seller_lapsed' : nil
       )
     end
     let!(:user2_order1) { Fabricate(:order, seller_id: second_partner_id, seller_type: 'partner', buyer_id: second_user, buyer_type: 'user') }
@@ -65,14 +67,14 @@ describe Api::GraphqlController, type: :request do
       it 'returns permission error when query for orders by user not in jwt' do
         expect do
           client.execute(query, id: user2_order1.id)
-        end.to raise_error(Graphlient::Errors::ExecutionError, 'order: Not permitted')
+        end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
       end
 
       it 'returns order when accessing correct order' do
         result = client.execute(query, id: user1_order1.id)
         expect(result.data.order.buyer.id).to eq user_id
         expect(result.data.order.seller.id).to eq partner_id
-        expect(result.data.order.currency_code).to eq 'usd'
+        expect(result.data.order.currency_code).to eq 'USD'
         expect(result.data.order.state).to eq 'PENDING'
         expect(result.data.order.items_total_cents).to eq 0
         expect(result.data.order.seller_total_cents).to eq 50_00
@@ -82,10 +84,12 @@ describe Api::GraphqlController, type: :request do
 
       Order::STATES.each do |state|
         # https://github.com/artsy/exchange/issues/88
-        it 'returns proper state' do
-          user1_order1.update!(state: state)
-          result = client.execute(query, id: user1_order1.id)
-          expect(result.data.order.state).to eq state.upcase
+        context "order in #{state} state" do
+          let(:state) { state }
+          it 'returns proper state' do
+            result = client.execute(query, id: user1_order1.id)
+            expect(result.data.order.state).to eq state.upcase
+          end
         end
       end
     end
@@ -106,7 +110,7 @@ describe Api::GraphqlController, type: :request do
           result = client.execute(query, id: user2_order1.id)
           expect(result.data.order.buyer.id).to eq user2_order1.buyer_id
           expect(result.data.order.seller.id).to eq user2_order1.seller_id
-          expect(result.data.order.currency_code).to eq 'usd'
+          expect(result.data.order.currency_code).to eq 'USD'
           expect(result.data.order.state).to eq 'PENDING'
           expect(result.data.order.items_total_cents).to eq 0
         end
@@ -125,11 +129,11 @@ describe Api::GraphqlController, type: :request do
         it 'raises error' do
           expect do
             client.execute(query, id: user2_order1.id)
-          end.to raise_error(Graphlient::Errors::ExecutionError, 'order: Not permitted')
+          end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
         end
       end
 
-      context "sale_admin accessing another account's order" do
+      context "sales admin accessing another account's order" do
         let(:jwt_roles) { 'sales_admin' }
 
         it 'allows action' do
@@ -142,7 +146,7 @@ describe Api::GraphqlController, type: :request do
           result = client.execute(query, id: user2_order1.id)
           expect(result.data.order.buyer.id).to eq user2_order1.buyer_id
           expect(result.data.order.seller.id).to eq user2_order1.seller_id
-          expect(result.data.order.currency_code).to eq 'usd'
+          expect(result.data.order.currency_code).to eq 'USD'
           expect(result.data.order.state).to eq 'PENDING'
           expect(result.data.order.items_total_cents).to eq 0
         end
@@ -155,7 +159,7 @@ describe Api::GraphqlController, type: :request do
         result = client.execute(query, id: another_user_order.id)
         expect(result.data.order.buyer.id).to eq 'someone-else-id'
         expect(result.data.order.seller.id).to eq partner_id
-        expect(result.data.order.currency_code).to eq 'usd'
+        expect(result.data.order.currency_code).to eq 'USD'
         expect(result.data.order.state).to eq 'PENDING'
         expect(result.data.order.items_total_cents).to eq 0
       end

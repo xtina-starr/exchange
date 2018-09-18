@@ -58,7 +58,7 @@ describe OrderSubmitService, type: :services do
           edition_set_inventory_undeduct_request
           expect do
             service.process!
-          end.to raise_error(Errors::InventoryError).and change(order.transactions, :count).by(0)
+          end.to raise_error(Errors::ValidationError).and change(order.transactions, :count).by(0)
         end
         it 'does not call to update edition set inventory' do
           expect(artwork_inventory_deduct_request).to have_been_requested
@@ -76,7 +76,7 @@ describe OrderSubmitService, type: :services do
           edition_set_inventory_undeduct_request
           expect do
             service.process!
-          end.to raise_error(Errors::InventoryError).and change(order.transactions, :count).by(0)
+          end.to raise_error(Errors::ValidationError).and change(order.transactions, :count).by(0)
         end
         it 'deducts and then undeducts artwork inventory' do
           expect(artwork_inventory_deduct_request).to have_been_requested
@@ -136,6 +136,42 @@ describe OrderSubmitService, type: :services do
         end
       end
 
+      context 'with failed Stripe transaction' do
+        before do
+          artwork_inventory_deduct_request
+          edition_set_inventory_deduct_request
+          artwork_inventory_undeduct_request
+          edition_set_inventory_undeduct_request
+          StripeMock.prepare_card_error(:card_declined, :new_charge)
+          allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
+          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+          expect(PostNotificationJob).not_to receive(:perform_later)
+          expect(OrderFollowUpJob).not_to receive(:perform_later)
+          expect { service.process! }.to raise_error do |error|
+            expect(error).to be_a(Errors::ProcessingError)
+            expect(error.code).to eq :failed_charge_authorization
+            expect(error.data[:failure_code]).to eq 'card_declined'
+          end
+        end
+        it 'deducts and then undeducts the inventory for both artwork and edition set' do
+          expect(artwork_inventory_deduct_request).to have_been_requested
+          expect(edition_set_inventory_deduct_request).to have_been_requested
+          expect(artwork_inventory_undeduct_request).to have_been_requested
+          expect(edition_set_inventory_undeduct_request).to have_been_requested
+        end
+        it 'records failed transaction' do
+          expect(order.transactions.last.transaction_type).to eq Transaction::HOLD
+          expect(order.transactions.last.status).to eq Transaction::FAILURE
+          expect(order.transactions.last.failure_code).to eq 'card_declined'
+        end
+        it 'keeps order in pending' do
+          expect(order.reload.state).to eq Order::PENDING
+        end
+        it 'does not update order external_charge_id' do
+          expect(order.reload.external_charge_id).to be_nil
+        end
+      end
+
       describe 'Stripe call' do
         let(:order) do
           Fabricate(
@@ -151,7 +187,7 @@ describe OrderSubmitService, type: :services do
         it 'calls stripe with expected params' do
           expect(Stripe::Charge).to receive(:create).with(
             amount: 18300_00,
-            currency: 'usd',
+            currency: 'USD',
             description: 'INVOICING-DE via Artsy',
             source: stripe_customer.default_source,
             customer: stripe_customer.id,
@@ -174,51 +210,44 @@ describe OrderSubmitService, type: :services do
           service.process!
         end
       end
-
-      context 'with failed Stripe charge call' do
-        before do
-          artwork_inventory_deduct_request
-          edition_set_inventory_deduct_request
-          artwork_inventory_undeduct_request
-          edition_set_inventory_undeduct_request
-          StripeMock.prepare_card_error(:card_declined, :new_charge)
-          allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
-          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-          expect { service.process! }.to raise_error(Errors::PaymentError)
-        end
-        it 'deducts and then undeducts the inventory for both artwork and edition set' do
-          expect(artwork_inventory_deduct_request).to have_been_requested
-          expect(edition_set_inventory_deduct_request).to have_been_requested
-          expect(artwork_inventory_undeduct_request).to have_been_requested
-          expect(edition_set_inventory_undeduct_request).to have_been_requested
-        end
-        it 'records failed transaction' do
-          expect(order.transactions.last.transaction_type).to eq Transaction::HOLD
-          expect(order.transactions.last.status).to eq Transaction::FAILURE
-        end
-      end
     end
   end
 
   describe '#assert_credit_card!' do
     it 'raises an error if the credit card does not have an external id' do
-      service.credit_card = { customer_account: { external_id: 'cust-1' }, deactivated_at: nil }
-      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::OrderError, 'Credit card does not have external id')
+      service.credit_card = { id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil }
+      expect { service.send(:assert_credit_card!) }.to raise_error do |error|
+        expect(error).to be_a(Errors::ValidationError)
+        expect(error.code).to eq :credit_card_missing_external_id
+        expect(error.data).to match(credit_card_id: 'cc-1')
+      end
     end
 
     it 'raises an error if the credit card does not have a customer account' do
-      service.credit_card = { external_id: 'cc-1' }
-      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::OrderError, 'Credit card does not have customer')
+      service.credit_card = { id: 'cc-1', external_id: 'cc-1' }
+      expect { service.send(:assert_credit_card!) }.to raise_error do |error|
+        expect(error).to be_a(Errors::ValidationError)
+        expect(error.code).to eq :credit_card_missing_customer
+        expect(error.data).to match(credit_card_id: 'cc-1')
+      end
     end
 
     it 'raises an error if the credit card does not have a customer account external id' do
-      service.credit_card = { external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil }
-      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::OrderError, 'Credit card does not have customer')
+      service.credit_card = { id: 'cc-1', external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil }
+      expect { service.send(:assert_credit_card!) }.to raise_error do |error|
+        expect(error).to be_a(Errors::ValidationError)
+        expect(error.code).to eq :credit_card_missing_customer
+        expect(error.data).to match(credit_card_id: 'cc-1')
+      end
     end
 
     it 'raises an error if the card is deactivated' do
-      service.credit_card = { external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago }
-      expect { service.send(:assert_credit_card!) }.to raise_error(Errors::OrderError, 'Credit card is deactivated')
+      service.credit_card = { id: 'cc-1', external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago }
+      expect { service.send(:assert_credit_card!) }.to raise_error do |error|
+        expect(error).to be_a(Errors::ValidationError)
+        expect(error.code).to eq :credit_card_deactivated
+        expect(error.data).to match(credit_card_id: 'cc-1')
+      end
     end
   end
 end

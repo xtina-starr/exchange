@@ -33,8 +33,9 @@ describe Api::GraphqlController, type: :request do
               }
               ... on OrderWithMutationFailure {
                 error {
-                  description
                   code
+                  data
+                  type
                 }
               }
             }
@@ -54,7 +55,8 @@ describe Api::GraphqlController, type: :request do
       let(:partner_id) { 'another-partner-id' }
       it 'returns permission error' do
         response = client.execute(mutation, reject_order_input)
-        expect(response.data.reject_order.order_or_error.error.description).to include 'Not permitted'
+        expect(response.data.reject_order.order_or_error.error.type).to eq 'validation'
+        expect(response.data.reject_order.order_or_error.error.code).to eq 'not_found'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -65,7 +67,8 @@ describe Api::GraphqlController, type: :request do
       end
       it 'returns error' do
         response = client.execute(mutation, reject_order_input)
-        expect(response.data.reject_order.order_or_error.error.description).to include 'Invalid action on this pending order'
+        expect(response.data.reject_order.order_or_error.error.type).to eq 'validation'
+        expect(response.data.reject_order.order_or_error.error.code).to eq 'invalid_state'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -77,9 +80,9 @@ describe Api::GraphqlController, type: :request do
       it 'rejects the order' do
         response = client.execute(mutation, reject_order_input)
         expect(response.data.reject_order.order_or_error.order.id).to eq order.id.to_s
-        expect(response.data.reject_order.order_or_error.order.state).to eq 'REJECTED'
+        expect(response.data.reject_order.order_or_error.order.state).to eq 'CANCELED'
         expect(response.data.reject_order.order_or_error).not_to respond_to(:error)
-        expect(order.reload.state).to eq Order::REJECTED
+        expect(order.reload.state).to eq Order::CANCELED
         expect(order.transactions.last.external_id).to_not eq nil
         expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
       end

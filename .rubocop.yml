@@ -7,7 +7,7 @@ AllCops:
     - 'spec/support/gravity_helper.rb'
     - 'spec/support/taxjar_helper.rb'
     - 'app/admin/**'
-  
+
 Metrics/ParameterLists:
   Max: 7
 
@@ -37,6 +37,9 @@ Rails/TimeZone:
   Enabled: false
 
 Style/Documentation:
+  Enabled: false
+
+Style/MultilineBlockChain:
   Enabled: false
 
 Style/FrozenStringLiteralComment:

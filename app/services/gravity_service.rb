@@ -1,30 +1,28 @@
 module GravityService
   def self.fetch_partner(partner_id)
-    Rails.cache.fetch("gravity_partner_#{partner_id}", expire_in: Rails.application.config_for(:gravity)['partner_cache_in_seconds']) do
-      Adapters::GravityV1.get("/partner/#{partner_id}/all")
-    end
+    Adapters::GravityV1.get("/partner/#{partner_id}/all")
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Unable to find partner'
+    raise Errors::ValidationError.new(:unknown_partner, partner_id: partner_id)
   rescue Adapters::GravityError, StandardError => e
-    raise Errors::OrderError, e.message
+    raise Errors::ValidationError.new(:gravity_error, message: e.message)
   end
 
   def self.get_merchant_account(partner_id)
     merchant_account = Adapters::GravityV1.get('/merchant_accounts', params: { partner_id: partner_id }).first
-    raise Errors::OrderError, 'Partner does not have merchant account' if merchant_account.nil?
+    raise Errors::ValidationError.new(:missing_merchant_account, partner_id: partner_id) if merchant_account.nil?
     merchant_account
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Unable to find partner or merchant account'
+    raise Errors::ValidationError.new(:missing_merchant_account, partner_id: partner_id)
   rescue Adapters::GravityError, StandardError => e
-    raise Errors::OrderError, e.message
+    raise Errors::ValidationError.new(:gravity_error, message: e.message)
   end
 
   def self.get_credit_card(credit_card_id)
     Adapters::GravityV1.get("/credit_card/#{credit_card_id}")
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Credit card not found'
+    raise Errors::ValidationError.new(:credit_card_not_found, credit_card_id: credit_card_id)
   rescue Adapters::GravityError, StandardError => e
-    raise Errors::OrderError, e.message
+    raise Errors::ValidationError.new(:gravity_error, message: e.message)
   end
 
   def self.get_artwork(artwork_id)
@@ -36,9 +34,7 @@ module GravityService
 
   def self.fetch_partner_location(partner_id)
     partner = fetch_partner(partner_id)
-    location = Rails.cache.fetch("gravity_partner_location_#{partner[:billing_location_id]}", expire_in: Rails.application.config_for(:gravity)['partner_cache_in_seconds']) do
-      Adapters::GravityV1.get("/partner/#{partner_id}/location/#{partner[:billing_location_id]}")
-    end
+    location = Adapters::GravityV1.get("/partner/#{partner_id}/location/#{partner[:billing_location_id]}")
     location.slice(:address, :address_2, :city, :state, :country, :postal_code)
   end
 
@@ -49,9 +45,9 @@ module GravityService
       Adapters::GravityV1.put("/artwork/#{line_item.artwork_id}/inventory", params: { deduct: line_item.quantity })
     end
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Credit card not found'
-  rescue Adapters::GravityError => e
-    raise Errors::InventoryError.new(e.message, line_item)
+    raise Errors::ValidationError.new(:unknown_artwork, line_item_id: line_item.id)
+  rescue Adapters::GravityError
+    raise Errors::ValidationError.new(:insufficient_inventory, line_item_id: line_item.id)
   end
 
   def self.undeduct_inventory(line_item)
@@ -61,8 +57,8 @@ module GravityService
       Adapters::GravityV1.put("/artwork/#{line_item.artwork_id}/inventory", params: { undeduct: line_item.quantity })
     end
   rescue Adapters::GravityNotFoundError
-    raise Errors::OrderError, 'Credit card not found'
-  rescue Adapters::GravityError => e
-    raise Errors::InventoryError.new(e.message, line_item)
+    raise Errors::ValidationError.new(:unknown_artwork, line_item_id: line_item.id)
+  rescue Adapters::GravityError
+    raise Errors::ValidationError.new(:insufficient_inventory, line_item_id: line_item.id)
   end
 end

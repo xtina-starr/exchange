@@ -5,7 +5,7 @@ end
 
 class Mutations::OrderWithMutationFailure < Types::BaseObject
   description 'An error response for changes to an order'
-  field :error, Types::MutationErrorType, null: false
+  field :error, Types::ApplicationErrorType, null: false
 end
 
 class Mutations::OrderOrFailureUnionType < Types::BaseUnion
