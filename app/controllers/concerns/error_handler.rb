@@ -6,11 +6,11 @@ module ErrorHandler
       end
 
       rescue_from ActionController::ParameterMissing do |exception|
-        render json: { errors: [exception.param => 'is required'] }, status: :bad_request
+        render json: { errors: [Types::ApplicationErrorType.error_type(type: :validation, code: :missing_param, data: { field: exception.param })] }, status: :bad_request
       end
 
       rescue_from ActiveRecord::RecordNotFound do |exception|
-        render json: { errors: ['not found' => exception.to_s] }, status: :not_found
+        render json: { errors: [Types::ApplicationErrorType.error_type(type: :validation, code: :not_found, data: { message: exception.to_s })] }, status: :not_found
       end
 
       rescue_from Errors::AuthError do |exception|
