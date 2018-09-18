@@ -17,7 +17,12 @@ describe OrderSubmitService, type: :services do
   end
   let(:artwork1) { { _id: 'a-1', current_version_id: '1' } }
   let(:artwork2) { { _id: 'a-2', current_version_id: '1' } }
-  let!(:line_items) { [Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: artwork1[:_id], artwork_version_id: artwork1[:current_version_id], quantity: 1), Fabricate(:line_item, order: order, price_cents: 8000_00, artwork_id: artwork2[:_id], artwork_version_id: artwork2[:current_version_id], edition_set_id: 'es-1', quantity: 2)] }
+  let!(:line_items) do
+    [
+      Fabricate(:line_item, order: order, price_cents: 2000_00, artwork_id: artwork1[:_id], artwork_version_id: artwork1[:current_version_id], quantity: 1),
+      Fabricate(:line_item, order: order, price_cents: 8000_00, artwork_id: artwork2[:_id], artwork_version_id: artwork2[:current_version_id], edition_set_id: 'es-1', quantity: 2)
+    ]
+  end
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
   let(:partner_merchant_accounts) { [{ external_id: 'ma-1' }, { external_id: 'some_account' }] }
