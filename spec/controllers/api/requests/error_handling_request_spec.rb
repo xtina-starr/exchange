@@ -64,7 +64,7 @@ describe Api::GraphqlController, type: :request do
         allow(CreateOrderService).to receive(:with_artwork!).and_raise(ActiveRecord::RecordNotFound, 'cannot find')
         post '/api/graphql', params: { query: mutation, variables: { input: mutation_input } }, headers: auth_headers
       end
-      it 'returns 500' do
+      it 'returns 404' do
         expect(response.status).to eq 404
       end
       it 'returns formatted the error' do
@@ -82,7 +82,7 @@ describe Api::GraphqlController, type: :request do
         allow(CreateOrderService).to receive(:with_artwork!).and_raise(ActionController::ParameterMissing, 'id')
         post '/api/graphql', params: { query: mutation, variables: { input: mutation_input } }, headers: auth_headers
       end
-      it 'returns 500' do
+      it 'returns 400' do
         expect(response.status).to eq 400
       end
       it 'returns formatted the error' do
