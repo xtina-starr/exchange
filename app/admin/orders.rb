@@ -1,3 +1,5 @@
+require 'time_diff'
+
 ActiveAdmin.register Order do
   actions :all, except: %i[create update destroy new edit]
   config.sort_order = 'state_updated_at_desc'
@@ -7,20 +9,42 @@ ActiveAdmin.register Order do
   scope('Fulfillment Overdue') { |scope| scope.approved.where('state_expires_at < ?', Time.now) }
   scope('Pending & Abandoned Orders') { |scope| scope.where(state: [ Order::ABANDONED, Order::PENDING ]) }
 
+  filter :id_eq, label: 'Order Id'
   filter :seller_id_eq, label: 'Seller Id'
   filter :buyer_id_eq, label: 'Buyer Id'
+  filter :created_at, as: :date_range, label: 'Submitted Date'
   filter :fulfillment_type, as: :check_boxes, collection: proc { Order::FULFILLMENT_TYPES }
   filter :state, as: :check_boxes, collection: proc { Order::STATES }
 
   index do
     column :id
     column :state
-    column :items_total_cents
-    column :currency
     column :fulfillment_type
-    column :shipping_country
-    column :updated_at
-    column 'Fulfillment Deadline', :state_expires_at
+    # last admin-action
+    column 'Submitted At', :created_at
+    column 'Last Updated At', :updated_at
+    column 'Approval Countdown', (:order) do |order|
+      if order.state == Order::SUBMITTED
+        format_time order.state_expires_at
+      end
+    end
+    column 'Fulfillment Countdown', (:order) do |order|
+      if order.state == Order::APPROVED
+        format_time order.state_expires_at
+      end
+    end
+    column 'Total', (:order) do |order|
+       number_to_currency order.items_total_cents
+    end
+  end
+
+  show do
+    panel do
+      "Something here"
+    end
+    sidebar do
+      "Artist Name"
+    end
   end
 
 end

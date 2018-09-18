@@ -22,6 +22,7 @@ gem 'sentry-raven'
 gem 'sidekiq'
 gem 'stripe'
 gem 'taxjar-ruby', require: 'taxjar'
+gem 'time_diff'
 
 group :development, :test do
   gem 'byebug'

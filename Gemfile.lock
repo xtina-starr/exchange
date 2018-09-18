@@ -340,6 +340,9 @@ GEM
       unicode-display_width (~> 1.1, >= 1.1.1)
     thor (0.20.0)
     thread_safe (0.3.6)
+    time_diff (0.3.0)
+      activesupport
+      i18n
     timecop (0.9.1)
     tzinfo (1.2.5)
       thread_safe (~> 0.1)
@@ -385,6 +388,7 @@ DEPENDENCIES
   stripe
   stripe-ruby-mock (~> 2.5.4)
   taxjar-ruby
+  time_diff
   timecop
   webmock
 
