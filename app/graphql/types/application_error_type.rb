@@ -17,7 +17,7 @@ class Types::ApplicationErrorType < Types::BaseObject
   def self.from_exception(err)
     {
       code: :server,
-      data: { message: err.message }.to_json,
+      data: { message: err.message },
       type: :internal
     }
   end
