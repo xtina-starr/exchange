@@ -7,10 +7,18 @@ class Types::ApplicationErrorType < Types::BaseObject
   field :type, String, null: false, description: 'Type of this error'
 
   def self.from_application(err)
+    format_error_type(type: err.type, code: err.code, data: err.data)
+  end
+
+  def self.from_generic_exception(err)
+    format_error_type(type: :internal, code: :generic, data: { message: err.message })
+  end
+
+  def self.format_error_type(type:, code:, data: nil)
     {
-      code: err.code,
-      data: err.data.to_json,
-      type: err.type.to_s
+      code: code,
+      data: data,
+      type: type
     }
   end
 end
