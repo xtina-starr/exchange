@@ -4,7 +4,7 @@ module GravityService
   rescue Adapters::GravityNotFoundError
     raise Errors::ValidationError.new(:unknown_partner, partner_id: partner_id)
   rescue Adapters::GravityError, StandardError => e
-    raise Errors::ValidationError.new(:gravity_error, message: e.message)
+    raise Errors::InternalError.new(:gravity, message: e.message)
   end
 
   def self.get_merchant_account(partner_id)
@@ -14,7 +14,7 @@ module GravityService
   rescue Adapters::GravityNotFoundError
     raise Errors::ValidationError.new(:missing_merchant_account, partner_id: partner_id)
   rescue Adapters::GravityError, StandardError => e
-    raise Errors::ValidationError.new(:gravity_error, message: e.message)
+    raise Errors::InternalError.new(:gravity, message: e.message)
   end
 
   def self.get_credit_card(credit_card_id)
@@ -22,7 +22,7 @@ module GravityService
   rescue Adapters::GravityNotFoundError
     raise Errors::ValidationError.new(:credit_card_not_found, credit_card_id: credit_card_id)
   rescue Adapters::GravityError, StandardError => e
-    raise Errors::ValidationError.new(:gravity_error, message: e.message)
+    raise Errors::InternalError.new(:gravity, message: e.message)
   end
 
   def self.get_artwork(artwork_id)
@@ -49,7 +49,7 @@ module GravityService
   rescue Adapters::GravityNotFoundError
     raise Errors::ValidationError.new(:unknown_artwork, line_item_id: line_item.id)
   rescue Adapters::GravityError
-    raise Errors::ValidationError.new(:insufficient_inventory, line_item_id: line_item.id)
+    raise Errors::ProcessingError.new(:insufficient_inventory, line_item_id: line_item.id)
   end
 
   def self.undeduct_inventory(line_item)
@@ -61,6 +61,6 @@ module GravityService
   rescue Adapters::GravityNotFoundError
     raise Errors::ValidationError.new(:unknown_artwork, line_item_id: line_item.id)
   rescue Adapters::GravityError
-    raise Errors::ValidationError.new(:insufficient_inventory, line_item_id: line_item.id)
+    raise Errors::ProcessingError.new(:insufficient_inventory, line_item_id: line_item.id)
   end
 end

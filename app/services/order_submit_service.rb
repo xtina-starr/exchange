@@ -39,7 +39,7 @@ class OrderSubmitService
   private
 
   def pre_process!
-    raise Errors::ValidationError, :missing_info unless can_submit?
+    raise Errors::ValidationError, :missing_required_info unless can_submit?
     @credit_card = GravityService.get_credit_card(@order.credit_card_id)
     assert_credit_card!
     @partner = GravityService.fetch_partner(@order.seller_id)

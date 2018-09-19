@@ -47,11 +47,21 @@ describe OrderSubmitService, type: :services do
           edition_set_inventory_deduct_request
           artwork_inventory_undeduct_request
           edition_set_inventory_undeduct_request
+        end
+        it 'raises proper error response' do
           expect do
             service.process!
-          end.to raise_error(Errors::ValidationError).and change(order.transactions, :count).by(0)
+          end.to raise_error do |error|
+            expect(error).to be_a(Errors::ProcessingError)
+            expect(error.type).to eq :processing
+            expect(error.code).to eq :insufficient_inventory
+            expect(line_items.pluck(:id)).to include error.data[:line_item_id]
+          end
         end
         it 'does not call to update edition set inventory' do
+          expect do
+            service.process!
+          end.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(0)
           expect(artwork_inventory_deduct_request).to have_been_requested
           expect(edition_set_inventory_deduct_request).to_not have_been_requested
           expect(artwork_inventory_undeduct_request).not_to have_been_requested
@@ -67,7 +77,7 @@ describe OrderSubmitService, type: :services do
           edition_set_inventory_undeduct_request
           expect do
             service.process!
-          end.to raise_error(Errors::ValidationError).and change(order.transactions, :count).by(0)
+          end.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(0)
         end
         it 'deducts and then undeducts artwork inventory' do
           expect(artwork_inventory_deduct_request).to have_been_requested

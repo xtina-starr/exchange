@@ -101,7 +101,7 @@ describe Api::GraphqlController, type: :request do
         it 'returns error' do
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
-          expect(response.data.submit_order.order_or_error.error.code).to eq 'missing_info'
+          expect(response.data.submit_order.order_or_error.error.code).to eq 'missing_required_info'
           expect(response.data.submit_order.order_or_error.error.type).to eq 'validation'
           expect(order.reload.state).to eq Order::PENDING
         end
@@ -111,7 +111,7 @@ describe Api::GraphqlController, type: :request do
         it 'returns error' do
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
-          expect(response.data.submit_order.order_or_error.error.code).to eq 'missing_info'
+          expect(response.data.submit_order.order_or_error.error.code).to eq 'missing_required_info'
           expect(response.data.submit_order.order_or_error.error.type).to eq 'validation'
           expect(order.reload.state).to eq Order::PENDING
         end
