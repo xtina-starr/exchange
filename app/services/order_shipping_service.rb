@@ -2,7 +2,7 @@ class OrderShippingService
   def initialize(order, fulfillment_type:, shipping:)
     @order = order
     @fulfillment_type = fulfillment_type
-    @shipping_address = Address.new(shipping)
+    @shipping_address = Address.new(shipping) if @fulfillment_type == Order::SHIP
     @buyer_name = shipping[:name]
     @buyer_phone_number = shipping[:phone_number]
   end

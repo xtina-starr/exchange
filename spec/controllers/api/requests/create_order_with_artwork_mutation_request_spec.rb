@@ -152,6 +152,22 @@ describe Api::GraphqlController, type: :request do
           end
         end
       end
+
+      context 'with artwork price in unsupported currency' do
+        before do
+          expect(GravityService).to receive(:get_artwork).with(artwork_id).and_return(gravity_v1_artwork(price_currency: 'RIA'))
+        end
+        it 'returns error' do
+          expect do
+            response = client.execute(mutation, input: mutation_input.except(:editionSetId))
+            expect(response.data.create_order_with_artwork.order_or_error).not_to respond_to(:order)
+            expect(response.data.create_order_with_artwork.order_or_error.error).not_to be_nil
+
+            expect(response.data.create_order_with_artwork.order_or_error.error.type).to eq 'validation'
+            expect(response.data.create_order_with_artwork.order_or_error.error.code).to eq 'invalid_order'
+          end.to change(Order, :count).by(0)
+        end
+      end
     end
   end
 end

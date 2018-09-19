@@ -13,6 +13,7 @@ module Errors
       invalid_commission_rate
       invalid_seller_address
       invalid_state
+      invalid_order
       missing_artwork_location
       missing_commission_rate
       missing_country

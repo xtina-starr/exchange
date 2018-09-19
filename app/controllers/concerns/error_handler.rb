@@ -13,6 +13,10 @@ module ErrorHandler
         render json: { errors: [Types::ApplicationErrorType.format_error_type(type: :validation, code: :not_found, data: { message: exception.to_s })] }, status: :not_found
       end
 
+      rescue_from ActiveRecord::RecordInvalid do |exception|
+        render json: { errors: [Types::ApplicationErrorType.format_error_type(type: :validation, code: :invalid_order, data: { message: exception.message })] }
+      end
+
       rescue_from Errors::AuthError do |exception|
         render json: { errors: [Types::ApplicationErrorType.from_application(exception)] }, status: :unauthorized
       end
