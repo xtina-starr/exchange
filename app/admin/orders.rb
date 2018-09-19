@@ -36,14 +36,5 @@ ActiveAdmin.register Order do
     end
   end
 
-  show do
-    panel do
-      "Something here"
-    end
-    sidebar do
-      "Artist Name"
-    end
-  end
-
 end
 
