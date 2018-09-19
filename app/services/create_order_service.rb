@@ -25,6 +25,8 @@ module CreateOrderService
       OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
       order
     end
+  rescue ActiveRecord::RecordInvalid => e
+    raise Errors::ValidationError.new(:invalid_order, message: e.message)
   end
 
   def self.artwork_price(external_artwork, edition_set_id: nil)

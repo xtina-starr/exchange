@@ -213,11 +213,11 @@ describe Api::GraphqlController, type: :request do
           allow(GravityService).to receive(:fetch_partner_location).and_return(partner_location)
         end
         context 'with PICKUP as fulfillment type' do
+          let(:fulfillment_type) { 'PICKUP' }
           before do
             expect(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
             expect(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
           end
-          let(:fulfillment_type) { 'PICKUP' }
           it 'sets total shipping cents to 0' do
             response = client.execute(mutation, set_shipping_input)
             expect(response.data.set_shipping.order_or_error.order.shipping_total_cents).to eq 0

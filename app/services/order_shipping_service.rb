@@ -19,12 +19,12 @@ class OrderShippingService
           fulfillment_type: @fulfillment_type,
           buyer_phone_number: @buyer_phone_number,
           shipping_name: @buyer_name,
-          shipping_address_line1: @shipping_address.street_line1,
-          shipping_address_line2: @shipping_address.street_line2,
-          shipping_city: @shipping_address.city,
-          shipping_region: @shipping_address.region,
-          shipping_country: @shipping_address.country,
-          shipping_postal_code: @shipping_address.postal_code
+          shipping_address_line1: @shipping_address&.street_line1,
+          shipping_address_line2: @shipping_address&.street_line2,
+          shipping_city: @shipping_address&.city,
+          shipping_region: @shipping_address&.region,
+          shipping_country: @shipping_address&.country,
+          shipping_postal_code: @shipping_address&.postal_code
         )
       )
       OrderTotalUpdaterService.new(@order).update_totals!
