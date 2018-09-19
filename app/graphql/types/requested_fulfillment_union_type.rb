@@ -14,6 +14,7 @@ end
 
 class Types::Pickup < Types::BaseObject
   field :fulfillment_type, String, null: false
+
   def fulfillment_type
     Order::PICKUP
   end
