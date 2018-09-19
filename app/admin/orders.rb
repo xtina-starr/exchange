@@ -1,5 +1,3 @@
-require 'time_diff'
-
 ActiveAdmin.register Order do
   actions :all, except: %i[create update destroy new edit]
   config.sort_order = 'state_updated_at_desc'
