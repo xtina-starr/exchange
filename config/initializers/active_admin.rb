@@ -295,6 +295,10 @@ end
 module ActiveAdmin::ViewHelpers
   def format_time(time)
     now = Time.now
-    (if now > time then '-' end) + Time.diff(time, now, '%h:%m:%s')[:diff].to_s
+    if now > time
+      '-' + Time.diff(time, now, '%h:%m:%s')[:diff].to_s
+    else
+      Time.diff(time, now, '%h:%m:%s')[:diff].to_s
+    end
   end
 end
