@@ -20,7 +20,7 @@ describe OrderShippingService, type: :services do
       city: 'Whitechapel',
       region: 'London',
       postal_code: 'E1 8PY',
-      country: 'UK'
+      country: 'GB'
     }
   end
   let(:domestic_artwork_config) do
@@ -100,6 +100,19 @@ describe OrderShippingService, type: :services do
         expect { @service_domestic_shipping.send(:calculate_international_shipping_fee, artwork) }.to raise_error do |error|
           expect(error).to be_a(Errors::ValidationError)
           expect(error.code).to eq :missing_international_shipping_fee
+        end
+      end
+    end
+  end
+
+  describe '#tax_total_cents' do
+    context 'with an invalid artwork location' do
+      it 'rescues AddressError and raises ValidationError with a code of invalid_artwork_address' do
+        artwork[:region] = 'Floridada'
+        allow(GravityService).to receive(:get_artwork).and_return(artwork)
+        expect { @service_domestic_shipping.send(:tax_total_cents) }.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.code).to eq :invalid_artwork_address
         end
       end
     end

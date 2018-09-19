@@ -18,7 +18,7 @@ describe Api::GraphqlController, type: :request do
     let(:total_sales_tax) { 2222 }
     let(:phone_number) { '00123456789' }
     let(:partner) { { billing_location_id: '123abc' } }
-    let(:partner_location) { { address: '123 Main St', address_2: nil, city: 'New York', state: 'NY', country: 'US', postal_code: 10_001 } }
+    let(:partner_location) { Address.new(address_line1: '123 Main St', address_line2: nil, city: 'New York', state: 'NY', country: 'US', postal_code: 10_001) }
 
     let(:mutation) do
       <<-GRAPHQL
