@@ -2,7 +2,7 @@ module ErrorHandler
   def self.included(clazz)
     clazz.class_eval do
       rescue_from StandardError do |exception|
-        render json: { errors: [Types::ApplicationErrorType.from_exception(exception)] }, status: :internal_server_error
+        render json: { errors: [Types::ApplicationErrorType.from_generic_exception(exception)] }, status: :internal_server_error
       end
 
       rescue_from ActionController::ParameterMissing do |exception|

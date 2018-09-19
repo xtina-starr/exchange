@@ -54,7 +54,7 @@ describe Api::GraphqlController, type: :request do
         expect(result['errors']).not_to be_nil
         error = result['errors'].first
         expect(error['type']).to eq 'internal'
-        expect(error['code']).to eq 'server'
+        expect(error['code']).to eq 'generic'
         expect(error['data']['message']).to eq 'something went wrong'
       end
     end

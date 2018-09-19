@@ -10,8 +10,8 @@ class Types::ApplicationErrorType < Types::BaseObject
     format_error_type(type: err.type, code: err.code, data: err.data)
   end
 
-  def self.from_exception(err)
-    format_error_type(type: :internal, code: :server, data: { message: err.message })
+  def self.from_generic_exception(err)
+    format_error_type(type: :internal, code: :generic, data: { message: err.message })
   end
 
   def self.format_error_type(type:, code:, data: nil)
