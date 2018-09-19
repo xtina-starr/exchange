@@ -35,7 +35,9 @@ module GravityService
   def self.fetch_partner_location(partner_id)
     partner = fetch_partner(partner_id)
     location = Adapters::GravityV1.get("/partner/#{partner_id}/location/#{partner[:billing_location_id]}")
-    location.slice(:address, :address_2, :city, :state, :country, :postal_code)
+    Address.new(location.slice(:address, :address_2, :city, :state, :country, :postal_code))
+  rescue Errors::AddressError
+    raise Errors::ValidationError.new(:invalid_seller_address, partner_id: partner_id)
   end
 
   def self.deduct_inventory(line_item)
