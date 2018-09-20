@@ -33,6 +33,10 @@ class Types::QueryType < Types::BaseObject
       query.order(updated_at: :asc)
     when 'UPDATED_AT_DESC'
       query.order(updated_at: :desc)
+    when 'STATE_UPDATED_AT_ASC'
+      query.order(state_updated_at: :asc)
+    when 'STATE_UPDATED_AT_DESC'
+      query.order(state_updated_at: :desc)
     else
       query
     end

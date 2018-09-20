@@ -94,6 +94,20 @@ describe Api::GraphqlController, type: :request do
         ids = ids_from_result_data(result)
         expect(ids).to eq([user1_order2.id, user1_order1.id])
       end
+
+      it 'sorts by state_updated_at in ascending order' do
+        user1_order1.update!(state_updated_at: Time.now)
+        result = client.execute(query, buyerId: user_id, sort: 'STATE_UPDATED_AT_ASC')
+        ids = ids_from_result_data(result)
+        expect(ids).to eq([user1_order2.id, user1_order1.id])
+      end
+
+      it 'sorts by state_updated_at in descending order' do
+        user1_order1.update!(state_updated_at: Time.now)
+        result = client.execute(query, buyerId: user_id, sort: 'STATE_UPDATED_AT_DESC')
+        ids = ids_from_result_data(result)
+        expect(ids).to eq([user1_order1.id, user1_order2.id])
+      end
     end
 
     context 'trusted user rules' do
