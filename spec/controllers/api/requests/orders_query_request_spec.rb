@@ -1,5 +1,10 @@
 require 'rails_helper'
 
+def ids_from_result_data(result)
+  nodes = result.data.orders.edges.map(&:node)
+  nodes.map(&:id).map(&:to_i)
+end
+
 describe Api::GraphqlController, type: :request do
   describe 'orders query' do
     include_context 'GraphQL Client'
@@ -63,27 +68,31 @@ describe Api::GraphqlController, type: :request do
         end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
       end
       it 'returns partners orders' do
-        results = client.execute(query, sellerId: partner_id)
-        expect(results.data.orders.edges.count).to eq 2
-        expect(results.data.orders.edges.map(&:node).map(&:id)).to match_array([user1_order1.id, user2_order1.id].map(&:to_s))
+        result = client.execute(query, sellerId: partner_id)
+        expect(result.data.orders.edges.count).to eq 2
+        ids = ids_from_result_data(result)
+        expect(ids).to match_array([user1_order1.id, user2_order1.id])
       end
     end
 
     context 'query with buyerId' do
       it 'returns buyers orders' do
-        results = client.execute(query, buyerId: user_id)
-        expect(results.data.orders.edges.count).to eq 2
-        expect(results.data.orders.edges.map(&:node).map(&:id)).to match_array([user1_order1.id, user1_order2.id].map(&:to_s))
+        result = client.execute(query, buyerId: user_id)
+        expect(result.data.orders.edges.count).to eq 2
+        ids = ids_from_result_data(result)
+        expect(ids).to match_array([user1_order1.id, user1_order2.id])
       end
 
       it 'sorts by updated_at in ascending order' do
-        results = client.execute(query, buyerId: user_id, sort: 'UPDATED_AT_ASC')
-        expect(results.data.orders.edges.map(&:node).map(&:id).map(&:to_i)).to eq([user1_order1.id, user1_order2.id])
+        result = client.execute(query, buyerId: user_id, sort: 'UPDATED_AT_ASC')
+        ids = ids_from_result_data(result)
+        expect(ids).to eq([user1_order1.id, user1_order2.id])
       end
 
       it 'sorts by updated_at in descending order' do
-        results = client.execute(query, buyerId: user_id, sort: 'UPDATED_AT_DESC')
-        expect(results.data.orders.edges.map(&:node).map(&:id).map(&:to_i)).to eq([user1_order2.id, user1_order1.id])
+        result = client.execute(query, buyerId: user_id, sort: 'UPDATED_AT_DESC')
+        ids = ids_from_result_data(result)
+        expect(ids).to eq([user1_order2.id, user1_order1.id])
       end
     end
 
@@ -119,9 +128,10 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'returns expected payload' do
-        results = client.execute(query, buyerId: second_user)
-        expect(results.data.orders.edges.count).to eq 1
-        expect(results.data.orders.edges.map(&:node).map(&:id)).to match_array([user2_order1.id].map(&:to_s))
+        result = client.execute(query, buyerId: second_user)
+        expect(result.data.orders.edges.count).to eq 1
+        ids = ids_from_result_data(result)
+        expect(ids).to match_array([user2_order1.id])
       end
     end
 
