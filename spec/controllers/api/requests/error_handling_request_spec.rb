@@ -53,9 +53,10 @@ describe Api::GraphqlController, type: :request do
         result = JSON.parse(response.body)
         expect(result['errors']).not_to be_nil
         error = result['errors'].first
-        expect(error['type']).to eq 'internal'
-        expect(error['code']).to eq 'generic'
-        expect(error['data']['message']).to eq 'something went wrong'
+        expect(error['message']).to eq 'something went wrong'
+        expect(error['extensions']['type']).to eq 'internal'
+        expect(error['extensions']['code']).to eq 'generic'
+        expect(error['extensions']['data']['message']).to eq 'something went wrong'
       end
     end
 
@@ -71,9 +72,10 @@ describe Api::GraphqlController, type: :request do
         result = JSON.parse(response.body)
         expect(result['errors']).not_to be_nil
         error = result['errors'].first
-        expect(error['type']).to eq 'validation'
-        expect(error['code']).to eq 'not_found'
-        expect(error['data']['message']).to eq 'cannot find'
+        expect(error['message']).to eq 'type: validation, code: not_found, data: {:message=>"cannot find"}'
+        expect(error['extensions']['type']).to eq 'validation'
+        expect(error['extensions']['code']).to eq 'not_found'
+        expect(error['extensions']['data']['message']).to eq 'cannot find'
       end
     end
 

@@ -23,7 +23,7 @@ class OrderSubmitService
         deducted_inventory << li
       end
       @transaction = PaymentService.authorize_charge(construct_charge_params)
-      raise Errors::ProcessingError.new(:failed_charge_authorization, @transaction) if @transaction.failed?
+      raise Errors::ProcessingError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
     end
     @order.update!(external_charge_id: @transaction.external_id)
     post_process!
@@ -39,11 +39,11 @@ class OrderSubmitService
   private
 
   def pre_process!
+    raise Errors::ValidationError, :missing_required_info unless can_submit?
     @order.line_items.map do |li|
       artwork = GravityService.get_artwork(li[:artwork_id])
-      raise Errors::ProcessingError, :artwork_version_missmatch if artwork[:current_version_id] != li[:artwork_version_id]
+      raise Errors::ProcessingError, :artwork_version_mismatch if artwork[:current_version_id] != li[:artwork_version_id]
     end
-    raise Errors::ValidationError, :missing_info unless can_submit?
     @credit_card = GravityService.get_credit_card(@order.credit_card_id)
     assert_credit_card!
     @partner = GravityService.fetch_partner(@order.seller_id)

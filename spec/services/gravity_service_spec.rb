@@ -77,7 +77,11 @@ describe GravityService, type: :services do
 
     it 'raises an error if the partner does not have a merchant account' do
       allow(Adapters::GravityV1).to receive(:get).with('/merchant_accounts', params: { partner_id: partner_id }).and_return([])
-      expect { GravityService.get_merchant_account(partner_id) }.to raise_error(Errors::ValidationError)
+      expect { GravityService.get_merchant_account(partner_id) }.to raise_error do |error|
+        expect(error).to be_a(Errors::InternalError)
+        expect(error.type).to eq :internal
+        expect(error.code).to eq :gravity
+      end
     end
 
     context 'with failed gravity call' do
