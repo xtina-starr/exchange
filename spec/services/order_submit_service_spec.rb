@@ -159,7 +159,7 @@ describe OrderSubmitService, type: :services do
           expect(OrderFollowUpJob).not_to receive(:perform_later)
           expect { service.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ProcessingError)
-            expect(error.code).to eq :failed_charge_authorization
+            expect(error.code).to eq :charge_authorization_failed
             expect(error.data[:failure_code]).to eq 'card_declined'
           end
         end

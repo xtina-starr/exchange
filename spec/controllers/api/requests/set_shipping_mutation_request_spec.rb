@@ -106,6 +106,34 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
+      context 'with partner missing billing location' do
+        before do
+          allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+          allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
+        end
+        context 'without partner location' do
+          before do
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(billing_location_id: nil)
+          end
+          it 'returns proper error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_partner_location'
+          end
+        end
+        context 'with unknown/deleted partner location' do
+          before do
+            expect(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(billing_location_id: 'random-location')
+            expect(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/location/random-location").and_raise(Adapters::GravityNotFoundError)
+          end
+          it 'returns proper error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_partner_location'
+          end
+        end
+      end
+
       context 'without passing phone number' do
         let(:phone_number) { nil }
         it 'fails' do

@@ -23,7 +23,7 @@ class OrderSubmitService
         deducted_inventory << li
       end
       @transaction = PaymentService.authorize_charge(construct_charge_params)
-      raise Errors::ProcessingError.new(:failed_charge_authorization, @transaction) if @transaction.failed?
+      raise Errors::ProcessingError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
     end
     @order.update!(external_charge_id: @transaction.external_id)
     post_process!

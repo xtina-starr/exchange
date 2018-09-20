@@ -15,6 +15,7 @@ module Errors
       invalid_state
       invalid_order
       missing_artwork_location
+      missing_partner_location
       missing_commission_rate
       missing_country
       missing_currency
@@ -33,7 +34,7 @@ module Errors
     ],
     processing: %i[
       capture_failed
-      failed_charge_authorization
+      charge_authorization_failed
       insufficient_inventory
       refund_failed
     ],
