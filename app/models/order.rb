@@ -52,6 +52,7 @@ class Order < ApplicationRecord
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
   has_many :transactions, dependent: :destroy
   has_many :state_histories, dependent: :destroy
+  has_many :admin_notes, dependent: :destroy
 
   before_validation { self.currency_code = currency_code.upcase if currency_code.present? }
 
@@ -102,6 +103,16 @@ class Order < ApplicationRecord
   def last_approved_at
     get_last_state_timestamp(Order::APPROVED)
   end
+
+  def last_admin_note
+    admin_notes.order(:updated_at).last
+  end
+
+# def self. 
+
+# ransacker :last_admin_note, proc { |note_type| 
+# } do |parent|
+# end
 
   private
 

@@ -1,5 +1,6 @@
 ActiveAdmin.register Order do
   actions :all, except: %i[create update destroy new edit]
+  # TODO: change sort order
   config.sort_order = 'state_updated_at_desc'
 
   scope('Active Orders', default: true) { |scope| scope.active }
@@ -13,12 +14,14 @@ ActiveAdmin.register Order do
   filter :created_at, as: :date_range, label: 'Submitted Date'
   filter :fulfillment_type, as: :check_boxes, collection: proc { Order::FULFILLMENT_TYPES }
   filter :state, as: :check_boxes, collection: proc { Order::STATES }
+  filter :state_reason, as: :check_boxes, collection: proc { Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize) }
+  filter :last_admin_note_cont, as: :check_boxes, collection: proc { AdminNote::TYPES }
 
   index do
     column :id
     column :state
     column :fulfillment_type
-    # last admin-action
+    column :last_admin_note
     column 'Submitted At', :created_at
     column 'Last Updated At', :updated_at
     column 'Approval Countdown', (:order) do |order|
