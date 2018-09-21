@@ -26,12 +26,12 @@ ActiveAdmin.register Order do
     column 'Last Updated At', :updated_at
     column 'Approval Countdown', (:order) do |order|
       if order.state == Order::SUBMITTED
-        format_time order.state_expires_at
+        order.state_expires_at
       end
     end
     column 'Fulfillment Countdown', (:order) do |order|
       if order.state == Order::APPROVED
-        format_time order.state_expires_at
+        order.state_expires_at
       end
     end
     column 'Total', (:order) do |order|
