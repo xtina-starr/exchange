@@ -291,14 +291,3 @@ ActiveAdmin.setup do |config|
   #
   # config.order_clause = MyOrderClause
 end
-
-module ActiveAdmin::ViewHelpers
-  def format_time(time)
-    now = Time.now
-    if now > time
-      '-' + Time.diff(time, now, '%h:%m:%s')[:diff].to_s
-    else
-      Time.diff(time, now, '%h:%m:%s')[:diff].to_s
-    end
-  end
-end
