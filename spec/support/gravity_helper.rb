@@ -153,7 +153,7 @@ def gravity_v1_artwork(options={})
     feature_eligible: false,
     price_currency: 'USD',
     inquireable: true,
-    acquireable: false,
+    acquireable: true,
     published_at: '2015-01-08T19:29:54+00:00',
     deleted_at: nil,
     publisher: nil,

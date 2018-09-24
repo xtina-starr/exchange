@@ -81,7 +81,7 @@ describe CreateOrderService, type: :services do
     end
     context 'with disabled ecommerce artwork' do
       before do
-        expect(Adapters::GravityV1).to receive(:get).and_return(gravity_v1_artwork(ecommerce: false))
+        expect(Adapters::GravityV1).to receive(:get).and_return(gravity_v1_artwork(acquireable: false))
       end
       it 'raises error' do
         expect { CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'random-artwork', quantity: 2) }.to raise_error do |error|
