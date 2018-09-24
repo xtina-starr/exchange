@@ -132,7 +132,7 @@ def gravity_v1_artwork(options={})
     series: '',
     availability: 'for sale',
     availability_hidden: false,
-    ecommerce: nil,
+    ecommerce: true,
     tags: [],
     width: '30 1/2',
     height: '44',

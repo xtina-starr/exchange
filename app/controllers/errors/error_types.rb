@@ -8,14 +8,14 @@ module Errors
       credit_card_missing_customer
       credit_card_missing_external_id
       credit_card_not_found
+      disabled_ecommerce
       failed_order_code_generation
       invalid_artwork_address
       invalid_commission_rate
+      invalid_order
       invalid_seller_address
       invalid_state
-      invalid_order
       missing_artwork_location
-      missing_partner_location
       missing_commission_rate
       missing_country
       missing_currency
@@ -23,6 +23,7 @@ module Errors
       missing_international_shipping_fee
       missing_merchant_account
       missing_params
+      missing_partner_location
       missing_postal_code
       missing_price
       missing_region
@@ -31,6 +32,7 @@ module Errors
       unknown_artwork
       unknown_edition_set
       unknown_partner
+      unpublished_artwork
     ],
     processing: %i[
       capture_failed

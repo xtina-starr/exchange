@@ -2,6 +2,8 @@ module CreateOrderService
   def self.with_artwork!(user_id:, artwork_id:, edition_set_id: nil, quantity:)
     artwork = GravityService.get_artwork(artwork_id)
     raise Errors::ValidationError.new(:unknown_artwork, artwork_id: artwork_id) if artwork.nil? || (edition_set_id && !find_edition_set(artwork, edition_set_id))
+    raise Errors::ValidationError.new(:unpublished_artwork, artwork_id: artwork_id) unless artwork[:published]
+    raise Errors::ValidationError.new(:disabled_ecommerce, artwork_id: artwork_id) unless artwork[:ecommerce]
 
     Order.transaction do
       order = Order.create!(
