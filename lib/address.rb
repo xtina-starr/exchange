@@ -30,12 +30,14 @@ class Address
 
   def parse_region(country, region)
     return region unless country&.code == Carmen::Country.coded('US').code || country&.code == Carmen::Country.coded('CA').code
+
     parsed_region = country.subregions.named(region) || country.subregions.coded(region)
     parsed_region&.code
   end
 
   def validate!
     raise Errors::AddressError, :missing_country if @address[:country].nil?
+
     validate_us_address! if @address[:country] == Carmen::Country.coded('US').code
     validate_ca_address! if @address[:country] == Carmen::Country.coded('CA').code
   end

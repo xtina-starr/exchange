@@ -53,7 +53,10 @@ describe Api::GraphqlController, type: :request do
         it 'requires artwork id' do
           expect do
             client.execute(mutation, input: { quantity: 1 })
-          end.to raise_error(Graphlient::Errors::GraphQLError, /artworkId: Expected value to not be null/)
+          end.to raise_error do |error|
+            expect(error).to be_a(Graphlient::Errors::GraphQLError)
+            expect(error.message).to match(/artworkId: Expected value to not be null/)
+          end
         end
       end
 

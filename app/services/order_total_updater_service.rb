@@ -2,11 +2,13 @@ class OrderTotalUpdaterService
   def initialize(order, commission_rate = nil)
     @order = order
     raise Errors::ValidationError, :invalid_commission_rate if commission_rate.present? && (commission_rate > 1 || commission_rate.negative?)
+
     @commission_rate = commission_rate
   end
 
   def update_totals!
     raise Errors::ValidationError.new('Missing price info on line items', 'd2e1cc') if @order.line_items.any? { |li| li.price_cents.nil? }
+
     @order.items_total_cents = @order.line_items.map(&:total_amount_cents).sum
     @order.buyer_total_cents = @order.items_total_cents + @order.shipping_total_cents.to_i + @order.tax_total_cents.to_i
     @order.commission_fee_cents = calculate_commission_fee if @commission_rate.present?
@@ -27,6 +29,7 @@ class OrderTotalUpdaterService
 
   def calculate_transaction_fee
     return 0 unless @order.buyer_total_cents.positive?
+
     # This is based on Stripe US fee, it will be different for other countries
     # https://stripe.com/us/pricing
     (Money.new(@order.buyer_total_cents * 2.9 / 100, 'USD') + Money.new(30, 'USD')).cents

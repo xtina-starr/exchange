@@ -35,6 +35,7 @@ class SalesTaxService
 
   def artsy_should_remit_taxes?
     return false unless destination_address.country == Carmen::Country.coded('US').code
+
     REMITTING_STATES.include? destination_address.region.downcase
   end
 

@@ -1,6 +1,7 @@
 module OrderService
   def self.set_payment!(order, credit_card_id)
     raise Errors::ValidationError.new(:invalid_state, state: order.state) unless order.state == Order::PENDING
+
     order.update!(credit_card_id: credit_card_id)
     order
   end

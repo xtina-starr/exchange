@@ -40,6 +40,7 @@ class OrderSubmitService
 
   def pre_process!
     raise Errors::ValidationError, :missing_required_info unless can_submit?
+
     @order.line_items.map do |li|
       artwork = GravityService.get_artwork(li[:artwork_id])
       raise Errors::ProcessingError, :artwork_version_mismatch if artwork[:current_version_id] != li[:artwork_version_id]
@@ -48,6 +49,7 @@ class OrderSubmitService
     assert_credit_card!
     @partner = GravityService.fetch_partner(@order.seller_id)
     raise Errors::ValidationError.new(:missing_commission_rate, partner_id: @partner[:id]) if @partner[:effective_commission_rate].blank?
+
     @merchant_account = GravityService.get_merchant_account(@order.seller_id)
     OrderTotalUpdaterService.new(@order, @partner[:effective_commission_rate]).update_totals!
   end
