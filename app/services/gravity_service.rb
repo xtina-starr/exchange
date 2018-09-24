@@ -10,6 +10,7 @@ module GravityService
   def self.get_merchant_account(partner_id)
     merchant_account = Adapters::GravityV1.get('/merchant_accounts', params: { partner_id: partner_id }).first
     raise Errors::ValidationError.new(:missing_merchant_account, partner_id: partner_id) if merchant_account.nil?
+
     merchant_account
   rescue Adapters::GravityNotFoundError
     raise Errors::ValidationError.new(:missing_merchant_account, partner_id: partner_id)
@@ -35,6 +36,7 @@ module GravityService
   def self.fetch_partner_location(partner_id)
     partner = fetch_partner(partner_id)
     raise Errors::ValidationError.new(:missing_partner_location, partner_id: partner_id) if partner[:billing_location_id].blank?
+
     location = Adapters::GravityV1.get("/partner/#{partner_id}/location/#{partner[:billing_location_id]}")
     Address.new(location.slice(:address, :address_2, :city, :state, :country, :postal_code))
   rescue Errors::AddressError

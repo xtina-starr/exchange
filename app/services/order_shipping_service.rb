@@ -9,6 +9,7 @@ class OrderShippingService
 
   def process!
     raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
+
     Order.transaction do
       attrs = {
         shipping_total_cents: shipping_total_cents,

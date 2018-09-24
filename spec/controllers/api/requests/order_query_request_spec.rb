@@ -67,7 +67,13 @@ describe Api::GraphqlController, type: :request do
       it 'returns permission error when query for orders by user not in jwt' do
         expect do
           client.execute(query, id: user2_order1.id)
-        end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
+        end.to raise_error do |error|
+          expect(error).to be_a(Graphlient::Errors::ServerError)
+          expect(error.message).to eq 'the server responded with status 401'
+          expect(error.status_code).to eq 401
+          expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
+          expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
+        end
       end
 
       it 'returns order when accessing correct order' do
@@ -129,7 +135,13 @@ describe Api::GraphqlController, type: :request do
         it 'raises error' do
           expect do
             client.execute(query, id: user2_order1.id)
-          end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
+          end.to raise_error do |error|
+            expect(error).to be_a(Graphlient::Errors::ServerError)
+            expect(error.message).to eq 'the server responded with status 401'
+            expect(error.status_code).to eq 401
+            expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
+            expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
+          end
         end
       end
 

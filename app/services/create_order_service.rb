@@ -34,12 +34,15 @@ module CreateOrderService
       if edition_set_id
         edition_set = find_edition_set(external_artwork, edition_set_id)
         raise Errors::ValidationError.new(:unknown_edition_set, artwork_id: external_artwork[:id], edition_set_id: edition_set_id) unless edition_set
+
         edition_set
       else
         external_artwork
       end
     raise Errors::ValidationError, :missing_price unless item[:price_listed]&.positive?
+
     raise Errors::ValidationError, :missing_currency if item[:price_currency].blank?
+
     # TODO: 🚨 update gravity to expose amount in cents and remove this duplicate logic
     # https://github.com/artsy/gravity/blob/65e398e3648d61175e7a8f4403a2d379b5aa2107/app/models/util/for_sale.rb#L221
     UnitConverter.convert_dollars_to_cents(item[:price_listed])

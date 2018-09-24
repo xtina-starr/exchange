@@ -58,14 +58,26 @@ describe Api::GraphqlController, type: :request do
     it 'returns error when missing both buyerId and sellerId' do
       expect do
         client.execute(query, state: 'PENDING')
-      end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 400')
+      end.to raise_error do |error|
+        expect(error).to be_a(Graphlient::Errors::ServerError)
+        expect(error.message).to eq 'the server responded with status 400'
+        expect(error.status_code).to eq 400
+        expect(error.response['errors'].first['extensions']['code']).to eq 'missing_params'
+        expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
+      end
     end
 
     context 'query with sellerId' do
       it 'returns permission error when query for sellerId not in jwt' do
         expect do
           client.execute(query, sellerId: 'someone-elses-partnerid')
-        end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
+        end.to raise_error do |error|
+          expect(error).to be_a(Graphlient::Errors::ServerError)
+          expect(error.message).to eq 'the server responded with status 401'
+          expect(error.status_code).to eq 401
+          expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
+          expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
+        end
       end
       it 'returns partners orders' do
         result = client.execute(query, sellerId: partner_id)
@@ -127,7 +139,13 @@ describe Api::GraphqlController, type: :request do
         it 'raises error' do
           expect do
             client.execute(query, buyerId: 'someone-elses-userid')
-          end.to raise_error(Graphlient::Errors::ServerError, 'the server responded with status 401')
+          end.to raise_error do |error|
+            expect(error).to be_a(Graphlient::Errors::ServerError)
+            expect(error.message).to eq 'the server responded with status 401'
+            expect(error.status_code).to eq 401
+            expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
+            expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
+          end
         end
       end
     end

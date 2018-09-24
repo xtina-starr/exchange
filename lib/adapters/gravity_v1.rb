@@ -16,8 +16,10 @@ module Adapters
 
     def self.process(response)
       raise GravityNotFoundError if response.status == 404
+
       results = JSON.parse(response.body, symbolize_names: true)
       raise GravityError, "Couldn't perform request! status: #{response.status}. Message: #{results[:message]}" unless response.success?
+
       results
     end
 

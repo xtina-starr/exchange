@@ -7,6 +7,7 @@ class ArtsyAuthToken
 
   def admin?
     return false unless @decoded_token
+
     @decoded_token['roles'].include? ADMIN_ROLE
   end
 
