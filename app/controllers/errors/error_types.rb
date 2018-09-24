@@ -8,7 +8,6 @@ module Errors
       credit_card_missing_customer
       credit_card_missing_external_id
       credit_card_not_found
-      disabled_ecommerce
       failed_order_code_generation
       invalid_artwork_address
       invalid_commission_rate
@@ -28,6 +27,7 @@ module Errors
       missing_price
       missing_region
       missing_required_info
+      not_acquireable
       not_found
       unknown_artwork
       unknown_edition_set

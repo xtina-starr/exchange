@@ -86,7 +86,7 @@ describe CreateOrderService, type: :services do
       it 'raises error' do
         expect { CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'random-artwork', quantity: 2) }.to raise_error do |error|
           expect(error).to be_a(Errors::ValidationError)
-          expect(error.code).to eq :disabled_ecommerce
+          expect(error.code).to eq :not_acquireable
           expect(error.type).to eq :validation
         end
       end
