@@ -1,5 +1,5 @@
 class SalesTaxService
-  REMITTING_STATES = %w[wa nj pa].freeze
+  REMITTING_STATES = %w[wa pa].freeze
 
   def initialize(
     line_item,

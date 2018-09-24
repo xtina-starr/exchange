@@ -37,7 +37,7 @@ describe SalesTaxService, type: :services do
   describe '#initialize' do
     context 'with a destination address in a remitting state' do
       it 'sets shipping_total_cents to the passed in value' do
-        shipping[:region] = 'NJ'
+        shipping[:region] = 'WA'
         service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location)
         expect(service.instance_variable_get(:@shipping_total_cents)).to eq shipping_total_cents
       end
@@ -178,16 +178,16 @@ describe SalesTaxService, type: :services do
 
   describe '#artsy_should_remit_taxes?' do
     context 'with an order that has a US-based destination address' do
-      context 'with a state of WA, NJ or PA' do
+      context 'with a state of WA or PA' do
         it 'returns true' do
-          %w[wa nj pa].each do |state|
+          %w[wa pa].each do |state|
             shipping[:region] = state
             service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location)
             expect(service.send(:artsy_should_remit_taxes?)).to be true
           end
         end
       end
-      context 'with a state other than WA, NJ or PA' do
+      context 'with a state other than WA or PA' do
         it 'returns false' do
           expect(@service_ship.send(:artsy_should_remit_taxes?)).to be false
         end
