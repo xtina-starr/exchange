@@ -67,6 +67,30 @@ describe CreateOrderService, type: :services do
         end
       end
     end
+    context 'with unpublished artwork' do
+      before do
+        expect(Adapters::GravityV1).to receive(:get).and_return(gravity_v1_artwork(published: false))
+      end
+      it 'raises error' do
+        expect { CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'random-artwork', quantity: 2) }.to raise_error do |error|
+          expect(error).to be_a(Errors::ValidationError)
+          expect(error.code).to eq :unpublished_artwork
+          expect(error.type).to eq :validation
+        end
+      end
+    end
+    context 'with disabled ecommerce artwork' do
+      before do
+        expect(Adapters::GravityV1).to receive(:get).and_return(gravity_v1_artwork(acquireable: false))
+      end
+      it 'raises error' do
+        expect { CreateOrderService.with_artwork!(user_id: user_id, artwork_id: 'random-artwork', quantity: 2) }.to raise_error do |error|
+          expect(error).to be_a(Errors::ValidationError)
+          expect(error.code).to eq :not_acquireable
+          expect(error.type).to eq :validation
+        end
+      end
+    end
   end
 
   describe '#artwork_price' do
