@@ -17,7 +17,7 @@ module ErrorHandler
         render json: { errors: [Types::ApplicationErrorType.root_level_from_application_error(exception)] }, status: :unauthorized
       end
 
-      rescue_from ::Errors::ValidationError do |exception|
+      rescue_from Errors::ValidationError do |exception|
         render json: { errors: [Types::ApplicationErrorType.root_level_from_application_error(exception)] }, status: :bad_request
       end
     end

@@ -136,6 +136,24 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
+      context 'with artwork version mismatch' do
+        let(:artwork) { { _id: 'a-1', current_version_id: '2' } }
+        before do
+          allow(GravityService).to receive(:get_artwork).and_return(artwork)
+        end
+        it 'raises processing error' do
+          expect(GravityService).not_to receive(:deduct_inventory)
+          expect(GravityService).not_to receive(:get_merchant_account)
+          expect(GravityService).not_to receive(:get_credit_card)
+          expect(Adapters::GravityV1).not_to receive(:get).with("/partner/#{partner_id}/all")
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
+          expect(response.data.submit_order.order_or_error.error.code).to eq 'artwork_version_mismatch'
+          expect(response.data.submit_order.order_or_error.error.type).to eq 'processing'
+          expect(order.reload.state).to eq Order::PENDING
+        end
+      end
+
       it 'submits the order' do
         inventory_request = stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json)
         expect(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
