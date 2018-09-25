@@ -35,6 +35,7 @@ module Errors
       unpublished_artwork
     ],
     processing: %i[
+      artwork_version_mismatch
       capture_failed
       charge_authorization_failed
       insufficient_inventory
