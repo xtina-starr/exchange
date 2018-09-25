@@ -53,3 +53,7 @@ Style/AsciiComments:
 
 Style/NumericLiterals:
   Enabled: false
+
+Lint/UselessComparison:
+  Exclude:
+    - 'spec/lib/address_spec.rb'
