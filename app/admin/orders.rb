@@ -24,18 +24,12 @@ ActiveAdmin.register Order do
     column :last_admin_note
     column 'Submitted At', :created_at
     column 'Last Updated At', :updated_at
-    column 'Approval Countdown', (:order) do |order|
-      if order.state == Order::SUBMITTED
-        order.state_expires_at
-      end
-    end
-    column 'Fulfillment Countdown', (:order) do |order|
-      if order.state == Order::APPROVED
-        order.state_expires_at
-      end
-    end
-    column 'Total', (:order) do |order|
+    column :state_expires_at
+    column 'Items Total', (:order) do |order|
        number_to_currency order.items_total_cents
+    end
+    column 'Buyer Total', (:order) do |order|
+       number_to_currency order.buyer_total_cents
     end
   end
 

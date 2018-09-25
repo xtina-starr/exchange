@@ -104,8 +104,8 @@ class Order < ApplicationRecord
     get_last_state_timestamp(Order::APPROVED)
   end
 
-  ransacker :last_admin_note do
-    Arel.sql('select * from admin_notes where order_id=id order by updated_at desc limit 1')
+  def last_admin_note
+    admin_notes.order(id: :desc).first
   end
 
   private
