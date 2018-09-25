@@ -104,10 +104,6 @@ class Order < ApplicationRecord
     get_last_state_timestamp(Order::APPROVED)
   end
 
-  def last_admin_note
-    admin_notes.order(id: :desc).first
-  end
-
   private
 
   def state_reason_inclusion
