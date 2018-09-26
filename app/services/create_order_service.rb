@@ -1,46 +1,59 @@
-module CreateOrderService
-  def self.with_artwork!(user_id:, artwork_id:, edition_set_id: nil, quantity:)
-    artwork = GravityService.get_artwork(artwork_id)
-    raise Errors::ValidationError.new(:unknown_artwork, artwork_id: artwork_id) if artwork.nil? || (edition_set_id && !find_edition_set(artwork, edition_set_id))
-    raise Errors::ValidationError.new(:unpublished_artwork, artwork_id: artwork_id) unless artwork[:published]
-    raise Errors::ValidationError.new(:not_acquireable, artwork_id: artwork_id) unless artwork[:acquireable]
+class CreateOrderService
+  attr_reader :order
+
+  def initialize(user_id:, artwork_id:, edition_set_id: nil, quantity:)
+    @user_id = user_id
+    @artwork_id = artwork_id
+    @edition_set_id = edition_set_id
+    @quantity = quantity
+    @edition_set = nil
+    @order = nil
+  end
+
+  def process!
+    pre_process!
 
     Order.transaction do
-      order = Order.create!(
-        buyer_id: user_id,
+      @order = Order.create!(
+        buyer_id: @user_id,
         buyer_type: Order::USER,
-        seller_id: artwork[:partner][:_id],
+        seller_id: @artwork[:partner][:_id],
         seller_type: Order::PARTNER,
-        currency_code: artwork[:price_currency],
+        currency_code: @artwork[:price_currency],
         state: Order::PENDING,
         state_updated_at: Time.now.utc,
         state_expires_at: Order::STATE_EXPIRATIONS[Order::PENDING].from_now
       )
-      order.line_items.create!(
-        artwork_id: artwork_id,
-        artwork_version_id: artwork[:current_version_id],
-        edition_set_id: edition_set_id,
-        price_cents: artwork_price(artwork, edition_set_id: edition_set_id),
-        quantity: quantity
+      @order.line_items.create!(
+        artwork_id: @artwork_id,
+        artwork_version_id: @artwork[:current_version_id],
+        edition_set_id: @edition_set_id,
+        price_cents: artwork_price,
+        quantity: @quantity
       )
-      OrderTotalUpdaterService.new(order).update_totals!
-      OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
-      order
+      OrderTotalUpdaterService.new(@order).update_totals!
     end
+    post_process
   rescue ActiveRecord::RecordInvalid => e
     raise Errors::ValidationError.new(:invalid_order, message: e.message)
   end
 
-  def self.artwork_price(external_artwork, edition_set_id: nil)
-    item =
-      if edition_set_id
-        edition_set = find_edition_set(external_artwork, edition_set_id)
-        raise Errors::ValidationError.new(:unknown_edition_set, artwork_id: external_artwork[:id], edition_set_id: edition_set_id) unless edition_set
+  private
 
-        edition_set
-      else
-        external_artwork
-      end
+  def pre_process!
+    @artwork = GravityService.get_artwork(@artwork_id)
+    raise Errors::ValidationError.new(:unknown_artwork, artwork_id: @artwork_id) if @artwork.nil?
+    raise Errors::ValidationError.new(:unpublished_artwork, artwork_id: @artwork_id) unless @artwork[:published]
+    raise Errors::ValidationError.new(:not_acquireable, artwork_id: @artwork_id) unless @artwork[:acquireable]
+    find_verify_edition_set
+  end
+
+  def post_process
+    OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
+  end
+
+  def artwork_price
+    item = @edition_set.present? ? @edition_set : @artwork
     raise Errors::ValidationError, :missing_price unless item[:price_listed]&.positive?
 
     raise Errors::ValidationError, :missing_currency if item[:price_currency].blank?
@@ -50,7 +63,19 @@ module CreateOrderService
     UnitConverter.convert_dollars_to_cents(item[:price_listed])
   end
 
-  def self.find_edition_set(external_artwork, edition_set_id)
-    external_artwork[:edition_sets].find { |e| e[:id] == edition_set_id }
+  def find_verify_edition_set
+    if @edition_set_id
+      @edition_set = @artwork[:edition_sets]&.find { |e| e[:id] == @edition_set_id }
+      raise Errors::ValidationError.new(:unknown_edition_set, artwork_id: @artwork[:id], edition_set_id: @edition_set_id) unless @edition_set
+    else
+      # If artwork has EditionSet but it was not passed in the request
+      # if there are more than one EditionSet we'll raise error
+      # if there is one we are going to assume thats the one buyer meant to buy
+      # TODO: ☝ is a temporary logic till Eigen starts supporting editionset artworks
+      return unless @artwork[:edition_sets]&.count
+      raise Errors::ValidationError.new(:missing_edition_set_id, artwork_id: @artwork[:id]) if @artwork[:edition_sets]&.count > 1
+      @edition_set = @artwork[:edition_sets].first
+      @edition_set_id = @edition_set[:id]
+    end
   end
 end

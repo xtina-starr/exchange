@@ -8,8 +8,10 @@ class Mutations::CreateOrderWithArtwork < Mutations::BaseMutation
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
   def resolve(artwork_id:, edition_set_id: nil, quantity: 1)
+    service = CreateOrderService.new(user_id: context[:current_user][:id], artwork_id: artwork_id, edition_set_id: edition_set_id, quantity: quantity)
+    service.process!
     {
-      order_or_error: { order: CreateOrderService.with_artwork!(user_id: context[:current_user][:id], artwork_id: artwork_id, edition_set_id: edition_set_id, quantity: quantity) }
+      order_or_error: { order: service.order }
     }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }

@@ -19,6 +19,7 @@ module Errors
       missing_country
       missing_currency
       missing_domestic_shipping_fee
+      missing_edition_set_id
       missing_international_shipping_fee
       missing_merchant_account
       missing_params
