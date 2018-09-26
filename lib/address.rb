@@ -12,6 +12,15 @@ class Address
     @postal_code = @address[:postal_code]
   end
 
+  def ==(other)
+    @country == other.country && \
+      @region == other.region && \
+      @city == other.city && \
+      @street_line1 == other.street_line1 && \
+      @street_line2 == other.street_line2 && \
+      @postal_code == other.postal_code
+  end
+
   private
 
   def parse(address)

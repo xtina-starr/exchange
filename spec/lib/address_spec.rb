@@ -107,4 +107,30 @@ describe Address do
       end
     end
   end
+  describe '#==' do
+    context 'with an address that has the same address attributes' do
+      context 'with an empty address' do
+        it 'returns true' do
+          expect(Address.new({}) == Address.new({})).to be true
+        end
+      end
+      it 'returns true' do
+        expect(Address.new(address_params) == Address.new(address_params)).to be true
+      end
+    end
+    context 'with an address that does not have the same address attributes' do
+      let(:mismatched_address_params) do
+        {
+          country: 'US',
+          region: 'NY',
+          city: 'New York',
+          address_line1: 'SOMEWHERE ELSE',
+          postal_code: '10013'
+        }
+      end
+      it 'returns false' do
+        expect(Address.new(address_params) == Address.new(mismatched_address_params)).to be false
+      end
+    end
+  end
 end
