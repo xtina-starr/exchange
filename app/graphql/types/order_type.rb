@@ -8,6 +8,7 @@ class Types::OrderType < Types::BaseObject
   field :seller, Types::OrderPartyUnionType, null: false
   field :credit_card_id, String, null: true
   field :state, Types::OrderStateEnum, null: false
+  field :state_reason, String, null: true
   field :currency_code, String, null: false
   field :requested_fulfillment, Types::RequestedFulfillmentUnionType, null: true
   field :items_total_cents, Integer, null: false

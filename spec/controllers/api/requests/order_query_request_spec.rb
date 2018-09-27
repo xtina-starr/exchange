@@ -45,6 +45,7 @@ describe Api::GraphqlController, type: :request do
               }
             }
             state
+            stateReason
             currencyCode
             itemsTotalCents
             shippingTotalCents
@@ -96,6 +97,14 @@ describe Api::GraphqlController, type: :request do
             result = client.execute(query, id: user1_order1.id)
             expect(result.data.order.state).to eq state.upcase
           end
+        end
+      end
+
+      context 'when state is CANCELED' do
+        let(:state) { Order::CANCELED }
+        it 'returns state_reason' do
+          result = client.execute(query, id: user1_order1.id)
+          expect(result.data.order.state_reason).to eq 'seller_lapsed'
         end
       end
     end
