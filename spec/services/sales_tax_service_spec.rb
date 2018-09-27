@@ -118,10 +118,11 @@ describe SalesTaxService, type: :services do
 
   describe '#record_tax_collected' do
     context 'when Artsy needs to remit taxes and line item has sales tax' do
-      it 'calls post_transaction' do
+      it 'calls post_transaction and saves the result to @transaction' do
         expect(@service_ship).to receive(:artsy_should_remit_taxes?).and_return(true)
-        expect(@service_ship).to receive(:post_transaction)
+        expect(@service_ship).to receive(:post_transaction).and_return(double(transaction_id: '123'))
         @service_ship.record_tax_collected
+        expect(@service_ship.transaction).to_not be_nil
       end
     end
     context 'when Artsy does not need to remit taxes' do
