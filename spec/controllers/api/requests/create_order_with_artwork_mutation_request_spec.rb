@@ -129,24 +129,24 @@ describe Api::GraphqlController, type: :request do
               sold: false,
               price: '$4200',
               price_listed: 4200.42,
-              price_currency: "USD",
+              price_currency: 'USD',
               acquireable: false,
-              dimensions: {in: '44 × 30 1/2 in', cm: '111.8 × 77.5 cm'},
+              dimensions: { in: '44 × 30 1/2 in', cm: '111.8 × 77.5 cm' },
               editions: 'Edition of 15',
               display_price_currency: 'USD (United States Dollar)',
-              availability: 'for sale',
-            },{
+              availability: 'for sale'
+            }, {
               id: 'edition-set-id2',
               forsale: true,
               sold: false,
               price: '$4400',
               price_listed: 4200.42,
-              price_currency: "USD",
+              price_currency: 'USD',
               acquireable: false,
-              dimensions: {in: '44 × 30 1/2 in', cm: '111.8 × 77.5 cm'},
+              dimensions: { in: '44 × 30 1/2 in', cm: '111.8 × 77.5 cm' },
               editions: 'Edition of 15',
               display_price_currency: 'USD (United States Dollar)',
-              availability: 'for sale',
+              availability: 'for sale'
             }]
           end
           let(:artwork) { gravity_v1_artwork(edition_sets: edition_sets) }
@@ -154,7 +154,7 @@ describe Api::GraphqlController, type: :request do
           context 'without setting edition_set_id' do
             it 'raises error' do
               expect do
-                response = client.execute(mutation, input: mutation_input.except(:editionSetId))
+                client.execute(mutation, input: mutation_input.except(:editionSetId))
               end.to change(Order, :count).by(0).and change(LineItem, :count).by(0)
             end
           end
