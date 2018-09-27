@@ -12,7 +12,8 @@ class RecordSalesTaxJob < ApplicationJob
       city: line_item.order.shipping_city,
       address_line1: line_item.order.shipping_address_line1
     )
-    transaction = SalesTaxService.new(line_item, line_item.order.fulfillment_type, shipping_address, line_item.order.shipping_total_cents, artwork_address).record_tax_collected
-    line_item.update!(sales_tax_transaction_id: transaction.transaction_id)
+    service = SalesTaxService.new(line_item, line_item.order.fulfillment_type, shipping_address, line_item.order.shipping_total_cents, artwork_address)
+    service.record_tax_collected
+    line_item.update!(sales_tax_transaction_id: service.transaction.transaction_id)
   end
 end
