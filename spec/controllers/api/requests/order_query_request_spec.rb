@@ -31,8 +31,43 @@ describe Api::GraphqlController, type: :request do
 
     let(:query) do
       <<-GRAPHQL
-        query($id: ID!) {
+        query($id: ID) {
           order(id: $id) {
+            id
+            buyer {
+              ... on User {
+                id
+              }
+            }
+            seller {
+              ... on Partner {
+                id
+              }
+            }
+            state
+            stateReason
+            currencyCode
+            itemsTotalCents
+            shippingTotalCents
+            sellerTotalCents
+            buyerTotalCents
+            createdAt
+            lineItems {
+              edges {
+                node {
+                  priceCents
+                }
+              }
+            }
+          }
+        }
+      GRAPHQL
+    end
+
+    let(:query_by_code) do
+      <<-GRAPHQL
+        query($code: String) {
+          order(code: $code) {
             id
             buyer {
               ... on User {
@@ -79,6 +114,18 @@ describe Api::GraphqlController, type: :request do
 
       it 'returns order when accessing correct order' do
         result = client.execute(query, id: user1_order1.id)
+        expect(result.data.order.buyer.id).to eq user_id
+        expect(result.data.order.seller.id).to eq partner_id
+        expect(result.data.order.currency_code).to eq 'USD'
+        expect(result.data.order.state).to eq 'PENDING'
+        expect(result.data.order.items_total_cents).to eq 0
+        expect(result.data.order.seller_total_cents).to eq 50_00
+        expect(result.data.order.buyer_total_cents).to eq 100_00
+        expect(result.data.order.created_at).to eq created_at.iso8601
+      end
+
+      it 'returns order when accessing correct order by code' do
+        result = client.execute(query_by_code, code: user1_order1.code)
         expect(result.data.order.buyer.id).to eq user_id
         expect(result.data.order.seller.id).to eq partner_id
         expect(result.data.order.currency_code).to eq 'USD'
