@@ -1,6 +1,6 @@
 class SalesTaxService
   REMITTING_STATES = %w[wa pa].freeze
-
+  attr_reader :transaction
   def initialize(
     line_item,
     fulfillment_type,
@@ -19,6 +19,7 @@ class SalesTaxService
     @artwork_location = artwork_location
     @shipping_address = shipping_address
     @shipping_total_cents = artsy_should_remit_taxes? ? shipping_total_cents : 0
+    @transaction = nil
   end
 
   def sales_tax
@@ -28,7 +29,7 @@ class SalesTaxService
   end
 
   def record_tax_collected
-    post_transaction if artsy_should_remit_taxes? && @line_item.sales_tax_cents&.positive?
+    @transaction = post_transaction if artsy_should_remit_taxes? && @line_item.sales_tax_cents&.positive?
   rescue Taxjar::Error => e
     raise Errors::ProcessingError.new(:tax_recording_failure, message: e.message)
   end

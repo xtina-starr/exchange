@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_09_19_205125) do
+ActiveRecord::Schema.define(version: 2018_09_27_142906) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -68,6 +68,7 @@ ActiveRecord::Schema.define(version: 2018_09_19_205125) do
     t.integer "sales_tax_cents"
     t.string "artwork_version_id"
     t.boolean "should_remit_sales_tax"
+    t.string "sales_tax_transaction_id"
     t.index ["order_id"], name: "index_line_items_on_order_id"
   end
 

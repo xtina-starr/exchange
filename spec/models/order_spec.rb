@@ -186,4 +186,32 @@ RSpec.describe Order, type: :model do
       end
     end
   end
+
+  describe '#shipping_address' do
+    context 'with a fulfillment type of SHIP' do
+      it 'returns an address object with shipping parameters as attributes' do
+        order.update!(fulfillment_type: Order::SHIP, shipping_country: 'US', shipping_region: 'NY', shipping_postal_code: '10013', shipping_city: 'New York', shipping_address_line1: '401 Broadway')
+        expected_shipping_address = Address.new(
+          country: order.shipping_country,
+          postal_code: order.shipping_postal_code,
+          region: order.shipping_region,
+          city: order.shipping_city,
+          address_line1: order.shipping_address_line1,
+          address_line2: order.shipping_address_line2
+        )
+        expect(order.shipping_address).to eq expected_shipping_address
+      end
+    end
+    context 'with a fulfillment type of PICKUP' do
+      it 'returns nil' do
+        order.update!(fulfillment_type: Order::PICKUP)
+        expect(order.shipping_address).to be_nil
+      end
+      context 'with nil fulfillment type' do
+        it 'returns nil' do
+          expect(order.shipping_address).to be_nil
+        end
+      end
+    end
+  end
 end

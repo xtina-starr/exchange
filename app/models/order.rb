@@ -104,6 +104,19 @@ class Order < ApplicationRecord
     get_last_state_timestamp(Order::APPROVED)
   end
 
+  def shipping_address
+    return unless fulfillment_type == Order::SHIP
+
+    Address.new(
+      country: shipping_country,
+      postal_code: shipping_postal_code,
+      region: shipping_region,
+      city: shipping_city,
+      address_line1: shipping_address_line1,
+      address_line2: shipping_address_line2
+    )
+  end
+
   private
 
   def state_reason_inclusion
