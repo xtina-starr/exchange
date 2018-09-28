@@ -21,6 +21,14 @@ class Address
       @postal_code == other.postal_code
   end
 
+  # The "continental United States" is defined as any US state that isn't Alaska or Hawaii.
+  def continental_us?
+    us = Carmen::Country.coded('US')
+    @country == us.code &&
+      @region != us.subregions.coded('HI').code &&
+      @region != us.subregions.coded('AK').code
+  end
+
   private
 
   def parse(address)
