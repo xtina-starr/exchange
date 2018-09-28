@@ -3,7 +3,7 @@ class RecordSalesTaxJob < ApplicationJob
 
   def perform(line_item_id)
     line_item = LineItem.find(line_item_id)
-    return unless line_item.should_remit_sales_tax
+    return unless line_item.should_remit_sales_tax?
 
     artwork = GravityService.get_artwork(line_item.artwork_id)
     artwork_address = Address.new(artwork[:location])

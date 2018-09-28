@@ -130,8 +130,8 @@ describe Api::GraphqlController, type: :request do
         it 'calculates tax' do
           expect(line_items[0].reload.sales_tax_cents).to eq 116
           expect(line_items[1].reload.sales_tax_cents).to eq 116
-          expect(line_items[0].reload.should_remit_sales_tax).to eq false
-          expect(line_items[1].reload.should_remit_sales_tax).to eq false
+          expect(line_items[0].reload.should_remit_sales_tax?).to eq false
+          expect(line_items[1].reload.should_remit_sales_tax?).to eq false
           expect(order.reload.tax_total_cents).to eq 232
         end
         it 'sets shipping to 0' do
@@ -264,8 +264,8 @@ describe Api::GraphqlController, type: :request do
           expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
           expect(line_items[0].reload.sales_tax_cents).to eq 116
           expect(line_items[1].reload.sales_tax_cents).to eq 116
-          expect(line_items[0].reload.should_remit_sales_tax).to eq false
-          expect(line_items[1].reload.should_remit_sales_tax).to eq false
+          expect(line_items[0].reload.should_remit_sales_tax?).to eq false
+          expect(line_items[1].reload.should_remit_sales_tax?).to eq false
           expect(order.tax_total_cents).to eq 232
         end
 
