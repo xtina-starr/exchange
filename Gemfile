@@ -35,6 +35,7 @@ group :development do
 end
 
 group :test do
+  gem 'coveralls', require: false
   gem 'danger'
   gem 'fabrication'
   gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
