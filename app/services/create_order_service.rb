@@ -73,6 +73,7 @@ class CreateOrderService
       # if there are more than one EditionSet we'll raise error
       # if there is one we are going to assume thats the one buyer meant to buy
       # TODO: ☝ is a temporary logic till Eigen starts supporting editionset artworks
+      # https://artsyproduct.atlassian.net/browse/PURCHASE-505
       return unless @artwork[:edition_sets]&.count
       raise Errors::ValidationError.new(:missing_edition_set_id, artwork_id: @artwork_id) if @artwork[:edition_sets].count > 1
 
