@@ -40,6 +40,7 @@ module Errors
       charge_authorization_failed
       insufficient_inventory
       refund_failed
+      tax_recording_failure
     ],
     internal: %i[
       generic
