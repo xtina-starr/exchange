@@ -17,6 +17,14 @@ module OrderService
     order
   end
 
+  def self.confirm_pickup!(order, by)
+    raise Errors::ValidationError, :wrong_fulfillment_type unless order.fulfillment_type == Order::PICKUP
+
+    order.fulfill!
+    PostNotificationJob.perform_later(order.id, Order::FULFILLED, by)
+    order
+  end
+
   def self.abandon!(order)
     order.abandon!
   end

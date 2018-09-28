@@ -33,6 +33,7 @@ module Errors
       unknown_edition_set
       unknown_partner
       unpublished_artwork
+      wrong_fulfillment_type
     ],
     processing: %i[
       artwork_version_mismatch
