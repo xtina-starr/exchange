@@ -17,7 +17,9 @@ ActiveAdmin.register Order do
   filter :state_reason, as: :check_boxes, collection: proc { Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize) }
 
   index do
-    column :id
+    column :id do |order|
+      link_to order.id, admin_order_path(order.id)
+    end
     column :state
     column :fulfillment_type
     column :last_admin_note
@@ -32,5 +34,52 @@ ActiveAdmin.register Order do
     end
   end
 
+  show do
+    h1 order.to_s
+
+    panel "Order Summary" do
+      attributes_table_for order do
+        row :state
+        row 'Reason', :state_reason
+        row 'Last Updated At', :updated_at
+        #Last admin action
+        #Last note
+        #row 'Order Status Link', link_to artsy_order_item_status_url(:id)
+      end
+      br 
+      para "Shipment"
+      if order.shipping_info?
+        para "Carrier"
+      else
+        para "None"
+      end
+
+
+    end
+
+    panel "Transaction" do
+      attributes_table_for order do
+        row :id
+        row :state
+      end
+    end
+
+#   panel "Admin Actions and Notes" do
+#   end
+
+  end
+
+  sidebar :contact_info, only: :show do
+
+    panel "Buyer Information" do
+    end
+
+    panel "Seller Information" do
+    end
+  end
+  
 end
+
+
+
 
