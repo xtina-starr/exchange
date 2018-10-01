@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 Datadog.configure do |c|
-  enabled = ENV.fetch('DATADOG_ENABLED', false)
+  enabled = ENV['DATADOG_ENABLED'] == 'true'
   hostname = ENV.fetch('TRACE_AGENT_HOSTNAME', 'localhost')
-  debug = ENV.fetch('DATADOG_DEBUG', false)
+  debug = ENV['DATADOG_DEBUG'] == 'true'
 
   c.tracer enabled: enabled, hostname: hostname, distributed_tracing: true, debug: debug
   c.use :rails, service_name: 'exchange', distributed_tracing: true, controller_service: 'exchange.controller', cache_service: 'exchange.cache', database_service: 'exchange.postgres'
