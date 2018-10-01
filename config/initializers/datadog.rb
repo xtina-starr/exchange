@@ -2,7 +2,7 @@
 
 Datadog.configure do |c|
   enabled = ENV['DATADOG_ENABLED'] == 'true'
-  hostname = ENV.fetch('TRACE_AGENT_HOSTNAME', 'localhost')
+  hostname = ENV.fetch('DATADOG_TRACE_AGENT_HOSTNAME', 'localhost')
   debug = ENV['DATADOG_DEBUG'] == 'true'
 
   c.tracer enabled: enabled, hostname: hostname, distributed_tracing: true, debug: debug
