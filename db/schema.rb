@@ -10,18 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_09_27_142906) do
+ActiveRecord::Schema.define(version: 2018_10_01_172826) do
 
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
-  create_table "active_admin_comments", force: :cascade do |t|
+  create_table "active_admin_comments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "namespace"
     t.text "body"
     t.string "resource_type"
-    t.bigint "resource_id"
+    t.uuid "resource_id"
     t.string "author_type"
-    t.bigint "author_id"
+    t.uuid "author_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["author_type", "author_id"], name: "index_active_admin_comments_on_author_type_and_author_id"
@@ -29,8 +30,8 @@ ActiveRecord::Schema.define(version: 2018_09_27_142906) do
     t.index ["resource_type", "resource_id"], name: "index_active_admin_comments_on_resource_type_and_resource_id"
   end
 
-  create_table "admin_notes", force: :cascade do |t|
-    t.bigint "order_id"
+  create_table "admin_notes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "order_id"
     t.string "admin_id", null: false
     t.string "type", null: false
     t.text "description"
@@ -39,7 +40,7 @@ ActiveRecord::Schema.define(version: 2018_09_27_142906) do
     t.index ["order_id"], name: "index_admin_notes_on_order_id"
   end
 
-  create_table "fulfillments", force: :cascade do |t|
+  create_table "fulfillments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "courier"
     t.string "tracking_id"
     t.date "estimated_delivery"
@@ -48,17 +49,17 @@ ActiveRecord::Schema.define(version: 2018_09_27_142906) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "line_item_fulfillments", force: :cascade do |t|
-    t.bigint "line_item_id"
-    t.bigint "fulfillment_id"
+  create_table "line_item_fulfillments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "line_item_id"
+    t.uuid "fulfillment_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["fulfillment_id"], name: "index_line_item_fulfillments_on_fulfillment_id"
     t.index ["line_item_id"], name: "index_line_item_fulfillments_on_line_item_id"
   end
 
-  create_table "line_items", force: :cascade do |t|
-    t.bigint "order_id"
+  create_table "line_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "order_id"
     t.string "artwork_id"
     t.string "edition_set_id"
     t.integer "price_cents"
@@ -72,7 +73,7 @@ ActiveRecord::Schema.define(version: 2018_09_27_142906) do
     t.index ["order_id"], name: "index_line_items_on_order_id"
   end
 
-  create_table "orders", force: :cascade do |t|
+  create_table "orders", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "code"
     t.integer "shipping_total_cents"
     t.integer "tax_total_cents"
@@ -109,8 +110,8 @@ ActiveRecord::Schema.define(version: 2018_09_27_142906) do
     t.index ["state"], name: "index_orders_on_state"
   end
 
-  create_table "state_histories", force: :cascade do |t|
-    t.bigint "order_id"
+  create_table "state_histories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "order_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "state"
@@ -118,8 +119,8 @@ ActiveRecord::Schema.define(version: 2018_09_27_142906) do
     t.index ["order_id"], name: "index_state_histories_on_order_id"
   end
 
-  create_table "transactions", force: :cascade do |t|
-    t.bigint "order_id"
+  create_table "transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "order_id"
     t.string "external_id"
     t.string "source_id"
     t.string "destination_id"

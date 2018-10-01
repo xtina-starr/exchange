@@ -1,6 +1,8 @@
 class CreateOrders < ActiveRecord::Migration[5.2]
   def change
-    create_table :orders do |t|
+    enable_extension 'pgcrypto' unless extension_enabled?('pgcrypto')
+
+    create_table :orders, id: :uuid do |t|
       t.string :code
       t.integer :item_total_cents
       t.integer :shipping_total_cents

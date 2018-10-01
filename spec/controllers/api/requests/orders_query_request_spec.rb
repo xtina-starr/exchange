@@ -1,8 +1,7 @@
 require 'rails_helper'
 
 def ids_from_result_data(result)
-  nodes = result.data.orders.edges.map(&:node)
-  nodes.map(&:id).map(&:to_i)
+  result.data.orders.edges.map(&:node).map(&:id)
 end
 
 describe Api::GraphqlController, type: :request do
