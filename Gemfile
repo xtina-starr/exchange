@@ -12,6 +12,8 @@ gem 'artsy-auth'
 gem 'artsy-eventservice'
 gem 'carmen'
 gem 'dalli'
+gem 'ddtrace', '>= 0.15.0' # datadog instrumentation
+gem 'dogstatsd-ruby', require: 'datadog/statsd' # send metrics to datadog agent
 gem 'faraday'
 gem 'graphql'
 gem 'jwt'
