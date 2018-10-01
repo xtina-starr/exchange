@@ -113,8 +113,12 @@ GEM
       octokit (~> 4.7)
       terminal-table (~> 1)
     dante (0.2.0)
+    ddtrace (0.16.0)
+      msgpack
+      opentracing (>= 0.4.1)
     diff-lcs (1.3)
     docile (1.3.1)
+    dogstatsd-ruby (4.0.0)
     domain_name (0.5.20180417)
       unf (>= 0.0.5, < 1.0.0)
     erubi (1.7.1)
@@ -207,6 +211,7 @@ GEM
     model_attribute (3.2.0)
     money (6.12.0)
       i18n (>= 0.6.4, < 1.1)
+    msgpack (1.2.4)
     multi_json (1.13.1)
     multi_xml (0.6.0)
     multipart-post (2.0.0)
@@ -233,6 +238,7 @@ GEM
       oauth2 (~> 1.1)
       omniauth (~> 1.2)
     open4 (1.3.4)
+    opentracing (0.4.1)
     paper_trail (10.0.1)
       activerecord (>= 4.2, < 5.3)
       request_store (~> 1.1)
@@ -391,6 +397,8 @@ DEPENDENCIES
   coveralls
   dalli
   danger
+  ddtrace (>= 0.15.0)
+  dogstatsd-ruby
   fabrication
   faraday
   graphlient

@@ -22,6 +22,8 @@ gem 'sentry-raven'
 gem 'sidekiq'
 gem 'stripe'
 gem 'taxjar-ruby', require: 'taxjar'
+gem 'ddtrace', '>= 0.15.0' # datadog instrumentation
+gem 'dogstatsd-ruby', require: 'datadog/statsd' # send metrics to datadog agent
 
 group :development, :test do
   gem 'byebug'
