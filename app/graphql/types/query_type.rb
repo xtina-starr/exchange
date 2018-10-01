@@ -4,7 +4,8 @@ class Types::QueryType < Types::BaseObject
 
   field :order, Types::OrderType, null: true do
     description 'Find an order by ID'
-    argument :id, ID, required: true
+    argument :id, ID, required: false
+    argument :code, String, required: false
   end
 
   field :orders, Types::OrderConnectionWithTotalCountType, null: true, connection: true do
@@ -17,8 +18,10 @@ class Types::QueryType < Types::BaseObject
     argument :sort, Types::OrderConnectionSortEnum, required: false
   end
 
-  def order(id:)
-    order = Order.find(id)
+  def order(args)
+    raise Error::ValidationError.new(:missing_required_param, message: 'id or code is required') unless args[:id].present? || args[:code].present?
+
+    order = Order.find_by!(args)
     validate_order_request!(order)
     order
   end

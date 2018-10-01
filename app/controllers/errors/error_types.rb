@@ -28,6 +28,7 @@ module Errors
       missing_price
       missing_region
       missing_required_info
+      missing_required_param
       not_acquireable
       not_found
       unknown_artwork
