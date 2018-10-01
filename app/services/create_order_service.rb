@@ -46,7 +46,7 @@ class CreateOrderService
     raise Errors::ValidationError.new(:unpublished_artwork, artwork_id: @artwork_id) unless @artwork[:published]
     raise Errors::ValidationError.new(:not_acquireable, artwork_id: @artwork_id) unless @artwork[:acquireable]
 
-    find_verify_edition_set
+    find_verify_edition_set if @edition_set_id.present? || @artwork[:edition_sets].present?
   end
 
   def post_process
@@ -74,7 +74,6 @@ class CreateOrderService
       # if there is one we are going to assume thats the one buyer meant to buy
       # TODO: ☝ is a temporary logic till Eigen starts supporting editionset artworks
       # https://artsyproduct.atlassian.net/browse/PURCHASE-505
-      return unless @artwork[:edition_sets]&.count
       raise Errors::ValidationError.new(:missing_edition_set_id, artwork_id: @artwork_id) if @artwork[:edition_sets].count > 1
 
       @edition_set = @artwork[:edition_sets].first
