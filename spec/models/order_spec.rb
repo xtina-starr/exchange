@@ -41,7 +41,7 @@ RSpec.describe Order, type: :model do
       end
       it 'adds proper state history' do
         expect { order.submit! }.to change(order.state_histories, :count).by(1)
-        expect(order.state_histories.last.state).to eq Order::SUBMITTED
+        expect(order.reload.state_histories.last.state).to eq Order::SUBMITTED
         expect(order.state_histories.last.reason).to be_nil
       end
       it 'raises error when setting reason' do
