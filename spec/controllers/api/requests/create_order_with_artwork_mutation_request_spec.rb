@@ -179,6 +179,26 @@ describe Api::GraphqlController, type: :request do
           end
         end
 
+        context 'artwork with empty array edition set' do
+          let(:artwork) { gravity_v1_artwork(edition_sets: []) }
+          it 'creates order with artwork price' do
+            expect do
+              response = client.execute(mutation, input: mutation_input.except(:editionSetId))
+              expect(response.data.create_order_with_artwork.order_or_error.order.id).not_to be_nil
+              expect(response.data.create_order_with_artwork.order_or_error).not_to respond_to(:error)
+              order = Order.find(response.data.create_order_with_artwork.order_or_error.order.id)
+              expect(order.currency_code).to eq 'USD'
+              expect(order.buyer_id).to eq jwt_user_id
+              expect(order.seller_id).to eq partner_id
+              expect(order.line_items.count).to eq 1
+              expect(order.line_items.first.price_cents).to eq 5400_12
+              expect(order.line_items.first.artwork_id).to eq 'artwork-id'
+              expect(order.line_items.first.edition_set_id).to be_nil
+              expect(order.line_items.first.quantity).to eq 2
+            end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
+          end
+        end
+
         context 'artwork without edition set' do
           let(:artwork) { gravity_v1_artwork(edition_sets: nil) }
           it 'creates order with artwork price' do
