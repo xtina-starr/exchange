@@ -46,7 +46,7 @@ class CreateOrderService
     raise Errors::ValidationError.new(:unpublished_artwork, artwork_id: @artwork_id) unless @artwork[:published]
     raise Errors::ValidationError.new(:not_acquireable, artwork_id: @artwork_id) unless @artwork[:acquireable]
 
-    find_verify_edition_set if @edition_set_id.present? || @artwork[:edition_sets].present?
+    find_verify_edition_set
   end
 
   def post_process
@@ -65,6 +65,8 @@ class CreateOrderService
   end
 
   def find_verify_edition_set
+    return unless @edition_set_id.present? || @artwork[:edition_sets].present?
+
     if @edition_set_id
       @edition_set = @artwork[:edition_sets]&.find { |e| e[:id] == @edition_set_id }
       raise Errors::ValidationError.new(:unknown_edition_set, artwork_id: @artwork[:id], edition_set_id: @edition_set_id) unless @edition_set
