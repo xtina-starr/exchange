@@ -35,6 +35,7 @@ module Errors
       unknown_edition_set
       unknown_partner
       unpublished_artwork
+      unsupported_shipping_location
       wrong_fulfillment_type
     ],
     processing: %i[
@@ -44,6 +45,7 @@ module Errors
       insufficient_inventory
       refund_failed
       tax_recording_failure
+      tax_calculator_failure
     ],
     internal: %i[
       generic
