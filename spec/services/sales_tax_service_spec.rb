@@ -29,6 +29,9 @@ describe SalesTaxService, type: :services do
   let(:artwork_location) { Address.new(gravity_v1_artwork[:location]) }
 
   before do
+    silence_warnings do
+      SalesTaxService.const_set('REMITTING_STATES', ['fl'])
+    end
     allow(Taxjar::Client).to receive(:new).with(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key'], api_url: nil).and_return(taxjar_client)
     @service_ship = SalesTaxService.new(line_item, Order::SHIP, shipping_address, shipping_total_cents, artwork_location)
     @service_pickup = SalesTaxService.new(line_item, Order::PICKUP, Address.new({}), shipping_total_cents, artwork_location)
@@ -37,7 +40,7 @@ describe SalesTaxService, type: :services do
   describe '#initialize' do
     context 'with a destination address in a remitting state' do
       it 'sets shipping_total_cents to the passed in value' do
-        shipping[:region] = 'WA'
+        shipping[:region] = 'FL'
         service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location)
         expect(service.instance_variable_get(:@shipping_total_cents)).to eq shipping_total_cents
       end
@@ -179,16 +182,16 @@ describe SalesTaxService, type: :services do
 
   describe '#artsy_should_remit_taxes?' do
     context 'with an order that has a US-based destination address' do
-      context 'with a state of WA or PA' do
+      context 'with a state where we are required to remit taxes' do
         it 'returns true' do
-          %w[wa pa].each do |state|
+          SalesTaxService::REMITTING_STATES.each do |state|
             shipping[:region] = state
             service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location)
             expect(service.send(:artsy_should_remit_taxes?)).to be true
           end
         end
       end
-      context 'with a state other than WA or PA' do
+      context 'with a state other than a tax remitting state' do
         it 'returns false' do
           expect(@service_ship.send(:artsy_should_remit_taxes?)).to be false
         end
