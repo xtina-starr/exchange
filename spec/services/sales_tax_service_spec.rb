@@ -37,6 +37,12 @@ describe SalesTaxService, type: :services do
     @service_pickup = SalesTaxService.new(line_item, Order::PICKUP, Address.new({}), shipping_total_cents, artwork_location)
   end
 
+  after do
+    silence_warnings do
+      SalesTaxService.const_set('REMITTING_STATES', [])
+    end
+  end
+
   describe '#initialize' do
     context 'with a destination address in a remitting state' do
       it 'sets shipping_total_cents to the passed in value' do
