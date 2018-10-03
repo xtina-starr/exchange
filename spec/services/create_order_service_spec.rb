@@ -29,11 +29,11 @@ describe CreateOrderService, type: :services do
           end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
         end
         it 'sets state_expires_at for newly pending order' do
-          Timecop.freeze(Time.now.utc) do
+          Timecop.freeze(Time.now.beginning_of_day) do
             service.process!
             order = service.order
             expect(order.state).to eq Order::PENDING
-            expect(order.state_updated_at).to eq Time.now.utc
+            expect(order.state_updated_at).to eq Time.now.beginning_of_day
             expect(order.state_expires_at).to eq 2.days.from_now
           end
         end
