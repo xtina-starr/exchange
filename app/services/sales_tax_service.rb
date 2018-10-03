@@ -25,7 +25,7 @@ class SalesTaxService
   def sales_tax
     @sales_tax ||= UnitConverter.convert_dollars_to_cents(fetch_sales_tax.amount_to_collect)
   rescue Taxjar::Error => e
-    raise Errors::ValidationError.new(:tax_calculator_failure, message: e.message)
+    raise Errors::ProcessingError.new(:tax_calculator_failure, message: e.message)
   end
 
   def record_tax_collected
