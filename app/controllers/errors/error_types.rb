@@ -46,6 +46,7 @@ module Errors
       refund_failed
       tax_recording_failure
       tax_calculator_failure
+      tax_refund_failure
     ],
     internal: %i[
       generic
