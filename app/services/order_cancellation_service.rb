@@ -9,7 +9,7 @@ class OrderCancellationService
     @order.seller_lapse! do
       refund
     end
-    PostNotificationJob.perform_later(@order.id, Order::SELLER_LAPSED)
+    PostNotificationJob.perform_later(@order.id, Order::CANCELED)
   ensure
     @order.transactions << @transaction if @transaction.present?
   end
