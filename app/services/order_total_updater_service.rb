@@ -9,22 +9,29 @@ class OrderTotalUpdaterService
   def update_totals!
     raise Errors::ValidationError.new('Missing price info on line items', 'd2e1cc') if @order.line_items.any? { |li| li.price_cents.nil? }
 
-    @order.items_total_cents = @order.line_items.map(&:total_amount_cents).sum
-    @order.buyer_total_cents = @order.items_total_cents + @order.shipping_total_cents.to_i + @order.tax_total_cents.to_i
-    @order.commission_fee_cents = calculate_commission_fee if @commission_rate.present?
-    @order.transaction_fee_cents = calculate_transaction_fee
-    @order.seller_total_cents = @order.buyer_total_cents - @order.commission_fee_cents.to_i - @order.transaction_fee_cents.to_i - calculate_remittable_sales_tax
-    @order.save!
+    @order.with_lock do
+      @order.items_total_cents = @order.line_items.map(&:total_amount_cents).sum
+      @order.buyer_total_cents = @order.items_total_cents + @order.shipping_total_cents.to_i + @order.tax_total_cents.to_i
+      if @commission_rate.present?
+        set_commission_on_line_items
+        @order.commission_fee_cents = @order.line_items.map(&:commission_fee_cents).sum
+      end
+      @order.transaction_fee_cents = calculate_transaction_fee
+      @order.seller_total_cents = @order.buyer_total_cents - @order.commission_fee_cents.to_i - @order.transaction_fee_cents.to_i - calculate_remittable_sales_tax
+      @order.save!
+    end
   end
 
   private
 
-  def calculate_remittable_sales_tax
-    @order.line_items.select(&:should_remit_sales_tax).sum(&:sales_tax_cents)
+  def set_commission_on_line_items
+    @order.line_items.each do |li|
+      li.update!(commission_fee_cents: li.total_amount_cents * @commission_rate)
+    end
   end
 
-  def calculate_commission_fee
-    @order.items_total_cents * @commission_rate
+  def calculate_remittable_sales_tax
+    @order.line_items.select(&:should_remit_sales_tax).sum(&:sales_tax_cents)
   end
 
   def calculate_transaction_fee

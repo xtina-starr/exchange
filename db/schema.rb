@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_10_01_172826) do
+ActiveRecord::Schema.define(version: 2018_10_03_191806) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -70,6 +70,7 @@ ActiveRecord::Schema.define(version: 2018_10_01_172826) do
     t.string "artwork_version_id"
     t.boolean "should_remit_sales_tax"
     t.string "sales_tax_transaction_id"
+    t.integer "commission_fee_cents"
     t.index ["order_id"], name: "index_line_items_on_order_id"
   end
 

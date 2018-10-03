@@ -31,10 +31,25 @@ describe OrderEvent, type: :events do
               buyer_total_cents: 380,
               **shipping_info)
   end
-  let!(:line_items) do
+  let(:line_item1) { Fabricate(:line_item, price_cents: 200, order: order, commission_fee_cents: 40) }
+  let(:line_item2) { Fabricate(:line_item, price_cents: 100, quantity: 2, order: order, commission_fee_cents: 20) }
+  let!(:line_items) { [line_item1, line_item2] }
+  let(:line_item_properties) do
     [
-      Fabricate(:line_item, price_cents: 200, order: order),
-      Fabricate(:line_item, price_cents: 100, order: order)
+      {
+        price_cents: 200,
+        artwork_id: line_item1.artwork_id,
+        edition_set_id: line_item1.edition_set_id,
+        quantity: 1,
+        commission_fee_cents: 40
+      },
+      {
+        price_cents: 100,
+        artwork_id: line_item2.artwork_id,
+        edition_set_id: line_item2.edition_set_id,
+        quantity: 2,
+        commission_fee_cents: 20
+      }
     ]
   end
   let(:event) { OrderEvent.new(user: user_id, action: Order::SUBMITTED, model: order) }
@@ -76,6 +91,7 @@ describe OrderEvent, type: :events do
       expect(event.properties[:updated_at]).not_to be_nil
       expect(event.properties[:created_at]).not_to be_nil
       expect(event.properties[:line_items].count).to eq 2
+      expect(event.properties[:line_items]).to match_array(line_item_properties)
       expect(event.properties[:shipping_name]).to eq 'Fname Lname'
       expect(event.properties[:shipping_address_line1]).to eq '123 Main St'
       expect(event.properties[:shipping_address_line2]).to eq 'Apt 2'
