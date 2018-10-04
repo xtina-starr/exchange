@@ -10,7 +10,7 @@ class OrderShippingService
   def process!
     raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
 
-    validate_shipping_location!
+    validate_shipping_location! if @fulfillment_type == Order::SHIP
 
     Order.transaction do
       attrs = {
