@@ -50,7 +50,8 @@ class OrderEvent < Events::BaseEvent
       price_cents: line_item.price_cents,
       artwork_id: line_item.artwork_id,
       edition_set_id: line_item.edition_set_id,
-      quantity: line_item.quantity
+      quantity: line_item.quantity,
+      commission_fee_cents: line_item.commission_fee_cents
     }
   end
 end

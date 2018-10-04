@@ -132,6 +132,7 @@ type FulfillmentEdge {
 # A Line Item
 type LineItem {
   artworkId: String!
+  commissionFeeCents: Int
   createdAt: DateTime!
   editionSetId: String
   fulfillments(
