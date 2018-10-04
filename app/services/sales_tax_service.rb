@@ -20,6 +20,7 @@ class SalesTaxService
     @shipping_address = shipping_address
     @shipping_total_cents = artsy_should_remit_taxes? ? shipping_total_cents : 0
     @transaction = nil
+    @refund = nil
   end
 
   def sales_tax
@@ -34,6 +35,13 @@ class SalesTaxService
     raise Errors::ProcessingError.new(:tax_recording_failure, message: e.message)
   end
 
+  def refund_transaction(refund_date)
+    @transaction = get_transaction(transaction_id)
+    @refund = post_refund(refund_date) if @transaction.present?
+  rescue Taxjar::Error => e
+    raise Errors::ProcessingError.new(:tax_refund_failure, message: e.message)
+  end
+
   def artsy_should_remit_taxes?
     return false unless destination_address.country == Carmen::Country.coded('US').code
 
@@ -42,28 +50,40 @@ class SalesTaxService
 
   private
 
+  def get_transaction(id)
+    @tax_client.show_order(id)
+  rescue Taxjar::Error::NotFound
+    nil
+  end
+
   def fetch_sales_tax
-    @tax_client.tax_for_order(
-      amount: UnitConverter.convert_cents_to_dollars(@line_item.total_amount_cents),
-      from_country: origin_address.country,
-      from_zip: origin_address.postal_code,
-      from_state: origin_address.region,
-      from_city: origin_address.city,
-      from_street: origin_address.street_line1,
-      to_country: destination_address.country,
-      to_zip: destination_address.postal_code,
-      to_state: destination_address.region,
-      to_city: destination_address.city,
-      to_street: destination_address.street_line1,
-      shipping: UnitConverter.convert_cents_to_dollars(@shipping_total_cents)
-    )
+    @tax_client.tax_for_order(construct_tax_params)
   end
 
   def post_transaction
     transaction_date = @line_item.order.last_approved_at.iso8601
     @tax_client.create_order(
-      transaction_id: "#{@line_item.order_id}-#{@line_item.id}",
-      transaction_date: transaction_date,
+      construct_tax_params(
+        transaction_id: transaction_id,
+        transaction_date: transaction_date,
+        sales_tax: UnitConverter.convert_cents_to_dollars(@line_item.sales_tax_cents)
+      )
+    )
+  end
+
+  def post_refund(refund_date)
+    @tax_client.create_refund(
+      construct_tax_params(
+        transaction_id: "refund_#{transaction_id}",
+        transaction_date: refund_date.iso8601,
+        transaction_reference_id: transaction_id,
+        sales_tax: UnitConverter.convert_cents_to_dollars(@line_item.sales_tax_cents)
+      )
+    )
+  end
+
+  def construct_tax_params(args = {})
+    {
       amount: UnitConverter.convert_cents_to_dollars(@line_item.total_amount_cents),
       from_country: origin_address.country,
       from_zip: origin_address.postal_code,
@@ -75,9 +95,8 @@ class SalesTaxService
       to_state: destination_address.region,
       to_city: destination_address.city,
       to_street: destination_address.street_line1,
-      sales_tax: UnitConverter.convert_cents_to_dollars(@line_item.sales_tax_cents),
       shipping: UnitConverter.convert_cents_to_dollars(@shipping_total_cents)
-    )
+    }.merge(args)
   end
 
   def origin_address
@@ -90,5 +109,9 @@ class SalesTaxService
 
   def seller_address
     @seller_address ||= GravityService.fetch_partner_location(@line_item.order.seller_id)
+  end
+
+  def transaction_id
+    "#{@line_item.order.id}__#{@line_item.id}"
   end
 end
