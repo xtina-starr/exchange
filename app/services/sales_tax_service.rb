@@ -36,7 +36,7 @@ class SalesTaxService
   end
 
   def refund_transaction(refund_date)
-    @transaction = get_transaction(transaction_id) if @transaction.blank?
+    @transaction = get_transaction(transaction_id)
     @refund = post_refund(refund_date) if @transaction.present?
   rescue Taxjar::Error => e
     raise Errors::ProcessingError.new(:tax_refund_failure, message: e.message)
@@ -74,7 +74,7 @@ class SalesTaxService
   def post_refund(refund_date)
     @tax_client.create_refund(
       construct_tax_params(
-        transaction_id: "#{transaction_id}_refund",
+        transaction_id: "refund_#{transaction_id}",
         transaction_date: refund_date.iso8601,
         transaction_reference_id: transaction_id,
         sales_tax: UnitConverter.convert_cents_to_dollars(@line_item.sales_tax_cents)
@@ -112,6 +112,6 @@ class SalesTaxService
   end
 
   def transaction_id
-    "#{@line_item.order.code}-#{@line_item.id[0..4]}"
+    "#{@line_item.order.id}__#{@line_item.id}"
   end
 end

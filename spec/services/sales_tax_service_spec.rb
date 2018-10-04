@@ -6,7 +6,7 @@ describe SalesTaxService, type: :services do
   let(:order) { Fabricate(:order, id: 1) }
   let!(:line_item) { Fabricate(:line_item, id: 1, order: order, price_cents: 2000_00, artwork_id: 'gravity_artwork_1', sales_tax_cents: 100) }
   let(:shipping_total_cents) { 2222 }
-  let(:transaction_id) { "#{line_item.order.code}-#{line_item.id[0..4]}" }
+  let(:transaction_id) { "#{line_item.order.id}__#{line_item.id}" }
   let(:shipping) do
     {
       country: 'US',
@@ -268,7 +268,7 @@ describe SalesTaxService, type: :services do
     let(:transaction_date) { Time.new(2018, 1, 1) }
     let(:params) do
       base_tax_params.merge(
-        transaction_id: "#{transaction_id}_refund",
+        transaction_id: "refund_#{transaction_id}",
         transaction_date: transaction_date.iso8601,
         transaction_reference_id: transaction_id,
         sales_tax: UnitConverter.convert_cents_to_dollars(line_item.sales_tax_cents)
