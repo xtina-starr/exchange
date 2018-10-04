@@ -27,10 +27,10 @@ ActiveAdmin.register Order do
     column 'Last Updated At', :updated_at
     column :state_expires_at
     column 'Items Total', (:order) do |order|
-       number_to_currency order.items_total_cents
+       number_to_currency (order.items_total_cents.to_f/100)
     end
     column 'Buyer Total', (:order) do |order|
-       number_to_currency order.buyer_total_cents
+       number_to_currency (order.buyer_total_cents.to_f/100)
     end
   end
 
@@ -87,19 +87,26 @@ ActiveAdmin.register Order do
 
     panel "Order Summary" do
       attributes_table_for order do
-        row :state
-        row 'Reason', :state_reason
-        row 'Last Updated At', :updated_at
-        #Last admin action
-        #Last note
-        #row 'Order Status Link', link_to artsy_order_item_status_url(:id)
+        row "State" do |order|
+          order.state
+        end
+        row 'Reason' do |order|
+          order.state_reason
+        end
+        row 'Last Updated At' do |order|
+          order.updated_at
+        end
+        row 'Last admin action' do |order|
+          #TODO: do something here
+        end
+        row 'Last note' do |order|
+          #TODO: do something here
+        end
+        row 'Order Status' do
+          link_to "#{order.id}", artsy_order_status_url(order.id)
+        end
         row 'Shipment' do |order|
-          if order.shipping_info?
-            #TODO: shipping info
-            #table_for order.admin_notes
-          else
-            'None'
-          end
+          #TODO: shipment info
         end
         row 'Admin Notes' do |order|
           #TODO: admin notes
@@ -115,29 +122,36 @@ ActiveAdmin.register Order do
       #TODO: finish this payment summary
       para "Paid #{number_to_currency order.buyer_total_cents}"
 
+      items_total = order.items_total_cents.to_f/100
+      shipping_total = order.shipping_total_cents.to_f/100
+      tax_total = order.tax_total_cents.to_f/100
+      sub_total = items_total + shipping_total + tax_total
+
+      transaction_fee = order.transaction_fee_cents.to_f/100
+      commission_fee = order.commission_fee_cents.to_f/100
+      seller_payout = sub_total - transaction_fee - commission_fee
+       
       attributes_table_for order do
         row "Artwork Price" do |order|
-           number_to_currency order.items_total_cents
+          number_to_currency items_total
         end
         row "Shipping" do |order|
-           number_to_currency order.shipping_total_cents
+          number_to_currency shipping_total
         end
         row "Sales Tax" do |order|
-           number_to_currency order.tax_total_cents
+          number_to_currency tax_total
         end
         row "Subtotal" do |order|
-          number_to_currency(order.items_total_cents.to_i +
-                             order.shipping_total_cents.to_i +
-                             order.tax_total_cents.to_i)
+          number_to_currency(sub_total)
         end
         row "Processing Fee" do |order|
-           number_to_currency order.transaction_fee_cents
+          number_to_currency(-transaction_fee, negative_format: "( %u%n )")
         end
         row "Artsy Fee" do |order|
-           number_to_currency order.commission_fee_cents
+          number_to_currency(-commission_fee, negative_format: "( %u%n )")
         end
         row "Seller Payout" do |order|
-           number_to_currency(order.items_total_cents.to_i + order.shipping_total_cents.to_i + order.tax_total_cents.to_i - order.transaction_fee_cents.to_i - order.commission_fee_cents.to_i)
+          number_to_currency(seller_payout)
         end
 
       end
@@ -154,4 +168,48 @@ ActiveAdmin.register Order do
 
   end
 
+  sidebar :contact_info, only: :show do
+
+    #TODO: how do I get artwork_id
+    h5 link_to("View Artwork on Artsy", artsy_view_artwork_url())
+
+    panel "Buyer Information" do
+      attributes_table_for order do
+        row :shipping_name
+        row :shipping_address do
+          if order.shipping_info?
+            div order.shipping_address_line1
+            div order.shipping_address_line2
+            div "#{order.shipping_city}, #{order.shipping_region} #{order.shipping_postal_code}"
+            div order.shipping_country
+          else
+            'None'
+          end
+        end
+        row 'Shipping Phone' do
+          number_to_phone order.buyer_phone_number
+        end
+        #TODO: fill in email
+        row :email
+      end
+      h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id))
+
+    end
+
+    panel "Seller Information" do
+      attributes_table_for order do
+        #TODO: fill this in
+        row :partner_name
+        row :address
+        row :phone
+        row :email
+        row :sales_contacts do
+          #TODO: add sales contacts
+          #table_for
+        end
+      end
+      h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id))
+    end
+  end
+  
 end
