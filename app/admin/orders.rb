@@ -119,8 +119,10 @@ ActiveAdmin.register Order do
     end
 
     panel "Transaction" do
-      #TODO: finish this payment summary
-      para "Paid #{number_to_currency order.buyer_total_cents}"
+
+      credit_card_info = GravityService.get_credit_card(order.credit_card_id)
+
+      h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{order[:created_at]}"
 
       items_total = order.items_total_cents.to_f/100
       shipping_total = order.shipping_total_cents.to_f/100
@@ -197,10 +199,20 @@ ActiveAdmin.register Order do
     end
 
     panel "Seller Information" do
-      attributes_table_for order do
+
+      partner_info = GravityService.fetch_partner(order.seller_id)
+      partner_location = GravityService.fetch_partner_location(order.seller_id)
+
+      byebug
+
+      attributes_table_for partner_info do
         #TODO: fill this in
-        row :partner_name
-        row :address
+        row :name
+        row :address do 
+          div partner_location[:street_line1]
+          div partner_location[:street_line2]
+          div "#{partner_location[:shipping_city]}, #{partner_location[:region]} #{partner_location[:postal_code]}"
+        end
         row :phone
         row :email
         row :sales_contacts do
