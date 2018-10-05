@@ -34,6 +34,55 @@ ActiveAdmin.register Order do
     end
   end
 
+  member_action :refund, method: :post do
+    OrderCancellationService.new(resource).refund!
+    redirect_to resource_path, notice: "Refunded!"
+  end
+
+  action_item :refund, only: :show do
+    link_to 'Refund', refund_admin_order_path(order), method: :post if [Order::APPROVED, Order::FULFILLED].include? order.state
+  end
+
+  sidebar :contact_info, only: :show do
+    #TODO: why doesn't this work?
+    link_to "artsy.net" do
+      button "View Artwork on Artsy"
+    end
+    panel "Buyer Information" do
+      attributes_table_for order do
+        #TODO: fill this in
+        row :name
+        row :shipping_address do
+          if order.shipping_info?
+            #TODO: shipping info
+            #table_for order.admin_notes
+          else
+            'None'
+          end
+        end
+        row :shipping_phone
+        row :email
+      end
+    end
+
+    panel "Seller Information" do
+      attributes_table_for order do
+        #TODO: fill this in
+        row :partner_name
+        row :address
+        row :phone
+        row :email
+        row :sales_contacts do
+          #TODO: add sales contacts
+          #table_for
+        end
+      end
+      link_to "artsy.net" do
+        button "View Partner in Admin-Partners"
+      end
+    end
+  end
+
   show do
 
     panel "Order Summary" do
@@ -65,7 +114,7 @@ ActiveAdmin.register Order do
     panel "Transaction" do
       #TODO: finish this payment summary
       para "Paid #{number_to_currency order.buyer_total_cents}"
-       
+
       attributes_table_for order do
         row "Artwork Price" do |order|
            number_to_currency order.items_total_cents
@@ -105,52 +154,4 @@ ActiveAdmin.register Order do
 
   end
 
-  sidebar :contact_info, only: :show do
-
-    #TODO: why doesn't this work?
-    link_to "artsy.net" do
-      button "View Artwork on Artsy"
-    end
-
-
-    panel "Buyer Information" do
-      attributes_table_for order do
-        #TODO: fill this in
-        row :name
-        row :shipping_address do
-          if order.shipping_info?
-            #TODO: shipping info
-            #table_for order.admin_notes
-          else
-            'None'
-          end
-        end
-        row :shipping_phone
-        row :email
-      end
-
-    end
-
-    panel "Seller Information" do
-      attributes_table_for order do
-        #TODO: fill this in
-        row :partner_name
-        row :address
-        row :phone
-        row :email
-        row :sales_contacts do
-          #TODO: add sales contacts
-          #table_for
-        end
-      end
-      link_to "artsy.net" do
-        button "View Partner in Admin-Partners"
-      end
-    end
-  end
-  
 end
-
-
-
-

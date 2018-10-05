@@ -109,4 +109,15 @@ describe OrderCancellationService, type: :services do
       end
     end
   end
+
+  describe '#refund!' do
+    context 'approved order' do
+      it 'refunds the order' do
+      end
+      it 'undeducts inventory' do
+      end
+      it 'captures refund transaction' do
+      end
+    end
+  end
 end
