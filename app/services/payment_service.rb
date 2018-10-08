@@ -27,7 +27,7 @@ module PaymentService
   end
 
   def self.refund_charge(charge_id)
-    refund = Stripe::Refund.create(charge: charge_id)
+    refund = Stripe::Refund.create(charge: charge_id, reverse_transfer: true)
     Transaction.new(external_id: refund.id, transaction_type: Transaction::REFUND, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
     generate_transaction_from_exception(e, Transaction::REFUND, charge_id: charge_id)

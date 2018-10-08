@@ -7,7 +7,7 @@ class OrderCancellationService
 
   def seller_lapse!
     @order.seller_lapse! do
-      refund
+      process_refund
     end
     PostNotificationJob.perform_later(@order.id, Order::CANCELED)
   ensure
@@ -16,7 +16,7 @@ class OrderCancellationService
 
   def reject!
     @order.reject! do
-      refund
+      process_refund
     end
     PostNotificationJob.perform_later(@order.id, Order::CANCELED, @by)
   ensure
@@ -25,7 +25,7 @@ class OrderCancellationService
 
   def refund!
     @order.refund! do
-      refund
+      process_refund
     end
     PostNotificationJob.perform_later(@order.id, Order::REFUNDED, @by)
   ensure
@@ -34,7 +34,7 @@ class OrderCancellationService
 
   private
 
-  def refund
+  def process_refund
     @transaction = PaymentService.refund_charge(@order.external_charge_id)
     raise Errors::ProcessingError.new(:refund_failed, @transaction.failure_data) if @transaction.failed?
 
