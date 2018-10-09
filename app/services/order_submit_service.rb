@@ -92,7 +92,7 @@ class OrderSubmitService
       buyer_type: @order.buyer_type,
       seller_id: @order.seller_id,
       seller_type: @order.seller_type,
-      type: @order.seller_type == 'auction' ? 'auction-bn' : 'bn-mo'
+      type: @order.auction_seller? ? 'auction-bn' : 'bn-mo'
     }
   end
 end

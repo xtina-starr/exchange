@@ -49,6 +49,11 @@ class Order < ApplicationRecord
     PARTNER = 'partner'.freeze
   ].freeze
 
+  SELLER_TYPES = [
+    AUCTION = 'auction'.freeze,
+    GALLERY = 'gallery'.freeze
+  ].freeze
+
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
   has_many :transactions, dependent: :destroy
   has_many :state_histories, dependent: :destroy
@@ -90,6 +95,10 @@ class Order < ApplicationRecord
 
   def payment_info?
     credit_card_id.present?
+  end
+
+  def auction_seller?
+    seller_type == AUCTION
   end
 
   def to_s
