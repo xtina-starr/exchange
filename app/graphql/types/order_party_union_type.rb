@@ -1,5 +1,6 @@
 class Types::Partner < Types::BaseObject
   field :id, String, null: false
+  field :type, String, null: false
 end
 
 class Types::User < Types::BaseObject
@@ -13,10 +14,8 @@ class Types::OrderPartyUnionType < Types::BaseUnion
     case object.type
     when Order::USER
       Types::User
-    when Order::PARTNER
-      Types::Partner
     else
-      raise "Unexpected Return value: #{object.inspect}"
+      Types::Partner
     end
   end
 end

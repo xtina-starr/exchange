@@ -18,7 +18,7 @@ class CreateOrderService
         buyer_id: @user_id,
         buyer_type: Order::USER,
         seller_id: @artwork[:partner][:_id],
-        seller_type: Order::PARTNER,
+        seller_type: @artwork[:partner][:type].downcase,
         currency_code: @artwork[:price_currency],
         state: Order::PENDING,
         state_updated_at: Time.now.utc,

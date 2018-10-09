@@ -92,6 +92,7 @@ describe Api::GraphqlController, type: :request do
                 expect(order.currency_code).to eq 'USD'
                 expect(order.buyer_id).to eq jwt_user_id
                 expect(order.seller_id).to eq partner_id
+                expect(order.seller_type).to eq 'gallery'
                 expect(order.line_items.count).to eq 1
                 expect(order.line_items.first.price_cents).to eq 4200_42
                 expect(order.line_items.first.artwork_id).to eq 'artwork-id'
