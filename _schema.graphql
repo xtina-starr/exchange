@@ -326,6 +326,7 @@ type PageInfo {
 
 type Partner {
   id: String!
+  type: String!
 }
 
 type Pickup {

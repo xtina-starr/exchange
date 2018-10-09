@@ -183,10 +183,12 @@ describe OrderSubmitService, type: :services do
       end
 
       describe 'Stripe call' do
+        let(:seller_type) { 'gallery' }
         let(:order) do
           Fabricate(
             :order,
             seller_id: partner_id,
+            seller_type: seller_type,
             credit_card_id: credit_card_id,
             fulfillment_type: Order::PICKUP,
             items_total_cents: 18000_00,
@@ -206,7 +208,7 @@ describe OrderSubmitService, type: :services do
               buyer_id: order.buyer_id,
               buyer_type: 'user',
               seller_id: 'partner-1',
-              seller_type: 'partner',
+              seller_type: 'gallery',
               type: 'bn-mo'
             },
             destination: {
@@ -218,6 +220,34 @@ describe OrderSubmitService, type: :services do
           artwork_inventory_deduct_request
           edition_set_inventory_deduct_request
           service.process!
+        end
+        context 'auction seller type' do
+          let(:seller_type) { 'auction' }
+          it 'calls stripe with expected params' do
+            expect(Stripe::Charge).to receive(:create).with(
+              amount: 18300_00,
+              currency: 'USD',
+              description: 'INVOICING-DE via Artsy',
+              source: stripe_customer.default_source,
+              customer: stripe_customer.id,
+              metadata: {
+                exchange_order_id: order.id,
+                buyer_id: order.buyer_id,
+                buyer_type: 'user',
+                seller_id: 'partner-1',
+                seller_type: 'auction',
+                type: 'auction-bn'
+              },
+              destination: {
+                account: 'ma-1',
+                amount: 3369_00
+              },
+              capture: false
+            ).and_return(captured_charge)
+            artwork_inventory_deduct_request
+            edition_set_inventory_deduct_request
+            service.process!
+          end
         end
       end
     end
