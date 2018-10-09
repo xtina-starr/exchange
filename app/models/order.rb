@@ -16,8 +16,10 @@ class Order < ApplicationRecord
     APPROVED = 'approved'.freeze,
     # Items have been deemed unavailable and hold is voided.
     CANCELED = 'canceled'.freeze,
-    # Order is completly fulfilled by the seller
-    FULFILLED = 'fulfilled'.freeze
+    # Order is completely fulfilled by the seller
+    FULFILLED = 'fulfilled'.freeze.freeze,
+    # Order was refunded after approval/fulfillment
+    REFUNDED = 'refunded'.freeze
   ].freeze
 
   REASONS = {
@@ -38,7 +40,7 @@ class Order < ApplicationRecord
     SHIP = 'ship'.freeze
   ].freeze
 
-  ACTIONS = %i[abandon submit approve reject fulfill seller_lapse].freeze
+  ACTIONS = %i[abandon submit approve reject fulfill seller_lapse refund].freeze
   ACTION_REASONS = {
     seller_lapse: REASONS[CANCELED][:seller_lapsed],
     reject: REASONS[CANCELED][:seller_rejected]
@@ -166,6 +168,7 @@ class Order < ApplicationRecord
     machine.when(:seller_lapse, SUBMITTED => CANCELED)
     machine.when(:cancel, SUBMITTED => CANCELED)
     machine.when(:fulfill, APPROVED => FULFILLED)
+    machine.when(:refund, APPROVED => REFUNDED, FULFILLED => REFUNDED)
     machine.on(:any) do
       self.state = machine.state
     end
