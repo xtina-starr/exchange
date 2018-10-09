@@ -20,6 +20,7 @@ describe Api::GraphqlController, type: :request do
         updated_at: 1.day.ago,
         shipping_total_cents: 100_00,
         commission_fee_cents: 50_00,
+        commission_rate: 0.10,
         seller_total_cents: 50_00,
         buyer_total_cents: 100_00,
         items_total_cents: 0,
@@ -52,6 +53,7 @@ describe Api::GraphqlController, type: :request do
             sellerTotalCents
             buyerTotalCents
             createdAt
+            displayCommissionRate
             lineItems {
               edges {
                 node {
@@ -134,6 +136,11 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.seller_total_cents).to eq 50_00
         expect(result.data.order.buyer_total_cents).to eq 100_00
         expect(result.data.order.created_at).to eq created_at.iso8601
+      end
+
+      it 'formats line item commission_rate into a display string' do
+        result = client.execute(query, id: user1_order1.id)
+        expect(result.data.order.display_commission_rate).to eq '10%'
       end
 
       Order::STATES.each do |state|
