@@ -45,11 +45,9 @@ ActiveAdmin.register Order do
 
   sidebar :contact_info, only: :show do
 
-    #TODO: how do I get artwork_id
-    
     table_for order.line_items do
       column '' do |line_item|
-        artwork_info = GravityService.fetch_artwork_info(line_item.artwork_id)
+        artwork_info = GravityService.get_artwork(line_item.artwork_id)
         if artwork_info[:images] && !artwork_info[:images].empty? && artwork_info[:images][0][:image_urls] && artwork_info[:images][0][:image_urls][:square]
           image_url = artwork_info[:images][0][:image_urls][:square]
           img :src => image_url, :width => "100%"
