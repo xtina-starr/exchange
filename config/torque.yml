@@ -1,0 +1,6 @@
+development: &default
+  user_url: <%= "#{ENV['TORQUE_URL']}/user" %>
+test:
+  <<: *default
+production:
+  <<: *default

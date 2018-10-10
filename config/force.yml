@@ -1,0 +1,6 @@
+development: &default
+  artwork_url: <%= "#{ENV['FORCE_URL']}/artwork" %>
+test:
+  <<: *default
+production:
+  <<: *default

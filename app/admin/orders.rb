@@ -46,28 +46,32 @@ ActiveAdmin.register Order do
   sidebar :contact_info, only: :show do
 
     #TODO: how do I get artwork_id
-    h5 link_to("View Artwork on Artsy", artsy_view_artwork_url())
+    #h5 link_to("View Artwork on Artsy", artsy_view_artwork_url())
 
     panel "Buyer Information" do
       attributes_table_for order do
-        row :shipping_name
-        row :shipping_address do
-          if order.shipping_info?
-            div order.shipping_address_line1
-            div order.shipping_address_line2
-            div "#{order.shipping_city}, #{order.shipping_region} #{order.shipping_postal_code}"
-            div order.shipping_country
-          else
-            'None'
+        if order.fulfillment_type == Order::SHIP
+          row :shipping_name
+          row :shipping_address do
+            if order.shipping_info?
+              div order.shipping_address_line1
+              div order.shipping_address_line2
+              div "#{order.shipping_city}, #{order.shipping_region} #{order.shipping_postal_code}"
+              div order.shipping_country
+            else
+              'None'
+            end
           end
-        end
-        row 'Shipping Phone' do
-          number_to_phone order.buyer_phone_number
+          row 'Shipping Phone' do
+            number_to_phone order.buyer_phone_number
+          end
         end
         #TODO: fill in email
         row :email
       end
-      h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id))
+      if order.buyer_type == 'user'
+        h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id))
+      end
 
     end
 
