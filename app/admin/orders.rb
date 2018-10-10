@@ -44,42 +44,49 @@ ActiveAdmin.register Order do
   end
 
   sidebar :contact_info, only: :show do
-    #TODO: why doesn't this work?
-    link_to "artsy.net" do
-      button "View Artwork on Artsy"
-    end
+
+    #TODO: how do I get artwork_id
+    h5 link_to("View Artwork on Artsy", artsy_view_artwork_url())
+
     panel "Buyer Information" do
       attributes_table_for order do
-        #TODO: fill this in
-        row :name
+        row :shipping_name
         row :shipping_address do
           if order.shipping_info?
-            #TODO: shipping info
-            #table_for order.admin_notes
+            div order.shipping_address_line1
+            div order.shipping_address_line2
+            div "#{order.shipping_city}, #{order.shipping_region} #{order.shipping_postal_code}"
+            div order.shipping_country
           else
             'None'
           end
         end
-        row :shipping_phone
+        row 'Shipping Phone' do
+          number_to_phone order.buyer_phone_number
+        end
+        #TODO: fill in email
         row :email
       end
+      h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id))
+
     end
 
     panel "Seller Information" do
-      attributes_table_for order do
-        #TODO: fill this in
-        row :partner_name
-        row :address
-        row :phone
-        row :email
-        row :sales_contacts do
-          #TODO: add sales contacts
-          #table_for
+
+      partner_info = GravityService.fetch_partner(order.seller_id)
+      partner_info[:partner_location] = GravityService.fetch_partner_location(order.seller_id)
+
+      attributes_table_for partner_info do
+        row :name
+        row :partner_location do |partner_info|
+          partner_location = partner_info[:partner_location]
+          div partner_location.street_line1
+          div partner_location.street_line2
+          div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
         end
+        row :email
       end
-      link_to "artsy.net" do
-        button "View Partner in Admin-Partners"
-      end
+      h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id))
     end
   end
 
@@ -108,12 +115,14 @@ ActiveAdmin.register Order do
         row 'Shipment' do |order|
           #TODO: shipment info
         end
-        row 'Admin Notes' do |order|
-          #TODO: admin notes
-          #table_for order.admin_notes
-        end
       end
       br
+
+      table_for order.state_histories do
+        column 'Date', :created_at
+        column :state
+        column :reason
+      end
 
 
     end
@@ -170,58 +179,6 @@ ActiveAdmin.register Order do
 
   end
 
-  sidebar :contact_info, only: :show do
-
-    #TODO: how do I get artwork_id
-    h5 link_to("View Artwork on Artsy", artsy_view_artwork_url())
-
-    panel "Buyer Information" do
-      attributes_table_for order do
-        row :shipping_name
-        row :shipping_address do
-          if order.shipping_info?
-            div order.shipping_address_line1
-            div order.shipping_address_line2
-            div "#{order.shipping_city}, #{order.shipping_region} #{order.shipping_postal_code}"
-            div order.shipping_country
-          else
-            'None'
-          end
-        end
-        row 'Shipping Phone' do
-          number_to_phone order.buyer_phone_number
-        end
-        #TODO: fill in email
-        row :email
-      end
-      h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id))
-
-    end
-
-    panel "Seller Information" do
-
-      partner_info = GravityService.fetch_partner(order.seller_id)
-      partner_info[:partner_location] = GravityService.fetch_partner_location(order.seller_id)
-      partner_info[:partner_contacts] = GravityService.fetch_partner_contacts(order.seller_id)
-
-      attributes_table_for partner_info do
-        row :name
-        row :partner_location do |partner_info|
-          partner_location = partner_info[:partner_location]
-          div partner_location.street_line1
-          div partner_location.street_line2
-          div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
-        end
-        #TODO: fill this in
-        row :phone
-        row :email
-        row :sales_contacts do
-          #TODO: add sales contacts
-          #table_for
-        end
-      end
-      h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id))
-    end
-  end
+ 
   
 end

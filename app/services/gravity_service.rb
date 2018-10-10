@@ -47,14 +47,6 @@ module GravityService
     raise Errors::InternalError.new(:gravity, message: e.message)
   end
 
-  def self.fetch_partner_contacts(partner_id)
-    Adapters::GravityV1.get("/partner/#{partner_id}/contacts")
-  rescue Adapters::GravityNotFoundError
-    raise Errors::ValidationError.new(:unknown_partner, partner_id: partner_id)
-  rescue Adapters::GravityError, StandardError => e
-    raise Errors::InternalError.new(:gravity, message: e.message)
-  end
-
   def self.deduct_inventory(line_item)
     if line_item.edition_set_id
       Adapters::GravityV1.put("/artwork/#{line_item.artwork_id}/edition_set/#{line_item.edition_set_id}/inventory", params: { deduct: line_item.quantity })
