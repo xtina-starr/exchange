@@ -3,8 +3,8 @@ module UrlHelper
     "https://www.artsy.net/order/#{order_id}/status"
   end
 
-  #TODO: make this take an artwork id
-  def artsy_view_artwork_url()
+  # TODO: make this take an artwork id
+  def artsy_view_artwork_url
     'https://www.artsy.net/'
   end
 
@@ -15,5 +15,4 @@ module UrlHelper
   def artsy_view_partner_admin_url(partner_id)
     "https://admin-partners.artsy.net/partners/#{partner_id}"
   end
-
 end
