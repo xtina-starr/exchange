@@ -9,6 +9,7 @@ ActiveAdmin.register Order do
   scope('Pending & Abandoned Orders') { |scope| scope.where(state: [ Order::ABANDONED, Order::PENDING ]) }
 
   filter :id_eq, label: 'Order Id'
+  filter :code_eq, label: 'Order Code'
   filter :seller_id_eq, label: 'Seller Id'
   filter :buyer_id_eq, label: 'Buyer Id'
   filter :created_at, as: :date_range, label: 'Submitted Date'
@@ -17,8 +18,8 @@ ActiveAdmin.register Order do
   filter :state_reason, as: :check_boxes, collection: proc { Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize) }
 
   index do
-    column :id do |order|
-      link_to order.id, admin_order_path(order.id)
+    column :code do |order|
+      link_to order.code, admin_order_path(order.id)
     end
     column :state
     column :fulfillment_type
