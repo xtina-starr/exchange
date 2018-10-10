@@ -70,5 +70,4 @@ module GravityService
   rescue Adapters::GravityError
     raise Errors::ProcessingError.new(:insufficient_inventory, line_item_id: line_item.id)
   end
-
 end

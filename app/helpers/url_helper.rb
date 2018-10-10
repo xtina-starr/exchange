@@ -1,6 +1,6 @@
 module UrlHelper
   def artsy_order_status_url(order_id)
-    # TODO add this route to exchange
+    # TODO: add this route to exchange
     "/order/#{order_id}/status"
   end
 
