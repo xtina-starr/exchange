@@ -23,7 +23,7 @@ describe OrderEvent, type: :events do
               buyer_type: Order::USER,
               buyer_phone_number: '00123459876',
               seller_id: partner_id,
-              seller_type: Order::PARTNER,
+              seller_type: 'gallery',
               currency_code: 'usd',
               shipping_total_cents: 50,
               tax_total_cents: 30,
@@ -83,7 +83,7 @@ describe OrderEvent, type: :events do
       expect(event.properties[:buyer_type]).to eq Order::USER
       expect(event.properties[:fulfillment_type]).to eq Order::SHIP
       expect(event.properties[:seller_id]).to eq partner_id
-      expect(event.properties[:seller_type]).to eq Order::PARTNER
+      expect(event.properties[:seller_type]).to eq 'gallery'
       expect(event.properties[:items_total_cents]).to eq 300
       expect(event.properties[:shipping_total_cents]).to eq 50
       expect(event.properties[:tax_total_cents]).to eq 30

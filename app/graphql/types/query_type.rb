@@ -58,7 +58,7 @@ class Types::QueryType < Types::BaseObject
   def validate_order_request!(order)
     return if trusted? || sales_admin? ||
               (order.buyer_type == Order::USER && order.buyer_id == context[:current_user][:id]) ||
-              (order.seller_type == Order::PARTNER && context[:current_user][:partner_ids].include?(order.seller_id))
+              (order.seller_type != Order::USER && context[:current_user][:partner_ids].include?(order.seller_id))
 
     raise Errors::AuthError, :not_found
   end
