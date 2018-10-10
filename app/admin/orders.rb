@@ -201,18 +201,18 @@ ActiveAdmin.register Order do
     panel "Seller Information" do
 
       partner_info = GravityService.fetch_partner(order.seller_id)
-      partner_location = GravityService.fetch_partner_location(order.seller_id)
-
-      byebug
+      partner_info[:partner_location] = GravityService.fetch_partner_location(order.seller_id)
+      partner_info[:partner_contacts] = GravityService.fetch_partner_contacts(order.seller_id)
 
       attributes_table_for partner_info do
-        #TODO: fill this in
         row :name
-        row :address do 
-          div partner_location[:street_line1]
-          div partner_location[:street_line2]
-          div "#{partner_location[:shipping_city]}, #{partner_location[:region]} #{partner_location[:postal_code]}"
+        row :partner_location do |partner_info|
+          partner_location = partner_info[:partner_location]
+          div partner_location.street_line1
+          div partner_location.street_line2
+          div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
         end
+        #TODO: fill this in
         row :phone
         row :email
         row :sales_contacts do
