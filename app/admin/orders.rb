@@ -46,7 +46,21 @@ ActiveAdmin.register Order do
   sidebar :contact_info, only: :show do
 
     #TODO: how do I get artwork_id
-    #h5 link_to("View Artwork on Artsy", artsy_view_artwork_url())
+    
+    table_for order.line_items do
+      column '' do |line_item|
+        artwork_info = GravityService.fetch_artwork_info(line_item.artwork_id)
+        if artwork_info[:images] && !artwork_info[:images].empty? && artwork_info[:images][0][:image_urls] && artwork_info[:images][0][:image_urls][:square]
+          image_url = artwork_info[:images][0][:image_urls][:square]
+          img :src => image_url, :width => "100%"
+        end
+
+        br
+        if artwork_info.key?(:title)
+          link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id)
+        end
+      end
+    end
 
     panel "Buyer Information" do
       attributes_table_for order do

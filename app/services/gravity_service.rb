@@ -70,4 +70,14 @@ module GravityService
   rescue Adapters::GravityError
     raise Errors::ProcessingError.new(:insufficient_inventory, line_item_id: line_item.id)
   end
+
+  def self.fetch_artwork_info(artwork_id)
+    Adapters::GravityV1.get("/artwork/#{artwork_id}")
+  rescue Adapters::GravityNotFoundError
+    raise Errors::ValidationError.new(:unknown_artwork, artwork_id: artwork_id)
+  rescue Adapters::GravityError, StandardError => e
+    raise Errors::InternalError.new(:gravity, message: e.message)
+  end
+
+
 end

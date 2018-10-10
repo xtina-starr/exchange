@@ -4,7 +4,6 @@ module UrlHelper
     "/order/#{order_id}/status"
   end
 
-  # TODO: make this take an artwork id
   def artsy_view_artwork_url(artwork_id)
     artwork_url = Rails.application.config_for(:force)['artwork_url']
     "#{artwork_url}/#{artwork_id}"
