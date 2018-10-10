@@ -1,6 +1,6 @@
 class Mutations::BaseMutation < GraphQL::Schema::RelayClassicMutation
   def validate_seller_request!(order)
-    raise Errors::ValidationError, :not_found unless order.seller_type == Order::PARTNER && context[:current_user]['partner_ids'].include?(order.seller_id)
+    raise Errors::ValidationError, :not_found unless order.seller_type != Order::USER && context[:current_user]['partner_ids'].include?(order.seller_id)
   end
 
   def validate_buyer_request!(order)
