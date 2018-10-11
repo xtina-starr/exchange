@@ -83,7 +83,7 @@ ActiveAdmin.register Order do
         row :email
       end
       if order.buyer_type == 'user'
-        h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id))
+        h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id), class: :button)
       end
 
     end
@@ -103,7 +103,7 @@ ActiveAdmin.register Order do
         end
         row :email
       end
-      h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id))
+      h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id), class: :button)
     end
   end
 
@@ -148,7 +148,7 @@ ActiveAdmin.register Order do
 
       credit_card_info = GravityService.get_credit_card(order.credit_card_id)
 
-      h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{order[:created_at]}"
+      h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
 
       items_total = order.items_total_cents.to_f/100
       shipping_total = order.shipping_total_cents.to_f/100
@@ -187,15 +187,12 @@ ActiveAdmin.register Order do
 
     panel "Admin Actions and Notes" do
       #TODO: Add "Add note" button
+      h5 link_to("Add note", new_admin_order_admin_note_path(order), class: :button)
       table_for(order.admin_notes) do
         column :created_at
         column :type
         column :description
       end
     end
-
   end
-
- 
-  
 end

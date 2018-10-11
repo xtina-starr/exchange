@@ -10,4 +10,5 @@ Rails.application.routes.draw do
     post '/graphql', to: 'graphql#execute'
     get '/health', to: 'health#index'
   end
+  resources :admin_notes
 end
