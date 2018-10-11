@@ -14,6 +14,7 @@ class OrderTotalUpdaterService
       @order.buyer_total_cents = @order.items_total_cents + @order.shipping_total_cents.to_i + @order.tax_total_cents.to_i
       if @commission_rate.present?
         set_commission_on_line_items
+        @order.commission_rate = @commission_rate
         @order.commission_fee_cents = @order.line_items.map(&:commission_fee_cents).sum
       end
       @order.transaction_fee_cents = calculate_transaction_fee

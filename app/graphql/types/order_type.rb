@@ -25,6 +25,8 @@ class Types::OrderType < Types::BaseObject
   field :state_expires_at, Types::DateTimeType, null: true
   field :last_submitted_at, Types::DateTimeType, null: true
   field :last_approved_at, Types::DateTimeType, null: true
+  field :commission_rate, Float, null: true
+  field :display_commission_rate, String, null: true
   field :line_items, Types::LineItemType.connection_type, null: true
 
   def buyer
@@ -48,5 +50,15 @@ class Types::OrderType < Types::BaseObject
     return if object.fulfillment_type.blank?
 
     object
+  end
+
+  def display_commission_rate
+    return if object.commission_rate.nil?
+
+    ActiveSupport::NumberHelper.number_to_percentage(
+      object.commission_rate * 100,
+      precision: 2,
+      strip_insignificant_zeros: true
+    )
   end
 end
