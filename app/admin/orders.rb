@@ -146,9 +146,10 @@ ActiveAdmin.register Order do
 
     panel "Transaction" do
 
-      credit_card_info = GravityService.get_credit_card(order.credit_card_id)
-
-      h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
+      if order.credit_card_id.nil? do
+        credit_card_info = GravityService.get_credit_card(order.credit_card_id)
+        h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
+      end
 
       items_total = order.items_total_cents.to_f/100
       shipping_total = order.shipping_total_cents.to_f/100
@@ -190,7 +191,7 @@ ActiveAdmin.register Order do
       h5 link_to("Add note", new_admin_order_admin_note_path(order), class: :button)
       table_for(order.admin_notes) do
         column :created_at
-        column :type
+        column :note_type
         column :description
       end
     end
