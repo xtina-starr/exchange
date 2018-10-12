@@ -146,7 +146,7 @@ ActiveAdmin.register Order do
 
     panel "Transaction" do
 
-      if order.credit_card_id.nil? do
+      if order.credit_card_id.nil?
         credit_card_info = GravityService.get_credit_card(order.credit_card_id)
         h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
       end
