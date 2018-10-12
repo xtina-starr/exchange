@@ -1,0 +1,6 @@
+development: &default
+  partners_url: <%= "#{ENV['VIBRATIONS_URL']}/partners" %>
+test:
+  <<: *default
+production:
+  <<: *default

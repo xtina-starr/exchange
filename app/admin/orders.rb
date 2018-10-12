@@ -28,10 +28,10 @@ ActiveAdmin.register Order do
     column 'Last Updated At', :updated_at
     column :state_expires_at
     column 'Items Total', (:order) do |order|
-       number_to_currency order.items_total_cents
+       number_to_currency (order.items_total_cents.to_f/100)
     end
     column 'Buyer Total', (:order) do |order|
-       number_to_currency order.buyer_total_cents
+       number_to_currency (order.buyer_total_cents.to_f/100)
     end
   end
 
@@ -45,42 +45,65 @@ ActiveAdmin.register Order do
   end
 
   sidebar :contact_info, only: :show do
-    #TODO: why doesn't this work?
-    link_to "artsy.net" do
-      button "View Artwork on Artsy"
-    end
-    panel "Buyer Information" do
-      attributes_table_for order do
-        #TODO: fill this in
-        row :name
-        row :shipping_address do
-          if order.shipping_info?
-            #TODO: shipping info
-            #table_for order.admin_notes
-          else
-            'None'
-          end
+
+    table_for order.line_items do
+      column '' do |line_item|
+        artwork_info = GravityService.get_artwork(line_item.artwork_id)
+        if artwork_info[:images] && !artwork_info[:images].empty? && artwork_info[:images][0][:image_urls] && artwork_info[:images][0][:image_urls][:square]
+          image_url = artwork_info[:images][0][:image_urls][:square]
+          img :src => image_url, :width => "100%"
         end
-        row :shipping_phone
-        row :email
+
+        br
+        if artwork_info.key?(:title)
+          link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id)
+        end
       end
     end
 
-    panel "Seller Information" do
+    panel "Buyer Information" do
       attributes_table_for order do
-        #TODO: fill this in
-        row :partner_name
-        row :address
-        row :phone
-        row :email
-        row :sales_contacts do
-          #TODO: add sales contacts
-          #table_for
+        if order.fulfillment_type == Order::SHIP
+          row :shipping_name
+          row :shipping_address do
+            if order.shipping_info?
+              div order.shipping_address_line1
+              div order.shipping_address_line2
+              div "#{order.shipping_city}, #{order.shipping_region} #{order.shipping_postal_code}"
+              div order.shipping_country
+            else
+              'None'
+            end
+          end
+          row 'Shipping Phone' do
+            number_to_phone order.buyer_phone_number
+          end
         end
+        #TODO: fill in email
+        row :email
       end
-      link_to "artsy.net" do
-        button "View Partner in Admin-Partners"
+      if order.buyer_type == 'user'
+        h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id))
       end
+
+    end
+
+    panel "Seller Information" do
+
+      partner_info = GravityService.fetch_partner(order.seller_id)
+      partner_info[:partner_location] = GravityService.fetch_partner_location(order.seller_id)
+
+      attributes_table_for partner_info do
+        row :name
+        row :partner_location do |partner_info|
+          partner_location = partner_info[:partner_location]
+          div partner_location.street_line1
+          div partner_location.street_line2
+          div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
+        end
+        row :email
+      end
+      h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id))
     end
   end
 
@@ -88,57 +111,75 @@ ActiveAdmin.register Order do
 
     panel "Order Summary" do
       attributes_table_for order do
-        row :state
-        row 'Reason', :state_reason
-        row 'Last Updated At', :updated_at
-        #Last admin action
-        #Last note
-        #row 'Order Status Link', link_to artsy_order_item_status_url(:id)
-        row 'Shipment' do |order|
-          if order.shipping_info?
-            #TODO: shipping info
-            #table_for order.admin_notes
-          else
-            'None'
-          end
+        row "State" do |order|
+          order.state
         end
-        row 'Admin Notes' do |order|
-          #TODO: admin notes
-          #table_for order.admin_notes
+        row 'Reason' do |order|
+          order.state_reason
+        end
+        row 'Last Updated At' do |order|
+          order.updated_at
+        end
+        row 'Last admin action' do |order|
+          #TODO: do something here
+        end
+        row 'Last note' do |order|
+          #TODO: do something here
+        end
+        row 'Order Status' do
+          link_to "#{order.id}", artsy_order_status_url(order.id)
+        end
+        row 'Shipment' do |order|
+          #TODO: shipment info
         end
       end
       br
+
+      table_for order.state_histories do
+        column 'Date', :created_at
+        column :state
+        column :reason
+      end
 
 
     end
 
     panel "Transaction" do
-      #TODO: finish this payment summary
-      para "Paid #{number_to_currency order.buyer_total_cents}"
 
+      credit_card_info = GravityService.get_credit_card(order.credit_card_id)
+
+      h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{order[:created_at]}"
+
+      items_total = order.items_total_cents.to_f/100
+      shipping_total = order.shipping_total_cents.to_f/100
+      tax_total = order.tax_total_cents.to_f/100
+      sub_total = items_total + shipping_total + tax_total
+
+      transaction_fee = order.transaction_fee_cents.to_f/100
+      commission_fee = order.commission_fee_cents.to_f/100
+      seller_payout = sub_total - transaction_fee - commission_fee
+       
       attributes_table_for order do
         row "Artwork Price" do |order|
-           number_to_currency order.items_total_cents
+          number_to_currency items_total
         end
         row "Shipping" do |order|
-           number_to_currency order.shipping_total_cents
+          number_to_currency shipping_total
         end
         row "Sales Tax" do |order|
-           number_to_currency order.tax_total_cents
+          number_to_currency tax_total
         end
         row "Subtotal" do |order|
-          number_to_currency(order.items_total_cents.to_i +
-                             order.shipping_total_cents.to_i +
-                             order.tax_total_cents.to_i)
+          number_to_currency(sub_total)
         end
         row "Processing Fee" do |order|
-           number_to_currency order.transaction_fee_cents
+          number_to_currency(-transaction_fee, negative_format: "( %u%n )")
         end
         row "Artsy Fee" do |order|
-           number_to_currency order.commission_fee_cents
+          number_to_currency(-commission_fee, negative_format: "( %u%n )")
         end
         row "Seller Payout" do |order|
-           number_to_currency(order.items_total_cents.to_i + order.shipping_total_cents.to_i + order.tax_total_cents.to_i - order.transaction_fee_cents.to_i - order.commission_fee_cents.to_i)
+          number_to_currency(seller_payout)
         end
 
       end
@@ -155,4 +196,6 @@ ActiveAdmin.register Order do
 
   end
 
+ 
+  
 end
