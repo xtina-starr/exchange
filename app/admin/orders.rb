@@ -191,7 +191,9 @@ ActiveAdmin.register Order do
       h5 link_to("Add note", new_admin_order_admin_note_path(order), class: :button)
       table_for(order.admin_notes) do
         column :created_at
-        column :note_type
+        column "Note Type" do |admin_note| 
+          admin_note.note_type.to_s.humanize
+        end
         column :description
       end
     end
