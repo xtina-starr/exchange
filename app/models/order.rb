@@ -51,9 +51,9 @@ class Order < ApplicationRecord
     PARTNER = 'partner'.freeze
   ].freeze
 
-  INTERNAL_EVENT_TOPICS = {
-    'seller_delay' => 'seller_delay'.freeze,
-    'buyer_delay' => 'buyer_delay'.freeze
+  REMINDER_EVENT_VERB = {
+    'seller_delay' => 'seller_delay_reminder'.freeze,
+    'buyer_delay' => 'buyer_delay_reminder'.freeze
   }.freeze
 
   AUCTION_SELLER_TYPE = 'auction'.freeze

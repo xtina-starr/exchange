@@ -53,7 +53,7 @@ class CreateOrderService
     # The official timeout
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
     # The timeout for our admins to reach out to folks
-    OrderInternalFollowUpJob.set(wait_until: @order.state_expires_at - 2.hours).perform_later(@order.id, @order.state)
+    ReminderFollowUpJob.set(wait_until: @order.state_expires_at - 2.hours).perform_later(@order.id, @order.state)
   end
 
   def artwork_price

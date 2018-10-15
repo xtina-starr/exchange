@@ -1,7 +1,7 @@
 require 'rails_helper'
 require 'timecop'
 
-describe OrderInternalFollowUpJob, type: :job do
+describe ReminderFollowUpJob, type: :job do
   let(:state) { Order::PENDING }
   let(:order) { Fabricate(:order, state: state) }
   describe '#perform' do
@@ -9,22 +9,22 @@ describe OrderInternalFollowUpJob, type: :job do
       context 'SUBMITTED' do
         let(:state) { Order::SUBMITTED }
         it 'sends an internal message to admins about seller lapsing' do
-          Timecop.freeze(order.state_expires_at + 1.second) do
-            expect_any_instance_of(PostNotificationJob).to receive(:perform_later)
-              .with(order.id, Order::INTERNAL_EVENT_TOPICS[:seller_delay])
+          Timecop.freeze(order.state_expires_at - 1.second) do
+            expect(PostNotificationJob).to receive(:perform_now)
+              .with(order.id, Order::REMINDER_EVENT_VERB[:seller_delay])
 
-            OrderInternalFollowUpJob.perform_now(order.id, Order::SUBMITTED)
+            ReminderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
           end
         end
       end
       context 'APPROVED' do
         let(:state) { Order::APPROVED }
         it 'sends an internal message to admins about buyerr lapsing' do
-          Timecop.freeze(order.state_expires_at + 1.second) do
-            expect_any_instance_of(PostNotificationJob).to receive(:perform_later)
-              .with(order.id, Order::INTERNAL_EVENT_TOPICS[:buyer_delay])
+          Timecop.freeze(order.state_expires_at - 1.second) do
+            expect(PostNotificationJob).to receive(:perform_now)
+              .with(order.id, Order::REMINDER_EVENT_VERB[:buyer_delay])
 
-            OrderInternalFollowUpJob.perform_now(order.id, Order::APPROVED)
+            ReminderFollowUpJob.perform_now(order.id, Order::APPROVED)
           end
         end
       end
@@ -33,9 +33,9 @@ describe OrderInternalFollowUpJob, type: :job do
       it 'does nothing' do
         order.update!(state: Order::SUBMITTED)
         Timecop.freeze(order.state_expires_at + 1.second) do
-          expect(OrderService).to_not receive(:abandon!)
-          expect_any_instance_of(OrderCancellationService).to_not receive(:seller_lapse!)
-          OrderInternalFollowUpJob.perform_now(order.id, Order::PENDING)
+          expect(PostNotificationJob).to_not receive(:perform_now)
+
+          ReminderFollowUpJob.perform_now(order.id, Order::PENDING)
         end
       end
     end
@@ -43,7 +43,7 @@ describe OrderInternalFollowUpJob, type: :job do
       it 'does nothing' do
         expect(OrderService).to_not receive(:abandon!)
         expect_any_instance_of(OrderCancellationService).to_not receive(:seller_lapse!)
-        OrderInternalFollowUpJob.perform_now(order.id, Order::PENDING)
+        ReminderFollowUpJob.perform_now(order.id, Order::PENDING)
       end
     end
   end
