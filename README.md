@@ -9,6 +9,18 @@ Exchange aspires to be responsible for the various types of e-commerce interacti
 * GitHub: https://github.com/artsy/exchange/
 * Point People: [@ashkan18][ashkan18], [@williardx][williardx]
 
+
+## Deployment
+### Staging
+PRs merged to `master` are automatically deployed to staging by CI.
+
+### Production
+Mention in #dev slack channel that you are going to deploy and then run:
+```
+hokusai pipeline promote --git-remote upstream
+```
+Assuming `upstream` points to Artsy's repository.
+
 ## Setup
 
 * Fork the project to your GitHub account
