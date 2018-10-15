@@ -51,6 +51,11 @@ class Order < ApplicationRecord
     PARTNER = 'partner'.freeze
   ].freeze
 
+  INTERNAL_EVENT_TOPICS = {
+    'seller_delay' => 'seller_delay'.freeze,
+    'buyer_delay' => 'buyer_delay'.freeze
+  }.freeze
+
   AUCTION_SELLER_TYPE = 'auction'.freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'
