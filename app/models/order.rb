@@ -125,6 +125,10 @@ class Order < ApplicationRecord
     )
   end
 
+  def last_admin_note
+    admin_notes.order(:created_at).last
+  end
+
   private
 
   def state_reason_inclusion

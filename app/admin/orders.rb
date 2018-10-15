@@ -3,6 +3,7 @@ ActiveAdmin.register Order do
   # TODO: change sort order
   config.sort_order = 'state_updated_at_desc'
 
+  scope :all
   scope('Active Orders', default: true) { |scope| scope.active }
   scope('Pickup Orders') { |scope| scope.where(state: [ Order::APPROVED, Order::FULFILLED, Order::SUBMITTED ], fulfillment_type: Order::PICKUP ) }
   scope('Fulfillment Overdue') { |scope| scope.approved.where('state_expires_at < ?', Time.now) }
@@ -23,7 +24,9 @@ ActiveAdmin.register Order do
     end
     column :state
     column :fulfillment_type
-    column :last_admin_note
+    column 'Last Admin Action', (:order) do |order|
+      !order.last_admin_note.nil? ? order.last_admin_note.note_type.humanize : nil
+    end
     column 'Submitted At', :created_at
     column 'Last Updated At', :updated_at
     column :state_expires_at
@@ -124,6 +127,9 @@ ActiveAdmin.register Order do
 
     panel "Order Summary" do
       attributes_table_for order do
+        row "Code" do |order|
+          order.code
+        end
         row "State" do |order|
           order.state
         end
@@ -133,12 +139,19 @@ ActiveAdmin.register Order do
         row 'Last Updated At' do |order|
           order.updated_at
         end
+
+        last_admin_note = order.last_admin_note
         row 'Last admin action' do |order|
-          #TODO: do something here
+          if !last_admin_note.nil?
+            last_admin_note.note_type.humanize
+          end
         end
         row 'Last note' do |order|
-          #TODO: do something here
+          if !last_admin_note.nil?
+            last_admin_note.description
+          end
         end
+
         row 'Order Status' do
           link_to "#{order.id}", artsy_order_status_url(order.id)
         end
@@ -159,7 +172,7 @@ ActiveAdmin.register Order do
 
     panel "Transaction" do
 
-      if order.credit_card_id.nil?
+      if !order.credit_card_id.nil?
         credit_card_info = GravityService.get_credit_card(order.credit_card_id)
         if !credit_card_info.nil?
           h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
