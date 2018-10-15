@@ -3,6 +3,7 @@ ActiveAdmin.register Order do
   # TODO: change sort order
   config.sort_order = 'state_updated_at_desc'
 
+  scope :all
   scope('Active Orders', default: true) { |scope| scope.active }
   scope('Pickup Orders') { |scope| scope.where(state: [ Order::APPROVED, Order::FULFILLED, Order::SUBMITTED ], fulfillment_type: Order::PICKUP ) }
   scope('Fulfillment Overdue') { |scope| scope.approved.where('state_expires_at < ?', Time.now) }
@@ -23,7 +24,9 @@ ActiveAdmin.register Order do
     end
     column :state
     column :fulfillment_type
-    column :last_admin_note
+    column 'Last Admin Action', (:order) do |order|
+      order.last_admin_note&.note_type&.humanize
+    end
     column 'Submitted At', :created_at
     column 'Last Updated At', :updated_at
     column :state_expires_at
@@ -49,14 +52,17 @@ ActiveAdmin.register Order do
     table_for order.line_items do
       column '' do |line_item|
         artwork_info = GravityService.get_artwork(line_item.artwork_id)
-        if artwork_info[:images] && !artwork_info[:images].empty? && artwork_info[:images][0][:image_urls] && artwork_info[:images][0][:image_urls][:square]
-          image_url = artwork_info[:images][0][:image_urls][:square]
-          img :src => image_url, :width => "100%"
-        end
-
-        br
-        if artwork_info.key?(:title)
-          link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id)
+        if artwork_info.present? 
+          if artwork_info[:images].kind_of?(Array)
+            square_image = artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
+            img :src => square_image[:image_urls][:square], :width => "100%"
+          end
+          br
+          if artwork_info.key?(:title)
+            link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id)
+          end
+        else
+          h3 "Failed to fetch artwork"
         end
       end
     end
@@ -91,19 +97,28 @@ ActiveAdmin.register Order do
     panel "Seller Information" do
 
       partner_info = GravityService.fetch_partner(order.seller_id)
-      partner_info[:partner_location] = GravityService.fetch_partner_location(order.seller_id)
+      if partner_info.present?
+        partner_location = GravityService.fetch_partner_location(order.seller_id)
 
-      attributes_table_for partner_info do
-        row :name
-        row :partner_location do |partner_info|
-          partner_location = partner_info[:partner_location]
-          div partner_location.street_line1
-          div partner_location.street_line2
-          div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
+        if partner_location.present?
+
+          partner_info[:partner_location] = partner_location
+
+          attributes_table_for partner_info do
+            row :name
+            row :partner_location do |partner_info|
+              partner_location = partner_info[:partner_location]
+              div partner_location.street_line1
+              div partner_location.street_line2
+              div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
+            end
+            row :email
+          end
         end
-        row :email
+        h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id), class: :button)
+      else
+        h3 "Failed to fetch partner info"
       end
-      h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id), class: :button)
     end
   end
 
@@ -111,6 +126,9 @@ ActiveAdmin.register Order do
 
     panel "Order Summary" do
       attributes_table_for order do
+        row "Code" do |order|
+          order.code
+        end
         row "State" do |order|
           order.state
         end
@@ -120,12 +138,19 @@ ActiveAdmin.register Order do
         row 'Last Updated At' do |order|
           order.updated_at
         end
+
+        last_admin_note = order.last_admin_note
         row 'Last admin action' do |order|
-          #TODO: do something here
+          if last_admin_note.present?
+            last_admin_note.note_type.humanize
+          end
         end
         row 'Last note' do |order|
-          #TODO: do something here
+          if last_admin_note.present?
+            last_admin_note.description
+          end
         end
+
         row 'Order Status' do
           link_to "#{order.id}", artsy_order_status_url(order.id)
         end
@@ -146,9 +171,13 @@ ActiveAdmin.register Order do
 
     panel "Transaction" do
 
-      if order.credit_card_id.nil?
+      if order.credit_card_id.present?
         credit_card_info = GravityService.get_credit_card(order.credit_card_id)
-        h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
+        if credit_card_info.present?
+          h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
+        else
+          h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
+        end
       end
 
       items_total = order.items_total_cents.to_f/100
@@ -191,7 +220,9 @@ ActiveAdmin.register Order do
       h5 link_to("Add note", new_admin_order_admin_note_path(order), class: :button)
       table_for(order.admin_notes) do
         column :created_at
-        column :note_type
+        column "Note Type" do |admin_note| 
+          admin_note.note_type.to_s.humanize
+        end
         column :description
       end
     end
