@@ -25,7 +25,7 @@ ActiveAdmin.register Order do
     column :state
     column :fulfillment_type
     column 'Last Admin Action', (:order) do |order|
-      !order.last_admin_note.nil? ? order.last_admin_note.note_type.humanize : nil
+      order.last_admin_note&.note_type&.humanize
     end
     column 'Submitted At', :created_at
     column 'Last Updated At', :updated_at
@@ -52,12 +52,11 @@ ActiveAdmin.register Order do
     table_for order.line_items do
       column '' do |line_item|
         artwork_info = GravityService.get_artwork(line_item.artwork_id)
-        if !artwork_info.nil?
-          if artwork_info[:images] && !artwork_info[:images].empty? && artwork_info[:images][0][:image_urls] && artwork_info[:images][0][:image_urls][:square]
-            image_url = artwork_info[:images][0][:image_urls][:square]
-            img :src => image_url, :width => "100%"
+        if artwork_info.present? 
+          if artwork_info[:images].kind_of?(Array)
+            square_image = artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
+            img :src => square_image[:image_urls][:square], :width => "100%"
           end
-
           br
           if artwork_info.key?(:title)
             link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id)
@@ -98,10 +97,10 @@ ActiveAdmin.register Order do
     panel "Seller Information" do
 
       partner_info = GravityService.fetch_partner(order.seller_id)
-      if !partner_info.nil?
+      if partner_info.present?
         partner_location = GravityService.fetch_partner_location(order.seller_id)
 
-        if !partner_location.nil?
+        if partner_location.present?
 
           partner_info[:partner_location] = partner_location
 
@@ -142,12 +141,12 @@ ActiveAdmin.register Order do
 
         last_admin_note = order.last_admin_note
         row 'Last admin action' do |order|
-          if !last_admin_note.nil?
+          if last_admin_note.present?
             last_admin_note.note_type.humanize
           end
         end
         row 'Last note' do |order|
-          if !last_admin_note.nil?
+          if last_admin_note.present?
             last_admin_note.description
           end
         end
@@ -172,9 +171,9 @@ ActiveAdmin.register Order do
 
     panel "Transaction" do
 
-      if !order.credit_card_id.nil?
+      if order.credit_card_id.present?
         credit_card_info = GravityService.get_credit_card(order.credit_card_id)
-        if !credit_card_info.nil?
+        if credit_card_info.present?
           h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
         else
           h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
