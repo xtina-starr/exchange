@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   namespace :api do
     post '/graphql', to: 'graphql#execute'
     get '/health', to: 'health#index'
+    get '/webhooks/stripe', to: 'webhook#stripe'
   end
   resources :admin_notes
 end
