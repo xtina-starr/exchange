@@ -95,19 +95,28 @@ ActiveAdmin.register Order do
     panel "Seller Information" do
 
       partner_info = GravityService.fetch_partner(order.seller_id)
-      partner_info[:partner_location] = GravityService.fetch_partner_location(order.seller_id)
+      if !partner_info.nil?
+        partner_location = GravityService.fetch_partner_location(order.seller_id)
 
-      attributes_table_for partner_info do
-        row :name
-        row :partner_location do |partner_info|
-          partner_location = partner_info[:partner_location]
-          div partner_location.street_line1
-          div partner_location.street_line2
-          div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
+        if !partner_location.nil?
+
+          partner_info[:partner_location] = partner_location
+
+          attributes_table_for partner_info do
+            row :name
+            row :partner_location do |partner_info|
+              partner_location = partner_info[:partner_location]
+              div partner_location.street_line1
+              div partner_location.street_line2
+              div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
+            end
+            row :email
+          end
         end
-        row :email
+        h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id), class: :button)
+      else
+        h3 "Failed to fetch partner info"
       end
-      h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id), class: :button)
     end
   end
 
@@ -152,7 +161,11 @@ ActiveAdmin.register Order do
 
       if order.credit_card_id.nil?
         credit_card_info = GravityService.get_credit_card(order.credit_card_id)
-        h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
+        if !credit_card_info.nil?
+          h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
+        else
+          h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
+        end
       end
 
       items_total = order.items_total_cents.to_f/100
