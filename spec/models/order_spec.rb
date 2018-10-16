@@ -214,4 +214,27 @@ RSpec.describe Order, type: :model do
       end
     end
   end
+
+  describe 'shipping_info?' do
+    context 'SHIP' do
+      let(:order_shipping_params) { { fulfillment_type: Order::SHIP, shipping_name: 'Col', shipping_address_line1: 'Address line', shipping_city: 'Brooklyn', shipping_country: 'US', buyer_phone_number: '123' } }
+      it 'does not require postal code' do
+        order = Fabricate(:order, fulfillment_type: Order::SHIP, shipping_name: 'Col', shipping_address_line1: 'Address line', shipping_city: 'Brooklyn', shipping_country: 'US', buyer_phone_number: '123')
+        expect(order.shipping_info?).to be true
+      end
+
+      %i[shipping_name shipping_address_line1 shipping_city shipping_country buyer_phone_number].each do |attr|
+        it "requires #{attr}" do
+          order = Fabricate(:order, order_shipping_params.except(attr))
+          expect(order.shipping_info?).to be false
+        end
+      end
+    end
+    context 'PICKUP' do
+      it 'does not require any shipping field' do
+        order = Fabricate(:order, fulfillment_type: Order::PICKUP, shipping_name: nil, shipping_address_line1: nil, shipping_city: nil, shipping_country: nil, buyer_phone_number: nil)
+        expect(order.shipping_info?).to be true
+      end
+    end
+  end
 end

@@ -186,6 +186,6 @@ class Order < ApplicationRecord
   end
 
   def complete_shipping_details?
-    [shipping_name, shipping_address_line1, shipping_city, shipping_country, shipping_postal_code, buyer_phone_number].all?(&:present?)
+    [shipping_name, shipping_address_line1, shipping_city, shipping_country, buyer_phone_number].all?(&:present?)
   end
 end
