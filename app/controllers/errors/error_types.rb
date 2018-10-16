@@ -47,6 +47,8 @@ module Errors
       tax_recording_failure
       tax_calculator_failure
       tax_refund_failure
+      unknown_event_charge
+      received_partial_refund
     ],
     internal: %i[
       generic

@@ -7,7 +7,7 @@ module Api
       error!('Missing required header.', 400) unless sig_header
       begin
         event = Stripe::Webhook.construct_event(request.body.read, signature_header, Rails.application.config_for(:stripe)['webhook_secret'])
-        WebhookService.process_stripe_event(event)
+        StripeWebhookService.new(event).process!
       rescue JSON::ParserError => e
         error!('Invalid payload.', 400)
       rescue Stripe::SignatureVerificationError => e
