@@ -45,7 +45,7 @@ describe Api::WebhooksController, type: :request do
     it 'ignores events we dont care about' do
       allow(Stripe::Webhook).to receive(:construct_event).and_return(random_event)
       post '/api/webhooks/stripe', params: random_event_payload, headers: { 'HTTP_STRIPE_SIGNATURE' => 'test_header' }
-      expect(response.status).to eq 201
+      expect(response.status).to eq 204
       expect(order.reload.transactions.count).to eq 0
     end
   end
