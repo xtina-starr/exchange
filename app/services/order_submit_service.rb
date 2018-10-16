@@ -33,7 +33,10 @@ class OrderSubmitService
     deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
     raise e
   ensure
-    @order.transactions << @transaction if @transaction.present?
+    if @transaction.present?
+      @order.transactions << @transaction
+      notify_failed_charge if @transaction.failed?
+    end
   end
 
   private
@@ -57,6 +60,10 @@ class OrderSubmitService
   def post_process!
     PostNotificationJob.perform_later(@order.id, Order::SUBMITTED, @by)
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
+  end
+
+  def notify_failed_charge
+    PostNotificationJob.perform_later(@order.id, Order::SUBMITTED, @by)
   end
 
   def construct_charge_params
