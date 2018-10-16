@@ -19,6 +19,7 @@ class StripeWebhookService
   def process_refund_event
     order = Order.find_by(external_charge_id: @event.data.object.id)
     raise Errors::ProcessingError.new(:unknown_event_charge, event_id: @event.id, charge_id: @event.data.object.id) unless order
+    return if order.state == Order::REFUNDED # ignore if it's already refunded
     raise Errors::ProcessingError.new(:received_partial_refund, event_id: @event.id, charge_id: @event.data.object.id) unless @event.data.object.refunded
 
     order.refund! do

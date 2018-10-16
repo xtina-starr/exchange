@@ -52,5 +52,13 @@ describe StripeWebhookService, type: :services do
         expect(new_transaction.source_id).to eq charge_refunded_event.data.object.source.id
       end
     end
+
+    context 'already refunded order' do
+      let(:state) { Order::REFUNDED }
+      it 'does not update the order' do
+        expect(GravityService).not_to receive(:undeduct_inventory)
+        expect { service.process! }.to change(order.transactions, :count).by(0)
+      end
+    end
   end
 end
