@@ -11,7 +11,7 @@ describe ReminderFollowUpJob, type: :job do
         it 'sends an internal message to admins about seller lapsing' do
           Timecop.freeze(order.state_expires_at - 1.second) do
             expect(PostNotificationJob).to receive(:perform_now)
-              .with(order.id, Order::REMINDER_EVENT_VERB[:seller_delay])
+              .with(order.id, Order::REMINDER_EVENT_VERB[:pending_approval])
 
             ReminderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
           end
@@ -22,7 +22,7 @@ describe ReminderFollowUpJob, type: :job do
         it 'sends an internal message to admins about buyerr lapsing' do
           Timecop.freeze(order.state_expires_at - 1.second) do
             expect(PostNotificationJob).to receive(:perform_now)
-              .with(order.id, Order::REMINDER_EVENT_VERB[:buyer_delay])
+              .with(order.id, Order::REMINDER_EVENT_VERB[:pending_fulfillment])
 
             ReminderFollowUpJob.perform_now(order.id, Order::APPROVED)
           end

@@ -52,8 +52,8 @@ class Order < ApplicationRecord
   ].freeze
 
   REMINDER_EVENT_VERB = {
-    'seller_delay' => 'seller_delay_reminder'.freeze,
-    'buyer_delay' => 'buyer_delay_reminder'.freeze
+    'pending_approval' => 'pending_approval'.freeze,
+    'pending_fulfillment' => 'pending_fulfillment'.freeze
   }.freeze
 
   AUCTION_SELLER_TYPE = 'auction'.freeze
