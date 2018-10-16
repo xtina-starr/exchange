@@ -63,7 +63,7 @@ class OrderSubmitService
   end
 
   def notify_failed_charge
-    PostNotificationJob.perform_later(@order.id, Order::SUBMITTED, @by)
+    PostTransactionNotificationJob.perform_later(@transaction.id, TransactionEvent::FAILED, @by)
   end
 
   def construct_charge_params
