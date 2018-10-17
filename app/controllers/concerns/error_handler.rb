@@ -19,7 +19,12 @@ module ErrorHandler
 
       rescue_from Errors::AuthError do |exception|
         log_exception(exception)
-        render json: { errors: [Types::ApplicationErrorType.root_level_from_application_error(exception)] }, status: :unauthorized
+        if exception.code == :not_found
+          status = :not_found
+        else
+          status = :unauthorized
+        end
+        render json: { errors: [Types::ApplicationErrorType.root_level_from_application_error(exception)] }, status: status
       end
 
       rescue_from Errors::ValidationError do |exception|

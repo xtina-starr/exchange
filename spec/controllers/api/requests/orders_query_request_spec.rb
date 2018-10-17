@@ -72,8 +72,8 @@ describe Api::GraphqlController, type: :request do
           client.execute(query, sellerId: 'someone-elses-partnerid')
         end.to raise_error do |error|
           expect(error).to be_a(Graphlient::Errors::ServerError)
-          expect(error.message).to eq 'the server responded with status 401'
-          expect(error.status_code).to eq 401
+          expect(error.message).to eq 'the server responded with status 404'
+          expect(error.status_code).to eq 404
           expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
           expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
         end
@@ -140,8 +140,8 @@ describe Api::GraphqlController, type: :request do
             client.execute(query, buyerId: 'someone-elses-userid')
           end.to raise_error do |error|
             expect(error).to be_a(Graphlient::Errors::ServerError)
-            expect(error.message).to eq 'the server responded with status 401'
-            expect(error.status_code).to eq 401
+            expect(error.status_code).to eq 404
+            expect(error.message).to eq 'the server responded with status 404'
             expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
             expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
           end
