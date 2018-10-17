@@ -19,11 +19,6 @@ module ErrorHandler
 
       rescue_from Errors::AuthError do |exception|
         log_exception(exception)
-        if exception.code == :not_found
-          status = :not_found
-        else
-          status = :unauthorized
-        end
         http_status = exception.code == :not_found ? :not_found : :unauthorized
         render json: { errors: [Types::ApplicationErrorType.root_level_from_application_error(exception)] }, status: http_status
       end
