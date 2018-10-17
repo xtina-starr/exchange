@@ -67,7 +67,7 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'query with sellerId' do
-      it 'returns permission error when query for sellerId not in jwt' do
+      it 'returns not found error when query for sellerId not in jwt' do
         expect do
           client.execute(query, sellerId: 'someone-elses-partnerid')
         end.to raise_error do |error|
