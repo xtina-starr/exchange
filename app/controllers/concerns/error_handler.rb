@@ -24,7 +24,8 @@ module ErrorHandler
         else
           status = :unauthorized
         end
-        render json: { errors: [Types::ApplicationErrorType.root_level_from_application_error(exception)] }, status: status
+        http_status = exception.code == :not_found ? :not_found : :unauthorized
+        render json: { errors: [Types::ApplicationErrorType.root_level_from_application_error(exception)] }, status: http_status
       end
 
       rescue_from Errors::ValidationError do |exception|
