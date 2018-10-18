@@ -195,9 +195,11 @@ type Order {
   buyerTotalCents: Int
   code: String!
   commissionFeeCents: Int
+  commissionRate: Float
   createdAt: DateTime!
   creditCardId: String
   currencyCode: String!
+  displayCommissionRate: String
   id: ID!
   itemsTotalCents: Int!
   lastApprovedAt: DateTime
@@ -230,6 +232,12 @@ type Order {
 
 # Fields to sort by
 enum OrderConnectionSortEnum {
+  # Sort by the timestamp the state of the order expires at in ascending order
+  STATE_EXPIRES_AT_ASC
+
+  # Sort by the timestamp the state of the order expires at in descending order
+  STATE_EXPIRES_AT_DESC
+
   # Sort by the timestamp the state of order was last updated in ascending order
   STATE_UPDATED_AT_ASC
 
@@ -294,6 +302,9 @@ enum OrderStateEnum {
 
   # order is still pending submission by buyer
   PENDING
+
+  # order is refunded after being approved or fulfilled
+  REFUNDED
 
   # order is submitted by buyer
   SUBMITTED

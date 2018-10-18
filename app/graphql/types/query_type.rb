@@ -29,23 +29,22 @@ class Types::QueryType < Types::BaseObject
   def orders(params)
     validate_orders_request!(params)
     sort = params.delete(:sort)
-    query = Order.where(params)
-
-    case sort
-    when 'UPDATED_AT_ASC'
-      query.order(updated_at: :asc)
-    when 'UPDATED_AT_DESC'
-      query.order(updated_at: :desc)
-    when 'STATE_UPDATED_AT_ASC'
-      query.order(state_updated_at: :asc)
-    when 'STATE_UPDATED_AT_DESC'
-      query.order(state_updated_at: :desc)
-    else
-      query
-    end
+    order_clause = sort_to_order[sort] || {}
+    Order.where(params).order(order_clause)
   end
 
   private
+
+  def sort_to_order
+    {
+      'UPDATED_AT_ASC' => { updated_at: :asc },
+      'UPDATED_AT_DESC' => { updated_at: :desc },
+      'STATE_UPDATED_AT_ASC' => { state_updated_at: :asc },
+      'STATE_UPDATED_AT_DESC' => { state_updated_at: :desc },
+      'STATE_EXPIRES_AT_ASC' => { state_expires_at: :asc },
+      'STATE_EXPIRES_AT_DESC' => { state_expires_at: :desc }
+    }
+  end
 
   def trusted?
     context[:current_user][:roles].include?('trusted')
