@@ -51,6 +51,11 @@ class Order < ApplicationRecord
     PARTNER = 'partner'.freeze
   ].freeze
 
+  REMINDER_EVENT_VERB = {
+    'pending_approval' => 'pending_approval'.freeze,
+    'pending_fulfillment' => 'pending_fulfillment'.freeze
+  }.freeze
+
   AUCTION_SELLER_TYPE = 'auction'.freeze
 
   has_many :line_items, dependent: :destroy, class_name: 'LineItem'

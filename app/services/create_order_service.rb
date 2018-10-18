@@ -50,6 +50,7 @@ class CreateOrderService
   end
 
   def post_process
+    # The official timeout
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
   end
 
