@@ -5,6 +5,6 @@ RSpec.describe PostTransactionNotificationJob, type: :job do
   let(:transaction) { Fabricate(:transaction, failure_code: 'stolen_card', failure_message: 'nvm! left the card at home', order: order) }
   it 'finds the transaction and posts the event' do
     expect(Artsy::EventService).to receive(:post_event).with(topic: 'commerce', event: instance_of(TransactionEvent))
-    PostTransactionNotificationJob.new.perform(transaction.id, TransactionEvent::FAILED, order.buyer_id)
+    PostTransactionNotificationJob.new.perform(transaction.id, TransactionEvent::CREATED, order.buyer_id)
   end
 end

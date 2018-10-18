@@ -29,7 +29,7 @@ describe TransactionEvent, type: :events do
               buyer_total_cents: 380,
               **shipping_info)
   end
-  let(:transaction) { Fabricate(:transaction, order: order, failure_code: 'stolen_card', failure_message: 'who stole it?') }
+  let(:transaction) { Fabricate(:transaction, order: order, failure_code: 'stolen_card', failure_message: 'who stole it?', status: Transaction::FAILURE) }
   let(:line_item1) { Fabricate(:line_item, price_cents: 200, order: order, commission_fee_cents: 40) }
   let(:line_item2) { Fabricate(:line_item, price_cents: 100, quantity: 2, order: order, commission_fee_cents: 20) }
   let!(:line_items) { [line_item1, line_item2] }
@@ -51,12 +51,12 @@ describe TransactionEvent, type: :events do
       }
     ]
   end
-  let(:event) { TransactionEvent.new(user: user_id, action: TransactionEvent::FAILED, model: transaction) }
+  let(:event) { TransactionEvent.new(user: user_id, action: TransactionEvent::CREATED, model: transaction) }
 
   describe 'post' do
     it 'calls ArtsyEventService to post event' do
       expect(Artsy::EventService).to receive(:post_event).with(topic: 'commerce', event: instance_of(TransactionEvent))
-      TransactionEvent.post(order, TransactionEvent::FAILED, user_id)
+      TransactionEvent.post(order, TransactionEvent::CREATED, user_id)
     end
   end
 
@@ -90,6 +90,7 @@ describe TransactionEvent, type: :events do
       expect(event.properties[:order][:line_items]).to match_array(line_item_properties)
       expect(event.properties[:failure_code]).to eq 'stolen_card'
       expect(event.properties[:failure_message]).to eq 'who stole it?'
+      expect(event.properties[:status]).to eq Transaction::FAILURE
     end
   end
 end

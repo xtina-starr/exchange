@@ -129,6 +129,10 @@ describe OrderSubmitService, type: :services do
           expect(PostNotificationJob).to have_been_enqueued
         end
 
+        it 'does not queue a job for posting transaction event' do
+          expect(PostTransactionNotificationJob).not_to have_been_enqueued
+        end
+
         it 'queues a job for rejecting the order when it expires' do
           job = ActiveJob::Base.queue_adapter.enqueued_jobs.detect { |j| j[:job] == OrderFollowUpJob }
           expect(job).to_not be_nil
@@ -156,7 +160,6 @@ describe OrderSubmitService, type: :services do
           allow(GravityService).to receive(:get_merchant_account).with(partner_id).and_return(partner_merchant_accounts.first)
           allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
           expect(PostNotificationJob).not_to receive(:perform_later)
-          expect(PostTransactionNotificationJob).to receive(:perform_later)
           expect(OrderFollowUpJob).not_to receive(:perform_later)
           expect { service.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ProcessingError)
@@ -174,6 +177,9 @@ describe OrderSubmitService, type: :services do
           expect(order.transactions.last.transaction_type).to eq Transaction::HOLD
           expect(order.transactions.last.status).to eq Transaction::FAILURE
           expect(order.transactions.last.failure_code).to eq 'card_declined'
+        end
+        it 'queues a job for posting transaction event' do
+          expect(PostTransactionNotificationJob).to have_been_enqueued
         end
         it 'keeps order in pending' do
           expect(order.reload.state).to eq Order::PENDING

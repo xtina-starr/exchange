@@ -1,7 +1,7 @@
 class TransactionEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
   ACTIONS = [
-    FAILED = 'failed'.freeze
+    CREATED = 'created'.freeze
   ].freeze
 
   def self.post(transaction, action, user_id)
@@ -37,7 +37,8 @@ class TransactionEvent < Events::BaseEvent
       },
       failure_code: @object.failure_code,
       failure_message: @object.failure_message,
-      transaction_type: @object.transaction_type
+      transaction_type: @object.transaction_type,
+      status: @object.status
     }
   end
 
