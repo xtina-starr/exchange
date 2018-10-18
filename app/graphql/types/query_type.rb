@@ -60,16 +60,16 @@ class Types::QueryType < Types::BaseObject
               (order.buyer_type == Order::USER && order.buyer_id == context[:current_user][:id]) ||
               (order.seller_type != Order::USER && context[:current_user][:partner_ids].include?(order.seller_id))
 
-    raise Errors::AuthError, :not_found
+    raise ActiveRecord::RecordNotFound
   end
 
   def validate_orders_request!(params)
     return if trusted? || sales_admin?
 
     if params[:buyer_id].present?
-      raise Errors::AuthError, :not_found unless params[:buyer_id] == context[:current_user][:id]
+      raise ActiveRecord::RecordNotFound unless params[:buyer_id] == context[:current_user][:id]
     elsif params[:seller_id].present?
-      raise Errors::AuthError, :not_found unless context[:current_user][:partner_ids].include?(params[:seller_id])
+      raise ActiveRecord::RecordNotFound unless context[:current_user][:partner_ids].include?(params[:seller_id])
     else
       raise Errors::ValidationError, :missing_params
     end

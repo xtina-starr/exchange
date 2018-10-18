@@ -102,15 +102,15 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'user accessing their order' do
-      it 'returns permission error when query for orders by user not in jwt' do
+      it 'returns not found error when query for orders by user not in jwt' do
         expect do
           client.execute(query, id: user2_order1.id)
         end.to raise_error do |error|
           expect(error).to be_a(Graphlient::Errors::ServerError)
-          expect(error.message).to eq 'the server responded with status 401'
-          expect(error.status_code).to eq 401
+          expect(error.message).to eq 'the server responded with status 404'
+          expect(error.status_code).to eq 404
           expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
-          expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
+          expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
         end
       end
 
@@ -200,10 +200,10 @@ describe Api::GraphqlController, type: :request do
             client.execute(query, id: user2_order1.id)
           end.to raise_error do |error|
             expect(error).to be_a(Graphlient::Errors::ServerError)
-            expect(error.message).to eq 'the server responded with status 401'
-            expect(error.status_code).to eq 401
+            expect(error.message).to eq 'the server responded with status 404'
+            expect(error.status_code).to eq 404
             expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
-            expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
+            expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
           end
         end
       end
