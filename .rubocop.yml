@@ -25,10 +25,10 @@ Metrics/MethodLength:
     - 'db/migrate/*'
 
 Metrics/ClassLength:
-  Max: 150
+  Max: 151
 
 Metrics/ModuleLength:
-  Max: 150
+  Max: 151
 
 Rails/ReversibleMigration:
   Enabled: false
