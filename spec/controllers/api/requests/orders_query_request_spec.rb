@@ -75,7 +75,7 @@ describe Api::GraphqlController, type: :request do
           expect(error.message).to eq 'the server responded with status 404'
           expect(error.status_code).to eq 404
           expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
-          expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
+          expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
         end
       end
       it 'returns partners orders' do
@@ -143,7 +143,7 @@ describe Api::GraphqlController, type: :request do
             expect(error.status_code).to eq 404
             expect(error.message).to eq 'the server responded with status 404'
             expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
-            expect(error.response['errors'].first['extensions']['type']).to eq 'auth'
+            expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
           end
         end
       end

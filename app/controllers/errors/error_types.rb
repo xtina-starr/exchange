@@ -1,8 +1,5 @@
 module Errors
   ERROR_TYPES = {
-    auth: %i[
-      not_found
-    ],
     validation: %i[
       credit_card_deactivated
       credit_card_missing_customer
