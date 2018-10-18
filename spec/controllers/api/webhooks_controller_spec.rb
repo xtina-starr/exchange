@@ -32,6 +32,12 @@ describe Api::WebhooksController, type: :request do
       post '/api/webhooks/stripe', params: charge_refunded_payload, headers: { 'HTTP_STRIPE_SIGNATURE' => 'test_header' }
       expect(response.status).to eq 400
     end
+    it 'returns 200 when missing signature' do
+      expect(Stripe::Webhook).not_to receive(:construct_event)
+      expect(StripeWebhookService).not_to receive(:new)
+      post '/api/webhooks/stripe', params: charge_refunded_payload
+      expect(response.status).to eq 200
+    end
     it 'refunds the order' do
       allow(Stripe::Webhook).to receive(:construct_event).and_return(charge_refunded_event)
       expect(GravityService).to receive(:undeduct_inventory).once.with(line_item)

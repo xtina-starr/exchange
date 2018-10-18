@@ -32,7 +32,7 @@ describe StripeWebhookService, type: :services do
     end
     context 'partial refunds' do
       let(:fully_refunded) { false }
-      it 'raises unknown_event_charge' do
+      it 'raises received_partial_refund' do
         expect { service.process! }.to raise_error do |e|
           expect(e.type).to eq :processing
           expect(e.code).to eq :received_partial_refund
