@@ -19,6 +19,7 @@ class TransactionEvent < Events::BaseEvent
     order = @object.order
     {
       order: {
+        id: order.id,
         buyer_id: order.buyer_id,
         buyer_total_cents: order.buyer_total_cents,
         buyer_type: order.buyer_type,
