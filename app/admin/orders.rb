@@ -155,7 +155,15 @@ ActiveAdmin.register Order do
           link_to "#{order.id}", artsy_order_status_url(order.id)
         end
         row 'Shipment' do |order|
-          #TODO: shipment info
+          table_for order.fulfillments do
+            column '' do |fulfillment|
+              attributes_table_for fulfillment do
+                row :courier
+                row :tracking_id
+                row :estimated_delivery
+              end
+            end
+          end
         end
       end
       br
