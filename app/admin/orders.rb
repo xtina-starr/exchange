@@ -24,17 +24,17 @@ ActiveAdmin.register Order do
     end
     column :state
     column :fulfillment_type
-    column 'Last Admin Action', (:order) do |order|
+    column 'Last Admin Action' do |order|
       order.last_admin_note&.note_type&.humanize
     end
     column 'Submitted At', :created_at
     column 'Last Updated At', :updated_at
     column :state_expires_at
-    column 'Items Total', (:order) do |order|
-       number_to_currency (order.items_total_cents.to_f/100)
+    column 'Items Total' do |order|
+       number_to_currency(order.items_total_cents.to_f/100)
     end
-    column 'Buyer Total', (:order) do |order|
-       number_to_currency (order.buyer_total_cents.to_f/100)
+    column 'Buyer Total' do |order|
+       number_to_currency(order.buyer_total_cents.to_f/100)
     end
   end
 
@@ -52,7 +52,7 @@ ActiveAdmin.register Order do
     table_for order.line_items do
       column '' do |line_item|
         artwork_info = GravityService.get_artwork(line_item.artwork_id)
-        if artwork_info.present? 
+        if artwork_info.present?
           if artwork_info[:images].kind_of?(Array)
             square_image = artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
             img :src => square_image[:image_urls][:square], :width => "100%"
@@ -188,7 +188,7 @@ ActiveAdmin.register Order do
       transaction_fee = order.transaction_fee_cents.to_f/100
       commission_fee = order.commission_fee_cents.to_f/100
       seller_payout = sub_total - transaction_fee - commission_fee
-       
+
       attributes_table_for order do
         row "Artwork Price" do |order|
           number_to_currency items_total
@@ -220,7 +220,7 @@ ActiveAdmin.register Order do
       h5 link_to("Add note", new_admin_order_admin_note_path(order), class: :button)
       table_for(order.admin_notes) do
         column :created_at
-        column "Note Type" do |admin_note| 
+        column "Note Type" do |admin_note|
           admin_note.note_type.to_s.humanize
         end
         column :description
