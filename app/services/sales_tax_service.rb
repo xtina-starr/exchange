@@ -24,7 +24,11 @@ class SalesTaxService
   end
 
   def sales_tax
-    @sales_tax ||= UnitConverter.convert_dollars_to_cents(fetch_sales_tax.amount_to_collect)
+    @sales_tax ||= begin
+      tax_response = fetch_sales_tax
+      collectable_tax = tax_response.breakdown.present? ? tax_response.breakdown.state_tax_collectable : tax_response.amount_to_collect
+      UnitConverter.convert_dollars_to_cents(collectable_tax)
+    end
   rescue Taxjar::Error => e
     raise Errors::ProcessingError.new(:tax_calculator_failure, message: e.message)
   end
@@ -57,7 +61,14 @@ class SalesTaxService
   end
 
   def fetch_sales_tax
-    @tax_client.tax_for_order(construct_tax_params)
+    @tax_client.tax_for_order(
+      construct_tax_params(
+        line_items: [{
+          unit_price: UnitConverter.convert_cents_to_dollars(@line_item.price_cents),
+          quantity: @line_item.quantity
+        }]
+      )
+    )
   end
 
   def post_transaction
