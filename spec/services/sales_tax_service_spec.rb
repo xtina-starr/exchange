@@ -44,6 +44,8 @@ describe SalesTaxService, type: :services do
       shipping: 0
     }
   end
+  let(:tax_response) { double(amount_to_collect: 3.00) }
+  let(:tax_response_with_breakdown) { double(amount_to_collect: 3.00, breakdown: double(state_tax_collectable: 2.00)) }
 
   before do
     silence_warnings do
@@ -81,18 +83,15 @@ describe SalesTaxService, type: :services do
     end
     context 'with a sales tax breakdown' do
       it 'calls fetch_sales_tax and returns the amount of sales tax to collect on a state level' do
-        breakdown_double = double(state_tax_collectable: 2.00)
-        tax_double = double(amount_to_collect: 3.00, breakdown: breakdown_double)
-        expect(@service_ship).to receive(:fetch_sales_tax).and_return(tax_double)
+        expect(@service_ship).to receive(:fetch_sales_tax).and_return(tax_response_with_breakdown)
         expect(@service_ship.sales_tax).to eq 200
       end
     end
     context 'without a sales tax breakdown' do
       it 'calls fetch_sales_tax and returns the total amount to collect' do
-        tax_double = double(amount_to_collect: 1.00)
-        expect(@service_ship).to receive(:fetch_sales_tax).and_return(tax_double)
-        expect(tax_double).to receive(:breakdown).and_return(nil)
-        expect(@service_ship.sales_tax).to eq 100
+        expect(@service_ship).to receive(:fetch_sales_tax).and_return(tax_response)
+        expect(tax_response).to receive(:breakdown).and_return(nil)
+        expect(@service_ship.sales_tax).to eq 300
       end
     end
     context 'with an error from TaxJar' do

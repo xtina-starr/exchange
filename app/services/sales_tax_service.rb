@@ -26,7 +26,7 @@ class SalesTaxService
   def sales_tax
     @sales_tax ||= begin
       tax_response = fetch_sales_tax
-      collectable_tax = tax_response.breakdown.present? ? tax_response.breakdown.state_tax_collectable : tax_response.amount_to_collect
+      collectable_tax = tax_response.breakdown&.state_tax_collectable || tax_response.amount_to_collect
       UnitConverter.convert_dollars_to_cents(collectable_tax)
     end
   rescue Taxjar::Error => e
