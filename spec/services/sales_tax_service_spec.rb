@@ -44,6 +44,8 @@ describe SalesTaxService, type: :services do
       shipping: 0
     }
   end
+  let(:tax_response) { double(amount_to_collect: 3.00) }
+  let(:tax_response_with_breakdown) { double(amount_to_collect: 3.00, breakdown: double(state_tax_collectable: 2.00)) }
 
   before do
     silence_warnings do
@@ -79,9 +81,18 @@ describe SalesTaxService, type: :services do
     before do
       allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_address)
     end
-    it 'calls fetch_sales_tax and returns the sales tax in cents' do
-      expect(@service_ship).to receive(:fetch_sales_tax).and_return(double(amount_to_collect: 1.00))
-      expect(@service_ship.sales_tax).to eq 100
+    context 'with a sales tax breakdown' do
+      it 'calls fetch_sales_tax and returns the amount of sales tax to collect on a state level' do
+        expect(@service_ship).to receive(:fetch_sales_tax).and_return(tax_response_with_breakdown)
+        expect(@service_ship.sales_tax).to eq 200
+      end
+    end
+    context 'without a sales tax breakdown' do
+      it 'calls fetch_sales_tax and returns the total amount to collect' do
+        expect(@service_ship).to receive(:fetch_sales_tax).and_return(tax_response)
+        expect(tax_response).to receive(:breakdown).and_return(nil)
+        expect(@service_ship.sales_tax).to eq 300
+      end
     end
     context 'with an error from TaxJar' do
       it 'raises a ProcessingError with a code of tax_calculator_failure' do
@@ -130,11 +141,21 @@ describe SalesTaxService, type: :services do
   end
 
   describe '#fetch_sales_tax' do
+    let(:params) do
+      base_tax_params.merge(
+        line_items: [
+          {
+            quantity: line_item.quantity,
+            unit_price: UnitConverter.convert_cents_to_dollars(line_item.price_cents)
+          }
+        ]
+      )
+    end
     it 'calls the Taxjar API with the correct parameters' do
       allow(GravityService).to receive(:fetch_partner_location).with(order.seller_id).and_return(partner_address)
-      allow(taxjar_client).to receive(:tax_for_order).with(base_tax_params)
+      allow(taxjar_client).to receive(:tax_for_order).with(params)
       @service_ship.send(:fetch_sales_tax)
-      expect(taxjar_client).to have_received(:tax_for_order).with(base_tax_params)
+      expect(taxjar_client).to have_received(:tax_for_order).with(params)
     end
   end
 
