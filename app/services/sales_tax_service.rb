@@ -7,6 +7,7 @@ class SalesTaxService
     shipping_address,
     shipping_total_cents,
     artwork_location,
+    seller_nexus_addresses,
     tax_client = Taxjar::Client.new(
       api_key: Rails.application.config_for(:taxjar)['taxjar_api_key'],
       api_url: Rails.application.config_for(:taxjar)['taxjar_api_url'].presence
@@ -19,15 +20,21 @@ class SalesTaxService
     @artwork_location = artwork_location
     @shipping_address = shipping_address
     @shipping_total_cents = artsy_should_remit_taxes? ? shipping_total_cents : 0
+    @seller_nexus_addresses = seller_nexus_addresses.select { |ad| address_taxable?(ad) }
     @transaction = nil
     @refund = nil
   end
 
   def sales_tax
     @sales_tax ||= begin
-      tax_response = fetch_sales_tax
-      collectable_tax = tax_response.breakdown&.state_tax_collectable || tax_response.amount_to_collect
-      UnitConverter.convert_dollars_to_cents(collectable_tax)
+      # A seller may end up with no nexuses if none of their locations are taxable, in which case their sales tax is 0.
+      if @seller_nexus_addresses.present?
+        tax_response = fetch_sales_tax
+        collectable_tax = tax_response.breakdown&.state_tax_collectable || tax_response.amount_to_collect
+        UnitConverter.convert_dollars_to_cents(collectable_tax)
+      else
+        0
+      end
     end
   rescue Taxjar::Error => e
     raise Errors::ProcessingError.new(:tax_calculator_failure, message: e.message)
@@ -47,12 +54,17 @@ class SalesTaxService
   end
 
   def artsy_should_remit_taxes?
-    return false unless destination_address.country == Carmen::Country.coded('US').code
+    return false unless address_taxable?(destination_address)
 
     REMITTING_STATES.include? destination_address.region.downcase
   end
 
   private
+
+  def address_taxable?(address)
+    # For the time being, we're only considering addresses in the United States to be taxable.
+    address.country == Carmen::Country.coded('US').code
+  end
 
   def get_transaction(id)
     @tax_client.show_order(id)
@@ -96,30 +108,26 @@ class SalesTaxService
   def construct_tax_params(args = {})
     {
       amount: UnitConverter.convert_cents_to_dollars(@line_item.total_amount_cents),
-      from_country: origin_address.country,
-      from_zip: origin_address.postal_code,
-      from_state: origin_address.region,
-      from_city: origin_address.city,
-      from_street: origin_address.street_line1,
       to_country: destination_address.country,
       to_zip: destination_address.postal_code,
       to_state: destination_address.region,
       to_city: destination_address.city,
       to_street: destination_address.street_line1,
+      nexus_addresses: @seller_nexus_addresses.map do |ad|
+        {
+          country: ad.country,
+          zip: ad.postal_code,
+          state: ad.region,
+          city: ad.city,
+          street: ad.street_line1
+        }
+      end,
       shipping: UnitConverter.convert_cents_to_dollars(@shipping_total_cents)
     }.merge(args)
   end
 
-  def origin_address
-    @origin_address ||= @fulfillment_type == Order::SHIP ? seller_address : @artwork_location
-  end
-
   def destination_address
-    @destination_address ||= @fulfillment_type == Order::SHIP ? @shipping_address : origin_address
-  end
-
-  def seller_address
-    @seller_address ||= GravityService.fetch_partner_location(@line_item.order.seller_id)
+    @destination_address ||= @fulfillment_type == Order::SHIP ? @shipping_address : @artwork_location
   end
 
   def transaction_id

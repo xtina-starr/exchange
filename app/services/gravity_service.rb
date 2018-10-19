@@ -47,6 +47,19 @@ module GravityService
     raise Errors::InternalError.new(:gravity, message: e.message)
   end
 
+  def self.fetch_partner_locations(partner_id)
+    locations = Adapters::GravityV1.get("/partner/#{partner_id}/locations?private=true")
+    raise Errors::ValidationError.new(:missing_partner_location, partner_id: partner_id) if locations.blank?
+
+    locations.map { |loc| Address.new(loc) }
+  rescue Errors::AddressError
+    raise Errors::ValidationError.new(:invalid_seller_address, partner_id: partner_id)
+  rescue Adapters::GravityNotFoundError
+    raise Errors::ValidationError.new(:unknown_partner, partner_id: partner_id)
+  rescue Adapters::GravityError
+    raise Errors::InternalError.new(:gravity, message: e.message)
+  end
+
   def self.deduct_inventory(line_item)
     if line_item.edition_set_id
       Adapters::GravityV1.put("/artwork/#{line_item.artwork_id}/edition_set/#{line_item.edition_set_id}/inventory", params: { deduct: line_item.quantity })
