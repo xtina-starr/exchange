@@ -27,14 +27,15 @@ describe Api::WebhooksController, type: :request do
     end
     let(:random_event_payload) { StripeMock.mock_webhook_payload('plan.updated') }
     let(:random_event) { StripeMock.mock_webhook_event('plan.updated') }
-    it 'returns 400 for unauthorized requests with wrong signature' do
+    it 'does not call StripeWebhook for unauthorized requests with wrong signature' do
       allow(Stripe::Webhook).to receive(:construct_event).and_raise(Stripe::SignatureVerificationError.new('invalid signature', '402'))
+      expect_any_instance_of(StripeWebhookService).not_to receive(:process!)
       post '/api/webhooks/stripe', params: charge_refunded_payload, headers: { 'HTTP_STRIPE_SIGNATURE' => 'test_header' }
-      expect(response.status).to eq 400
+      expect(response.status).to eq 200
     end
     it 'returns 200 when missing signature' do
       expect(Stripe::Webhook).not_to receive(:construct_event)
-      expect(StripeWebhookService).not_to receive(:new)
+      expect_any_instance_of(StripeWebhookService).not_to receive(:process!)
       post '/api/webhooks/stripe', params: charge_refunded_payload
       expect(response.status).to eq 200
     end

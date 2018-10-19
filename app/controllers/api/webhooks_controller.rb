@@ -8,16 +8,16 @@ module Api
       event = Stripe::Webhook.construct_event(request.body.read, @signature_header, Rails.application.config_for(:stripe)['webhook_secret'])
       StripeWebhookService.new(event).process!
     rescue JSON::ParserError
-      render json: { error: 'Invalid payload' }, status: :bad_request
+      Rails.logger.warn("Invalid Stripe webhook payload #{event}")
+      render json: { error: 'Invalid payload' }
     rescue Stripe::SignatureVerificationError
       Rails.logger.warn("Received request with invalid stripe signature: #{@signature_header}")
-      render json: { error: 'Invalid request header' }, status: :bad_request
+      render json: { error: 'Invalid request header' }
     end
-
 
     def require_stripe_header
       @signature_header = request.headers['Stripe-Signature']
-      render json: { error: 'Missing required header.' }, status: :bad_request unless @signature_header
+      render json: { error: 'Missing required header.' } unless @signature_header
     end
   end
 end
