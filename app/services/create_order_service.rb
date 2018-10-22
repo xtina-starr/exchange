@@ -33,6 +33,7 @@ class CreateOrderService
       )
       OrderTotalUpdaterService.new(@order).update_totals!
     end
+    Exchange.dogstatsd.increment 'order.create'
     post_process
   rescue ActiveRecord::RecordInvalid => e
     raise Errors::ValidationError.new(:invalid_order, message: e.message)
