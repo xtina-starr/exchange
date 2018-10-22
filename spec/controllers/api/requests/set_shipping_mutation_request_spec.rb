@@ -166,7 +166,7 @@ describe Api::GraphqlController, type: :request do
           before do
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
-            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/locations?private=true").and_return([{country: 'FR'}])
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/locations?private=true").and_return([{ country: 'FR' }])
           end
           it 'sets sales tax to 0 and should_remit_sales_tax to false on each line item' do
             client.execute(mutation, set_shipping_input)
