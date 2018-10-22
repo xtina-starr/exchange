@@ -35,7 +35,7 @@ describe SalesTaxService, type: :services do
       }
     ]
   end
-  let!(:seller_addresses) { seller_locations.map{ |ad| Address.new(ad) } }
+  let!(:seller_addresses) { seller_locations.map { |ad| Address.new(ad) } }
   let(:artwork_location) { Address.new(gravity_v1_artwork[:location]) }
   let(:base_tax_params) do
     {
@@ -59,6 +59,7 @@ describe SalesTaxService, type: :services do
   end
   let(:tax_response) { double(amount_to_collect: 3.00) }
   let(:tax_response_with_breakdown) { double(amount_to_collect: 3.00, breakdown: double(state_tax_collectable: 2.00)) }
+  let(:untaxable_address) { Address.new(country: 'IR') }
 
   before do
     silence_warnings do
@@ -76,16 +77,40 @@ describe SalesTaxService, type: :services do
   end
 
   describe '#initialize' do
-    context 'with a destination address in a remitting state' do
-      it 'sets shipping_total_cents to the passed in value' do
-        shipping[:region] = 'FL'
-        service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
-        expect(service.instance_variable_get(:@shipping_total_cents)).to eq shipping_total_cents
+    context 'with taxable nexus addresses' do
+      context 'with a destination address in a remitting state' do
+        it 'sets shipping_total_cents to the passed in value' do
+          shipping[:region] = 'FL'
+          service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
+          expect(service.instance_variable_get(:@shipping_total_cents)).to eq shipping_total_cents
+        end
+        it 'sets seller_nexus_addresses to only be taxable seller addresses' do
+          service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses + [untaxable_address])
+          expect(service.instance_variable_get(:@seller_nexus_addresses)).to eq seller_addresses
+        end
+      end
+      context 'with a destination address in a non-remitting state' do
+        it 'sets shipping_total_cents to 0' do
+          expect(@service_ship.instance_variable_get(:@shipping_total_cents)).to eq 0
+        end
       end
     end
-    context 'with a destination address in a non-remitting state' do
-      it 'sets shipping_total_cents to 0' do
-        expect(@service_ship.instance_variable_get(:@shipping_total_cents)).to eq 0
+    context 'with empty seller addresses' do
+      it 'raises error' do
+        expect { SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, []) }.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.type).to eq :validation
+          expect(error.code).to eq :no_taxable_addresses
+        end
+      end
+    end
+    context 'with untaxable seller addresses' do
+      it 'raises error' do
+        expect { SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, [untaxable_address]) }.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.type).to eq :validation
+          expect(error.code).to eq :no_taxable_addresses
+        end
       end
     end
   end
@@ -294,6 +319,19 @@ describe SalesTaxService, type: :services do
     it 'merges in additional data' do
       additional_data = { foo: 'bar' }
       expect(@service_ship.send(:construct_tax_params, additional_data)).to eq base_tax_params.merge(additional_data)
+    end
+  end
+
+  describe '#address_taxable?' do
+    context 'with a US-based address' do
+      it 'returns true' do
+        expect(@service_ship.send(:address_taxable?, Address.new(country: 'US', region: 'FL', postal_code: '12345'))).to eq true
+      end
+    end
+    context 'with a non-US-based address' do
+      it 'returns false' do
+        expect(@service_ship.send(:address_taxable?, untaxable_address)).to eq false
+      end
     end
   end
 end
