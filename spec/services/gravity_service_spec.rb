@@ -137,4 +137,19 @@ describe GravityService, type: :services do
       end
     end
   end
+
+  describe '#get_user' do
+    let(:user_id) { 'some-id' }
+    it 'calls the /userid endpoint' do
+      allow(Adapters::GravityV1).to receive(:get).with("/user/#{user_id}")
+      GravityService.get_user(user_id)
+      expect(Adapters::GravityV1).to have_received(:get).with("/user/#{user_id}")
+    end
+    context 'with failed gravity call' do
+      it 'returns nil' do
+        expect(Adapters::GravityV1).to receive(:get).and_raise(Adapters::GravityError, 'timeout')
+        expect(GravityService.get_user(user_id)).to be_nil
+      end
+    end
+  end
 end
