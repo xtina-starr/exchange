@@ -31,13 +31,13 @@ describe Api::WebhooksController, type: :request do
       allow(Stripe::Webhook).to receive(:construct_event).and_raise(Stripe::SignatureVerificationError.new('invalid signature', '402'))
       expect_any_instance_of(StripeWebhookService).not_to receive(:process!)
       post '/api/webhooks/stripe', params: charge_refunded_payload, headers: { 'HTTP_STRIPE_SIGNATURE' => 'test_header' }
-      expect(response.status).to eq 200
+      expect(response.status).to eq 400
     end
-    it 'returns 200 when missing signature' do
+    it 'returns 400 when missing signature' do
       expect(Stripe::Webhook).not_to receive(:construct_event)
       expect_any_instance_of(StripeWebhookService).not_to receive(:process!)
       post '/api/webhooks/stripe', params: charge_refunded_payload
-      expect(response.status).to eq 200
+      expect(response.status).to eq 400
     end
     it 'refunds the order' do
       allow(Stripe::Webhook).to receive(:construct_event).and_return(charge_refunded_event)
@@ -54,6 +54,19 @@ describe Api::WebhooksController, type: :request do
       post '/api/webhooks/stripe', params: random_event_payload, headers: { 'HTTP_STRIPE_SIGNATURE' => 'test_header' }
       expect(response.status).to eq 204
       expect(order.reload.transactions.count).to eq 0
+    end
+
+    context 'partial refunds' do
+      let(:fully_refunded) { false }
+      it 'returns 200 and does not refund' do
+        allow(Stripe::Webhook).to receive(:construct_event).and_return(charge_refunded_event)
+        expect(GravityService).not_to receive(:undeduct_inventory)
+        expect do
+          post '/api/webhooks/stripe', params: charge_refunded_payload, headers: { 'HTTP_STRIPE_SIGNATURE' => 'test_header' }
+          expect(response.status).to eq 200
+          expect(order.reload.state).to eq Order::APPROVED
+        end.to change(order.transactions, :count).by(0)
+      end
     end
   end
 end
