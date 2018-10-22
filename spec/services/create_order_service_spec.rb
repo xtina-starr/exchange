@@ -11,7 +11,7 @@ describe CreateOrderService, type: :services do
       end
       context 'without edition set' do
         let(:artwork) { gravity_v1_artwork(edition_sets: nil) }
-        let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: nil, quantity: 2) }
+        let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: nil, quantity: 2, mode: Order::BUY) }
         it 'create order with proper data' do
           expect do
             service.process!
@@ -26,6 +26,7 @@ describe CreateOrderService, type: :services do
             expect(order.line_items.first.edition_set_id).to be_nil
             expect(order.line_items.first.quantity).to eq 2
             expect(order.items_total_cents).to eq 1080024
+            expect(order.mode).to eq Order::BUY
           end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
         end
         it 'sets state_expires_at for newly pending order' do
@@ -42,7 +43,7 @@ describe CreateOrderService, type: :services do
       context 'artwork with one edition set' do
         let(:artwork) { gravity_v1_artwork }
         context 'with passing edition_set_id' do
-          let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: 'edition-set-id', quantity: 2) }
+          let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: 'edition-set-id', quantity: 2, mode: Order::BUY) }
           it 'creates order' do
             expect do
               service.process!
@@ -65,7 +66,7 @@ describe CreateOrderService, type: :services do
           end
         end
         context 'without passing edition_set_id' do
-          let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', quantity: 2) }
+          let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', quantity: 2, mode: Order::BUY) }
           it 'creates order with artworks edition set' do
             expect do
               service.process!
@@ -119,7 +120,7 @@ describe CreateOrderService, type: :services do
         end
         let(:artwork) { gravity_v1_artwork(edition_sets: edition_sets) }
         context 'without passing edition set' do
-          let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', quantity: 2) }
+          let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', quantity: 2, mode: Order::BUY) }
           it 'raises error' do
             expect do
               service.process!
@@ -132,11 +133,12 @@ describe CreateOrderService, type: :services do
           end
         end
         context 'with passing edition set' do
-          let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: 'edition-set-id', quantity: 2) }
+          let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: 'edition-set-id', quantity: 2, mode: Order::BUY) }
           it 'creates order with proper data' do
             expect do
               service.process!
               order = service.order
+              expect(order.mode).to eq Order::BUY
               expect(order.currency_code).to eq 'USD'
               expect(order.buyer_id).to eq user_id
               expect(order.seller_id).to eq 'gravity-partner-id'
@@ -161,7 +163,7 @@ describe CreateOrderService, type: :services do
         expect(Adapters::GravityV1).to receive(:get).and_raise(Adapters::GravityError.new('unknown artwork'))
       end
       it 'raises error' do
-        expect { CreateOrderService.new(user_id: user_id, artwork_id: 'random-artwork', quantity: 2).process! }.to raise_error do |error|
+        expect { CreateOrderService.new(user_id: user_id, artwork_id: 'random-artwork', quantity: 2, mode: Order::BUY).process! }.to raise_error do |error|
           expect(error).to be_a(Errors::ValidationError)
           expect(error.code).to eq :unknown_artwork
           expect(error.type).to eq :validation
@@ -173,7 +175,7 @@ describe CreateOrderService, type: :services do
         expect(Adapters::GravityV1).to receive(:get).and_return(gravity_v1_artwork(published: false))
       end
       it 'raises error' do
-        expect { CreateOrderService.new(user_id: user_id, artwork_id: 'random-artwork', quantity: 2).process! }.to raise_error do |error|
+        expect { CreateOrderService.new(user_id: user_id, artwork_id: 'random-artwork', quantity: 2, mode: Order::BUY).process! }.to raise_error do |error|
           expect(error).to be_a(Errors::ValidationError)
           expect(error.code).to eq :unpublished_artwork
           expect(error.type).to eq :validation
@@ -185,7 +187,7 @@ describe CreateOrderService, type: :services do
         expect(Adapters::GravityV1).to receive(:get).and_return(gravity_v1_artwork(acquireable: false))
       end
       it 'raises error' do
-        expect { CreateOrderService.new(user_id: user_id, artwork_id: 'random-artwork', quantity: 2).process! }.to raise_error do |error|
+        expect { CreateOrderService.new(user_id: user_id, artwork_id: 'random-artwork', quantity: 2, mode: Order::BUY).process! }.to raise_error do |error|
           expect(error).to be_a(Errors::ValidationError)
           expect(error.code).to eq :not_acquireable
           expect(error.type).to eq :validation

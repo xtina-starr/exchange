@@ -4,11 +4,12 @@ class Mutations::CreateOrderWithArtwork < Mutations::BaseMutation
   argument :artwork_id, String, 'Artwork Id', required: true
   argument :edition_set_id, String, 'EditionSet Id', required: false
   argument :quantity, Integer, 'Number of items in the line item', required: false
+  argument :mode, Types::OrderModeEnum, 'Enum defining order mode', required: false
 
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
-  def resolve(artwork_id:, edition_set_id: nil, quantity: 1)
-    service = CreateOrderService.new(user_id: context[:current_user][:id], artwork_id: artwork_id, edition_set_id: edition_set_id, quantity: quantity)
+  def resolve(artwork_id:, edition_set_id: nil, quantity: 1, mode: Order::BUY)
+    service = CreateOrderService.new(user_id: context[:current_user][:id], artwork_id: artwork_id, edition_set_id: edition_set_id, quantity: quantity, mode: mode)
     service.process!
     {
       order_or_error: { order: service.order }

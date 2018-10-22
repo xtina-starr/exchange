@@ -1,10 +1,11 @@
 class CreateOrderService
   attr_reader :order
 
-  def initialize(user_id:, artwork_id:, edition_set_id: nil, quantity:)
+  def initialize(user_id:, artwork_id:, edition_set_id: nil, quantity:, mode:)
     @user_id = user_id
     @artwork_id = artwork_id
     @edition_set_id = edition_set_id
+    @mode = mode
     @quantity = quantity
     @edition_set = nil
     @order = nil
@@ -15,6 +16,7 @@ class CreateOrderService
 
     Order.transaction do
       @order = Order.create!(
+        mode: @mode,
         buyer_id: @user_id,
         buyer_type: Order::USER,
         seller_id: @artwork[:partner][:_id],

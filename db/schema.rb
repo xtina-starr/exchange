@@ -106,7 +106,7 @@ ActiveRecord::Schema.define(version: 2018_10_22_140918) do
     t.string "buyer_phone_number"
     t.string "state_reason"
     t.float "commission_rate"
-    t.string "mode"
+    t.string "mode", null: false
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["mode"], name: "index_orders_on_mode"
