@@ -68,7 +68,24 @@ ActiveAdmin.register Order do
     end
 
     panel "Buyer Information" do
+      user_info = GravityService.get_user(order.buyer_id)
+
       attributes_table_for order do
+        if user_info.present?
+          row 'Name' do
+            user_info[:name]
+          end
+          row 'Location' do
+            if user_info[:location][:display].empty?
+              div "No location for user"
+            else
+              user_info[:location][:display]
+            end
+          end
+          row 'Email' do
+            user_info[:email]
+          end
+        end
         if order.fulfillment_type == Order::SHIP
           row :shipping_name
           row :shipping_address do
@@ -85,8 +102,6 @@ ActiveAdmin.register Order do
             number_to_phone order.buyer_phone_number
           end
         end
-        #TODO: fill in email
-        row :email
       end
       if order.buyer_type == 'user'
         h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id), class: :button)
