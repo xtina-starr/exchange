@@ -46,6 +46,7 @@ class OrderSubmitService
 
     @order.line_items.map do |li|
       artwork = GravityService.get_artwork(li[:artwork_id])
+      Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
       raise Errors::ProcessingError, :artwork_version_mismatch if artwork[:current_version_id] != li[:artwork_version_id]
     end
     @credit_card = GravityService.get_credit_card(@order.credit_card_id)
