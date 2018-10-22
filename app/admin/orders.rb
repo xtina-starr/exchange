@@ -10,6 +10,7 @@ ActiveAdmin.register Order do
   scope('Pending & Abandoned Orders') { |scope| scope.where(state: [ Order::ABANDONED, Order::PENDING ]) }
 
   filter :id_eq, label: 'Order Id'
+  filter :mode, as: :check_boxes, collection: proc { Order::MODES }, label: 'Mode'
   filter :code_eq, label: 'Order Code'
   filter :seller_id_eq, label: 'Seller Id'
   filter :buyer_id_eq, label: 'Buyer Id'

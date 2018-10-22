@@ -35,6 +35,7 @@ describe Api::GraphqlController, type: :request do
         query($id: ID) {
           order(id: $id) {
             id
+            mode
             buyer {
               ... on User {
                 id
@@ -116,6 +117,7 @@ describe Api::GraphqlController, type: :request do
 
       it 'returns order when accessing correct order' do
         result = client.execute(query, id: user1_order1.id)
+        expect(result.data.order.mode).to eq Order::BUY
         expect(result.data.order.buyer.id).to eq user_id
         expect(result.data.order.seller.id).to eq partner_id
         expect(result.data.order.currency_code).to eq 'USD'
