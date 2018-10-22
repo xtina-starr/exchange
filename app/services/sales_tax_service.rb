@@ -14,27 +14,26 @@ class SalesTaxService
     )
   )
 
+    nexus_addresses = seller_nexus_addresses.select { |ad| address_taxable?(ad) }
+    # There's nothing to do here if there are no taxable addresses.
+    raise Errors::ValidationError, :no_taxable_addresses if nexus_addresses.blank?
+
     @line_item = line_item
     @fulfillment_type = fulfillment_type
     @tax_client = tax_client
     @artwork_location = artwork_location
     @shipping_address = shipping_address
     @shipping_total_cents = artsy_should_remit_taxes? ? shipping_total_cents : 0
-    @seller_nexus_addresses = seller_nexus_addresses.select { |ad| address_taxable?(ad) }
+    @seller_nexus_addresses = nexus_addresses
     @transaction = nil
     @refund = nil
   end
 
   def sales_tax
     @sales_tax ||= begin
-      # A seller may end up with no nexuses if none of their locations are taxable, in which case their sales tax is 0.
-      if @seller_nexus_addresses.present?
-        tax_response = fetch_sales_tax
-        collectable_tax = tax_response.breakdown&.state_tax_collectable || tax_response.amount_to_collect
-        UnitConverter.convert_dollars_to_cents(collectable_tax)
-      else
-        0
-      end
+      tax_response = fetch_sales_tax
+      collectable_tax = tax_response.breakdown&.state_tax_collectable || tax_response.amount_to_collect
+      UnitConverter.convert_dollars_to_cents(collectable_tax)
     end
   rescue Taxjar::Error => e
     raise Errors::ProcessingError.new(:tax_calculator_failure, message: e.message)
