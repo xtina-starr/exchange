@@ -3,7 +3,7 @@ module Datadog
     attr_accessor :disabled
 
     def send_to_socket(message)
-      print message
+      print message # rubocop:disable Rails/Output
       super unless disabled
     end
   end
@@ -13,8 +13,15 @@ Datadog::Statsd.prepend Datadog::StatsdDisabled
 
 module Exchange
   def self.dogstatsd
-    @dogstatsd ||= Datadog::Statsd.new(ENV.fetch('DATADOG_TRACE_AGENT_HOSTNAME', 'localhost'), 8125,
-      tags: ["service:exchange"]
-    ).tap { |d| d.disabled = !(ENV['DATADOG_ENABLED'] == 'true') }
+    @dogstatsd ||= build_statsd
+  end
+
+  def self.build_statsd
+    hostname = ENV.fetch('DATADOG_TRACE_AGENT_HOSTNAME', 'localhost')
+    port = 8125
+    tags = ['service:exchange']
+    dogstatsd = Datadog::Statsd.new(hostname, port, tags: tags)
+    dogstatsd.disabled = ENV['DATADOG_ENABLED'] != 'true'
+    dogstatsd
   end
 end
