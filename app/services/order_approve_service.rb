@@ -19,7 +19,6 @@ class OrderApproveService
   private
 
   def post_process
-    # order total cents and commission cents
     Exchange.dogstatsd.increment 'order.approve'
     Exchange.dogstatsd.count('order.money_collected', @order.buyer_total_cents)
     Exchange.dogstatsd.count('order.commission_collected', @order.commission_fee_cents)
