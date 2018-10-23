@@ -75,11 +75,16 @@ In order to talk to Exchange GraphQL endpoint:
 - Start local server `dotenv rails s`
 - If you work at Artsy, get proper Gravity User Token following [these instructions](https://github.com/artsy/gravity/blob/master/doc/ApiAuthentication.md#fetching-a-user-jwt-for-the-target-service) (the client application name is "Exchange Staging").
 - Install and run [GraphiQL](https://github.com/skevy/graphiql-app) app `brew cask install graphiql`
-- In GraphiQL app, go to http://localhost:300/api/graphql, you should ge unauthorized error
+- In GraphiQL app, go to http://localhost:3000/api/graphql, you should ge unauthorized error
 - Edit HTTP Headers and add `Authorization` header and set it to `Bearer <token>` where `<token>` is your Gravity token generated few steps above.
 
 ### Working at Artsy?
+
+#### GraphQL Queries
 We share our GraphQL sample queries using [Insomnia](https://insomnia.rest/) shared workspace. You can import latest queries from [environments_and_requests.json](https://github.com/artsy/potential/tree/master/insomnia)
+
+#### Get Access To Exchange
+Access to Exchange Admin is limited to users with the role "Sales Admin". Ask someone with Role Manager permissions to grant your user "Sales Admin" permissions.
 
 ### Debugging
 Something went wrong? Ideally in the JSON response returned from Exchange there will be enough info to describe what went wrong. In case that was not useful, you can:
