@@ -26,6 +26,7 @@ module Errors
       missing_region
       missing_required_info
       missing_required_param
+      no_taxable_addresses
       not_acquireable
       not_found
       unknown_artwork
