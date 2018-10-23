@@ -27,6 +27,8 @@ class OrderCancellationService
     @order.refund! do
       process_refund
     end
+    Exchange.dogstatsd.increment 'order.refund'
+    Exchange.dogstatsd.count('order.money_refunded', @order.buyer_total_cents)
     PostNotificationJob.perform_later(@order.id, Order::REFUNDED, @by)
   ensure
     @order.transactions << @transaction if @transaction.present?
