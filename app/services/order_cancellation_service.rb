@@ -27,6 +27,7 @@ class OrderCancellationService
     @order.refund! do
       process_refund
     end
+    record_stats
     PostNotificationJob.perform_later(@order.id, Order::REFUNDED, @by)
   ensure
     @order.transactions << @transaction if @transaction.present?
@@ -39,5 +40,10 @@ class OrderCancellationService
     raise Errors::ProcessingError.new(:refund_failed, @transaction.failure_data) if @transaction.failed?
 
     @order.line_items.each { |li| GravityService.undeduct_inventory(li) }
+  end
+
+  def record_stats
+    Exchange.dogstatsd.increment 'order.refund'
+    Exchange.dogstatsd.count('order.money_refunded', @order.buyer_total_cents)
   end
 end
