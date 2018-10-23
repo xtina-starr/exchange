@@ -19,8 +19,6 @@ class OrderApproveService
   private
 
   def post_process
-<<<<<<< HEAD
-    # order total cents and commission cents
     record_stats
     @order.line_items.each { |li| RecordSalesTaxJob.perform_later(li.id) }
     PostNotificationJob.perform_later(@order.id, Order::APPROVED, @by)
