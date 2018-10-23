@@ -153,6 +153,9 @@ describe OrderShippingService, type: :services do
 
   describe '#tax_total_cents' do
     context 'with an invalid artwork location' do
+      before do
+        allow(GravityService).to receive(:fetch_partner_locations).and_return([Address.new(country: 'US', state: 'FL', postal_code: '12345')])
+      end
       it 'rescues AddressError and raises ValidationError with a code of invalid_artwork_address' do
         artwork[:region] = 'Floridada'
         allow(GravityService).to receive(:get_artwork).and_return(artwork)
