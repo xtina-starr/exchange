@@ -69,4 +69,11 @@ module GravityService
   rescue Adapters::GravityError
     raise Errors::ProcessingError.new(:insufficient_inventory, line_item_id: line_item.id)
   end
+
+  def self.get_user(user_id)
+    Adapters::GravityV1.get("/user/#{user_id}")
+  rescue Adapters::GravityError, StandardError => e
+    Rails.logger.warn("Could not fetch user #{user_id} from gravity: #{e.message}")
+    nil
+  end
 end
