@@ -113,7 +113,7 @@ ActiveAdmin.register Order do
 
       partner_info = GravityService.fetch_partner(order.seller_id)
       if partner_info.present?
-        partner_locations = GravityService.fetch_partner_locations(order.seller_id)
+        partner_locations = GravityService.fetch_partner_locations(order.seller_id, true)
 
         if partner_locations.present?
 

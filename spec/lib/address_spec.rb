@@ -70,6 +70,13 @@ describe Address do
           expect(error.code).to eq :missing_country
         end
       end
+      context 'with skip_validation' do
+        it 'does not validate' do
+          address_params[:country] = nil
+          address_params[:skip_validation] = true
+          expect { Address.new(address_params) }.to_not raise_error
+        end
+      end
     end
   end
   describe '#validate_us_address!' do
@@ -82,6 +89,13 @@ describe Address do
           expect(error.code).to eq :missing_region
         end
       end
+      context 'with skip_validation' do
+        it 'does not validate' do
+          address_params[:region] = nil
+          address_params[:skip_validation] = true
+          expect { Address.new(address_params) }.to_not raise_error
+        end
+      end
     end
     context 'with missing postal code' do
       it 'raises an error' do
@@ -90,6 +104,13 @@ describe Address do
           expect(error).to be_a Errors::AddressError
           expect(error.type).to eq :validation
           expect(error.code).to eq :missing_postal_code
+        end
+      end
+      context 'with skip_validation' do
+        it 'does not validate' do
+          address_params[:postal_code] = nil
+          address_params[:skip_validation] = true
+          expect { Address.new(address_params) }.to_not raise_error
         end
       end
     end
@@ -103,6 +124,14 @@ describe Address do
           expect(error).to be_a Errors::AddressError
           expect(error.type).to eq :validation
           expect(error.code).to eq :missing_region
+        end
+      end
+      context 'with skip_validation' do
+        it 'does not validate' do
+          address_params[:region] = nil
+          address_params[:country] = 'CA'
+          address_params[:skip_validation] = true
+          expect { Address.new(address_params) }.to_not raise_error
         end
       end
     end
