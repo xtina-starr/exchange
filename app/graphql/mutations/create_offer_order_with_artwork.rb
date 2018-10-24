@@ -14,6 +14,6 @@ class Mutations::CreateOfferOrderWithArtwork < Mutations::BaseMutation
       order_or_error: service.order
     }
   rescue Errors::ApplicationError => e
-    { order_or_error: Types::ApplicationErrorType.from_application(e) }
+    { order_or_error: e }
   end
 end

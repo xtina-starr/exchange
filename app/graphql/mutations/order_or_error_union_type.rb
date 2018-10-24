@@ -5,7 +5,7 @@ class Mutations::OrderOrErrorUnionType < Types::BaseUnion
   def self.resolve_type(object, _context)
     if object.is_a?(Order)
       Types::OrderType
-    elsif object.key?(:code)
+    elsif object.is_a?(Errors::ApplicationError)
       Types::ApplicationErrorType
     else
       raise "Unexpected Return value: #{object.inspect}"
