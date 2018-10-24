@@ -20,27 +20,23 @@ describe Api::GraphqlController, type: :request do
         mutation($input: CreateOfferOrderWithArtworkInput!) {
           createOfferOrderWithArtwork(input: $input) {
             orderOrError {
-              ... on OrderWithMutationSuccess {
-                order {
-                  id
-                  buyer {
-                    ... on Partner {
-                      id
-                    }
+              ... on Order {
+                id
+                buyer {
+                  ... on Partner {
+                    id
                   }
-                  seller {
-                    ... on User {
-                      id
-                    }
+                }
+                seller {
+                  ... on User {
+                    id
                   }
                 }
               }
-              ... on OrderWithMutationFailure {
-                error {
-                  code
-                  data
-                  type
-                }
+              ... on ApplicationError {
+                code
+                data
+                type
               }
             }
           }
@@ -67,11 +63,10 @@ describe Api::GraphqlController, type: :request do
         it 'does not create order and returns proper error' do
           expect do
             response = client.execute(mutation, input: mutation_input)
-            expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:order)
-            expect(response.data.create_offer_order_with_artwork.order_or_error.error).not_to be_nil
+            expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:id)
 
-            expect(response.data.create_offer_order_with_artwork.order_or_error.error.type).to eq 'validation'
-            expect(response.data.create_offer_order_with_artwork.order_or_error.error.code).to eq 'unknown_artwork'
+            expect(response.data.create_offer_order_with_artwork.order_or_error.type).to eq 'validation'
+            expect(response.data.create_offer_order_with_artwork.order_or_error.code).to eq 'unknown_artwork'
           end.to change(Order, :count).by(0).and change(LineItem, :count).by(0)
         end
       end
@@ -86,9 +81,9 @@ describe Api::GraphqlController, type: :request do
             it 'uses artworks edition set' do
               expect do
                 response = client.execute(mutation, input: mutation_input.except(:editionSetId))
-                expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error.id).not_to be_nil
                 expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
-                order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.order.id)
+                order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.id)
                 expect(order.currency_code).to eq 'USD'
                 expect(order.buyer_id).to eq jwt_user_id
                 expect(order.seller_id).to eq partner_id
@@ -105,10 +100,10 @@ describe Api::GraphqlController, type: :request do
             it 'creates order with edition_set price' do
               expect do
                 response = client.execute(mutation, input: mutation_input)
-                expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error.id).not_to be_nil
                 expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
 
-                order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.order.id)
+                order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.id)
                 expect(order.currency_code).to eq 'USD'
                 expect(order.buyer_id).to eq jwt_user_id
                 expect(order.seller_id).to eq partner_id
@@ -163,10 +158,10 @@ describe Api::GraphqlController, type: :request do
             it 'creates order with edition_set price' do
               expect do
                 response = client.execute(mutation, input: mutation_input)
-                expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error.id).not_to be_nil
                 expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
 
-                order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.order.id)
+                order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.id)
                 expect(order.mode).to eq Order::OFFER
                 expect(order.currency_code).to eq 'USD'
                 expect(order.buyer_id).to eq jwt_user_id
@@ -186,9 +181,9 @@ describe Api::GraphqlController, type: :request do
           it 'creates order with artwork price' do
             expect do
               response = client.execute(mutation, input: mutation_input.except(:editionSetId))
-              expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+              expect(response.data.create_offer_order_with_artwork.order_or_error.id).not_to be_nil
               expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
-              order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.order.id)
+              order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.id)
               expect(order.mode).to eq Order::OFFER
               expect(order.currency_code).to eq 'USD'
               expect(order.buyer_id).to eq jwt_user_id
@@ -207,9 +202,9 @@ describe Api::GraphqlController, type: :request do
           it 'creates order with artwork price' do
             expect do
               response = client.execute(mutation, input: mutation_input.except(:editionSetId))
-              expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+              expect(response.data.create_offer_order_with_artwork.order_or_error.id).not_to be_nil
               expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
-              order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.order.id)
+              order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.id)
               expect(order.mode).to eq Order::OFFER
               expect(order.currency_code).to eq 'USD'
               expect(order.buyer_id).to eq jwt_user_id
@@ -225,10 +220,10 @@ describe Api::GraphqlController, type: :request do
             it 'defaults to 1' do
               expect do
                 response = client.execute(mutation, input: { artworkId: artwork_id })
-                expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error.id).not_to be_nil
                 expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
 
-                order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.order.id)
+                order = Order.find(response.data.create_offer_order_with_artwork.order_or_error.id)
                 expect(order.mode).to eq Order::OFFER
                 expect(order.currency_code).to eq 'USD'
                 expect(order.buyer_id).to eq jwt_user_id
@@ -250,7 +245,7 @@ describe Api::GraphqlController, type: :request do
             it 'creates a new order' do
               expect do
                 response = client.execute(mutation, input: { artworkId: artwork_id })
-                expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error.id).not_to be_nil
                 expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
                 expect(order.reload.state).to eq Order::PENDING
               end.to change(Order, :count).by(1)
@@ -266,11 +261,11 @@ describe Api::GraphqlController, type: :request do
         it 'returns error' do
           expect do
             response = client.execute(mutation, input: mutation_input.except(:editionSetId))
-            expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:order)
-            expect(response.data.create_offer_order_with_artwork.order_or_error.error).not_to be_nil
+            expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:id)
+            expect(response.data.create_offer_order_with_artwork.order_or_error).not_to be_nil
 
-            expect(response.data.create_offer_order_with_artwork.order_or_error.error.type).to eq 'validation'
-            expect(response.data.create_offer_order_with_artwork.order_or_error.error.code).to eq 'invalid_order'
+            expect(response.data.create_offer_order_with_artwork.order_or_error.type).to eq 'validation'
+            expect(response.data.create_offer_order_with_artwork.order_or_error.code).to eq 'invalid_order'
           end.to change(Order, :count).by(0)
         end
       end
