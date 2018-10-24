@@ -113,10 +113,12 @@ ActiveAdmin.register Order do
 
       partner_info = GravityService.fetch_partner(order.seller_id)
       if partner_info.present?
-        partner_location = GravityService.fetch_partner_location(order.seller_id)
+        partner_locations = GravityService.fetch_partner_locations(order.seller_id)
 
-        if partner_location.present?
+        if partner_locations.present?
 
+          #TODO - handle multiple partner_locations properly, instead of just taking the first.
+          partner_location = partner_locations.first
           partner_info[:partner_location] = partner_location
 
           attributes_table_for partner_info do
