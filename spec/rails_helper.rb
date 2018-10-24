@@ -8,6 +8,8 @@ require 'rspec/rails'
 require 'webmock/rspec'
 # Add additional requires below this line. Rails is not loaded until this point!
 
+WebMock.disable_net_connect!(allow_localhost: true)
+
 Dir['./spec/support/**/*.rb'].each { |f| require f }
 
 ActiveRecord::Migration.maintain_test_schema!
@@ -18,5 +20,11 @@ RSpec.configure do |config|
   config.use_transactional_fixtures = true
   config.before do
     ActiveJob::Base.queue_adapter = :test
+  end
+end
+
+RSpec.configure do |config|
+  config.before :each, type: :system do 
+    config.include ArtsyAuth::Engine.routes.url_helpers
   end
 end
