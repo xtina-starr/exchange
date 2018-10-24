@@ -33,7 +33,7 @@ module GravityService
     nil
   end
 
-  def self.fetch_partner_locations(partner_id, skip_validation=false)
+  def self.fetch_partner_locations(partner_id, skip_validation = false)
     locations = Adapters::GravityV1.get("/partner/#{partner_id}/locations?private=true")
     raise Errors::ValidationError.new(:missing_partner_location, partner_id: partner_id) if locations.blank?
 
