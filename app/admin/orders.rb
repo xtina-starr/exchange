@@ -189,8 +189,14 @@ ActiveAdmin.register Order do
     panel "Transaction" do
 
       if order.credit_card_id.present?
-        credit_card_info = GravityService.get_credit_card(order.credit_card_id)
-        if credit_card_info.present?
+        no_credit_card_found = false
+        begin
+          credit_card_info = GravityService.get_credit_card(order.credit_card_id)
+          no_credit_card_found = !credit_card_info.present?
+        rescue
+          no_credit_card_found = true
+        end
+        if no_credit_card_found
           h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
         else
           h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
