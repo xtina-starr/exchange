@@ -44,7 +44,7 @@ ActiveAdmin.register Order do
   end
 
   action_item :refund, only: :show do
-    link_to 'Refund', refund_admin_order_path(order), method: :post if [Order::APPROVED, Order::FULFILLED].include? order.state
+    link_to 'Refund', refund_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to refund this order?'} if [Order::APPROVED, Order::FULFILLED].include? order.state
   end
 
   sidebar :contact_info, only: :show do
