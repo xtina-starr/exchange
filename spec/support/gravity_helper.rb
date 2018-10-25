@@ -154,6 +154,7 @@ def gravity_v1_artwork(options={})
     price_currency: 'USD',
     inquireable: true,
     acquireable: true,
+    offerable: true,
     published_at: '2015-01-08T19:29:54+00:00',
     deleted_at: nil,
     publisher: nil,

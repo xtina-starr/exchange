@@ -29,6 +29,7 @@ module Errors
       no_taxable_addresses
       not_acquireable
       not_found
+      not_offerable
       unknown_artwork
       unknown_edition_set
       unknown_partner
