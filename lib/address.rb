@@ -3,7 +3,7 @@ class Address
 
   def initialize(address)
     @address = parse(address)
-    validate! if address.present? && address[:skip_validation] != true
+    validate! if address.present?
     @country = @address[:country]
     @region = @address[:region]
     @city = @address[:city]

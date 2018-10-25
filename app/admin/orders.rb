@@ -113,14 +113,17 @@ ActiveAdmin.register Order do
 
       partner_info = GravityService.fetch_partner(order.seller_id)
       if partner_info.present?
-        partner_locations = GravityService.fetch_partner_locations(order.seller_id, true)
+        valid_partner_location = true
+        begin
+          partner_locations = GravityService.fetch_partner_locations(order.seller_id)
+        rescue Errors::ValidationError
+          valid_partner_location = false
+        end
 
-        if partner_locations.present?
-
+        if valid_partner_location
           #TODO - handle multiple partner_locations properly, instead of just taking the first.
           partner_location = partner_locations.first
           partner_info[:partner_location] = partner_location
-
           attributes_table_for partner_info do
             row :name
             row :partner_location do |partner_info|
@@ -131,6 +134,8 @@ ActiveAdmin.register Order do
             end
             row :email
           end
+        else
+          h3 "Failed to fetch partner location info"
         end
         h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id), class: :button)
       else
