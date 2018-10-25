@@ -177,8 +177,20 @@ ActiveAdmin.register Order do
         row 'Order Status' do
           link_to "#{order.id}", artsy_order_status_url(order.id)
         end
-        row 'Shipment' do |order|
-          #TODO: shipment info
+
+        if order.state == Order::FULFILLED && order.fulfillment_type == Order::SHIP
+          row 'Shipment' do |order|
+            fulfillments = order.line_items.map(&:fulfillments).flatten
+            table_for fulfillments do
+              column '' do |fulfillment|
+                attributes_table_for fulfillment do
+                  row :courier
+                  row :tracking_id
+                  row :estimated_delivery
+                end
+              end
+            end
+          end
         end
       end
       br
