@@ -134,11 +134,6 @@ class Order < ApplicationRecord
     admin_notes.order(:created_at).last
   end
 
-  def fulfillments
-    # TODO: add tests
-    Fulfillment.joins(line_items: :order).where(orders: { id: id }).distinct
-  end
-
   private
 
   def state_reason_inclusion
