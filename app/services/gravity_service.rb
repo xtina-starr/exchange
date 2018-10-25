@@ -33,16 +33,15 @@ module GravityService
     nil
   end
 
-  def self.fetch_partner_location(partner_id)
-    partner = fetch_partner(partner_id)
-    raise Errors::ValidationError.new(:missing_partner_location, partner_id: partner_id) if partner[:billing_location_id].blank?
+  def self.fetch_partner_locations(partner_id)
+    locations = Adapters::GravityV1.get("/partner/#{partner_id}/locations?private=true")
+    raise Errors::ValidationError.new(:missing_partner_location, partner_id: partner_id) if locations.blank?
 
-    location = Adapters::GravityV1.get("/partner/#{partner_id}/location/#{partner[:billing_location_id]}")
-    Address.new(location.slice(:address, :address_2, :city, :state, :country, :postal_code))
+    locations.map { |loc| Address.new(loc) }
   rescue Errors::AddressError
     raise Errors::ValidationError.new(:invalid_seller_address, partner_id: partner_id)
   rescue Adapters::GravityNotFoundError
-    raise Errors::ValidationError.new(:missing_partner_location, partner_id: partner_id)
+    raise Errors::ValidationError.new(:unknown_partner, partner_id: partner_id)
   rescue Adapters::GravityError
     raise Errors::InternalError.new(:gravity, message: e.message)
   end
@@ -69,5 +68,12 @@ module GravityService
     raise Errors::ValidationError.new(:unknown_artwork, line_item_id: line_item.id)
   rescue Adapters::GravityError
     raise Errors::ProcessingError.new(:insufficient_inventory, line_item_id: line_item.id)
+  end
+
+  def self.get_user(user_id)
+    Adapters::GravityV1.get("/user/#{user_id}")
+  rescue Adapters::GravityError, StandardError => e
+    Rails.logger.warn("Could not fetch user #{user_id} from gravity: #{e.message}")
+    nil
   end
 end

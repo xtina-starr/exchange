@@ -10,6 +10,7 @@ ActiveAdmin.register Order do
   scope('Pending & Abandoned Orders') { |scope| scope.where(state: [ Order::ABANDONED, Order::PENDING ]) }
 
   filter :id_eq, label: 'Order Id'
+  filter :mode, as: :check_boxes, collection: proc { Order::MODES }, label: 'Mode'
   filter :code_eq, label: 'Order Code'
   filter :seller_id_eq, label: 'Seller Id'
   filter :buyer_id_eq, label: 'Buyer Id'
@@ -44,7 +45,7 @@ ActiveAdmin.register Order do
   end
 
   action_item :refund, only: :show do
-    link_to 'Refund', refund_admin_order_path(order), method: :post if [Order::APPROVED, Order::FULFILLED].include? order.state
+    link_to 'Refund', refund_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to refund this order?'} if [Order::APPROVED, Order::FULFILLED].include? order.state
   end
 
   sidebar :contact_info, only: :show do
@@ -68,7 +69,24 @@ ActiveAdmin.register Order do
     end
 
     panel "Buyer Information" do
+      user_info = GravityService.get_user(order.buyer_id)
+
       attributes_table_for order do
+        if user_info.present?
+          row 'Name' do
+            user_info[:name]
+          end
+          row 'Location' do
+            if user_info[:location][:display].empty?
+              div "No location for user"
+            else
+              user_info[:location][:display]
+            end
+          end
+          row 'Email' do
+            user_info[:email]
+          end
+        end
         if order.fulfillment_type == Order::SHIP
           row :shipping_name
           row :shipping_address do
@@ -85,8 +103,6 @@ ActiveAdmin.register Order do
             number_to_phone order.buyer_phone_number
           end
         end
-        #TODO: fill in email
-        row :email
       end
       if order.buyer_type == 'user'
         h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id), class: :button)
@@ -98,12 +114,17 @@ ActiveAdmin.register Order do
 
       partner_info = GravityService.fetch_partner(order.seller_id)
       if partner_info.present?
-        partner_location = GravityService.fetch_partner_location(order.seller_id)
+        valid_partner_location = true
+        begin
+          partner_locations = GravityService.fetch_partner_locations(order.seller_id)
+        rescue Errors::ValidationError
+          valid_partner_location = false
+        end
 
-        if partner_location.present?
-
+        if valid_partner_location
+          #TODO - handle multiple partner_locations properly, instead of just taking the first.
+          partner_location = partner_locations.first
           partner_info[:partner_location] = partner_location
-
           attributes_table_for partner_info do
             row :name
             row :partner_location do |partner_info|
@@ -114,6 +135,8 @@ ActiveAdmin.register Order do
             end
             row :email
           end
+        else
+          h3 "Failed to fetch partner location info"
         end
         h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id), class: :button)
       else
@@ -184,8 +207,14 @@ ActiveAdmin.register Order do
     panel "Transaction" do
 
       if order.credit_card_id.present?
-        credit_card_info = GravityService.get_credit_card(order.credit_card_id)
-        if credit_card_info.present?
+        no_credit_card_found = false
+        begin
+          credit_card_info = GravityService.get_credit_card(order.credit_card_id)
+          no_credit_card_found = !credit_card_info.present?
+        rescue
+          no_credit_card_found = true
+        end
+        if no_credit_card_found
           h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
         else
           h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"

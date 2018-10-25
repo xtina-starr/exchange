@@ -13,6 +13,7 @@ describe RecordSalesTaxJob, type: :job do
       postal_code: 10013
     }
   end
+  let(:seller_addresses) { [Address.new(country: 'US', region: 'NY', postal_code: '10012')] }
   describe '#perform' do
     before do
       stub_tax_for_order
@@ -28,6 +29,7 @@ describe RecordSalesTaxJob, type: :job do
     context 'with an order that has sales tax to remit' do
       it 'posts a transaction to TaxJar and saves the transaction id' do
         expect(GravityService).to receive(:get_artwork).with(line_item.artwork_id).and_return(gravity_v1_artwork(location: artwork_location))
+        expect(GravityService).to receive(:fetch_partner_locations).with(line_item.order.seller_id).and_return(seller_addresses)
         expect(Address).to receive(:new).with(artwork_location).and_return(Address.new(artwork_location))
         RecordSalesTaxJob.perform_now(line_item.id)
         expect(line_item.reload.sales_tax_transaction_id).to eq '123'

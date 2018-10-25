@@ -16,6 +16,7 @@ class Types::QueryType < Types::BaseObject
     argument :buyer_type, String, required: false
     argument :state, Types::OrderStateEnum, required: false
     argument :sort, Types::OrderConnectionSortEnum, required: false
+    argument :mode, Types::OrderModeEnum, required: false
   end
 
   def order(args)

@@ -26,33 +26,38 @@ describe GravityService, type: :services do
     end
   end
 
-  describe '#fetch_partner_location' do
-    let(:valid_location) { { country: 'US', state: 'NY', postal_code: '12345' } }
-    let(:invalid_location) { { country: 'US', state: 'Floridada' } }
-    before do
-      allow(GravityService).to receive(:fetch_partner).and_return(partner)
-    end
-    it 'fetches the partner' do
-      expect(GravityService).to receive(:fetch_partner).with(partner_id)
-      allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/location/#{partner[:billing_location_id]}").and_return(valid_location)
-      GravityService.fetch_partner_location(partner_id)
-    end
+  describe '#fetch_partner_locations' do
+    let(:valid_locations) { [{ country: 'US', state: 'NY', postal_code: '12345' }, { country: 'US', state: 'FL', postal_code: '67890' }] }
+    let(:invalid_location) { [{ country: 'US', state: 'Floridada' }] }
     it 'calls the correct location Gravity endpoint' do
-      expect(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/location/#{partner[:billing_location_id]}").and_return(valid_location)
-      GravityService.fetch_partner_location(partner_id)
+      expect(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/locations?private=true").and_return(valid_locations)
+      GravityService.fetch_partner_locations(partner_id)
     end
-    context 'with a valid partner location' do
-      it 'returns a new address' do
-        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/location/#{partner[:billing_location_id]}").and_return(valid_location)
-        expect(GravityService.fetch_partner_location(partner_id)).to be_a Address
+    context 'with at least one partner location' do
+      context 'with valid partner locations' do
+        it 'returns new addresses for each location' do
+          allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/locations?private=true").and_return(valid_locations)
+          partner_addresses = GravityService.fetch_partner_locations(partner_id)
+          partner_addresses.each { |ad| expect(ad).to be_a Address }
+        end
+      end
+      context 'with an invalid partner location' do
+        it 'rescues AddressError and raises ValidationError' do
+          allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/locations?private=true").and_return(invalid_location)
+          expect { GravityService.fetch_partner_locations(partner_id) }.to raise_error do |error|
+            expect(error).to be_a Errors::ValidationError
+            expect(error.code).to eq :invalid_seller_address
+            expect(error.data[:partner_id]).to eq partner_id
+          end
+        end
       end
     end
-    context 'with an invalid partner location' do
-      it 'rescues AddressError and raises ValidationError' do
-        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/location/#{partner[:billing_location_id]}").and_return(invalid_location)
-        expect { GravityService.fetch_partner_location(partner_id) }.to raise_error do |error|
+    context 'with no partner locations' do
+      it 'raises error' do
+        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/locations?private=true").and_return([])
+        expect { GravityService.fetch_partner_locations(partner_id) }.to raise_error do |error|
           expect(error).to be_a Errors::ValidationError
-          expect(error.code).to eq :invalid_seller_address
+          expect(error.code).to eq :missing_partner_location
           expect(error.data[:partner_id]).to eq partner_id
         end
       end
@@ -134,6 +139,21 @@ describe GravityService, type: :services do
       it 'returns nil' do
         expect(Adapters::GravityV1).to receive(:get).and_raise(Adapters::GravityError, 'timeout')
         expect(GravityService.get_artwork(artwork_id)).to be_nil
+      end
+    end
+  end
+
+  describe '#get_user' do
+    let(:user_id) { 'some-id' }
+    it 'calls the /userid endpoint' do
+      allow(Adapters::GravityV1).to receive(:get).with("/user/#{user_id}")
+      GravityService.get_user(user_id)
+      expect(Adapters::GravityV1).to have_received(:get).with("/user/#{user_id}")
+    end
+    context 'with failed gravity call' do
+      it 'returns nil' do
+        expect(Adapters::GravityV1).to receive(:get).and_raise(Adapters::GravityError, 'timeout')
+        expect(GravityService.get_user(user_id)).to be_nil
       end
     end
   end

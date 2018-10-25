@@ -1,6 +1,11 @@
 class Order < ApplicationRecord
   has_paper_trail
   SUPPORTED_CURRENCIES = %w[USD].freeze
+
+  MODES = [
+    BUY = 'buy'.freeze,
+    OFFER = 'offer'.freeze
+  ].freeze
   # For more docs about states go to:
   # https://www.notion.so/artsy/37c311363ef046c3aa546047e60cc58a?v=de68d5bbc30748f88b0d92a059bc0ba8
   STATES = [
