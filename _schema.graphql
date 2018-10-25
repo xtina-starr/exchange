@@ -53,7 +53,7 @@ input CreateOfferOrderWithArtworkInput {
   # EditionSet Id
   editionSetId: String
 
-  # Number of items in the line item
+  # Number of items in the line item, default is 1
   quantity: Int
 }
 
@@ -242,7 +242,7 @@ type Order {
     # Returns the last _n_ elements from the list.
     last: Int
   ): LineItemConnection
-  mode: OrderModeEnum!
+  mode: OrderModeEnum
   requestedFulfillment: RequestedFulfillmentUnion
   seller: OrderPartyUnion!
   sellerTotalCents: Int

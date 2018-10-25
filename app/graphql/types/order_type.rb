@@ -3,7 +3,7 @@ class Types::OrderType < Types::BaseObject
   graphql_name 'Order'
 
   field :id, ID, null: false
-  field :mode, Types::OrderModeEnum, null: false
+  field :mode, Types::OrderModeEnum, null: true
   field :code, String, null: false
   field :buyer, Types::OrderPartyUnionType, null: false
   field :seller, Types::OrderPartyUnionType, null: false
