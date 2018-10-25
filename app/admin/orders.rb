@@ -113,14 +113,17 @@ ActiveAdmin.register Order do
 
       partner_info = GravityService.fetch_partner(order.seller_id)
       if partner_info.present?
-        partner_locations = GravityService.fetch_partner_locations(order.seller_id)
+        valid_partner_location = true
+        begin
+          partner_locations = GravityService.fetch_partner_locations(order.seller_id)
+        rescue Errors::ValidationError
+          valid_partner_location = false
+        end
 
-        if partner_locations.present?
-
+        if valid_partner_location
           #TODO - handle multiple partner_locations properly, instead of just taking the first.
           partner_location = partner_locations.first
           partner_info[:partner_location] = partner_location
-
           attributes_table_for partner_info do
             row :name
             row :partner_location do |partner_info|
@@ -131,6 +134,8 @@ ActiveAdmin.register Order do
             end
             row :email
           end
+        else
+          h3 "Failed to fetch partner location info"
         end
         h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id), class: :button)
       else
@@ -189,8 +194,14 @@ ActiveAdmin.register Order do
     panel "Transaction" do
 
       if order.credit_card_id.present?
-        credit_card_info = GravityService.get_credit_card(order.credit_card_id)
-        if credit_card_info.present?
+        no_credit_card_found = false
+        begin
+          credit_card_info = GravityService.get_credit_card(order.credit_card_id)
+          no_credit_card_found = !credit_card_info.present?
+        rescue
+          no_credit_card_found = true
+        end
+        if no_credit_card_found
           h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
         else
           h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
