@@ -269,6 +269,22 @@ describe Api::GraphqlController, type: :request do
           end.to change(Order, :count).by(0)
         end
       end
+
+      context 'with not-offerable artwork' do
+        before do
+          expect(GravityService).to receive(:get_artwork).with(artwork_id).and_return(gravity_v1_artwork(edition_sets: nil, offerable: false))
+        end
+        it 'returns error' do
+          expect do
+            response = client.execute(mutation, input: mutation_input.except(:editionSetId))
+            expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:id)
+            expect(response.data.create_offer_order_with_artwork.order_or_error).not_to be_nil
+
+            expect(response.data.create_offer_order_with_artwork.order_or_error.type).to eq 'validation'
+            expect(response.data.create_offer_order_with_artwork.order_or_error.code).to eq 'not_offerable'
+          end.to change(Order, :count).by(0)
+        end
+      end
     end
   end
 end

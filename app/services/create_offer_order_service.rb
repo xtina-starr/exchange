@@ -4,7 +4,6 @@ class CreateOfferOrderService < CreateOrderService
   end
 
   def assert_create!(artwork)
-    # TODO: add following assertion once we know the field
-    # raise Errors::ValidationError.new(:not_offerable, artwork_id: @artwork_id) unless @artwork[:offerable]
+    raise Errors::ValidationError.new(:not_offerable, artwork_id: artwork[:_id]) unless artwork[:offerable]
   end
 end
