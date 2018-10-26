@@ -82,7 +82,7 @@ class Order < ApplicationRecord
   scope :pending, -> { where(state: PENDING) }
   scope :active, -> { where(state: [Order::APPROVED, Order::SUBMITTED]) }
   scope :approved, -> { where(state: APPROVED) }
-  scope :by_last_admin_note, -> (note_type) { where("(SELECT note_type FROM admin_notes WHERE order_id = orders.id ORDER BY created_at DESC limit 1) = ?", note_type)}
+  scope :by_last_admin_note, ->(note_type) { where('(SELECT note_type FROM admin_notes WHERE order_id = orders.id ORDER BY created_at DESC limit 1) = ?', note_type) }
 
   ACTIONS.each do |action|
     define_method "#{action}!" do |state_reason = nil, &block|

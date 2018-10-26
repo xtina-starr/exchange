@@ -185,6 +185,24 @@ RSpec.describe Order, type: :model do
         expect(orders.first).to eq approved_order
       end
     end
+
+    describe 'by_last_admin_note' do
+      let!(:order1) { Fabricate(:order) }
+      let!(:order2) { Fabricate(:order) }
+      let!(:order3) { Fabricate(:order) }
+      let!(:order1_admin_note_1) { Fabricate(:admin_note, order: order1, note_type: 'case_opened_return', created_at: 10.days.ago) }
+      let!(:order1_admin_note_2) { Fabricate(:admin_note, order: order1, note_type: 'case_opened_cancellation', created_at: 9.days.ago) }
+      let!(:order1_admin_note_3) { Fabricate(:admin_note, order: order1, note_type: 'mediation_contacted_buyer', created_at: 8.days.ago) }
+      let!(:order2_admin_note_1) { Fabricate(:admin_note, order: order2, note_type: 'case_opened_return', created_at: 10.days.ago) }
+      it 'returns correct orders for case_opened_return' do
+        orders = Order.by_last_admin_note('case_opened_return')
+        expect(orders).to eq [order2]
+      end
+      it 'returns correct orders for case mediation_contacted_buyer' do
+        orders = Order.by_last_admin_note('mediation_contacted_buyer')
+        expect(orders).to eq [order1]
+      end
+    end
   end
 
   describe '#shipping_address' do
