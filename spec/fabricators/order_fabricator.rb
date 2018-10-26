@@ -1,4 +1,5 @@
 Fabricator(:order) do
+  mode { Order::BUY }
   code { SecureRandom.hex(10) }
   buyer_id { sequence(:user_id) { |i| "user-id-#{i}" } }
   buyer_type { 'user' }

@@ -121,7 +121,7 @@ RSpec.describe Order, type: :model do
   describe '#create_state_history' do
     context 'when an order is first created' do
       it 'creates a new state history object with its initial state' do
-        new_order = Order.create!(state: Order::PENDING, currency_code: 'USD')
+        new_order = Order.create!(state: Order::PENDING, currency_code: 'USD', mode: Order::BUY)
         expect(new_order.state_histories.count).to eq 1
         expect(new_order.state_histories.last.state).to eq Order::PENDING
         expect(new_order.state_histories.last.updated_at.to_i).to eq new_order.state_updated_at.to_i

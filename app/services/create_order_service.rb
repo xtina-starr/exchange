@@ -1,10 +1,11 @@
 class CreateOrderService
   attr_reader :order
 
-  def initialize(user_id:, artwork_id:, edition_set_id: nil, quantity:)
+  def initialize(user_id:, artwork_id:, edition_set_id: nil, quantity:, mode:)
     @user_id = user_id
     @artwork_id = artwork_id
     @edition_set_id = edition_set_id
+    @mode = mode
     @quantity = quantity
     @edition_set = nil
     @order = nil
@@ -15,6 +16,7 @@ class CreateOrderService
 
     Order.transaction do
       @order = Order.create!(
+        mode: @mode,
         buyer_id: @user_id,
         buyer_type: Order::USER,
         seller_id: @artwork[:partner][:_id],
@@ -39,14 +41,20 @@ class CreateOrderService
     raise Errors::ValidationError.new(:invalid_order, message: e.message)
   end
 
+  protected
+
+  def assert_create!(_artwork)
+    raise NotImplementedError
+  end
+
   private
 
   def pre_process!
     @artwork = GravityService.get_artwork(@artwork_id)
     raise Errors::ValidationError.new(:unknown_artwork, artwork_id: @artwork_id) if @artwork.nil?
     raise Errors::ValidationError.new(:unpublished_artwork, artwork_id: @artwork_id) unless @artwork[:published]
-    raise Errors::ValidationError.new(:not_acquireable, artwork_id: @artwork_id) unless @artwork[:acquireable]
 
+    assert_create!(@artwork)
     find_verify_edition_set
   end
 
