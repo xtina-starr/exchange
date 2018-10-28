@@ -3,46 +3,41 @@ require 'timecop'
 
 describe ReminderFollowUpJob, type: :job do
   let(:state) { Order::PENDING }
-  let(:order) { Fabricate(:order, state: state) }
+  let(:state_expires_at) { 1.day.from_now }
+  let(:order) { Fabricate(:order, state: state, state_expires_at: state_expires_at) }
   describe '#perform' do
     context 'with an order in the same state before its expiration time' do
       context 'SUBMITTED' do
         let(:state) { Order::SUBMITTED }
         it 'sends an internal message to admins about seller lapsing' do
-          Timecop.freeze(order.state_expires_at - 1.second) do
-            expect(PostNotificationJob).to receive(:perform_now)
-              .with(order.id, Order::REMINDER_EVENT_VERB[:pending_approval])
+          expect(OrderEvent).to receive(:post)
+            .with(order, Order::REMINDER_EVENT_VERB[:pending_approval], nil)
 
-            ReminderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
-          end
+          ReminderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
         end
       end
       context 'APPROVED' do
         let(:state) { Order::APPROVED }
         it 'sends an internal message to admins about buyerr lapsing' do
-          Timecop.freeze(order.state_expires_at - 1.second) do
-            expect(PostNotificationJob).to receive(:perform_now)
-              .with(order.id, Order::REMINDER_EVENT_VERB[:pending_fulfillment])
+          expect(OrderEvent).to receive(:post)
+            .with(order, Order::REMINDER_EVENT_VERB[:pending_fulfillment], nil)
 
-            ReminderFollowUpJob.perform_now(order.id, Order::APPROVED)
-          end
+          ReminderFollowUpJob.perform_now(order.id, Order::APPROVED)
         end
       end
     end
     context 'with an order in a different state than when the job was made' do
       it 'does nothing' do
-        order.update!(state: Order::SUBMITTED)
-        Timecop.freeze(order.state_expires_at + 1.second) do
-          expect(PostNotificationJob).to_not receive(:perform_now)
+        order.update!(state: Order::SUBMITTED, state_expires_at: 1.hour.ago)
+        expect(OrderEvent).to_not receive(:post)
 
-          ReminderFollowUpJob.perform_now(order.id, Order::PENDING)
-        end
+        ReminderFollowUpJob.perform_now(order.id, Order::PENDING)
       end
     end
     context 'with an order in the same state after its expiration time' do
+      let(:state_expires_at) { 1.hour.ago }
       it 'does nothing' do
-        expect(OrderService).to_not receive(:abandon!)
-        expect_any_instance_of(OrderCancellationService).to_not receive(:seller_lapse!)
+        expect(OrderEvent).to_not receive(:post)
         ReminderFollowUpJob.perform_now(order.id, Order::PENDING)
       end
     end
