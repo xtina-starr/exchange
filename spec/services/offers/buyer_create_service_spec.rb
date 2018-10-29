@@ -18,7 +18,7 @@ describe Offers::BuyerCreateService, type: :services do
         end
       end
     end
-    Order::STATES.reject {|s| [Order::PENDING, Order::CANCELED].include? s }.each do |state|
+    Order::STATES.reject { |s| [Order::PENDING, Order::CANCELED].include? s }.each do |state|
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do

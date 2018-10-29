@@ -17,7 +17,7 @@ describe OrderService, type: :services do
         expect(order.reload.credit_card_id).to eq 'gravity-cc-1'
       end
     end
-    Order::STATES.reject { |s| [Order::PENDING, Order::IN_NEGOTIATION].include? s }.each do |state|
+    Order::STATES.reject { |s| s == Order::PENDING }.each do |state|
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do
