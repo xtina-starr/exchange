@@ -77,11 +77,11 @@ ActiveRecord::Schema.define(version: 2018_10_29_122615) do
   create_table "offers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id"
     t.integer "amount_cents"
-    t.integer "offerer_id"
+    t.string "offerer_id"
     t.string "offerer_type"
     t.string "state"
-    t.integer "offered_by"
-    t.integer "responded_by"
+    t.string "offered_by"
+    t.string "responded_by"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["order_id"], name: "index_offers_on_order_id"
@@ -122,7 +122,6 @@ ActiveRecord::Schema.define(version: 2018_10_29_122615) do
     t.string "mode", null: false
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
-    t.index ["mode"], name: "index_orders_on_mode"
     t.index ["seller_id"], name: "index_orders_on_seller_id"
     t.index ["state"], name: "index_orders_on_state"
   end

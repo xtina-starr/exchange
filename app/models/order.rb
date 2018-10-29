@@ -10,7 +10,7 @@ class Order < ApplicationRecord
   # https://www.notion.so/artsy/37c311363ef046c3aa546047e60cc58a?v=de68d5bbc30748f88b0d92a059bc0ba8
   STATES = [
     PENDING = 'pending'.freeze,
-    NEGOTIATION = 'negotiation'.freeze,
+    IN_NEGOTIATION = 'in_negotiation'.freeze,
     # Buyer starts checkout flow but never submits
     ABANDONED = 'abandoned'.freeze,
     # Check-out complete; payment authorized.
@@ -184,8 +184,7 @@ class Order < ApplicationRecord
 
   def build_machine
     machine = MicroMachine.new(state)
-    machine.when(:negotiate, PENDING => NEGOTIATION)
-    machine.when(:negotiate, NEGOTIATION => NEGOTIATION)
+    machine.when(:negotiate, PENDING => IN_NEGOTIATION, IN_NEGOTIATION => IN_NEGOTIATION)
     machine.when(:abandon, PENDING => ABANDONED)
     machine.when(:submit, PENDING => SUBMITTED)
     machine.when(:approve, SUBMITTED => APPROVED)
