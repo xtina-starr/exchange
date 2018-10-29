@@ -54,6 +54,9 @@ rails db:setup
 $ rails s
 ```
 
+## Did You Change Models?
+If you changed something in the `/models` make sure to inform #data (analytics) team about it in case it impacts their reports.
+
 ## Did You Change GraphQL Schema?
 Metaphysics is the current consumer of Exchange GraphQL schema and keeps a copy of latest schema in https://github.com/artsy/metaphysics/tree/master/src/data, if you have changed Exchange GraphQL schema, make sure you also update the copy of this schema in Metaphysics. In order to do so follow these steps:
 1) In exchange run
