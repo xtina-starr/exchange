@@ -1,8 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe "visit order details", type: :system do
-
-
+RSpec.describe 'visit order details', type: :system do
   let(:partner_id) { 'partner1' }
   let(:user_id) { 'user1' }
   let(:state) { Order::PENDING }
@@ -27,43 +25,40 @@ RSpec.describe "visit order details", type: :system do
     )
   end
 
-  it "renders order overview page" do
+  it 'renders order overview page' do
     allow_any_instance_of(ApplicationController).to receive(:require_artsy_authentication)
-    visit "/admin"
+    visit '/admin'
   end
 
-  it "is able to switch to All Orders tab, where it shows an order", js: true do
-
+  it 'is able to switch to All Orders tab, where it shows an order', js: true do
     order.save
 
     allow_any_instance_of(ApplicationController).to receive(:require_artsy_authentication)
-    visit "/admin"
+    visit '/admin'
 
-    row_selector = "td.col.col-code"
+    row_selector = 'td.col.col-code'
 
     expect(page).to_not have_selector(row_selector)
 
-    tab_selector = "li.scope.all"
+    tab_selector = 'li.scope.all'
     within tab_selector do
       click_link 'All'
     end
 
     expect(page).to have_selector(row_selector)
-
   end
 
-  it "renders order details page", js: true do
-
+  it 'renders order details page', js: true do
     order.save
 
     allow_any_instance_of(ApplicationController).to receive(:require_artsy_authentication)
-    visit "/admin"
+    visit '/admin'
 
-    row_selector = "td.col.col-code"
+    row_selector = 'td.col.col-code'
 
     expect(page).to_not have_selector(row_selector)
 
-    tab_selector = "li.scope.all"
+    tab_selector = 'li.scope.all'
     within tab_selector do
       click_link 'All'
     end
@@ -73,8 +68,5 @@ RSpec.describe "visit order details", type: :system do
     within row_selector do
       click_link order.code
     end
-
   end
-
-
 end
