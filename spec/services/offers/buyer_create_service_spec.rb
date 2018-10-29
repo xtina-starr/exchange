@@ -18,7 +18,7 @@ describe Offers::BuyerCreateService, type: :services do
         end
       end
     end
-    Order::STATES.reject {|s| [Order::PENDING, Order::IN_NEGOTIATION, Order::CANCELED].include? s }.each do |state|
+    Order::STATES.reject {|s| [Order::PENDING, Order::CANCELED].include? s }.each do |state|
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do
@@ -47,25 +47,7 @@ describe Offers::BuyerCreateService, type: :services do
         expect(offer.offerer_id).to eq user_id
         expect(offer.offerer_type).to eq Order::USER
         expect(offer.offered_by).to eq user_id
-      end
-      it 'changes order state' do
-        service.process!
-        expect(order.reload.state).to eq Order::IN_NEGOTIATION
-      end
-    end
-    context 'In Negotiation Order' do
-      let(:state) { Order::IN_NEGOTIATION }
-      it 'creates offer' do
-        expect { service.process! }.to change(order.offers, :count).by(1)
-        offer = order.offers.first
-        expect(offer.amount_cents).to eq 200
-        expect(offer.offerer_id).to eq user_id
-        expect(offer.offerer_type).to eq Order::USER
-        expect(offer.offered_by).to eq user_id
-      end
-      it 'keeps order state' do
-        service.process!
-        expect(order.reload.state).to eq Order::IN_NEGOTIATION
+        expect(order.reload.state).to eq Order::PENDING
       end
     end
   end

@@ -1,7 +1,6 @@
 class Types::OrderStateEnum < Types::BaseEnum
   value 'ABANDONED', 'order is abandoned by buyer and never submitted', value: Order::ABANDONED
   value 'PENDING', 'order is still pending submission by buyer', value: Order::PENDING
-  value 'IN_NEGOTIATION', 'order is in negotiation state', value: Order::IN_NEGOTIATION
   value 'SUBMITTED', 'order is submitted by buyer', value: Order::SUBMITTED
   value 'APPROVED', 'order is approved by seller', value: Order::APPROVED
   value 'CANCELED', 'order is canceled', value: Order::CANCELED

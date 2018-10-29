@@ -17,7 +17,7 @@ module Offers
 
     def assert_offer!
       raise Errors::ValidationError, :invalid_amount_cents unless @amount_cents.present? && @amount_cents.positive?
-      raise Errors::ValidationError, :cant_offer unless @order.mode == Order::OFFER && [Order::PENDING, Order::IN_NEGOTIATION].include?(@order.state)
+      raise Errors::ValidationError, :cant_offer unless @order.mode == Order::OFFER && @order.state == Order::PENDING
     end
   end
 end

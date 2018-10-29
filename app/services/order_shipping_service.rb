@@ -8,7 +8,7 @@ class OrderShippingService
   end
 
   def process!
-    raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless [Order::PENDING, Order::IN_NEGOTIATION].include? @order.state
+    raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
 
     validate_shipping_location! if @fulfillment_type == Order::SHIP
 
