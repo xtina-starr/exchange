@@ -1,12 +1,12 @@
 require 'rails_helper'
 require 'support/gravity_helper'
 
-describe CreateOrderService, type: :services do
+describe BaseCreateOrderService, type: :services do
   describe '#process!' do
     let(:user_id) { 'user-id' }
     let(:artwork) { gravity_v1_artwork }
     let(:artwork) { gravity_v1_artwork(edition_sets: nil) }
-    let(:service) { CreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: nil, quantity: 2, mode: Order::BUY) }
+    let(:service) { BaseCreateOrderService.new(user_id: user_id, artwork_id: 'artwork-id', edition_set_id: nil, quantity: 2, mode: Order::BUY) }
     context 'known artwork' do
       before do
         expect(Adapters::GravityV1).to receive(:get).and_return(artwork)
