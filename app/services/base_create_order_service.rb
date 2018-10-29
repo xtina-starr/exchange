@@ -1,4 +1,4 @@
-class CreateOrderService
+class BaseCreateOrderService
   attr_reader :order
 
   def initialize(user_id:, artwork_id:, edition_set_id: nil, quantity:, mode:)
