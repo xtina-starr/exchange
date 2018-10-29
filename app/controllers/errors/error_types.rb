@@ -1,12 +1,14 @@
 module Errors
   ERROR_TYPES = {
     validation: %i[
+      cant_offer
       credit_card_deactivated
       credit_card_missing_customer
       credit_card_missing_external_id
       credit_card_not_found
       failed_order_code_generation
       invalid_artwork_address
+      invalid_amount_cents
       invalid_commission_rate
       invalid_order
       invalid_seller_address

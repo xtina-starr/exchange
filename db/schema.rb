@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_10_22_140918) do
+ActiveRecord::Schema.define(version: 2018_10_29_122615) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -72,6 +72,19 @@ ActiveRecord::Schema.define(version: 2018_10_22_140918) do
     t.string "sales_tax_transaction_id"
     t.integer "commission_fee_cents"
     t.index ["order_id"], name: "index_line_items_on_order_id"
+  end
+
+  create_table "offers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "order_id"
+    t.integer "amount_cents"
+    t.integer "offerer_id"
+    t.string "offerer_type"
+    t.string "state"
+    t.integer "offered_by"
+    t.integer "responded_by"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_offers_on_order_id"
   end
 
   create_table "orders", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -152,6 +165,7 @@ ActiveRecord::Schema.define(version: 2018_10_22_140918) do
   add_foreign_key "line_item_fulfillments", "fulfillments"
   add_foreign_key "line_item_fulfillments", "line_items"
   add_foreign_key "line_items", "orders"
+  add_foreign_key "offers", "orders"
   add_foreign_key "state_histories", "orders"
   add_foreign_key "transactions", "orders"
 end

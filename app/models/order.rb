@@ -10,6 +10,7 @@ class Order < ApplicationRecord
   # https://www.notion.so/artsy/37c311363ef046c3aa546047e60cc58a?v=de68d5bbc30748f88b0d92a059bc0ba8
   STATES = [
     PENDING = 'pending'.freeze,
+    NEGOTIATION = 'negotiation'.freeze,
     # Buyer starts checkout flow but never submits
     ABANDONED = 'abandoned'.freeze,
     # Check-out complete; payment authorized.
@@ -45,7 +46,7 @@ class Order < ApplicationRecord
     SHIP = 'ship'.freeze
   ].freeze
 
-  ACTIONS = %i[abandon submit approve reject fulfill seller_lapse refund].freeze
+  ACTIONS = %i[abandon negotiate submit approve reject fulfill seller_lapse refund].freeze
   ACTION_REASONS = {
     seller_lapse: REASONS[CANCELED][:seller_lapsed],
     reject: REASONS[CANCELED][:seller_rejected]
@@ -67,6 +68,7 @@ class Order < ApplicationRecord
   has_many :transactions, dependent: :destroy
   has_many :state_histories, dependent: :destroy
   has_many :admin_notes, dependent: :destroy
+  has_many :offers, dependent: :destroy
 
   before_validation { self.currency_code = currency_code.upcase if currency_code.present? }
 
@@ -182,6 +184,8 @@ class Order < ApplicationRecord
 
   def build_machine
     machine = MicroMachine.new(state)
+    machine.when(:negotiate, PENDING => NEGOTIATION)
+    machine.when(:negotiate, NEGOTIATION => NEGOTIATION)
     machine.when(:abandon, PENDING => ABANDONED)
     machine.when(:submit, PENDING => SUBMITTED)
     machine.when(:approve, SUBMITTED => APPROVED)
