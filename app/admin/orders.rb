@@ -44,8 +44,16 @@ ActiveAdmin.register Order do
     redirect_to resource_path, notice: "Refunded!"
   end
 
+  member_action :approve_order, method: :post do
+    redirect_to resource_path, notice: "Order approved!"
+  end
+
   action_item :refund, only: :show do
     link_to 'Refund', refund_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to refund this order?'} if [Order::APPROVED, Order::FULFILLED].include? order.state
+  end
+
+  action_item :approve_order, only: :show do
+    link_to 'Approve Order', approve_order_admin_order_path(order), method: :post, data: {confirm: 'Approve this order?'} if order.state == Order::SUBMITTED
   end
 
   sidebar :contact_info, only: :show do
