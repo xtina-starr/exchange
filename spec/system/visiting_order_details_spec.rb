@@ -48,7 +48,7 @@ RSpec.describe 'visit order details', type: :system do
       .to_return(status: 200, body: {}.to_json, headers: {})
   end
 
-  it 'renders order overview page' do
+  it 'renders order overview page', js: true do
     allow_any_instance_of(ApplicationController).to receive(:require_artsy_authentication)
     visit '/admin'
   end
