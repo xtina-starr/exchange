@@ -50,6 +50,7 @@ describe Offers::BuyerCreateService, type: :services do
           expect(offer.from_type).to eq Order::USER
           expect(offer.creator_id).to eq user_id
           expect(order.reload.state).to eq state
+          expect(order.last_offer).to eq offer
         end
       end
     end
