@@ -24,6 +24,27 @@ RSpec.describe 'visit order details', type: :system do
       state_reason: state == Order::CANCELED ? 'seller_lapsed' : nil
     )
   end
+  before do
+    stub_request(:get, "http://exchange-test-gravity.biz/user/user1").
+      with(
+        headers: {
+              'Accept'=>'*/*',
+              'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
+              'User-Agent'=>'Faraday v0.15.3',
+              'X-Xapp-Token'=>'https://media.giphy.com/media/yow6i0Zmp7G24/giphy.gif'
+        }).
+      to_return(status: 200, body: {}.to_json, headers: {})
+
+    stub_request(:get, "http://exchange-test-gravity.biz/partner/partner1/all").
+      with(
+        headers: {
+              'Accept'=>'*/*',
+              'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
+              'User-Agent'=>'Faraday v0.15.3',
+              'X-Xapp-Token'=>'https://media.giphy.com/media/yow6i0Zmp7G24/giphy.gif'
+        }).
+      to_return(status: 200, body: {}.to_json, headers: {})
+  end
 
   it 'renders order overview page' do
     allow_any_instance_of(ApplicationController).to receive(:require_artsy_authentication)
