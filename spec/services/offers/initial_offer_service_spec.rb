@@ -18,7 +18,7 @@ describe Offers::InitialOfferService, type: :services do
         end
       end
     end
-    Order::STATES.reject { |s| [Order::PENDING, Order::SUBMITTED, Order::CANCELED].include? s }.each do |state|
+    Order::STATES.reject { |s| [Order::PENDING, Order::CANCELED].include? s }.each do |state|
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do
@@ -39,19 +39,17 @@ describe Offers::InitialOfferService, type: :services do
         end
       end
     end
-    [Order::PENDING, Order::SUBMITTED].each do |state|
-      context "#{state} Order" do
-        let(:state) { state }
-        it 'creates offer' do
-          expect { service.process! }.to change(order.offers, :count).by(1)
-          offer = order.offers.first
-          expect(offer.amount_cents).to eq 200
-          expect(offer.from_id).to eq user_id
-          expect(offer.from_type).to eq Order::USER
-          expect(offer.creator_id).to eq user_id
-          expect(order.reload.state).to eq state
-          expect(order.last_offer).to eq offer
-        end
+    context 'Pending Order' do
+      let(:state) { Order::PENDING }
+      it 'creates offer' do
+        expect { service.process! }.to change(order.offers, :count).by(1)
+        offer = order.offers.first
+        expect(offer.amount_cents).to eq 200
+        expect(offer.from_id).to eq user_id
+        expect(offer.from_type).to eq Order::USER
+        expect(offer.creator_id).to eq user_id
+        expect(order.reload.state).to eq state
+        expect(order.last_offer).to eq offer
       end
     end
   end
