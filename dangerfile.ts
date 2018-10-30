@@ -13,3 +13,8 @@ if (danger.git.created_files.includes("schema.graphql")) {
 if (danger.git.created_files.includes("exchange.graphql")) {
   fail("Please remove the schema from your PR `rm exchange.graphql` - it's meant to go to metaphysics.")
 }
+
+const fileInModelsFolder = addedOrModified.find(f => f.startsWith("app/models"))
+if (fileInModelsFolder) {
+  warn("You have updated models folder please consider [notifying Analytics Team](https://github.com/artsy/exchange#did-you-change-models).")
+}

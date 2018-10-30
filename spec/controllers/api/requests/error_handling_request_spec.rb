@@ -43,7 +43,7 @@ describe Api::GraphqlController, type: :request do
 
     context 'StandardError' do
       before do
-        expect_any_instance_of(CreateOrderService).to receive(:process!).and_raise('something went wrong')
+        expect_any_instance_of(BaseCreateOrderService).to receive(:process!).and_raise('something went wrong')
         post '/api/graphql', params: { query: mutation, variables: { input: mutation_input } }, headers: auth_headers
       end
       it 'returns 500' do
@@ -62,7 +62,7 @@ describe Api::GraphqlController, type: :request do
 
     context 'ActiveRecord::RecordNotFound' do
       before do
-        expect_any_instance_of(CreateOrderService).to receive(:process!).and_raise(ActiveRecord::RecordNotFound, 'cannot find')
+        expect_any_instance_of(BaseCreateOrderService).to receive(:process!).and_raise(ActiveRecord::RecordNotFound, 'cannot find')
         post '/api/graphql', params: { query: mutation, variables: { input: mutation_input } }, headers: auth_headers
       end
       it 'returns 404' do
@@ -81,7 +81,7 @@ describe Api::GraphqlController, type: :request do
 
     context 'ActionController::ParameterMissing' do
       before do
-        expect_any_instance_of(CreateOrderService).to receive(:process!).and_raise(ActionController::ParameterMissing, 'id')
+        expect_any_instance_of(BaseCreateOrderService).to receive(:process!).and_raise(ActionController::ParameterMissing, 'id')
         post '/api/graphql', params: { query: mutation, variables: { input: mutation_input } }, headers: auth_headers
       end
       it 'returns 400' do
