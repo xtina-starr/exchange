@@ -82,10 +82,12 @@ ActiveRecord::Schema.define(version: 2018_10_29_122615) do
     t.string "state"
     t.string "creator_id"
     t.string "resolved_by_id"
+    t.uuid "responds_to_id"
     t.datetime "resolved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["order_id"], name: "index_offers_on_order_id"
+    t.index ["responds_to_id"], name: "index_offers_on_responds_to_id"
   end
 
   create_table "orders", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -167,6 +169,7 @@ ActiveRecord::Schema.define(version: 2018_10_29_122615) do
   add_foreign_key "line_item_fulfillments", "fulfillments"
   add_foreign_key "line_item_fulfillments", "line_items"
   add_foreign_key "line_items", "orders"
+  add_foreign_key "offers", "offers", column: "responds_to_id"
   add_foreign_key "offers", "orders"
   add_foreign_key "orders", "offers", column: "last_offer_id"
   add_foreign_key "state_histories", "orders"

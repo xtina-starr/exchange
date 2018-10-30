@@ -1,16 +1,18 @@
 module Offers
-  class BuyerCreateService
+  class InitialOfferService
+    attr_reader :order, :offer
     def initialize(order, amount_cents, user_id)
       @order = order
       @amount_cents = amount_cents
       @user_id = user_id
+      @offer = nil
     end
 
     def process!
       assert_offer!
       @order.with_lock do
-        offer = @order.offers.create!(amount_cents: @amount_cents, from_id: @user_id, from_type: Order::USER, creator_id: @user_id)
-        @order.update!(last_offer: offer, state_expires_at: 2.days.from_now)
+        @offer = @order.offers.create!(amount_cents: @amount_cents, from_id: @user_id, from_type: Order::USER, creator_id: @user_id)
+        @order.update!(last_offer: @offer, state_expires_at: 2.days.from_now)
       end
     end
 

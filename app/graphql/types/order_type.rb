@@ -5,30 +5,32 @@ class Types::OrderType < Types::BaseObject
   field :id, ID, null: false
   field :mode, Types::OrderModeEnum, null: true
   field :code, String, null: false
+  field :buyer_phone_number, String, null: true
+  field :buyer_total_cents, Integer, null: true
   field :buyer, Types::OrderPartyUnionType, null: false
-  field :seller, Types::OrderPartyUnionType, null: false
+  field :commission_fee_cents, Integer, null: true, seller_only: true
+  field :commission_rate, Float, null: true
+  field :created_at, Types::DateTimeType, null: false
   field :credit_card_id, String, null: true
-  field :state, Types::OrderStateEnum, null: false
-  field :state_reason, String, null: true
   field :currency_code, String, null: false
-  field :requested_fulfillment, Types::RequestedFulfillmentUnionType, null: true
+  field :display_commission_rate, String, null: true
   field :items_total_cents, Integer, null: false
+  field :last_approved_at, Types::DateTimeType, null: true
+  field :last_submitted_at, Types::DateTimeType, null: true
+  field :line_items, Types::LineItemType.connection_type, null: true
+  field :requested_fulfillment, Types::RequestedFulfillmentUnionType, null: true
+  field :seller_total_cents, Integer, null: true, seller_only: true
+  field :seller, Types::OrderPartyUnionType, null: false
   field :shipping_total_cents, Integer, null: true
+  field :state_expires_at, Types::DateTimeType, null: true
+  field :state_reason, String, null: true
+  field :state_updated_at, Types::DateTimeType, null: true
+  field :state, Types::OrderStateEnum, null: false
+  field :offers, Types::OfferType.connection_type, null: true
+  field :last_offer, Types::OfferType, null: true
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true, seller_only: true
-  field :commission_fee_cents, Integer, null: true, seller_only: true
-  field :seller_total_cents, Integer, null: true, seller_only: true
-  field :buyer_total_cents, Integer, null: true
-  field :buyer_phone_number, String, null: true
-  field :created_at, Types::DateTimeType, null: false
   field :updated_at, Types::DateTimeType, null: false
-  field :state_updated_at, Types::DateTimeType, null: true
-  field :state_expires_at, Types::DateTimeType, null: true
-  field :last_submitted_at, Types::DateTimeType, null: true
-  field :last_approved_at, Types::DateTimeType, null: true
-  field :commission_rate, Float, null: true
-  field :display_commission_rate, String, null: true
-  field :line_items, Types::LineItemType.connection_type, null: true
 
   def buyer
     OpenStruct.new(

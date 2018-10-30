@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe Offers::BuyerCreateService, type: :services do
+describe Offers::InitialOfferService, type: :services do
   describe '#process!' do
     let(:user_id) { 'user-id' }
     let(:amount_cents) { 200 }
@@ -8,7 +8,7 @@ describe Offers::BuyerCreateService, type: :services do
     let(:state) { Order::PENDING }
     let(:state_reason) { nil }
     let(:order) { Fabricate(:order, seller_id: user_id, seller_type: Order::USER, state: state, state_reason: state_reason, mode: mode) }
-    let(:service) { Offers::BuyerCreateService.new(order, amount_cents, user_id) }
+    let(:service) { Offers::InitialOfferService.new(order, amount_cents, user_id) }
     context 'Buy Order' do
       let(:mode) { Order::BUY }
       it 'raises error' do

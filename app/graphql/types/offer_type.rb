@@ -9,5 +9,14 @@ class Types::OfferType < Types::BaseObject
   field :creator_id, String, null: false
   field :resolved_by_id, String, null: true
   field :resolved_at, Types::DateTimeType, null: true
-  field :updated_at, Types::DateTimeType, null: false
+  field :created_at, Types::DateTimeType, null: false
+  field :order, Types::OrderType, null: false
+  field :responds_to, Types::OfferType, null: true
+
+  def from
+    OpenStruct.new(
+      id: object.from_id,
+      type: object.from_type
+    )
+  end
 end
