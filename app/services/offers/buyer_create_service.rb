@@ -8,8 +8,9 @@ module Offers
 
     def process!
       assert_offer!
-      @order.negotiate! do
-        @order.offers.create!(amount_cents: @amount_cents, offerer_id: @user_id, offerer_type: Order::USER, offered_by: @user_id)
+      @order.with_lock do
+        offer = @order.offers.create!(amount_cents: @amount_cents, from_id: @user_id, from_type: Order::USER, creator_id: @user_id)
+        @order.update!(last_offer: offer, state_expires_at: 2.days.from_now)
       end
     end
 
@@ -17,7 +18,7 @@ module Offers
 
     def assert_offer!
       raise Errors::ValidationError, :invalid_amount_cents unless @amount_cents.present? && @amount_cents.positive?
-      raise Errors::ValidationError, :cant_offer unless @order.mode == Order::OFFER && @order.state == Order::PENDING
+      raise Errors::ValidationError, :cant_offer unless @order.mode == Order::OFFER && @order.offerable?
     end
   end
 end

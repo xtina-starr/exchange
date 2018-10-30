@@ -45,7 +45,7 @@ class Order < ApplicationRecord
     SHIP = 'ship'.freeze
   ].freeze
 
-  ACTIONS = %i[abandon negotiate submit approve reject fulfill seller_lapse refund].freeze
+  ACTIONS = %i[abandon submit approve reject fulfill seller_lapse refund].freeze
   ACTION_REASONS = {
     seller_lapse: REASONS[CANCELED][:seller_lapsed],
     reject: REASONS[CANCELED][:seller_rejected]
@@ -68,6 +68,7 @@ class Order < ApplicationRecord
   has_many :state_histories, dependent: :destroy
   has_many :admin_notes, dependent: :destroy
   has_many :offers, dependent: :destroy
+  belongs_to :last_offer, class_name: 'Offer', optional: true
 
   before_validation { self.currency_code = currency_code.upcase if currency_code.present? }
 
@@ -97,6 +98,10 @@ class Order < ApplicationRecord
     rescue MicroMachine::InvalidState
       raise Errors::ValidationError.new(:invalid_state, state: state)
     end
+  end
+
+  def offerable?
+    [PENDING, SUBMITTED].include? state
   end
 
   def shipping_info?
@@ -183,7 +188,6 @@ class Order < ApplicationRecord
 
   def build_machine
     machine = MicroMachine.new(state)
-    machine.when(:negotiate, PENDING => PENDING, SUBMITTED => SUBMITTED)
     machine.when(:abandon, PENDING => ABANDONED)
     machine.when(:submit, PENDING => SUBMITTED)
     machine.when(:approve, SUBMITTED => APPROVED)

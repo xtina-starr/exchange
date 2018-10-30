@@ -77,11 +77,12 @@ ActiveRecord::Schema.define(version: 2018_10_29_122615) do
   create_table "offers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id"
     t.integer "amount_cents"
-    t.string "offerer_id"
-    t.string "offerer_type"
+    t.string "from_id"
+    t.string "from_type"
     t.string "state"
-    t.string "offered_by"
-    t.string "responded_by"
+    t.string "creator_id"
+    t.string "resolved_by_id"
+    t.datetime "resolved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["order_id"], name: "index_offers_on_order_id"
@@ -120,8 +121,10 @@ ActiveRecord::Schema.define(version: 2018_10_29_122615) do
     t.string "state_reason"
     t.float "commission_rate"
     t.string "mode", null: false
+    t.uuid "last_offer_id"
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
+    t.index ["last_offer_id"], name: "index_orders_on_last_offer_id"
     t.index ["seller_id"], name: "index_orders_on_seller_id"
     t.index ["state"], name: "index_orders_on_state"
   end
@@ -165,6 +168,7 @@ ActiveRecord::Schema.define(version: 2018_10_29_122615) do
   add_foreign_key "line_item_fulfillments", "line_items"
   add_foreign_key "line_items", "orders"
   add_foreign_key "offers", "orders"
+  add_foreign_key "orders", "offers", column: "last_offer_id"
   add_foreign_key "state_histories", "orders"
   add_foreign_key "transactions", "orders"
 end

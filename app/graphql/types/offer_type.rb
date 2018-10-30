@@ -3,9 +3,11 @@ class Types::OfferType < Types::BaseObject
   graphql_name 'Offer'
 
   field :id, ID, null: false
-  field :offerer, Types::OrderPartyUnionType, null: false
-  field :state, Types::OrderStateEnum, null: false
+  field :from, Types::OrderPartyUnionType, null: false
+  field :state, Types::OfferStateEnum, null: false
   field :amount_cents, Integer, null: false
-  field :created_at, Types::DateTimeType, null: false
+  field :creator_id, String, null: false
+  field :resolved_by_id, String, null: true
+  field :resolved_at, Types::DateTimeType, null: true
   field :updated_at, Types::DateTimeType, null: false
 end

@@ -3,13 +3,16 @@ class CreateOffers < ActiveRecord::Migration[5.2]
     create_table :offers, id: :uuid do |t|
       t.references :order, foreign_key: true, type: :uuid
       t.integer :amount_cents
-      t.string :offerer_id
-      t.string :offerer_type
+      t.string :from_id
+      t.string :from_type
       t.string :state
-      t.string :offered_by
-      t.string :responded_by
+      t.string :creator_id
+      t.string :resolved_by_id
+      t.datetime :resolved_at
 
       t.timestamps
     end
+    add_reference :orders, :last_offer, null: true, type: :uuid
+    add_foreign_key :orders, :offers, column: :last_offer_id
   end
 end
