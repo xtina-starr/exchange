@@ -174,10 +174,6 @@ ActiveAdmin.register Order do
           end
         end
 
-        row 'Order Status' do
-          link_to "#{order.id}", artsy_order_status_url(order.id)
-        end
-
         if order.state == Order::FULFILLED && order.fulfillment_type == Order::SHIP
           row 'Shipment' do |order|
             fulfillments = order.line_items.map(&:fulfillments).flatten
