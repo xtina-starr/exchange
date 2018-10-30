@@ -14,7 +14,7 @@ describe Api::GraphqlController, type: :request do
     let(:mutation_input) do
       {
         orderId: order_id,
-        amountCents: amount_cents,
+        amountCents: amount_cents
       }
     end
     let(:mutation) do
