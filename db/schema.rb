@@ -109,6 +109,7 @@ ActiveRecord::Schema.define(version: 2018_10_22_140918) do
     t.string "mode", null: false
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
+    t.index ["mode"], name: "index_orders_on_mode"
     t.index ["seller_id"], name: "index_orders_on_seller_id"
     t.index ["state"], name: "index_orders_on_state"
   end
