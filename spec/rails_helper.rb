@@ -25,12 +25,6 @@ RSpec.configure do |config|
 end
 
 RSpec.configure do |config|
-  config.before :each, type: :system do
-    config.include ArtsyAuth::Engine.routes.url_helpers
-  end
-end
-
-RSpec.configure do |config|
   config.before(:each, type: :system) do
     driven_by :rack_test
   end
