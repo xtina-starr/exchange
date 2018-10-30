@@ -66,6 +66,11 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.buyer_offer.object_or_error.type).to eq('validation')
         expect(response.data.buyer_offer.object_or_error.code).to eq('invalid_amount_cents')
       end
+
+      it 'returns the order' do
+        response = client.execute(mutation, input: mutation_input)
+        expect(response.data.buyer_offer.object_or_error.id).to eq(order_id)
+      end
     end
   end
 end

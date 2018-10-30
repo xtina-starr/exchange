@@ -10,7 +10,8 @@ class Mutations::BuyerOffer < Mutations::BaseMutation
     order = Order.find(order_id)
     validate_buyer_request!(order)
     Offers::BuyerCreateService.new(order, amount_cents, context[:current_user]['id']).process!
-    { object_or_error: offer.reload }
+    result = { object_or_error: order.reload }
+    result
   rescue Errors::ApplicationError => application_error
     { object_or_error: application_error }
   end
