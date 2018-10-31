@@ -12,6 +12,17 @@ RUN bundle config --global frozen 1
 # Set up deploy user
 RUN adduser --disabled-password --gecos '' deploy
 
+# Install chrome
+RUN echo install chrome
+RUN curl https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o /chrome.deb
+RUN dpkg -i /chrome.deb || apt-get install -yf
+RUN rm /chrome.deb
+
+# Install chromedriver for Selenium
+RUN echo install chromedriver
+RUN curl https://chromedriver.storage.googleapis.com/2.31/chromedriver_linux64.zip -o /usr/local/bin/chromedriver
+RUN chmod +x /usr/local/bin/chromedriver
+
 # Set up gems
 WORKDIR /tmp
 ADD .ruby-version .ruby-version
