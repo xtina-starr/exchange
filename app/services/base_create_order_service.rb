@@ -28,7 +28,7 @@ class BaseCreateOrderService
         state_updated_at: Time.now.utc,
         state_expires_at: Order::STATE_EXPIRATIONS[Order::PENDING].from_now,
         original_user_agent: @user_agent,
-        original_user_ip: @user_ip,
+        original_user_ip: @user_ip
       )
       @order.line_items.create!(
         artwork_id: @artwork_id,
