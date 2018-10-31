@@ -178,6 +178,26 @@ describe Api::GraphqlController, type: :request do
                 expect(order.line_items.first.artwork_id).to eq 'artwork-id'
                 expect(order.line_items.first.edition_set_id).to eq 'edition-set-id'
                 expect(order.line_items.first.quantity).to eq 2
+
+                expect(order.original_user_agent).to eq user_agent
+                expect(order.original_user_ip).to eq user_ip
+
+              end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
+            end
+          end
+
+          context 'with specific analytics fields' do
+            let(:user_agent) { '2340hjf209' }
+            let(:user_ip) { '3209uj2' }
+
+            it 'tracks the fields correctly' do
+              expect do
+                response = client.execute(mutation, input: mutation_input)
+                order = Order.find(response.data.create_order_with_artwork.order_or_error.order.id)
+
+                expect(order.original_user_agent).to eq '2340hjf209'
+                expect(order.original_user_ip).to eq '3209uj2'
+
               end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
             end
           end

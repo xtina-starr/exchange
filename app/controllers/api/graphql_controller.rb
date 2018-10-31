@@ -6,7 +6,9 @@ module Api
       operation_name = params[:operationName]
       context = {
         # Query context goes here, for example:
-        current_user: current_user
+        current_user: current_user,
+        user_agent: request.headers['User-Agent'],
+        user_ip: request.headers['x-forwarded-for']
       }
       result = ExchangeSchema.execute(query, variables: variables, context: context, operation_name: operation_name)
       render json: result
