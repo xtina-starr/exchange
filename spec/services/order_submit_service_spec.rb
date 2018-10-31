@@ -12,6 +12,7 @@ describe OrderSubmitService, type: :services do
       :order,
       seller_id: partner_id,
       credit_card_id: credit_card_id,
+      original_user_agent: 'old-user-agent',
       fulfillment_type: Order::PICKUP
     )
   end
@@ -39,7 +40,7 @@ describe OrderSubmitService, type: :services do
   let(:edition_set_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { deduct: 2 }).to_return(status: 200, body: {}.to_json) }
   let(:artwork_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }).to_return(status: 200, body: {}.to_json) }
   let(:edition_set_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { undeduct: 2 }).to_return(status: 200, body: {}.to_json) }
-  let(:service) { OrderSubmitService.new(order, user_id) }
+  let(:service) { OrderSubmitService.new(order, user_id, 'new-user-agent') }
   describe '#process!' do
     context 'with a partner with a merchant account' do
       before do
@@ -123,6 +124,10 @@ describe OrderSubmitService, type: :services do
 
         it 'updates external_charge_id with the id of the charge' do
           expect(order.external_charge_id).not_to be_nil
+        end
+
+        it 'updates the original_user_agent string' do
+          expect(order.original_user_agent).to eq('new-user-agent')
         end
 
         it 'queues a job for posting event' do

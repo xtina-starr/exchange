@@ -1,16 +1,17 @@
 class OrderSubmitService
-  def self.call!(order, by: nil)
-    new(order, by).process!
+  def self.call!(order, by: nil, user_agent: nil)
+    new(order, by, user_agent).process!
   end
 
   attr_accessor :order, :credit_card, :merchant_account, :partner
-  def initialize(order, by)
+  def initialize(order, by, user_agent)
     @order = order
     @by = by
     @credit_card = nil
     @merchant_account = nil
     @partner = nil
     @transaction = nil
+    @user_agent = user_agent
   end
 
   def process!
@@ -25,7 +26,7 @@ class OrderSubmitService
       @transaction = PaymentService.authorize_charge(construct_charge_params)
       raise Errors::ProcessingError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
     end
-    @order.update!(external_charge_id: @transaction.external_id)
+    @order.update!(external_charge_id: @transaction.external_id, original_user_agent: @user_agent)
     post_process!
     @order
   rescue Errors::ValidationError, Errors::ProcessingError => e
