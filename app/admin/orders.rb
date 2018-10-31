@@ -43,10 +43,17 @@ ActiveAdmin.register Order do
     OrderCancellationService.new(resource).refund!
     redirect_to resource_path, notice: "Refunded!"
   end
-
+  
   member_action :approve_order, method: :post do
     OrderApproveService.new(resource).process!
     redirect_to resource_path, notice: "Order approved!"
+  end
+
+  member_action :confirm_fulfillment, method: :post do
+    if resource.fulfillment_type == Order::PICKUP
+      OrderService.confirm_pickup!(resource, current_user[:id])
+    end
+    redirect_to resource_path, notice: "Fulfillment confirmed!"
   end
 
   action_item :refund, only: :show do
@@ -55,6 +62,10 @@ ActiveAdmin.register Order do
 
   action_item :approve_order, only: :show do
     link_to 'Approve Order', approve_order_admin_order_path(order), method: :post, data: {confirm: 'Approve this order?'} if order.state == Order::SUBMITTED
+  end
+
+  action_item :confirm_fulfillment, only: :show do
+    link_to 'Confirm Fulfillment', confirm_fulfillment_admin_order_path(order), method: :post, data: {confirm: 'Confirm fulfillment?'} if order.state == Order::APPROVED
   end
 
   sidebar :contact_info, only: :show do
