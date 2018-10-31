@@ -65,7 +65,7 @@ ActiveAdmin.register Order do
   end
 
   action_item :confirm_fulfillment, only: :show do
-    link_to 'Confirm Fulfillment', confirm_fulfillment_admin_order_path(order), method: :post, data: {confirm: 'Confirm fulfillment?'} if order.state == Order::APPROVED
+    link_to 'Confirm Fulfillment', confirm_fulfillment_admin_order_path(order), method: :post, data: {confirm: 'Confirm fulfillment?'} if order.state == Order::APPROVED && order.fulfillment_type == Order::PICKUP
   end
 
   sidebar :contact_info, only: :show do
