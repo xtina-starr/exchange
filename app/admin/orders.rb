@@ -45,11 +45,11 @@ ActiveAdmin.register Order do
   end
   
   member_action :approve_order, method: :post do
-    OrderApproveService.new(resource).process!
+    OrderApproveService.new(resource, current_user[:id]).process!
     redirect_to resource_path, notice: "Order approved!"
   end
 
-  member_action :confirm_fulfillment, method: :post do
+  member_action :confirm_pickup, method: :post do
     if resource.fulfillment_type == Order::PICKUP
       OrderService.confirm_pickup!(resource, current_user[:id])
     end
@@ -57,15 +57,22 @@ ActiveAdmin.register Order do
   end
 
   action_item :refund, only: :show do
-    link_to 'Refund', refund_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to refund this order?'} if [Order::APPROVED, Order::FULFILLED].include? order.state
+    if [Order::APPROVED, Order::FULFILLED].include? order.state
+      link_to 'Refund', refund_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to refund this order?'}
+    end
   end
 
+  
   action_item :approve_order, only: :show do
-    link_to 'Approve Order', approve_order_admin_order_path(order), method: :post, data: {confirm: 'Approve this order?'} if order.state == Order::SUBMITTED
+    if order.state == Order::SUBMITTED
+      link_to 'Approve Order', approve_order_admin_order_path(order), method: :post, data: {confirm: 'Approve this order?'}
+    end
   end
 
-  action_item :confirm_fulfillment, only: :show do
-    link_to 'Confirm Fulfillment', confirm_fulfillment_admin_order_path(order), method: :post, data: {confirm: 'Confirm fulfillment?'} if order.state == Order::APPROVED && order.fulfillment_type == Order::PICKUP
+  action_item :confirm_pickup, only: :show do
+    if order.state == Order::APPROVED && order.fulfillment_type == Order::PICKUP
+      link_to 'Confirm Pickup', confirm_pickup_admin_order_path(order), method: :post, data: {confirm: 'Confirm order pickup?'}
+    end
   end
 
   sidebar :contact_info, only: :show do
