@@ -1,7 +1,7 @@
 class BaseCreateOrderService
   attr_reader :order
 
-  def initialize(user_id:, artwork_id:, edition_set_id: nil, quantity:, mode:)
+  def initialize(user_id:, artwork_id:, edition_set_id: nil, quantity:, mode:, user_agent: nil, user_ip: nil)
     @user_id = user_id
     @artwork_id = artwork_id
     @edition_set_id = edition_set_id
@@ -9,6 +9,8 @@ class BaseCreateOrderService
     @quantity = quantity
     @edition_set = nil
     @order = nil
+    @user_agent = user_agent
+    @user_ip = user_ip
   end
 
   def process!
@@ -24,7 +26,9 @@ class BaseCreateOrderService
         currency_code: @artwork[:price_currency],
         state: Order::PENDING,
         state_updated_at: Time.now.utc,
-        state_expires_at: Order::STATE_EXPIRATIONS[Order::PENDING].from_now
+        state_expires_at: Order::STATE_EXPIRATIONS[Order::PENDING].from_now,
+        original_user_agent: @user_agent,
+        original_user_ip: @user_ip
       )
       @order.line_items.create!(
         artwork_id: @artwork_id,
