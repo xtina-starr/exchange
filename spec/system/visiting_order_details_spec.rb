@@ -1,27 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe 'visit order details', type: :system do
-  let!(:order) do
-    Fabricate(
-      :order,
-      seller_id: 'partner1',
-      seller_type: 'partner',
-      buyer_id: 'user1',
-      buyer_type: 'user',
-      created_at: 2.days.ago,
-      updated_at: 1.day.ago,
-      shipping_total_cents: 100_00,
-      commission_fee_cents: 50_00,
-      commission_rate: 0.10,
-      seller_total_cents: 50_00,
-      buyer_total_cents: 100_00,
-      items_total_cents: 0,
-      state: Order::PENDING,
-      state_reason: nil
-    )
-  end
+  let!(:order) { Fabricate(:order) }
   before do
-    stub_request(:get, 'http://exchange-test-gravity.biz/user/user1')
+    stub_request(:get, "http://exchange-test-gravity.biz/user/#{order.buyer_id}")
       .with(
         headers: {
           'Accept' => '*/*',
@@ -32,7 +14,7 @@ RSpec.describe 'visit order details', type: :system do
       )
       .to_return(status: 200, body: {}.to_json, headers: {})
 
-    stub_request(:get, 'http://exchange-test-gravity.biz/partner/partner1/all')
+    stub_request(:get, "http://exchange-test-gravity.biz/partner/#{order.seller_id}/all")
       .with(
         headers: {
           'Accept' => '*/*',
