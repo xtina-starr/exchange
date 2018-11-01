@@ -27,11 +27,9 @@ describe Api::GraphqlController, type: :request do
         shipping_country: 'IR',
         fulfillment_type: Order::SHIP,
         items_total_cents: 1000_00,
-        buyer_total_cents: 1000_00,
-        original_user_agent: 'old-user-agent'
+        buyer_total_cents: 1000_00
       )
     end
-    let(:user_agent) { 'new-user-agent' }
     let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
     let(:line_item) do
       Fabricate(:line_item, order: order, price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1')
@@ -181,8 +179,6 @@ describe Api::GraphqlController, type: :request do
         expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
         expect(order.reload.transactions.last.external_id).not_to be_nil
         expect(order.reload.transactions.last.transaction_type).to eq Transaction::HOLD
-
-        expect(order.original_user_agent).to eq 'new-user-agent'
       end
     end
   end
