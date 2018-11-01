@@ -8,6 +8,8 @@ ActiveAdmin.register Order do
   scope('Pickup Orders') { |scope| scope.where(state: [ Order::APPROVED, Order::FULFILLED, Order::SUBMITTED ], fulfillment_type: Order::PICKUP ) }
   scope('Fulfillment Overdue') { |scope| scope.approved.where('state_expires_at < ?', Time.now) }
   scope('Pending & Abandoned Orders') { |scope| scope.where(state: [ Order::ABANDONED, Order::PENDING ]) }
+  scope('Case Closed') { |scope| scope.by_last_admin_note(AdminNote::TYPES[:case_closed]) }
+  scope('Case Still Open') { |scope| scope.by_last_admin_note(AdminNote::TYPES.except(:case_closed).values) }
 
   filter :id_eq, label: 'Order Id'
   filter :mode, as: :check_boxes, collection: proc { Order::MODES }, label: 'Mode'
