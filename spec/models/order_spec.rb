@@ -203,11 +203,11 @@ RSpec.describe Order, type: :model do
         expect(orders).to eq [order1]
       end
       it 'returns multiple orders for case mediation_contacted_buyer and case_opened_return' do
-        orders = Order.by_last_admin_note(['mediation_contacted_buyer', 'case_opened_return'])
+        orders = Order.by_last_admin_note(%w[mediation_contacted_buyer case_opened_return])
         expect(orders).to match_array([order1, order2])
       end
       it 'returns the only order for case mediation_contacted_buyer and case_opened_cancellation' do
-        orders = Order.by_last_admin_note(['mediation_contacted_buyer', 'case_opened_cancellation'])
+        orders = Order.by_last_admin_note(%w[mediation_contacted_buyer case_opened_cancellation])
         expect(orders).to eq [order1]
       end
     end
