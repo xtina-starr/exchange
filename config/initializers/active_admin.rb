@@ -146,6 +146,7 @@ ActiveAdmin.setup do |config|
   # Active Admin resources and pages from here.
   #
   # config.before_action :do_something_awesome
+  config.before_action :admin_display_in_eastern_timezone
 
   # == Localize Date/Time Format
   #

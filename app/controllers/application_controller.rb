@@ -11,4 +11,8 @@ class ApplicationController < ActionController::Base
   def set_current_user_for_error_reporting
     Raven.user_context(current_user: current_user) if current_user.present?
   end
+
+  def admin_display_in_eastern_timezone
+    Time.zone = 'Eastern Time (US & Canada)'
+  end
 end

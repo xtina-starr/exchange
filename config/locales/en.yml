@@ -31,3 +31,9 @@
 
 en:
   hello: "Hello world"
+  date:
+    formats:
+      long: "%B %d, %Y"
+  time:
+    formats:
+      long: "%B %d, %Y %H:%M %Z"
