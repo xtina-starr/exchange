@@ -9,6 +9,7 @@ describe Api::GraphqlController, type: :request do
     let(:second_user) { 'user2' }
     let(:state) { Order::PENDING }
     let(:created_at) { 2.days.ago }
+    let(:order_mode) { Order::BUY }
     let!(:user1_order1) do
       Fabricate(
         :order,
@@ -32,7 +33,7 @@ describe Api::GraphqlController, type: :request do
 
     let(:query) do
       <<-GRAPHQL
-        query($id: ID) {
+        query($id: ID, $offerFromId: String, $offerFromType: String) {
           order(id: $id) {
             id
             mode
@@ -55,10 +56,46 @@ describe Api::GraphqlController, type: :request do
             buyerTotalCents
             createdAt
             displayCommissionRate
+            lastOffer {
+              id
+              amountCents
+              respondsTo {
+                id
+              }
+              from {
+                __typename
+                ... on User {
+                  id
+                }
+                ... on Partner {
+                  id
+                }
+              }
+            }
             lineItems {
               edges {
                 node {
+                  id
                   priceCents
+                  artworkId
+                  editionSetId
+                }
+              }
+            }
+            offers(fromId: $offerFromId, fromType: $offerFromType) {
+              edges {
+                node {
+                  id
+                  amountCents
+                  from {
+                    __typename
+                    ... on User {
+                      id
+                    }
+                    ... on Partner {
+                      id
+                    }
+                  }
                 }
               }
             }
@@ -90,10 +127,35 @@ describe Api::GraphqlController, type: :request do
             sellerTotalCents
             buyerTotalCents
             createdAt
+            lastOffer {
+              id
+              amountCents
+              respondsTo {
+                id
+              }
+              from {
+                __typename
+                ... on User {
+                  id
+                }
+                ... on Partner {
+                  id
+                }
+              }
+            }
             lineItems {
               edges {
                 node {
+                  id
                   priceCents
+                }
+              }
+            }
+            offers {
+              edges {
+                node {
+                  id
+                  amountCents
                 }
               }
             }
@@ -140,9 +202,63 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.created_at).to eq created_at.iso8601
       end
 
-      it 'formats line item commission_rate into a display string' do
+      it 'formats commission_rate into a display string' do
         result = client.execute(query, id: user1_order1.id)
         expect(result.data.order.display_commission_rate).to eq '10%'
+      end
+
+      context 'with line items' do
+        let!(:order1_line_item1) { Fabricate(:line_item, order: user1_order1, artwork_id: 'artwork1', edition_set_id: 'edi-1') }
+        let!(:order1_line_item2) { Fabricate(:line_item, order: user1_order1, artwork_id: 'artwork2', edition_set_id: 'edi-2') }
+        it 'includes line items' do
+          result = client.execute(query, id: user1_order1.id)
+          expect(result.data.order.line_items.edges.count).to eq 2
+          expect(result.data.order.line_items.edges.map(&:node).map(&:id)).to match_array [order1_line_item1.id, order1_line_item2.id]
+          expect(result.data.order.line_items.edges.map(&:node).map(&:artwork_id)).to match_array %w[artwork1 artwork2]
+          expect(result.data.order.line_items.edges.map(&:node).map(&:edition_set_id)).to match_array %w[edi-1 edi-2]
+        end
+      end
+
+      context 'with offers' do
+        let(:order_mode) { Order::OFFER }
+        let!(:offer1) { Fabricate(:offer, order: user1_order1, amount_cents: 200, from_id: user_id, from_type: Order::USER) }
+        let!(:offer2) { Fabricate(:offer, order: user1_order1, amount_cents: 300, from_id: partner_id, from_type: 'gallery', responds_to_id: offer1.id) }
+        before do
+          user1_order1.update! last_offer: offer2
+        end
+        it 'includes offers' do
+          result = client.execute(query, id: user1_order1.id)
+          expect(result.data.order.offers.edges.count).to eq 2
+          expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [offer1.id, offer2.id]
+          expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200, 300]
+          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id, partner_id]
+          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User Partner]
+        end
+        it 'includes last_offer' do
+          result = client.execute(query, id: user1_order1.id)
+          expect(result.data.order.last_offer.id).to eq offer2.id
+          expect(result.data.order.last_offer.from.id).to eq partner_id
+          expect(result.data.order.last_offer.from.__typename).to eq 'Partner'
+          expect(result.data.order.last_offer.responds_to.id).to eq offer1.id
+        end
+        describe 'offer filters' do
+          it 'filters by from id' do
+            result = client.execute(query, id: user1_order1.id, offerFromId: user_id)
+            expect(result.data.order.offers.edges.count).to eq 1
+            expect(result.data.order.offers.edges.map(&:node).map(&:id)).to eq [offer1.id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to eq [200]
+            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to eq [user_id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to eq %w[User]
+          end
+          it 'filters by from type' do
+            result = client.execute(query, id: user1_order1.id, offerFromType: 'gallery')
+            expect(result.data.order.offers.edges.count).to eq 1
+            expect(result.data.order.offers.edges.map(&:node).map(&:id)).to eq [offer2.id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to eq [300]
+            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to eq [partner_id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to eq %w[Partner]
+          end
+        end
       end
 
       Order::STATES.each do |state|

@@ -74,6 +74,19 @@ ActiveRecord::Schema.define(version: 2018_10_30_164042) do
     t.index ["order_id"], name: "index_line_items_on_order_id"
   end
 
+  create_table "offers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "order_id"
+    t.integer "amount_cents"
+    t.string "from_id"
+    t.string "from_type"
+    t.string "creator_id"
+    t.uuid "responds_to_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_offers_on_order_id"
+    t.index ["responds_to_id"], name: "index_offers_on_responds_to_id"
+  end
+
   create_table "orders", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "code"
     t.integer "shipping_total_cents"
@@ -107,10 +120,13 @@ ActiveRecord::Schema.define(version: 2018_10_30_164042) do
     t.string "state_reason"
     t.float "commission_rate"
     t.string "mode", null: false
+    t.uuid "last_offer_id"
+    t.integer "offer_total_cents"
     t.string "original_user_agent"
     t.string "original_user_ip"
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
+    t.index ["last_offer_id"], name: "index_orders_on_last_offer_id"
     t.index ["seller_id"], name: "index_orders_on_seller_id"
     t.index ["state"], name: "index_orders_on_state"
   end
@@ -153,6 +169,9 @@ ActiveRecord::Schema.define(version: 2018_10_30_164042) do
   add_foreign_key "line_item_fulfillments", "fulfillments"
   add_foreign_key "line_item_fulfillments", "line_items"
   add_foreign_key "line_items", "orders"
+  add_foreign_key "offers", "offers", column: "responds_to_id"
+  add_foreign_key "offers", "orders"
+  add_foreign_key "orders", "offers", column: "last_offer_id"
   add_foreign_key "state_histories", "orders"
   add_foreign_key "transactions", "orders"
 end

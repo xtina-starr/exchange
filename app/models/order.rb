@@ -67,6 +67,8 @@ class Order < ApplicationRecord
   has_many :transactions, dependent: :destroy
   has_many :state_histories, dependent: :destroy
   has_many :admin_notes, dependent: :destroy
+  has_many :offers, dependent: :destroy
+  belongs_to :last_offer, class_name: 'Offer', optional: true
 
   before_validation { self.currency_code = currency_code.upcase if currency_code.present? }
 
@@ -96,6 +98,10 @@ class Order < ApplicationRecord
     rescue MicroMachine::InvalidState
       raise Errors::ValidationError.new(:invalid_state, state: state)
     end
+  end
+
+  def offerable?
+    [PENDING, SUBMITTED].include? state
   end
 
   def shipping_info?
@@ -138,6 +144,10 @@ class Order < ApplicationRecord
 
   def last_admin_note
     admin_notes.order(:created_at).last
+  end
+
+  def current_total_cents
+    mode == OFFER ? offer_total_cents : items_total_cents
   end
 
   private
