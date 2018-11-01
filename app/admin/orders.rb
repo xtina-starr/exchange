@@ -21,13 +21,19 @@ ActiveAdmin.register Order do
   filter :state, as: :check_boxes, collection: proc { Order::STATES }
   filter :state_reason, as: :check_boxes, collection: proc { Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize) }
 
+  controller do
+    def scoped_collection
+      Order.includes :admin_notes
+    end
+  end
+
   index do
     column :code do |order|
       link_to order.code, admin_order_path(order.id)
     end
     column :state
     column :fulfillment_type
-    column 'Last Admin Action' do |order|
+    column :admin_notes, sortable: 'admin_notes.note_type' do |order|
       order.last_admin_note&.note_type&.humanize
     end
     column 'Submitted At', :created_at
