@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_10_22_140918) do
+ActiveRecord::Schema.define(version: 2018_10_30_164042) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -107,6 +107,8 @@ ActiveRecord::Schema.define(version: 2018_10_22_140918) do
     t.string "state_reason"
     t.float "commission_rate"
     t.string "mode", null: false
+    t.string "original_user_agent"
+    t.string "original_user_ip"
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["seller_id"], name: "index_orders_on_seller_id"
