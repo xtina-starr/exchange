@@ -121,6 +121,7 @@ ActiveRecord::Schema.define(version: 2018_10_29_122615) do
     t.float "commission_rate"
     t.string "mode", null: false
     t.uuid "last_offer_id"
+    t.integer "offer_total_cents"
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["last_offer_id"], name: "index_orders_on_last_offer_id"

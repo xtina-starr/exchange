@@ -12,7 +12,10 @@ class CreateOffers < ActiveRecord::Migration[5.2]
       t.timestamps
     end
 
-    add_reference :orders, :last_offer, null: true, type: :uuid
-    add_foreign_key :orders, :offers, column: :last_offer_id
+    change_table :orders do |t|
+      t.references :last_offer, null: true, type: :uuid
+      t.foreign_key :offers, column: :last_offer_id
+      t.integer :offer_total_cents
+    end
   end
 end
