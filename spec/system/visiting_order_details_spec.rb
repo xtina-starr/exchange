@@ -4,31 +4,13 @@ RSpec.describe 'visit order details', type: :system do
   let!(:order) { Fabricate(:order) }
   before do
     stub_request(:get, "http://exchange-test-gravity.biz/user/#{order.buyer_id}")
-      .with(
-        headers: {
-          'Accept' => '*/*',
-          'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-          'User-Agent' => 'Faraday v0.15.3',
-          'X-Xapp-Token' => 'https://media.giphy.com/media/yow6i0Zmp7G24/giphy.gif'
-        }
-      )
       .to_return(status: 200, body: {}.to_json, headers: {})
 
     stub_request(:get, "http://exchange-test-gravity.biz/partner/#{order.seller_id}/all")
-      .with(
-        headers: {
-          'Accept' => '*/*',
-          'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-          'User-Agent' => 'Faraday v0.15.3',
-          'X-Xapp-Token' => 'https://media.giphy.com/media/yow6i0Zmp7G24/giphy.gif'
-        }
-      )
       .to_return(status: 200, body: {}.to_json, headers: {})
   end
 
   it 'renders order details page', js: true do
-    order.save
-
     allow_any_instance_of(ApplicationController).to receive(:require_artsy_authentication)
     visit '/admin'
 
@@ -44,8 +26,6 @@ RSpec.describe 'visit order details', type: :system do
     within tab_selector do
       click_link 'All'
     end
-
-    expect(page).to have_selector(row_selector)
 
     within row_selector do
       click_link order.code
