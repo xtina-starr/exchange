@@ -20,11 +20,12 @@ services:
     - COVERALLS_REPO_TOKEN=$COVERALLS_REPO_TOKEN
     - CI=$CI
 
-
     command: ./hokusai/ci.sh
     depends_on:
       - exchange-db
       - exchange-redis
+    volumes:
+      - "../.git:/app/.git:ro"
   exchange-db:
     image: postgres:9.6-alpine
   exchange-redis:

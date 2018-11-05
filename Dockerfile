@@ -1,37 +1,27 @@
-FROM artsy/ruby:2.5.3-node-chrome
-
-RUN apt-get update -qq && apt-get install -y \
-  libpq-dev && \
-  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-RUN gem install bundler
-
-# throw errors if Gemfile has been modified since Gemfile.lock
-RUN bundle config --global frozen 1
-
-# Set up deploy user
-RUN adduser --disabled-password --gecos '' deploy
-
-# Set up gems
-WORKDIR /tmp
-ADD .ruby-version .ruby-version
-ADD Gemfile Gemfile
-ADD Gemfile.lock Gemfile.lock
-RUN bundle install -j4
-
-# Finally, add the rest of our app's code
-# (this is done at the end so that changes to our app's code
-# don't bust Docker's cache)
-ADD . /app
-WORKDIR /app
-RUN chown -R deploy:deploy /app
-
-# Switch to deploy user
-USER deploy
-ENV USER deploy
-ENV HOME /home/deploy
+FROM ruby:2.5.3-alpine
 
 ENV PORT 8080
 EXPOSE 8080
+WORKDIR /app
+
+RUN apk --no-cache add \
+      build-base \
+      chromium \
+      chromium-chromedriver \
+      git \
+      nodejs \
+      postgresql-dev \
+      tzdata
+
+COPY .ruby-version Gemfile* ./
+
+RUN gem install bundler && \
+    bundle install --frozen --jobs $(nproc)
+
+COPY . ./
+RUN adduser -D deploy && \
+    chown -R deploy:deploy /app
+
+USER deploy
 
 CMD bundle exec rails server
