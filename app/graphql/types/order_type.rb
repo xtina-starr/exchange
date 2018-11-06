@@ -30,6 +30,7 @@ class Types::OrderType < Types::BaseObject
     argument :from_id, String, required: false
     argument :from_type, String, required: false
   end
+  field :total_list_price_cents, Integer, null: false
   field :offer_total_cents, Integer, null: true
   field :last_offer, Types::OfferType, null: true
   field :tax_total_cents, Integer, null: true

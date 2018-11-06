@@ -64,8 +64,7 @@ describe OrderTotalUpdaterService, type: :service do
     end
     context 'OFFER order' do
       let(:mode) { Order::OFFER }
-      let(:line_item1) { Fabricate(:line_item, order: order, list_price_cents: 200_00, quantity: 2, sales_tax_cents: 10_00, should_remit_sales_tax: false) }
-      let!(:line_items) { [line_item1 ] }
+      let!(:line_item1) { Fabricate(:line_item, order: order, list_price_cents: 200_00, quantity: 2, sales_tax_cents: 10_00, should_remit_sales_tax: false) }
 
       context 'with last_offer' do
         let(:offer) { Fabricate(:offer, order: order, amount_cents: 300_00) }
@@ -82,7 +81,7 @@ describe OrderTotalUpdaterService, type: :service do
               expect(order.buyer_total_cents).to eq(300_00 + 50_00 + 60_00)
               expect(order.transaction_fee_cents).to eq 12_19
               expect(order.commission_fee_cents).to be_nil
-              expect(order.seller_total_cents).to eq(300_00 + 50_00 + 60_00 - (12_19))
+              expect(order.seller_total_cents).to eq(300_00 + 50_00 + 60_00 - 12_19)
             end
           end
           context 'with commission rate' do

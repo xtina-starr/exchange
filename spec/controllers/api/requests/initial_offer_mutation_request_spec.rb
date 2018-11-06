@@ -10,6 +10,7 @@ describe Api::GraphqlController, type: :request do
     let(:state) { Order::PENDING }
     let(:state_reason) { nil }
     let(:order) { Fabricate(:order, seller_id: partner_id, buyer_id: user_id, mode: mode, state: state, state_reason: state_reason) }
+    let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 200, quantity: 2) }
     let(:order_id) { order.id.to_s }
     let(:amount_cents) { 500 }
     let(:mutation_input) do
@@ -26,6 +27,8 @@ describe Api::GraphqlController, type: :request do
               ... on OrderWithMutationSuccess {
                 order {
                   id
+                  mode
+                  totalListPriceCents
                   buyer {
                     ... on Partner {
                       id
@@ -127,6 +130,7 @@ describe Api::GraphqlController, type: :request do
           response = client.execute(mutation, input: mutation_input)
           response_order = response.data.initial_offer.order_or_error.order
           expect(response_order.id).to eq(order_id)
+          expect(response_order.total_list_price_cents).to eq 400
           expect(response_order.last_offer.amount_cents).to eq 500
           expect(response_order.last_offer.from.id).to eq user_id
           expect(response_order.last_offer.responds_to).to be_nil

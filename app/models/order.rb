@@ -146,6 +146,10 @@ class Order < ApplicationRecord
     admin_notes.order(:created_at).last
   end
 
+  def total_list_price_cents
+    line_items.map(&:total_list_price).sum
+  end
+
   private
 
   def state_reason_inclusion
