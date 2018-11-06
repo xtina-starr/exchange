@@ -76,6 +76,22 @@ describe Api::GraphqlController, type: :request do
       end
     end
 
+    context 'when the specified offer does not exist' do
+      let(:seller_accept_offer_input) do
+        {
+          input: {
+            offerId: '-1'
+          }
+        }
+      end
+
+      it 'returns a not-found error' do
+        expect { client.execute(mutation, seller_accept_offer_input) }.to raise_error do |error|
+          expect(error.status_code).to eq(404)
+        end
+      end
+    end
+
     context 'with proper permission' do
       it 'approves the order' do
         expect do
