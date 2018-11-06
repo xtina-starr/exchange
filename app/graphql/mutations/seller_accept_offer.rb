@@ -1,12 +1,12 @@
 class Mutations::SellerAcceptOffer < Mutations::BaseMutation
   null true
 
-  argument :id, ID, required: true
+  argument :offer_id, ID, required: true
 
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
-  def resolve(id:)
-    offer = Offer.find(id)
+  def resolve(offer_id:)
+    offer = Offer.find(offer_id)
     order = offer.order
 
     validate_seller_request!(order)

@@ -47,7 +47,7 @@ describe Api::GraphqlController, type: :request do
     let(:seller_accept_offer_input) do
       {
         input: {
-          id: offer.id.to_s
+          offerId: offer.id.to_s
         }
       }
     end
