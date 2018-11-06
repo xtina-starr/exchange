@@ -4,7 +4,7 @@ namespace 'graphql' do
     task :diff_check do
       puts 'Checking for GraphQL schema diffs...'
       no_schema_diff_exists = system(
-        'cp _schema.graphql{,.orig} &&' \
+        'cp _schema.graphql _schema.graphql.orig &&' \
         'rake graphql:schema:idl > /dev/null && ' \
         'diff _schema.graphql.orig _schema.graphql'
       )
