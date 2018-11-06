@@ -1,4 +1,4 @@
-FROM ruby:2.5.3-alpine
+FROM ruby:2.5.3-alpine3.7
 
 ENV PORT 8080
 EXPOSE 8080
