@@ -1,13 +1,19 @@
 namespace 'graphql' do
   namespace 'schema' do
-    desc 'fail if there is uncommitted diff in _schema.graphql'
+    desc 'fail if there is ungenerated diff in _schema.graphql'
     task :diff_check do
-      is_successful = system(
+      puts 'Checking for GraphQL schema diffs...'
+      no_schema_diff_exists = system(
+        'cp _schema.graphql{,.orig} &&' \
         'rake graphql:schema:idl > /dev/null && ' \
-        'git diff --exit-code _schema.graphql > /dev/null'
+        'diff _schema.graphql.orig _schema.graphql'
       )
 
-      raise(failure_message) unless is_successful
+      if no_schema_diff_exists
+        system('rm _schema.graphql.orig')
+      else
+        raise failure_message
+      end
     end
 
     def failure_message
