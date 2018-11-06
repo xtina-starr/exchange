@@ -2,8 +2,6 @@ require 'rails_helper'
 require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
-  include_context 'use stripe mock'
-
   describe 'approve_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
@@ -14,8 +12,8 @@ describe Api::GraphqlController, type: :request do
 
     let(:mutation) do
       <<-GRAPHQL
-        mutation($input: AcceptOfferInput!) {
-          acceptOffer(input: $input) {
+        mutation($input: SellerAcceptOfferInput!) {
+          sellerAcceptOffer(input: $input) {
             orderOrError {
               ... on OrderWithMutationSuccess {
                 order {
@@ -46,7 +44,7 @@ describe Api::GraphqlController, type: :request do
       GRAPHQL
     end
 
-    let(:accept_offer_input) do
+    let(:seller_accept_offer_input) do
       {
         input: {
           id: offer.id.to_s
@@ -58,10 +56,10 @@ describe Api::GraphqlController, type: :request do
       let(:order_state) { Order::PENDING }
 
       it "returns invalid state transition error and doesn't change the state" do
-        response = client.execute(mutation, accept_offer_input)
+        response = client.execute(mutation, seller_accept_offer_input)
 
-        expect(response.data.accept_offer.order_or_error.error.type).to eq 'validation'
-        expect(response.data.accept_offer.order_or_error.error.code).to eq 'invalid_state'
+        expect(response.data.seller_accept_offer.order_or_error.error.type).to eq 'validation'
+        expect(response.data.seller_accept_offer.order_or_error.error.code).to eq 'invalid_state'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -70,10 +68,10 @@ describe Api::GraphqlController, type: :request do
       let(:partner_id) { 'another-partner-id' }
 
       it 'returns permission error' do
-        response = client.execute(mutation, accept_offer_input)
+        response = client.execute(mutation, seller_accept_offer_input)
 
-        expect(response.data.accept_offer.order_or_error.error.type).to eq 'validation'
-        expect(response.data.accept_offer.order_or_error.error.code).to eq 'not_found'
+        expect(response.data.seller_accept_offer.order_or_error.error.type).to eq 'validation'
+        expect(response.data.seller_accept_offer.order_or_error.error.code).to eq 'not_found'
         expect(order.reload.state).to eq Order::SUBMITTED
       end
     end
@@ -81,7 +79,7 @@ describe Api::GraphqlController, type: :request do
     context 'with proper permission' do
       it 'approves the order' do
         expect do
-          client.execute(mutation, accept_offer_input)
+          client.execute(mutation, seller_accept_offer_input)
         end.to change { order.reload.state }.from(Order::SUBMITTED).to(Order::APPROVED)
       end
     end

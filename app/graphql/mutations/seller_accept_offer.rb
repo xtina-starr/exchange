@@ -1,4 +1,4 @@
-class Mutations::AcceptOffer < Mutations::BaseMutation
+class Mutations::SellerAcceptOffer < Mutations::BaseMutation
   null true
 
   argument :id, ID, required: true
