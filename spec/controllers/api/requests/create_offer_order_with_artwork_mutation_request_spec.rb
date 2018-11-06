@@ -94,7 +94,7 @@ describe Api::GraphqlController, type: :request do
                 expect(order.seller_id).to eq partner_id
                 expect(order.seller_type).to eq 'gallery'
                 expect(order.line_items.count).to eq 1
-                expect(order.line_items.first.price_cents).to eq 4200_42
+                expect(order.line_items.first.list_price_cents).to eq 4200_42
                 expect(order.line_items.first.artwork_id).to eq 'artwork-id'
                 expect(order.line_items.first.edition_set_id).to eq 'edition-set-id'
                 expect(order.line_items.first.quantity).to eq 2
@@ -114,7 +114,7 @@ describe Api::GraphqlController, type: :request do
                 expect(order.buyer_id).to eq jwt_user_id
                 expect(order.seller_id).to eq partner_id
                 expect(order.line_items.count).to eq 1
-                expect(order.line_items.first.price_cents).to eq 4200_42
+                expect(order.line_items.first.list_price_cents).to eq 4200_42
                 expect(order.line_items.first.artwork_id).to eq 'artwork-id'
                 expect(order.line_items.first.edition_set_id).to eq 'edition-set-id'
                 expect(order.line_items.first.quantity).to eq 2
@@ -174,7 +174,7 @@ describe Api::GraphqlController, type: :request do
                 expect(order.buyer_id).to eq jwt_user_id
                 expect(order.seller_id).to eq partner_id
                 expect(order.line_items.count).to eq 1
-                expect(order.line_items.first.price_cents).to eq 4200_42
+                expect(order.line_items.first.list_price_cents).to eq 4200_42
                 expect(order.line_items.first.artwork_id).to eq 'artwork-id'
                 expect(order.line_items.first.edition_set_id).to eq 'edition-set-id'
                 expect(order.line_items.first.quantity).to eq 2
@@ -197,7 +197,7 @@ describe Api::GraphqlController, type: :request do
               expect(order.buyer_id).to eq jwt_user_id
               expect(order.seller_id).to eq partner_id
               expect(order.line_items.count).to eq 1
-              expect(order.line_items.first.price_cents).to eq 5400_12
+              expect(order.line_items.first.list_price_cents).to eq 5400_12
               expect(order.line_items.first.artwork_id).to eq 'artwork-id'
               expect(order.line_items.first.edition_set_id).to be_nil
               expect(order.line_items.first.quantity).to eq 2
@@ -219,7 +219,7 @@ describe Api::GraphqlController, type: :request do
               expect(order.buyer_id).to eq jwt_user_id
               expect(order.seller_id).to eq partner_id
               expect(order.line_items.count).to eq 1
-              expect(order.line_items.first.price_cents).to eq 5400_12
+              expect(order.line_items.first.list_price_cents).to eq 5400_12
               expect(order.line_items.first.artwork_id).to eq 'artwork-id'
               expect(order.line_items.first.edition_set_id).to be_nil
               expect(order.line_items.first.quantity).to eq 2
@@ -239,7 +239,7 @@ describe Api::GraphqlController, type: :request do
                 expect(order.buyer_id).to eq jwt_user_id
                 expect(order.seller_id).to eq partner_id
                 expect(order.line_items.count).to eq 1
-                expect(order.line_items.first.price_cents).to eq 5400_12
+                expect(order.line_items.first.list_price_cents).to eq 5400_12
                 expect(order.line_items.first.artwork_id).to eq 'artwork-id'
                 expect(order.line_items.first.edition_set_id).to be_nil
                 expect(order.line_items.first.quantity).to eq 1

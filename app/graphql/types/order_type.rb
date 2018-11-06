@@ -76,4 +76,8 @@ class Types::OrderType < Types::BaseObject
       object.offers.all
     end
   end
+
+  def offer_total_cents
+    object.last_offer&.amount_cents
+  end
 end

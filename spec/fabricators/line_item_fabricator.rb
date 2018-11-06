@@ -1,5 +1,5 @@
 Fabricator(:line_item) do
-  price_cents { 100_00 }
+  list_price_cents { 100_00 }
   artwork_id { sequence(:artwork_id) { |i| "artwork-id-#{i}" } }
   quantity { 1 }
   order { Fabricate(:order) }

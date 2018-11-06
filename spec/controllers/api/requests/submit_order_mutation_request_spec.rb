@@ -32,7 +32,7 @@ describe Api::GraphqlController, type: :request do
     end
     let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
     let(:line_item) do
-      Fabricate(:line_item, order: order, price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1')
+      Fabricate(:line_item, order: order, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1')
     end
 
     let(:mutation) do

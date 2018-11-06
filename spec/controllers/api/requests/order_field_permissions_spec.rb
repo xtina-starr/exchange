@@ -19,7 +19,7 @@ describe Api::GraphqlController, type: :request do
         seller_total_cents: 1050_00
       )
     end
-    let!(:line_item) { Fabricate(:line_item, price_cents: 100_00, quantity: 2, commission_fee_cents: 40_00, order: order) }
+    let!(:line_item) { Fabricate(:line_item, list_price_cents: 100_00, quantity: 2, commission_fee_cents: 40_00, order: order) }
     context 'as buyer' do
       let(:jwt_partner_ids) { [] }
       let(:jwt_user_id) { user_id }
@@ -37,6 +37,7 @@ describe Api::GraphqlController, type: :request do
                   node {
                     id
                     priceCents
+                    listPriceCents
                     quantity
                     commissionFeeCents
                   }
@@ -53,7 +54,7 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.seller_total_cents).to be_nil
         expect(result.data.order.buyer_total_cents).to eq 1100_00
         expect(result.data.order.line_items.edges.first.node.commission_fee_cents).to be_nil
-        expect(result.data.order.line_items.edges.first.node.price_cents).to eq 100_00
+        expect(result.data.order.line_items.edges.first.node.list_price_cents).to eq 100_00
       end
     end
 
@@ -73,6 +74,7 @@ describe Api::GraphqlController, type: :request do
                   node {
                     id
                     priceCents
+                    listPriceCents
                     quantity
                     commissionFeeCents
                   }
@@ -89,6 +91,7 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.commission_fee_cents).to eq 30_00
         expect(result.data.order.line_items.edges.first.node.commission_fee_cents).to eq 40_00
         expect(result.data.order.line_items.edges.first.node.price_cents).to eq 100_00
+        expect(result.data.order.line_items.edges.first.node.list_price_cents).to eq 100_00
       end
     end
 

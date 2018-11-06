@@ -8,7 +8,7 @@ describe Offers::InitialOfferService, type: :services do
     let(:state) { Order::PENDING }
     let(:state_reason) { nil }
     let(:order) { Fabricate(:order, seller_id: user_id, seller_type: Order::USER, state: state, state_reason: state_reason, mode: mode) }
-    let!(:line_item) { Fabricate(:line_item, order: order, price_cents: 500) }
+    let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 500) }
     let(:service) { Offers::InitialOfferService.new(order, amount_cents, user_id) }
     context 'Buy Order' do
       let(:mode) { Order::BUY }
@@ -51,8 +51,7 @@ describe Offers::InitialOfferService, type: :services do
         expect(offer.creator_id).to eq user_id
         expect(order.reload.state).to eq state
         expect(order.last_offer).to eq offer
-        expect(order.items_total_cents).to eq 5_00
-        expect(order.offer_total_cents).to eq 2_00
+        expect(order.items_total_cents).to eq 2_00
       end
     end
   end

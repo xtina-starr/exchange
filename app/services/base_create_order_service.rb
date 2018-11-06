@@ -34,7 +34,7 @@ class BaseCreateOrderService
         artwork_id: @artwork_id,
         artwork_version_id: @artwork[:current_version_id],
         edition_set_id: @edition_set_id,
-        price_cents: artwork_price,
+        list_price_cents: artwork_price,
         quantity: @quantity
       )
       OrderTotalUpdaterService.new(@order).update_totals!

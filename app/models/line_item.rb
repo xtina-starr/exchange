@@ -4,6 +4,6 @@ class LineItem < ApplicationRecord
   has_many :fulfillments, through: :line_item_fulfillments
 
   def total_amount_cents
-    price_cents * quantity
+    order.mode == Order::BUY ? list_price_cents * quantity : order.last_offer.amount_cents
   end
 end

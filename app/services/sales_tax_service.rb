@@ -75,7 +75,7 @@ class SalesTaxService
     @tax_client.tax_for_order(
       construct_tax_params(
         line_items: [{
-          unit_price: UnitConverter.convert_cents_to_dollars(@line_item.price_cents),
+          unit_price: UnitConverter.convert_cents_to_dollars(@line_item.total_amount_cents / @line_item.quantity),
           quantity: @line_item.quantity
         }]
       )

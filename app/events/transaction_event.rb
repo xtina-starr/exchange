@@ -46,7 +46,7 @@ class TransactionEvent < Events::BaseEvent
 
   def line_item_detail(line_item)
     {
-      price_cents: line_item.price_cents,
+      price_cents: line_item.list_price_cents,
       artwork_id: line_item.artwork_id,
       edition_set_id: line_item.edition_set_id,
       quantity: line_item.quantity,

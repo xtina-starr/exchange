@@ -8,7 +8,7 @@ describe Api::GraphqlController, type: :request do
     let(:credit_card_id) { 'cc-1' }
     let(:order) { Fabricate(:order, seller_id: partner_id, buyer_id: user_id) }
     let!(:line_items) do
-      Array.new(2) { Fabricate(:line_item, order: order, price_cents: 200) }
+      Array.new(2) { Fabricate(:line_item, order: order, list_price_cents: 200) }
     end
 
     let(:mutation) do

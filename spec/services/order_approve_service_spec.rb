@@ -3,7 +3,7 @@ require 'rails_helper'
 describe OrderApproveService, type: :services do
   include_context 'use stripe mock'
   let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: Order::SUBMITTED) }
-  let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, price_cents: 124_00)] }
+  let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
   let(:service) { OrderApproveService.new(order, user_id) }
 
