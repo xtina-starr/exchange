@@ -21,10 +21,14 @@ class Address
       @postal_code == other.postal_code
   end
 
+  def united_states?
+    @country == Carmen::Country.coded('US').code
+  end
+
   # The "continental United States" is defined as any US state that isn't Alaska or Hawaii.
   def continental_us?
     us = Carmen::Country.coded('US')
-    @country == us.code &&
+    united_states? &&
       @region != us.subregions.coded('HI').code &&
       @region != us.subregions.coded('AK').code
   end
@@ -54,17 +58,5 @@ class Address
 
   def validate!
     raise Errors::AddressError, :missing_country if @address[:country].nil?
-
-    validate_us_address! if @address[:country] == Carmen::Country.coded('US').code
-    validate_ca_address! if @address[:country] == Carmen::Country.coded('CA').code
-  end
-
-  def validate_us_address!
-    raise Errors::AddressError, :missing_region if @address[:region].nil?
-    raise Errors::AddressError, :missing_postal_code if @address[:postal_code].nil?
-  end
-
-  def validate_ca_address!
-    raise Errors::AddressError, :missing_region if @address[:region].nil?
   end
 end

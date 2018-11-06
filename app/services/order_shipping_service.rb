@@ -62,8 +62,8 @@ class OrderShippingService
         end
       end.sum
     end
-  rescue Errors::AddressError
-    raise Errors::ValidationError, :invalid_artwork_address
+  rescue Errors::AddressError => e
+    raise Errors::ValidationError, e.code
   end
 
   def validate_artwork!(artwork)

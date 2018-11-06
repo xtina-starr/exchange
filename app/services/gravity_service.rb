@@ -38,8 +38,6 @@ module GravityService
     raise Errors::ValidationError.new(:missing_partner_location, partner_id: partner_id) if locations.blank?
 
     locations.map { |loc| Address.new(loc) }
-  rescue Errors::AddressError
-    raise Errors::ValidationError.new(:invalid_seller_address, partner_id: partner_id)
   rescue Adapters::GravityNotFoundError
     raise Errors::ValidationError.new(:unknown_partner, partner_id: partner_id)
   rescue Adapters::GravityError
