@@ -39,9 +39,12 @@ group :development do
 end
 
 group :test do
+  gem 'capybara'
+  gem 'chromedriver-helper'
   gem 'coveralls', require: false
   gem 'danger'
   gem 'fabrication'
+  gem 'selenium-webdriver'
   gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
   gem 'timecop'
   gem 'webmock'

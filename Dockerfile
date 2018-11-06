@@ -1,7 +1,7 @@
-FROM ruby:2.5.3
+FROM artsy/ruby:2.5.3-node-chrome
 
 RUN apt-get update -qq && apt-get install -y \
-  libpq-dev nodejs && \
+  libpq-dev && \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN gem install bundler
