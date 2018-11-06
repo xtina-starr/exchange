@@ -3,9 +3,8 @@ class Types::LineItemType < Types::BaseObject
   graphql_name 'LineItem'
 
   field :id, ID, null: false
-  field :price_cents, Integer, null: false, deprecation_reason: 'switch to use listPrice or effectivePrice'
+  field :price_cents, Integer, null: false, deprecation_reason: 'switch to use listPrice'
   field :list_price_cents, Integer, null: false
-  field :effective_price, Integer, null: true
   field :artwork_id, String, null: false
   field :edition_set_id, String, null: true
   field :quantity, Integer, null: false
