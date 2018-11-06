@@ -45,7 +45,7 @@ ActiveAdmin.register Order do
     OrderCancellationService.new(resource).refund!
     redirect_to resource_path, notice: "Refunded!"
   end
-  
+
   member_action :approve_order, method: :post do
     OrderApproveService.new(resource, current_user[:id]).process!
     redirect_to resource_path, notice: "Order approved!"
@@ -64,7 +64,7 @@ ActiveAdmin.register Order do
     end
   end
 
-  
+
   action_item :approve_order, only: :show do
     if order.state == Order::SUBMITTED
       link_to 'Approve Order', approve_order_admin_order_path(order), method: :post, data: {confirm: 'Approve this order?'}
@@ -246,7 +246,7 @@ ActiveAdmin.register Order do
         end
       end
 
-      items_total = order.items_total_cents.to_f/100
+      items_total = order.total_list_price_cents.to_f/100
       shipping_total = order.shipping_total_cents.to_f/100
       tax_total = order.tax_total_cents.to_f/100
       sub_total = items_total + shipping_total + tax_total
@@ -256,7 +256,7 @@ ActiveAdmin.register Order do
       seller_payout = sub_total - transaction_fee - commission_fee
 
       attributes_table_for order do
-        row "Artwork Price" do |order|
+        row "Artwork List Price" do |order|
           number_to_currency items_total
         end
         row "Shipping" do |order|
