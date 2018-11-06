@@ -13,5 +13,5 @@ if %w[development test].include? Rails.env
   RuboCop::RakeTask.new(:rubocop)
 
   Rake::Task[:default].clear
-  task default: %i[rubocop spec coveralls:push]
+  task default: %i[graphql:schema:diff_check rubocop spec coveralls:push]
 end
