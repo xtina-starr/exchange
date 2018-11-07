@@ -189,6 +189,11 @@ describe Api::GraphqlController, type: :request do
         end
 
         context 'with a US-based shipping address' do
+          before do
+            allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+            allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/locations?private=true").and_return([{country: 'US', state: 'NY'}])
+          end
           let(:shipping_country) { 'US' }
           context 'without a state' do
             let(:shipping_region) { nil }
@@ -207,19 +212,6 @@ describe Api::GraphqlController, type: :request do
               expect(response.data.set_shipping.order_or_error).to respond_to(:error)
               expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
               expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_postal_code'
-            end
-          end
-        end
-
-        context 'with a Canada based shipping address' do
-          let(:shipping_country) { 'CA' }
-          context 'without a province or territory' do
-            let(:shipping_region) { nil }
-            it 'returns proper error' do
-              response = client.execute(mutation, set_shipping_input)
-              expect(response.data.set_shipping.order_or_error).to respond_to(:error)
-              expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
-              expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_region'
             end
           end
         end

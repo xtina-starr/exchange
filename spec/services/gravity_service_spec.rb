@@ -41,16 +41,6 @@ describe GravityService, type: :services do
           partner_addresses.each { |ad| expect(ad).to be_a Address }
         end
       end
-      context 'with an invalid partner location' do
-        it 'rescues AddressError and raises ValidationError' do
-          allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/locations?private=true").and_return(invalid_location)
-          expect { GravityService.fetch_partner_locations(partner_id) }.to raise_error do |error|
-            expect(error).to be_a Errors::ValidationError
-            expect(error.code).to eq :invalid_seller_address
-            expect(error.data[:partner_id]).to eq partner_id
-          end
-        end
-      end
     end
     context 'with no partner locations' do
       it 'raises error' do
