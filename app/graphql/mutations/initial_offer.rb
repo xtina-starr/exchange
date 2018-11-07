@@ -8,7 +8,7 @@ class Mutations::InitialOffer < Mutations::BaseMutation
 
   def resolve(order_id:, amount_cents:)
     order = Order.find(order_id)
-    validate_buyer_request!(order)
+    authorize_buyer_request!(order)
     service = Offers::InitialOfferService.new(order, amount_cents, context[:current_user]['id'])
     service.process!
     { order_or_error: { order: service.order } }

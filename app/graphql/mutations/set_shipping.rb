@@ -9,7 +9,7 @@ class Mutations::SetShipping < Mutations::BaseMutation
 
   def resolve(id:, fulfillment_type:, shipping: {})
     order = Order.find(id)
-    validate_buyer_request!(order)
+    authorize_buyer_request!(order)
     OrderShippingService.new(order, fulfillment_type: fulfillment_type, shipping: shipping).process!
     {
       order_or_error: { order: order.reload }

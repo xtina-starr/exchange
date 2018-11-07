@@ -9,7 +9,7 @@ class Mutations::SellerAcceptOffer < Mutations::BaseMutation
     offer = Offer.find(offer_id)
     order = offer.order
 
-    validate_seller_request!(order)
+    authorize_seller_request!(order)
 
     Offers::AcceptService.new(offer: offer, order: order).process!
 

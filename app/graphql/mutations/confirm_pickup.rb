@@ -7,7 +7,7 @@ class Mutations::ConfirmPickup < Mutations::BaseMutation
 
   def resolve(id:)
     order = Order.find(id)
-    validate_seller_request!(order)
+    authorize_seller_request!(order)
     OrderService.confirm_pickup!(order, context[:current_user][:id])
     {
       order_or_error: { order: order.reload }

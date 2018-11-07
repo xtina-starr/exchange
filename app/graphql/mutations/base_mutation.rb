@@ -1,9 +1,9 @@
 class Mutations::BaseMutation < GraphQL::Schema::RelayClassicMutation
-  def validate_seller_request!(order)
+  def authorize_seller_request!(order)
     raise Errors::ValidationError, :not_found unless authorized_to_sell?(order)
   end
 
-  def validate_buyer_request!(order)
+  def authorize_buyer_request!(order)
     raise Errors::ValidationError, :not_found unless authorized_to_buy?(order)
   end
 
