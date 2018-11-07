@@ -40,7 +40,6 @@ end
 
 group :test do
   gem 'capybara'
-  gem 'chromedriver-helper'
   gem 'coveralls', require: false
   gem 'danger'
   gem 'fabrication'
