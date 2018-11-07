@@ -20,6 +20,7 @@ class TransactionEvent < Events::BaseEvent
     {
       order: {
         id: order.id,
+        mode: order.mode,
         buyer_id: order.buyer_id,
         buyer_total_cents: order.buyer_total_cents,
         buyer_type: order.buyer_type,

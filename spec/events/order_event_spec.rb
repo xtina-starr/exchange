@@ -76,6 +76,7 @@ describe OrderEvent, type: :events do
   describe '#properties' do
     it 'returns correct properties for a submitted order' do
       order.submit!
+      expect(event.properties[:mode]).to eq Order::BUY
       expect(event.properties[:code]).to eq order.code
       expect(event.properties[:currency_code]).to eq 'USD'
       expect(event.properties[:state]).to eq 'submitted'
