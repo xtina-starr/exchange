@@ -126,18 +126,17 @@ class SalesTaxService
       address = @fulfillment_type == Order::SHIP ? @shipping_address : @artwork_location
       validate_destination_address!(address)
       address
-    rescue Errors::AddressError => e
+    rescue Errors::ValidationError => e
       raise Errors::ValidationError, :invalid_artwork_address if @fulfillment_type == Order::PICKUP
-      raise Errors::ValidationError, e.code
+      raise e
     end
   end
 
   def validate_destination_address!(destination_address)
-    raise Errors::AddressError, :missing_region if destination_address.region.nil?
-    raise Errors::AddressError, :missing_postal_code if destination_address.postal_code.nil?
+    raise Errors::ValidationError, :missing_region if destination_address.region.nil?
+    raise Errors::ValidationError, :missing_postal_code if destination_address.postal_code.nil?
   end
 
-  
   def process_nexus_addresses!(seller_nexus_addresses)
     nexus_addresses = seller_nexus_addresses.select{ |ad| address_taxable?(ad) }
     raise Errors::ValidationError, :no_taxable_addresses if nexus_addresses.blank?
