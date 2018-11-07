@@ -97,7 +97,7 @@ describe SalesTaxService, type: :services do
       it 'sets effective_shipping_total_cents to 0' do
         expect(@service_ship.send(:effective_shipping_total_cents)).to eq 0
       end
-    end    
+    end
   end
 
   describe '#sales_tax' do

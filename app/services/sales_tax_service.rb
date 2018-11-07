@@ -93,14 +93,16 @@ class SalesTaxService
   end
 
   def destination_address
-    @destination_address ||= begin
-      address = @fulfillment_type == Order::SHIP ? @shipping_address : @artwork_location
-      validate_destination_address!(address)
-      address
-    rescue Errors::ValidationError => e
-      raise Errors::ValidationError, :invalid_artwork_address if @fulfillment_type == Order::PICKUP
-      raise e
-    end
+    @destination_address ||=
+      begin
+        address = @fulfillment_type == Order::SHIP ? @shipping_address : @artwork_location
+        validate_destination_address!(address)
+        address
+      rescue Errors::ValidationError => e
+        raise Errors::ValidationError, :invalid_artwork_address if @fulfillment_type == Order::PICKUP
+
+        raise e
+      end
   end
 
   def address_taxable?(address)
@@ -114,17 +116,17 @@ class SalesTaxService
   end
 
   def process_nexus_addresses!(seller_nexus_addresses)
-    nexus_addresses = seller_nexus_addresses.select{ |ad| address_taxable?(ad) }
+    nexus_addresses = seller_nexus_addresses.select { |ad| address_taxable?(ad) }
     raise Errors::ValidationError, :no_taxable_addresses if nexus_addresses.blank?
-    
-    nexus_addresses.each { |ad| validate_nexus_address!(ad) } 
+
+    nexus_addresses.each { |ad| validate_nexus_address!(ad) }
     nexus_addresses
   end
-  
+
   def validate_nexus_address!(nexus_address)
     raise Errors::ValidationError, :invalid_seller_address if nexus_address.region.nil?
   end
-  
+
   def post_transaction
     transaction_date = @line_item.order.last_approved_at.iso8601
     @tax_client.create_order(
