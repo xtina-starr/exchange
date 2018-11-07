@@ -1,5 +1,34 @@
 class OrderEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
+  PROPERTIES_ATTRS = %i[
+    mode
+    buyer_id
+    buyer_type
+    buyer_phone_number
+    buyer_total_cents
+    code
+    commission_fee_cents
+    created_at
+    currency_code
+    fulfillment_type
+    items_total_cents
+    seller_id
+    seller_total_cents
+    seller_type
+    shipping_address_line1
+    shipping_address_line2
+    shipping_city
+    shipping_country
+    shipping_name
+    shipping_postal_code
+    shipping_region
+    shipping_total_cents state
+    state_reason
+    state_expires_at
+    tax_total_cents
+    transaction_fee_cents
+    updated_at
+  ].freeze
 
   def self.post(order, action, user_id)
     event = new(user: user_id, action: action, model: order)
@@ -13,18 +42,7 @@ class OrderEvent < Events::BaseEvent
   end
 
   def properties
-    attrs = %i[
-      mode buyer_id buyer_type buyer_phone_number
-      buyer_total_cents code commission_fee_cents
-      created_at currency_code fulfillment_type
-      items_total_cents line_items seller_id seller_total_cents
-      seller_type shipping_address_line1 shipping_address_line2
-      shipping_city shipping_country shipping_name
-      shipping_postal_code shipping_region shipping_total_cents state
-      state_reason state_expires_at tax_total_cents
-      transaction_fee_cents updated_at
-    ]
-    Hash[attrs.map { |att| [att, @object.send(att)] }].merge(line_items: line_items_details)
+    PROPERTIES_ATTRS.map { |att| [att, @object.send(att)] }.to_h.merge(line_items: line_items_details)
   end
 
   private
