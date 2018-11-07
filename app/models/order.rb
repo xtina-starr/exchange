@@ -147,7 +147,7 @@ class Order < ApplicationRecord
   end
 
   def total_list_price_cents
-    line_items.map(&:total_list_price).sum
+    line_items.map(&:total_list_price_cents).sum
   end
 
   private

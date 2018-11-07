@@ -3,20 +3,24 @@ class LineItem < ApplicationRecord
   has_many :line_item_fulfillments, dependent: :destroy
   has_many :fulfillments, through: :line_item_fulfillments
 
-  before_create :validate_creation
+  validate :offer_order_lacks_line_items, on: :create
 
   def total_amount_cents
-    order.mode == Order::BUY ? total_list_price : order.last_offer&.amount_cents
+    order.mode == Order::BUY ? total_list_price_cents : order.last_offer&.amount_cents
   end
 
-  def total_list_price
+  def total_list_price_cents
     list_price_cents * quantity
+  end
+
+  def effective_price_cents
+    # calculates effective price considering order type
+    total_amount_cents / quantity
   end
 
   private
 
-  def validate_creation
-    # Offer orders can have only one line item
-    raise Errors::ValidationError, :offer_more_than_one_line_item if order.mode == Order::OFFER && order.line_items.exists?
+  def offer_order_lacks_line_items
+    errors.add(:order, 'offer order can only have one line item') if order.mode == Order::OFFER && order.line_items.any?
   end
 end

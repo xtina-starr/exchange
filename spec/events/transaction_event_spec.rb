@@ -37,6 +37,7 @@ describe TransactionEvent, type: :events do
     [
       {
         price_cents: 200,
+        list_price_cents: 200,
         artwork_id: line_item1.artwork_id,
         edition_set_id: line_item1.edition_set_id,
         quantity: 1,
@@ -44,6 +45,7 @@ describe TransactionEvent, type: :events do
       },
       {
         price_cents: 100,
+        list_price_cents: 100,
         artwork_id: line_item2.artwork_id,
         edition_set_id: line_item2.edition_set_id,
         quantity: 2,

@@ -25,10 +25,7 @@ describe LineItem, type: :model do
         order.line_items.create!(quantity: 2)
         expect do
           order.line_items.create!(quantity: 4)
-        end.to raise_error do |error|
-          expect(error.type).to eq :validation
-          expect(error.code).to eq :offer_more_than_one_line_item
-        end
+        end.to raise_error(ActiveRecord::RecordInvalid, /Order offer order can only have one line item/)
       end
     end
   end
@@ -59,10 +56,29 @@ describe LineItem, type: :model do
     end
   end
 
-  describe '#total_list_price' do
+  describe '#total_list_price_cents' do
     it 'returns proper list price' do
       line_item = Fabricate(:line_item, list_price_cents: 200, quantity: 3)
-      expect(line_item.total_list_price).to eq 600
+      expect(line_item.total_list_price_cents).to eq 600
+    end
+  end
+
+  describe '#effective_price_cents' do
+    let(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 300, quantity: 3) }
+    context 'Buy order' do
+      it 'returns correct amount' do
+        expect(line_item.effective_price_cents).to eq 300
+      end
+    end
+    context 'Offer order' do
+      let(:mode) { Order::OFFER }
+      before do
+        offer = Fabricate(:offer, order: order, amount_cents: 900)
+        order.update!(last_offer: offer)
+      end
+      it 'returns correct amount' do
+        expect(line_item.effective_price_cents).to eq 300
+      end
     end
   end
 end
