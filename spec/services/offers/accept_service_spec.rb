@@ -6,6 +6,12 @@ describe Offers::AcceptService, type: :services do
     let!(:order) { Fabricate(:order, state: Order::SUBMITTED) }
     let!(:offer) { Fabricate(:offer, order: order) }
 
+    before do
+      # last_offer is set in Orders::InitialOffer. "Stubbing" out the
+      # dependent behavior of this class to by setting last_offer directly
+      order.update!(last_offer: offer)
+    end
+
     context 'with a approve-able order' do
       it 'updates the state of the order' do
         expect do
@@ -14,9 +20,7 @@ describe Offers::AcceptService, type: :services do
       end
 
       it 'instruments an approved order' do
-        dd_statsd = double(Datadog::Statsd)
-        allow(Exchange).to receive(:dogstatsd)
-          .and_return(dd_statsd)
+        dd_statsd = stub_ddstatsd_instance
         allow(dd_statsd).to receive(:increment).with('order.approve')
 
         call_service
@@ -30,9 +34,7 @@ describe Offers::AcceptService, type: :services do
       let(:offer) { Fabricate(:offer, order: order) }
 
       it "doesn't instrument" do
-        dd_statsd = double(Datadog::Statsd)
-        allow(Exchange).to receive(:dogstatsd)
-          .and_return(dd_statsd)
+        dd_statsd = stub_ddstatsd_instance
         allow(dd_statsd).to receive(:increment).with('order.approve')
 
         expect { call_service }.to raise_error(Errors::ValidationError)
@@ -44,16 +46,38 @@ describe Offers::AcceptService, type: :services do
     context 'attempting to accept not the last offer' do
       let!(:another_offer) { Fabricate(:offer, order: order) }
 
-      it 'raises a validation error' do
-        # last offer is set in Orders::InitialOffer. "Stubbing" out the
+      before do
+        # last_offer is set in Orders::InitialOffer. "Stubbing" out the
         # dependent behavior of this class to by setting last_offer directly
         order.update!(last_offer: another_offer)
-
-        expect { call_service }.to raise_error(Errors::ValidationError)
       end
 
-      it 'does not approve the order'
-      it 'does not instrument'
+      it 'raises a validation error' do
+        expect { call_service }
+          .to raise_error(Errors::ValidationError)
+      end
+
+      it 'does not approve the order' do
+        expect { call_service }.to raise_error(Errors::ValidationError)
+
+        expect(order.reload.state).to eq(Order::SUBMITTED)
+      end
+
+      it 'does not instrument' do
+        dd_statsd = stub_ddstatsd_instance
+        allow(dd_statsd).to receive(:increment).with('order.approve')
+
+        expect { call_service }.to raise_error(Errors::ValidationError)
+
+        expect(dd_statsd).to_not have_received(:increment)
+      end
     end
+  end
+
+  def stub_ddstatsd_instance
+    dd_statsd = double(Datadog::Statsd)
+    allow(Exchange).to receive(:dogstatsd).and_return(dd_statsd)
+
+    dd_statsd
   end
 end

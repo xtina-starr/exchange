@@ -32,6 +32,7 @@ module Errors
       not_acquireable
       not_found
       not_offerable
+      not_last_offer
       unknown_artwork
       unknown_edition_set
       unknown_partner

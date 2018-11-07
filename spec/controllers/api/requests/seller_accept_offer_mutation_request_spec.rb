@@ -2,7 +2,7 @@ require 'rails_helper'
 require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
-  describe 'approve_order mutation' do
+  describe 'seller_approve_order mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
@@ -19,16 +19,6 @@ describe Api::GraphqlController, type: :request do
                 order {
                   id
                   state
-                  buyer {
-                    ... on Partner {
-                      id
-                    }
-                  }
-                  seller {
-                    ... on User {
-                      id
-                    }
-                  }
                 }
               }
               ... on OrderWithMutationFailure {
@@ -52,15 +42,32 @@ describe Api::GraphqlController, type: :request do
       }
     end
 
-    context 'with an invalid state transition' do
+    before do
+      order.update!(last_offer: offer)
+    end
+
+    context 'when not in the submitted state' do
       let(:order_state) { Order::PENDING }
 
-      it "returns invalid state transition error and doesn't change the state" do
+      it "returns invalid state transition error and doesn't change the order state" do
         response = client.execute(mutation, seller_accept_offer_input)
 
         expect(response.data.seller_accept_offer.order_or_error.error.type).to eq 'validation'
         expect(response.data.seller_accept_offer.order_or_error.error.code).to eq 'invalid_state'
         expect(order.reload.state).to eq Order::PENDING
+      end
+    end
+
+    context 'when attempting to accept not the last offer' do
+      it 'returns a validation error and does not change the order state' do
+        create_order_and_original_offer
+        create_another_offer
+
+        response = client.execute(mutation, seller_accept_offer_input)
+
+        expect(response.data.seller_accept_offer.order_or_error.error.type).to eq 'validation'
+        expect(response.data.seller_accept_offer.order_or_error.error.code).to eq 'not_last_offer'
+        expect(order.reload.state).to eq Order::SUBMITTED
       end
     end
 
@@ -99,5 +106,15 @@ describe Api::GraphqlController, type: :request do
         end.to change { order.reload.state }.from(Order::SUBMITTED).to(Order::APPROVED)
       end
     end
+  end
+
+  def create_order_and_original_offer
+    order
+    offer
+  end
+
+  def create_another_offer
+    another_offer = Fabricate(:offer, order: order)
+    order.update!(last_offer: another_offer)
   end
 end
