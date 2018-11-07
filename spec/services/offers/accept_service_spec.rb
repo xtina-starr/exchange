@@ -1,13 +1,12 @@
 require 'rails_helper'
 
-describe OfferAcceptService, type: :services do
+describe Offers::AcceptService, type: :services do
   describe '#process!' do
-    subject(:call_service) { OfferAcceptService.new(offer: offer, order: order).process! }
+    subject(:call_service) { described_class.new(offer: offer, order: order).process! }
+    let!(:order) { Fabricate(:order, state: Order::SUBMITTED) }
+    let!(:offer) { Fabricate(:offer, order: order) }
 
     context 'with a approve-able order' do
-      let(:order) { Fabricate(:order, state: Order::SUBMITTED) }
-      let(:offer) { Fabricate(:offer, order: order) }
-
       it 'updates the state of the order' do
         expect do
           call_service
@@ -40,6 +39,21 @@ describe OfferAcceptService, type: :services do
 
         expect(dd_statsd).to_not have_received(:increment)
       end
+    end
+
+    context 'attempting to accept not the last offer' do
+      let!(:another_offer) { Fabricate(:offer, order: order) }
+
+      it 'raises a validation error' do
+        # last offer is set in Orders::InitialOffer. "Stubbing" out the
+        # dependent behavior of this class to by setting last_offer directly
+        order.update!(last_offer: another_offer)
+
+        expect { call_service }.to raise_error(Errors::ValidationError)
+      end
+
+      it 'does not approve the order'
+      it 'does not instrument'
     end
   end
 end
