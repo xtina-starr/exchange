@@ -31,6 +31,7 @@ module Errors
       missing_required_info
       missing_required_param
       no_taxable_addresses
+      non_buyer_credit_card
       not_acquireable
       not_found
       not_last_offer
