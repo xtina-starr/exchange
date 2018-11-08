@@ -31,6 +31,7 @@ class Types::OrderType < Types::BaseObject
     argument :from_type, String, required: false
   end
   field :total_list_price_cents, Integer, null: false
+  field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
   field :last_offer, Types::OfferType, null: true
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true, seller_only: true
@@ -75,5 +76,10 @@ class Types::OrderType < Types::BaseObject
     else
       object.offers.all
     end
+  end
+
+  def offer_total_cents
+    # This can be removed once reaction is updated to `itemsTotalCents`
+    object.items_total_cents
   end
 end
