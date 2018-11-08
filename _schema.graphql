@@ -192,7 +192,7 @@ type LineItem {
   ): FulfillmentConnection
   id: ID!
   listPriceCents: Int!
-  priceCents: Int! @deprecated(reason: "switch to use listPrice")
+  priceCents: Int! @deprecated(reason: "switch to use listPriceCents")
   quantity: Int!
   updatedAt: DateTime!
 }
