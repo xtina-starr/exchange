@@ -14,7 +14,7 @@ class Types::OrderType < Types::BaseObject
   field :credit_card_id, String, null: true
   field :currency_code, String, null: false
   field :display_commission_rate, String, null: true
-  field :items_total_cents, Integer, null: false
+  field :items_total_cents, Integer, null: false, description: 'Item total in cents, for Offer Orders this field reflects current offer'
   field :last_approved_at, Types::DateTimeType, null: true
   field :last_submitted_at, Types::DateTimeType, null: true
   field :line_items, Types::LineItemType.connection_type, null: true
@@ -31,7 +31,6 @@ class Types::OrderType < Types::BaseObject
     argument :from_type, String, required: false
   end
   field :total_list_price_cents, Integer, null: false
-  field :offer_total_cents, Integer, null: true
   field :last_offer, Types::OfferType, null: true
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true, seller_only: true
@@ -76,9 +75,5 @@ class Types::OrderType < Types::BaseObject
     else
       object.offers.all
     end
-  end
-
-  def offer_total_cents
-    object.last_offer&.amount_cents
   end
 end
