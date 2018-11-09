@@ -3,7 +3,6 @@ class Address
 
   def initialize(address)
     @address = parse(address)
-    validate! if address.present?
     @country = @address[:country]
     @region = @address[:region]
     @city = @address[:city]
@@ -54,9 +53,5 @@ class Address
 
     parsed_region = country.subregions.named(region) || country.subregions.coded(region)
     parsed_region&.code
-  end
-
-  def validate!
-    raise Errors::AddressError, :missing_country if @address[:country].nil?
   end
 end

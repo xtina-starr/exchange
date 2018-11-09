@@ -60,18 +60,6 @@ describe Address do
       end
     end
   end
-  describe '#validate!' do
-    context 'with a missing country' do
-      it 'raises an error' do
-        address_params[:country] = nil
-        expect { Address.new(address_params) }.to raise_error do |error|
-          expect(error).to be_a Errors::AddressError
-          expect(error.type).to eq :validation
-          expect(error.code).to eq :missing_country
-        end
-      end
-    end
-  end
   describe '#==' do
     context 'with an address that has the same address attributes' do
       context 'with an empty address' do
