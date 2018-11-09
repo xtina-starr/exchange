@@ -60,53 +60,6 @@ describe Address do
       end
     end
   end
-  describe '#validate!' do
-    context 'with a missing country' do
-      it 'raises an error' do
-        address_params[:country] = nil
-        expect { Address.new(address_params) }.to raise_error do |error|
-          expect(error).to be_a Errors::AddressError
-          expect(error.type).to eq :validation
-          expect(error.code).to eq :missing_country
-        end
-      end
-    end
-  end
-  describe '#validate_us_address!' do
-    context 'with missing region' do
-      it 'raises an error' do
-        address_params[:region] = nil
-        expect { Address.new(address_params) }.to raise_error do |error|
-          expect(error).to be_a Errors::AddressError
-          expect(error.type).to eq :validation
-          expect(error.code).to eq :missing_region
-        end
-      end
-    end
-    context 'with missing postal code' do
-      it 'raises an error' do
-        address_params[:postal_code] = nil
-        expect { Address.new(address_params) }.to raise_error do |error|
-          expect(error).to be_a Errors::AddressError
-          expect(error.type).to eq :validation
-          expect(error.code).to eq :missing_postal_code
-        end
-      end
-    end
-  end
-  describe '#validate_ca_address!' do
-    context 'with missing region' do
-      it 'raises an error' do
-        address_params[:region] = nil
-        address_params[:country] = 'CA'
-        expect { Address.new(address_params) }.to raise_error do |error|
-          expect(error).to be_a Errors::AddressError
-          expect(error.type).to eq :validation
-          expect(error.code).to eq :missing_region
-        end
-      end
-    end
-  end
   describe '#==' do
     context 'with an address that has the same address attributes' do
       context 'with an empty address' do

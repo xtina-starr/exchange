@@ -77,40 +77,25 @@ describe SalesTaxService, type: :services do
   end
 
   describe '#initialize' do
-    context 'with taxable nexus addresses' do
-      context 'with a destination address in a remitting state' do
-        it 'sets shipping_total_cents to the passed in value' do
-          shipping[:region] = 'FL'
-          service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
-          expect(service.instance_variable_get(:@shipping_total_cents)).to eq shipping_total_cents
-        end
-        it 'sets seller_nexus_addresses to only be taxable seller addresses' do
-          service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses + [untaxable_address])
-          expect(service.instance_variable_get(:@seller_nexus_addresses)).to eq seller_addresses
-        end
-      end
-      context 'with a destination address in a non-remitting state' do
-        it 'sets shipping_total_cents to 0' do
-          expect(@service_ship.instance_variable_get(:@shipping_total_cents)).to eq 0
-        end
+    context 'with a destination address in a remitting state' do
+      it 'sets seller_nexus_addresses to only be taxable seller addresses' do
+        service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses + [untaxable_address])
+        expect(service.instance_variable_get(:@seller_nexus_addresses)).to eq seller_addresses
       end
     end
-    context 'with empty seller addresses' do
-      it 'raises error' do
-        expect { SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, []) }.to raise_error do |error|
-          expect(error).to be_a Errors::ValidationError
-          expect(error.type).to eq :validation
-          expect(error.code).to eq :no_taxable_addresses
-        end
+  end
+
+  describe '#effective_shipping_total_cents' do
+    context 'with a destination address in a remitting state' do
+      it 'sets effective_shipping_total_cents to @shipping_total_cents' do
+        shipping[:region] = 'FL'
+        service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
+        expect(service.send(:effective_shipping_total_cents)).to eq shipping_total_cents
       end
     end
-    context 'with untaxable seller addresses' do
-      it 'raises error' do
-        expect { SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, [untaxable_address]) }.to raise_error do |error|
-          expect(error).to be_a Errors::ValidationError
-          expect(error.type).to eq :validation
-          expect(error.code).to eq :no_taxable_addresses
-        end
+    context 'with a destination address in a non-remitting state' do
+      it 'sets effective_shipping_total_cents to 0' do
+        expect(@service_ship.send(:effective_shipping_total_cents)).to eq 0
       end
     end
   end
@@ -143,13 +128,65 @@ describe SalesTaxService, type: :services do
 
   describe '#destination_address' do
     context 'with a fulfillment_type of SHIP' do
-      it 'returns the shipping address' do
-        expect(@service_ship.send(:destination_address)).to eq shipping_address
+      context 'with a valid address' do
+        it 'returns the shipping address' do
+          expect(@service_ship.send(:destination_address)).to eq shipping_address
+        end
+      end
+      context 'with an invalid address' do
+        context 'with missing region' do
+          it 'raises a missing_region error' do
+            shipping[:region] = nil
+            service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
+            expect { service.send(:destination_address) }.to raise_error do |error|
+              expect(error).to be_a Errors::ValidationError
+              expect(error.type).to eq :validation
+              expect(error.code).to eq :missing_region
+            end
+          end
+        end
+        context 'with missing postal code' do
+          it 'raises a missing_postal_code error' do
+            shipping[:postal_code] = nil
+            service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
+            expect { service.send(:destination_address) }.to raise_error do |error|
+              expect(error).to be_a Errors::ValidationError
+              expect(error.type).to eq :validation
+              expect(error.code).to eq :missing_postal_code
+            end
+          end
+        end
       end
     end
     context 'with a fulfillment_type of PICKUP' do
-      it 'returns the origin address' do
-        expect(@service_pickup.send(:destination_address)).to eq artwork_location
+      context 'with a valid address' do
+        it 'returns the origin address' do
+          expect(@service_pickup.send(:destination_address)).to eq artwork_location
+        end
+      end
+      context 'with an invalid address' do
+        context 'with missing region' do
+          it 'raises an invalid_artwork_address error' do
+            invalid_artwork_location = Address.new(country: 'US', postal_code: '10013')
+            service = SalesTaxService.new(line_item, Order::PICKUP, Address.new(shipping), shipping_total_cents, invalid_artwork_location, seller_addresses)
+            expect { service.send(:destination_address) }.to raise_error do |error|
+              expect(error).to be_a Errors::ValidationError
+              expect(error.type).to eq :validation
+              expect(error.code).to eq :invalid_artwork_address
+            end
+          end
+        end
+        context 'with missing postal code' do
+          it 'raises an invalid_artwork_address error' do
+            invalid_artwork_location = Address.new(country: 'US', region: 'NY')
+            service = SalesTaxService.new(line_item, Order::PICKUP, Address.new(shipping), shipping_total_cents, invalid_artwork_location, seller_addresses)
+            expect { service.send(:destination_address) }.to raise_error do |error|
+              expect(error).to be_a Errors::ValidationError
+              expect(error.type).to eq :validation
+              expect(error.code).to eq :invalid_artwork_address
+            end
+          end
+        end
       end
     end
   end
@@ -331,6 +368,51 @@ describe SalesTaxService, type: :services do
     context 'with a non-US-based address' do
       it 'returns false' do
         expect(@service_ship.send(:address_taxable?, untaxable_address)).to eq false
+      end
+    end
+  end
+
+  describe '#process_nexus_addresses' do
+    context 'with no addresses' do
+      it 'raises an error' do
+        expect { @service_ship.send(:process_nexus_addresses!, []) }.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.type).to eq :validation
+          expect(error.code).to eq :no_taxable_addresses
+        end
+      end
+    end
+    context 'with no valid taxable addresses' do
+      it 'raises an error' do
+        expect { @service_ship.send(:process_nexus_addresses!, [untaxable_address]) }.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.type).to eq :validation
+          expect(error.code).to eq :no_taxable_addresses
+        end
+      end
+    end
+    context 'with taxable addresses' do
+      it 'filters out non-taxable addresses' do
+        addresses = seller_addresses + [untaxable_address]
+        expect(@service_ship.send(:process_nexus_addresses!, addresses)).to eq seller_addresses
+      end
+      it 'validates taxable addresses' do
+        seller_addresses.each do |ad|
+          expect(@service_ship).to receive(:validate_nexus_address!).with(ad)
+        end
+        @service_ship.send(:process_nexus_addresses!, seller_addresses)
+      end
+    end
+  end
+  context '#validate_nexus_address!' do
+    context 'with an address with a missing region' do
+      it 'raises an error' do
+        invalid_address = Address.new(country: 'US')
+        expect { @service_ship.send(:validate_nexus_address!, invalid_address) }.to raise_error do |error|
+          expect(error).to be_a Errors::ValidationError
+          expect(error.type).to eq :validation
+          expect(error.code).to eq :invalid_seller_address
+        end
       end
     end
   end
