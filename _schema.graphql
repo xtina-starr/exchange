@@ -282,7 +282,7 @@ type Order {
   id: ID!
 
   # Item total in cents, for Offer Orders this field reflects current offer
-  itemsTotalCents: Int!
+  itemsTotalCents: Int
   lastApprovedAt: DateTime
   lastOffer: Offer
   lastSubmittedAt: DateTime
