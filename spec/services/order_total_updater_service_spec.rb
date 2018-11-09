@@ -16,8 +16,8 @@ describe OrderTotalUpdaterService, type: :service do
         end
       end
       context 'with line items' do
-        let(:line_item1) { Fabricate(:line_item, order: order, price_cents: 100_00, sales_tax_cents: 500, should_remit_sales_tax: true) }
-        let(:line_item2) { Fabricate(:line_item, order: order, price_cents: 200_00, quantity: 2, sales_tax_cents: 10_00, should_remit_sales_tax: false) }
+        let(:line_item1) { Fabricate(:line_item, order: order, list_price_cents: 100_00, sales_tax_cents: 500, should_remit_sales_tax: true) }
+        let(:line_item2) { Fabricate(:line_item, order: order, list_price_cents: 200_00, quantity: 2, sales_tax_cents: 10_00, should_remit_sales_tax: false) }
         let!(:line_items) { [line_item1, line_item2] }
         context 'with shipping and tax' do
           let(:shipping_total_cents) { 50_00 }
@@ -64,9 +64,7 @@ describe OrderTotalUpdaterService, type: :service do
     end
     context 'OFFER order' do
       let(:mode) { Order::OFFER }
-      let(:line_item1) { Fabricate(:line_item, order: order, price_cents: 100_00, sales_tax_cents: 500, should_remit_sales_tax: true) }
-      let(:line_item2) { Fabricate(:line_item, order: order, price_cents: 200_00, quantity: 2, sales_tax_cents: 10_00, should_remit_sales_tax: false) }
-      let!(:line_items) { [line_item1, line_item2] }
+      let!(:line_item1) { Fabricate(:line_item, order: order, list_price_cents: 200_00, quantity: 2, sales_tax_cents: 10_00, should_remit_sales_tax: false) }
 
       context 'with last_offer' do
         let(:offer) { Fabricate(:offer, order: order, amount_cents: 300_00) }
@@ -79,12 +77,11 @@ describe OrderTotalUpdaterService, type: :service do
           context 'without commission rate' do
             it 'sets correct totals on the order' do
               OrderTotalUpdaterService.new(order).update_totals!
-              expect(order.items_total_cents).to eq 500_00
-              expect(order.offer_total_cents).to eq 300_00
+              expect(order.items_total_cents).to eq 300_00
               expect(order.buyer_total_cents).to eq(300_00 + 50_00 + 60_00)
               expect(order.transaction_fee_cents).to eq 12_19
               expect(order.commission_fee_cents).to be_nil
-              expect(order.seller_total_cents).to eq(410_00 - 12_19 - 500)
+              expect(order.seller_total_cents).to eq(300_00 + 50_00 + 60_00 - 12_19)
             end
           end
           context 'with commission rate' do
@@ -102,17 +99,15 @@ describe OrderTotalUpdaterService, type: :service do
             end
             it 'sets correct totals on the order' do
               OrderTotalUpdaterService.new(order, 0.40).update_totals!
-              expect(order.items_total_cents).to eq 500_00
-              expect(order.offer_total_cents).to eq 300_00
+              expect(order.items_total_cents).to eq 300_00
               expect(order.buyer_total_cents).to eq(300_00 + 50_00 + 60_00)
               expect(order.transaction_fee_cents).to eq 12_19
               expect(order.commission_fee_cents).to eq 120_00
-              expect(order.seller_total_cents).to eq(410_00 - (12_19 + 120_00 + 500))
+              expect(order.seller_total_cents).to eq(410_00 - (12_19 + 120_00))
             end
             it 'does not set commission on line items' do
               OrderTotalUpdaterService.new(order, 0.40).update_totals!
-              expect(line_item1.reload.commission_fee_cents).to be_nil
-              expect(line_item2.reload.commission_fee_cents).to be_nil
+              expect(line_item1.reload.commission_fee_cents).to eq 12000
             end
           end
         end

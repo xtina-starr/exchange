@@ -146,8 +146,8 @@ class Order < ApplicationRecord
     admin_notes.order(:created_at).last
   end
 
-  def current_total_cents
-    mode == OFFER ? offer_total_cents : items_total_cents
+  def total_list_price_cents
+    line_items.map(&:total_list_price_cents).sum
   end
 
   private

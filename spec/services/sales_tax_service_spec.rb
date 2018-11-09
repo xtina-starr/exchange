@@ -4,7 +4,7 @@ require 'support/gravity_helper'
 describe SalesTaxService, type: :services do
   let(:taxjar_client) { double }
   let(:order) { Fabricate(:order, id: 1) }
-  let!(:line_item) { Fabricate(:line_item, id: 1, order: order, price_cents: 2000_00, artwork_id: 'gravity_artwork_1', sales_tax_cents: 100) }
+  let!(:line_item) { Fabricate(:line_item, id: 1, order: order, list_price_cents: 2000_00, artwork_id: 'gravity_artwork_1', sales_tax_cents: 100) }
   let(:shipping_total_cents) { 2222 }
   let(:transaction_id) { "#{line_item.order.id}__#{line_item.id}" }
   let(:shipping) do
@@ -39,7 +39,7 @@ describe SalesTaxService, type: :services do
   let(:artwork_location) { Address.new(gravity_v1_artwork[:location]) }
   let(:base_tax_params) do
     {
-      amount: UnitConverter.convert_cents_to_dollars(line_item.price_cents),
+      amount: UnitConverter.convert_cents_to_dollars(line_item.list_price_cents),
       nexus_addresses: seller_addresses.map do |ad|
         {
           country: ad.country,
@@ -160,7 +160,7 @@ describe SalesTaxService, type: :services do
         line_items: [
           {
             quantity: line_item.quantity,
-            unit_price: UnitConverter.convert_cents_to_dollars(line_item.price_cents)
+            unit_price: UnitConverter.convert_cents_to_dollars(line_item.list_price_cents)
           }
         ]
       )

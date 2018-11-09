@@ -7,8 +7,8 @@ module Errors
       credit_card_missing_external_id
       credit_card_not_found
       failed_order_code_generation
-      invalid_artwork_address
       invalid_amount_cents
+      invalid_artwork_address
       invalid_commission_rate
       invalid_order
       invalid_seller_address
@@ -31,8 +31,9 @@ module Errors
       no_taxable_addresses
       not_acquireable
       not_found
-      not_offerable
       not_last_offer
+      not_offerable
+      offer_more_than_one_line_item
       unknown_artwork
       unknown_edition_set
       unknown_partner

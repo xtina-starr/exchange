@@ -191,7 +191,8 @@ type LineItem {
     last: Int
   ): FulfillmentConnection
   id: ID!
-  priceCents: Int!
+  listPriceCents: Int!
+  priceCents: Int! @deprecated(reason: "switch to use listPriceCents")
   quantity: Int!
   updatedAt: DateTime!
 }
@@ -278,6 +279,8 @@ type Order {
   currencyCode: String!
   displayCommissionRate: String
   id: ID!
+
+  # Item total in cents, for Offer Orders this field reflects current offer
   itemsTotalCents: Int!
   lastApprovedAt: DateTime
   lastOffer: Offer
@@ -296,7 +299,7 @@ type Order {
     last: Int
   ): LineItemConnection
   mode: OrderModeEnum
-  offerTotalCents: Int
+  offerTotalCents: Int! @deprecated(reason: "itemsTotalCents reflects offer total for offer orders.")
   offers(
     # Returns the elements in the list that come after the specified cursor.
     after: String
@@ -321,6 +324,7 @@ type Order {
   stateReason: String
   stateUpdatedAt: DateTime
   taxTotalCents: Int
+  totalListPriceCents: Int!
   transactionFeeCents: Int
   updatedAt: DateTime!
 }

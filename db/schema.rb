@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_10_30_164042) do
+ActiveRecord::Schema.define(version: 2018_11_05_214933) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -62,7 +62,7 @@ ActiveRecord::Schema.define(version: 2018_10_30_164042) do
     t.uuid "order_id"
     t.string "artwork_id"
     t.string "edition_set_id"
-    t.integer "price_cents"
+    t.integer "list_price_cents"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "quantity", default: 1, null: false
@@ -121,7 +121,6 @@ ActiveRecord::Schema.define(version: 2018_10_30_164042) do
     t.float "commission_rate"
     t.string "mode", null: false
     t.uuid "last_offer_id"
-    t.integer "offer_total_cents"
     t.string "original_user_agent"
     t.string "original_user_ip"
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"

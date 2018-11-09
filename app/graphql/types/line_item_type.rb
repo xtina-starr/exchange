@@ -3,7 +3,8 @@ class Types::LineItemType < Types::BaseObject
   graphql_name 'LineItem'
 
   field :id, ID, null: false
-  field :price_cents, Integer, null: false
+  field :price_cents, Integer, null: false, deprecation_reason: 'switch to use listPriceCents'
+  field :list_price_cents, Integer, null: false
   field :artwork_id, String, null: false
   field :edition_set_id, String, null: true
   field :quantity, Integer, null: false
@@ -11,4 +12,8 @@ class Types::LineItemType < Types::BaseObject
   field :created_at, Types::DateTimeType, null: false
   field :updated_at, Types::DateTimeType, null: false
   field :fulfillments, Types::FulfillmentType.connection_type, null: true
+
+  def price_cents
+    object.list_price_cents
+  end
 end

@@ -31,13 +31,14 @@ describe OrderEvent, type: :events do
               buyer_total_cents: 380,
               **shipping_info)
   end
-  let(:line_item1) { Fabricate(:line_item, price_cents: 200, order: order, commission_fee_cents: 40) }
-  let(:line_item2) { Fabricate(:line_item, price_cents: 100, quantity: 2, order: order, commission_fee_cents: 20) }
+  let(:line_item1) { Fabricate(:line_item, list_price_cents: 200, order: order, commission_fee_cents: 40) }
+  let(:line_item2) { Fabricate(:line_item, list_price_cents: 100, quantity: 2, order: order, commission_fee_cents: 20) }
   let!(:line_items) { [line_item1, line_item2] }
   let(:line_item_properties) do
     [
       {
         price_cents: 200,
+        list_price_cents: 200,
         artwork_id: line_item1.artwork_id,
         edition_set_id: line_item1.edition_set_id,
         quantity: 1,
@@ -45,6 +46,7 @@ describe OrderEvent, type: :events do
       },
       {
         price_cents: 100,
+        list_price_cents: 100,
         artwork_id: line_item2.artwork_id,
         edition_set_id: line_item2.edition_set_id,
         quantity: 2,
