@@ -8,7 +8,7 @@ class Mutations::SetPayment < Mutations::BaseMutation
 
   def resolve(id:, credit_card_id:)
     order = Order.find(id)
-    validate_buyer_request!(order)
+    authorize_buyer_request!(order)
     {
       order_or_error: { order: OrderService.set_payment!(order, credit_card_id) }
     }

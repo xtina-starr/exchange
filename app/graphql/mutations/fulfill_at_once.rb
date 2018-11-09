@@ -9,7 +9,7 @@ class Mutations::FulfillAtOnce < Mutations::BaseMutation
 
   def resolve(id:, fulfillment:)
     order = Order.find(id)
-    validate_seller_request!(order)
+    authorize_seller_request!(order)
     {
       order_or_error: { order: OrderService.fulfill_at_once!(order, fulfillment.to_h, context[:current_user][:id]) }
     }
