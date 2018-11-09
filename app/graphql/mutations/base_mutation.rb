@@ -7,6 +7,10 @@ class Mutations::BaseMutation < GraphQL::Schema::RelayClassicMutation
     raise Errors::ValidationError, :not_found unless authorized_to_buy?(order)
   end
 
+  def authorize_offer_owner_request!(offer)
+    raise Errors::ValidationError, :not_found unless context[:current_user]['id'] == offer.from_id && offer.from_type == Order::USER
+  end
+
   private
 
   def authorized_to_sell?(order)

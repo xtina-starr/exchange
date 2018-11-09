@@ -10,4 +10,5 @@ class Types::MutationType < Types::BaseObject
   field :fulfill_at_once, mutation: Mutations::FulfillAtOnce
   field :confirm_pickup, mutation: Mutations::ConfirmPickup
   field :initial_offer, mutation: Mutations::InitialOffer
+  field :submit_order_with_offer, mutation: Mutations::SubmitOrderWithOffer
 end

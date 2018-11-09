@@ -42,7 +42,7 @@ class OrderSubmitService
   private
 
   def pre_process!
-    raise Errors::ValidationError, :missing_required_info unless can_submit?
+    raise Errors::ValidationError, :missing_required_info unless @order.can_submit?
 
     @order.line_items.map do |li|
       artwork = GravityService.get_artwork(li[:artwork_id])
@@ -85,10 +85,6 @@ class OrderSubmitService
     raise Errors::ValidationError.new(:credit_card_missing_external_id, credit_card_id: @credit_card[:id]) if @credit_card[:external_id].blank?
     raise Errors::ValidationError.new(:credit_card_missing_customer, credit_card_id: @credit_card[:id]) if @credit_card.dig(:customer_account, :external_id).blank?
     raise Errors::ValidationError.new(:credit_card_deactivated, credit_card_id: @credit_card[:id]) unless @credit_card[:deactivated_at].nil?
-  end
-
-  def can_submit?
-    @order.shipping_info? && @order.payment_info?
   end
 
   def charge_description

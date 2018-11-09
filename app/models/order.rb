@@ -150,6 +150,10 @@ class Order < ApplicationRecord
     line_items.map(&:total_list_price_cents).sum
   end
 
+  def can_submit?
+    shipping_info? && payment_info?
+  end
+
   private
 
   def state_reason_inclusion
