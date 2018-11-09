@@ -72,7 +72,7 @@ class OrderShippingService
   end
 
   def validate_shipping_location!
-    raise Errors::ValidationError, :missing_country unless @shipping_address&.country.present?
+    raise Errors::ValidationError, :missing_country if @shipping_address&.country.blank?
 
     domestic_shipping_only = artworks.any? do |(_, artwork)|
       artwork[:international_shipping_fee_cents].nil? && international_shipping?(artwork[:location])
