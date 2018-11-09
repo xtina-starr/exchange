@@ -1,6 +1,6 @@
 class Address
   attr_reader :country, :region, :city, :street_line1, :street_line2, :postal_code
-
+  UNITED_STATES = Carmen::Country.coded('US')
   def initialize(address)
     @address = parse(address)
     @country = @address[:country]
@@ -21,15 +21,14 @@ class Address
   end
 
   def united_states?
-    @country == Carmen::Country.coded('US').code
+    @country == UNITED_STATES.code
   end
 
   # The "continental United States" is defined as any US state that isn't Alaska or Hawaii.
   def continental_us?
-    us = Carmen::Country.coded('US')
     united_states? &&
-      @region != us.subregions.coded('HI').code &&
-      @region != us.subregions.coded('AK').code
+      @region != UNITED_STATES.subregions.coded('HI').code &&
+      @region != UNITED_STATES.subregions.coded('AK').code
   end
 
   private
@@ -49,7 +48,7 @@ class Address
   end
 
   def parse_region(country, region)
-    return region unless country&.code == Carmen::Country.coded('US').code || country&.code == Carmen::Country.coded('CA').code
+    return region unless country&.code == UNITED_STATES.code || country&.code == Carmen::Country.coded('CA').code
 
     parsed_region = country.subregions.named(region) || country.subregions.coded(region)
     parsed_region&.code
