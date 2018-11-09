@@ -23,6 +23,8 @@ describe Api::GraphqlController, type: :request do
               ... on OrderWithMutationSuccess {
                 order {
                   id
+                  itemsTotalCents
+                  totalListPriceCents
                   buyer {
                     ... on Partner {
                       id
@@ -88,6 +90,8 @@ describe Api::GraphqlController, type: :request do
                 order_id = response.data.create_offer_order_with_artwork.order_or_error.order.id
                 expect(order_id).not_to be_nil
                 expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
+                expect(response.data.create_offer_order_with_artwork.order_or_error.order.items_total_cents).to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error.order.total_list_price_cents).to eq 840084
                 order = Order.find(order_id)
                 expect(order.currency_code).to eq 'USD'
                 expect(order.buyer_id).to eq jwt_user_id
