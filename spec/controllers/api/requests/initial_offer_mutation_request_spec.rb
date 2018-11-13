@@ -135,7 +135,7 @@ describe Api::GraphqlController, type: :request do
           expect(response_order.last_offer.from.id).to eq user_id
           expect(response_order.last_offer.responds_to).to be_nil
           expect(response_order.last_offer.creator_id).to eq user_id
-          expect(response_order.offers.edges.count).to eq 1
+          expect(response_order.offers.edges.count).to eq 0 # offer is not submitted yet
         end
       end
     end

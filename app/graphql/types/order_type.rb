@@ -29,6 +29,7 @@ class Types::OrderType < Types::BaseObject
   field :offers, Types::OfferType.connection_type, null: true do
     argument :from_id, String, required: false
     argument :from_type, String, required: false
+    argument :include_pending, Boolean, required: false
   end
   field :total_list_price_cents, Integer, null: false
   field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
@@ -71,11 +72,10 @@ class Types::OrderType < Types::BaseObject
   end
 
   def offers(**args)
-    if args.keys.any? { |ar| %i[from_id from_type].include? ar }
-      object.offers.where(args.slice(:from_id, :from_type))
-    else
-      object.offers.all
-    end
+    include_pending = args.delete(:include_pending)
+    offers = include_pending ? object.offers.all : object.offers.submitted
+    offers = offers.where(args.slice(:from_id, :from_type)) if args.keys.any? { |ar| %i[from_id from_type].include? ar }
+    offers
   end
 
   def offer_total_cents

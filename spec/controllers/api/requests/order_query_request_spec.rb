@@ -33,7 +33,7 @@ describe Api::GraphqlController, type: :request do
 
     let(:query) do
       <<-GRAPHQL
-        query($id: ID, $offerFromId: String, $offerFromType: String) {
+        query($id: ID, $offerFromId: String, $offerFromType: String, $offerIncludePending: Boolean) {
           order(id: $id) {
             id
             mode
@@ -83,7 +83,7 @@ describe Api::GraphqlController, type: :request do
                 }
               }
             }
-            offers(fromId: $offerFromId, fromType: $offerFromType) {
+            offers(fromId: $offerFromId, fromType: $offerFromType, includePending: $offerIncludePending) {
               edges {
                 node {
                   id
@@ -230,13 +230,13 @@ describe Api::GraphqlController, type: :request do
         before do
           user1_order1.update! last_offer: offer2
         end
-        it 'includes offers' do
+        it 'excludes pending offers' do
           result = client.execute(query, id: user1_order1.id)
-          expect(result.data.order.offers.edges.count).to eq 2
-          expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [offer1.id, offer2.id]
-          expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200, 300]
-          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id, partner_id]
-          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User Partner]
+          expect(result.data.order.offers.edges.count).to eq 1
+          expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [offer1.id]
+          expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200]
+          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id]
+          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User]
           expect(result.data.order.offers.edges.first.node.submitted_at).to eq '2018-01-01T00:00:00Z'
         end
         it 'includes last_offer' do
@@ -248,7 +248,7 @@ describe Api::GraphqlController, type: :request do
         end
         describe 'offer filters' do
           it 'filters by from id' do
-            result = client.execute(query, id: user1_order1.id, offerFromId: user_id)
+            result = client.execute(query, id: user1_order1.id, offerFromId: user_id, offerIncludePending: true)
             expect(result.data.order.offers.edges.count).to eq 1
             expect(result.data.order.offers.edges.map(&:node).map(&:id)).to eq [offer1.id]
             expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to eq [200]
@@ -256,12 +256,21 @@ describe Api::GraphqlController, type: :request do
             expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to eq %w[User]
           end
           it 'filters by from type' do
-            result = client.execute(query, id: user1_order1.id, offerFromType: 'gallery')
+            result = client.execute(query, id: user1_order1.id, offerFromType: 'gallery', offerIncludePending: true)
             expect(result.data.order.offers.edges.count).to eq 1
             expect(result.data.order.offers.edges.map(&:node).map(&:id)).to eq [offer2.id]
             expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to eq [300]
             expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to eq [partner_id]
             expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to eq %w[Partner]
+          end
+          it 'includes pending offers when requested' do
+            result = client.execute(query, id: user1_order1.id, offerIncludePending: true)
+            expect(result.data.order.offers.edges.count).to eq 2
+            expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [offer1.id, offer2.id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200, 300]
+            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id, partner_id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User Partner]
+            expect(result.data.order.offers.edges.first.node.submitted_at).to eq '2018-01-01T00:00:00Z'
           end
         end
       end

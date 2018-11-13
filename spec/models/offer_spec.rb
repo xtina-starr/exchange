@@ -20,4 +20,15 @@ RSpec.describe Offer, type: :model do
       expect(first_offer.last_offer?).to eq(false)
     end
   end
+
+  describe '#scopes' do
+    describe 'submitted' do
+      let!(:offer1) { Fabricate(:offer, submitted_at: Time.now) }
+      let!(:offer2) { Fabricate(:offer, submitted_at: nil) }
+      let!(:offer3) { Fabricate(:offer, submitted_at: nil) }
+      it 'returns submitted offers' do
+        expect(Offer.submitted).to match_array [offer1]
+      end
+    end
+  end
 end
