@@ -3,7 +3,7 @@ module OrderService
     raise Errors::ValidationError.new(:invalid_state, state: order.state) unless order.state == Order::PENDING
 
     credit_card = GravityService.get_credit_card(credit_card_id)
-    raise Errors::ValidationError.new(:non_buyer_credit_card, credit_card_id: credit_card_id) unless credit_card.dig(:user, :_id) == order.buyer_id
+    raise Errors::ValidationError.new(:invalid_credit_card, credit_card_id: credit_card_id) unless credit_card.dig(:user, :_id) == order.buyer_id
 
     order.update!(credit_card_id: credit_card_id)
     order

@@ -26,7 +26,7 @@ describe OrderService, type: :services do
           expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(invalid_credit_card)
           expect { OrderService.set_payment!(order, credit_card_id) }.to raise_error do |error|
             expect(error).to be_a Errors::ValidationError
-            expect(error.code).to eq :non_buyer_credit_card
+            expect(error.code).to eq :invalid_credit_card
           end
         end
       end

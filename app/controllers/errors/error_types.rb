@@ -11,6 +11,7 @@ module Errors
       invalid_amount_cents
       invalid_artwork_address
       invalid_commission_rate
+      invalid_credit_card
       invalid_offer
       invalid_order
       invalid_seller_address
@@ -31,7 +32,6 @@ module Errors
       missing_required_info
       missing_required_param
       no_taxable_addresses
-      non_buyer_credit_card
       not_acquireable
       not_found
       not_last_offer

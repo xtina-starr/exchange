@@ -95,7 +95,7 @@ describe Api::GraphqlController, type: :request do
             expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(invalid_credit_card)
             response = client.execute(mutation, set_payment_input)
             expect(response.data.set_payment.order_or_error.error.type).to eq 'validation'
-            expect(response.data.set_payment.order_or_error.error.code).to eq 'non_buyer_credit_card'
+            expect(response.data.set_payment.order_or_error.error.code).to eq 'invalid_credit_card'
             expect(order.reload.credit_card_id).to be_nil
           end
         end
