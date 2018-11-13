@@ -4,7 +4,7 @@ describe OrderService, type: :services do
   include_context 'use stripe mock'
   let(:state) { Order::PENDING }
   let(:state_reason) { state == Order::CANCELED ? 'seller_lapsed' : nil }
-  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state, state_reason: state_reason) }
+  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state, state_reason: state_reason, buyer_id: 'b123') }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
 
@@ -12,9 +12,23 @@ describe OrderService, type: :services do
     let(:credit_card_id) { 'gravity-cc-1' }
     context 'order in pending state' do
       let(:state) { Order::PENDING }
-      it 'sets credit_card_id on the order' do
-        OrderService.set_payment!(order, credit_card_id)
-        expect(order.reload.credit_card_id).to eq 'gravity-cc-1'
+      context "with a credit card id for the buyer's credit card" do
+        let(:credit_card) { { id: credit_card_id, user: { _id: 'b123' } } }
+        it 'sets credit_card_id on the order' do
+          expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+          OrderService.set_payment!(order, credit_card_id)
+          expect(order.reload.credit_card_id).to eq 'gravity-cc-1'
+        end
+      end
+      context 'with a credit card id for credit card not belonging to the buyer' do
+        let(:invalid_credit_card) { { id: credit_card_id, user: { _id: 'b456' } } }
+        it 'raises an error' do
+          expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(invalid_credit_card)
+          expect { OrderService.set_payment!(order, credit_card_id) }.to raise_error do |error|
+            expect(error).to be_a Errors::ValidationError
+            expect(error.code).to eq :invalid_credit_card
+          end
+        end
       end
     end
     Order::STATES.reject { |s| s == Order::PENDING }.each do |state|
@@ -28,9 +42,6 @@ describe OrderService, type: :services do
         end
       end
     end
-  end
-
-  describe 'set_shipping!' do
   end
 
   describe 'fulfill_at_once!' do

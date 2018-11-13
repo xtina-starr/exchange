@@ -11,6 +11,7 @@ module Errors
       invalid_amount_cents
       invalid_artwork_address
       invalid_commission_rate
+      invalid_credit_card
       invalid_offer
       invalid_order
       invalid_seller_address

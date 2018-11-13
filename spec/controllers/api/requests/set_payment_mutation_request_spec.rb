@@ -6,6 +6,7 @@ describe Api::GraphqlController, type: :request do
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'gravity-cc-1' }
+    let(:credit_card) { { id: credit_card_id, user: { _id: user_id } } }
     let(:order) { Fabricate(:order, seller_id: partner_id, buyer_id: user_id) }
 
     let(:mutation) do
@@ -74,15 +75,30 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      it 'sets payments on the order' do
-        response = client.execute(mutation, set_payment_input)
-        expect(response.data.set_payment.order_or_error.order.id).to eq order.id.to_s
-        expect(response.data.set_payment.order_or_error.order.state).to eq 'PENDING'
-        expect(response.data.set_payment.order_or_error.order.credit_card_id).to eq 'gravity-cc-1'
-        expect(response.data.set_payment.order_or_error).not_to respond_to(:error)
-        expect(order.reload.credit_card_id).to eq credit_card_id
-        expect(order.state).to eq Order::PENDING
-        expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
+      context 'with an order in pending state' do
+        context 'with a credit card that belongs to the buyer' do
+          it 'sets payments on the order' do
+            expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+            response = client.execute(mutation, set_payment_input)
+            expect(response.data.set_payment.order_or_error.order.id).to eq order.id.to_s
+            expect(response.data.set_payment.order_or_error.order.state).to eq 'PENDING'
+            expect(response.data.set_payment.order_or_error.order.credit_card_id).to eq 'gravity-cc-1'
+            expect(response.data.set_payment.order_or_error).not_to respond_to(:error)
+            expect(order.reload.credit_card_id).to eq credit_card_id
+            expect(order.state).to eq Order::PENDING
+            expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
+          end
+        end
+        context 'with a credit card that does not belong to the buyer' do
+          let(:invalid_credit_card) { { id: credit_card_id, user: { _id: 'someone_else' } } }
+          it 'raises an error' do
+            expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(invalid_credit_card)
+            response = client.execute(mutation, set_payment_input)
+            expect(response.data.set_payment.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_payment.order_or_error.error.code).to eq 'invalid_credit_card'
+            expect(order.reload.credit_card_id).to be_nil
+          end
+        end
       end
     end
   end
