@@ -26,7 +26,7 @@ Metrics/MethodLength:
     - "db/migrate/*"
 
 Metrics/ClassLength:
-  Max: 165
+  Max: 170
 
 Metrics/ModuleLength:
   Max: 151

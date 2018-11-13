@@ -5,4 +5,8 @@ class Offer < ApplicationRecord
   def last_offer?
     order.last_offer == self
   end
+
+  def submitted?
+    submitted_at.present?
+  end
 end
