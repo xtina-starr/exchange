@@ -60,6 +60,20 @@ describe Api::GraphqlController, type: :request do
                       id
                     }
                   }
+                  myLastOffer {
+                    id
+                    amountCents
+                    submittedAt
+                    creatorId
+                    from {
+                      ... on User {
+                        id
+                      }
+                    }
+                    respondsTo {
+                      id
+                    }
+                  }
                 }
               }
               ... on OrderWithMutationFailure {
@@ -131,10 +145,12 @@ describe Api::GraphqlController, type: :request do
           response_order = response.data.initial_offer.order_or_error.order
           expect(response_order.id).to eq(order_id)
           expect(response_order.total_list_price_cents).to eq 400
-          expect(response_order.last_offer.amount_cents).to eq 500
-          expect(response_order.last_offer.from.id).to eq user_id
-          expect(response_order.last_offer.responds_to).to be_nil
-          expect(response_order.last_offer.creator_id).to eq user_id
+          expect(response_order.last_offer).to be_nil
+          expect(response_order.my_last_offer.amount_cents).to eq 500
+          expect(response_order.my_last_offer.from.id).to eq user_id
+          expect(response_order.my_last_offer.responds_to).to be_nil
+          expect(response_order.my_last_offer.creator_id).to eq user_id
+          expect(response_order.my_last_offer.submitted_at).to be_nil
           expect(response_order.offers.edges.count).to eq 0 # offer is not submitted yet
         end
       end

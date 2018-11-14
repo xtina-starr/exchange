@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_11_08_193631) do
+ActiveRecord::Schema.define(version: 2018_11_13_234322) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -84,6 +84,8 @@ ActiveRecord::Schema.define(version: 2018_11_08_193631) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "submitted_at"
+    t.integer "tax_total_cents"
+    t.integer "shipping_total_cents"
     t.index ["order_id"], name: "index_offers_on_order_id"
     t.index ["responds_to_id"], name: "index_offers_on_responds_to_id"
   end

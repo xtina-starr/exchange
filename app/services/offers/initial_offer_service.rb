@@ -12,7 +12,6 @@ module Offers
       assert_offer!
       @order.with_lock do
         @offer = @order.offers.create!(amount_cents: @amount_cents, from_id: @user_id, from_type: Order::USER, creator_id: @user_id)
-        @order.update!(last_offer: @offer)
         OrderTotalUpdaterService.new(@order).update_totals!
       end
     end

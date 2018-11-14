@@ -50,8 +50,8 @@ describe Offers::InitialOfferService, type: :services do
         expect(offer.from_type).to eq Order::USER
         expect(offer.creator_id).to eq user_id
         expect(order.reload.state).to eq state
-        expect(order.last_offer).to eq offer
-        expect(order.items_total_cents).to eq 2_00
+        expect(order.last_offer).to be_nil
+        expect(order.items_total_cents).to eq 0
       end
     end
   end

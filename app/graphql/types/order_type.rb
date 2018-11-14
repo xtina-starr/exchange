@@ -31,6 +31,7 @@ class Types::OrderType < Types::BaseObject
     argument :from_type, String, required: false
     argument :include_pending, Boolean, required: false
   end
+  field :my_last_offer, Types::OfferType, null: true
   field :total_list_price_cents, Integer, null: false
   field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
   field :last_offer, Types::OfferType, null: true
@@ -81,5 +82,11 @@ class Types::OrderType < Types::BaseObject
   def offer_total_cents
     # This can be removed once reaction is updated to `itemsTotalCents`
     object.items_total_cents
+  end
+
+  def my_last_offer
+    return unless context[:current_user][:id]
+
+    object.offers.where(creator_id: context[:current_user][:id]).order(created_at: :desc).first
   end
 end

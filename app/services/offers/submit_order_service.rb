@@ -11,6 +11,7 @@ module Offers
       assert_can_submit!
       @order.submit! do
         @offer.update!(submitted_at: Time.now.utc)
+        @order.update!(last_offer: @offer)
       end
       post_process
     end
@@ -27,7 +28,7 @@ module Offers
     def assert_can_submit!
       raise Errors::ValidationError, :cant_submit unless @order.mode == Order::OFFER
       raise Errors::ValidationError, :missing_required_info unless @order.can_submit?
-      raise Errors::ValidationError, :invalid_offer if !@offer.last_offer? || @offer.submitted?
+      raise Errors::ValidationError, :invalid_offer if @offer.submitted?
     end
   end
 end

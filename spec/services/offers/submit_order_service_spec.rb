@@ -71,17 +71,6 @@ describe Offers::SubmitOrderService, type: :services do
         end
       end
 
-      context 'offer not last offer' do
-        let(:new_last_offer) { Fabricate(:offer, order: order) }
-        it 'raises invalid_offer error' do
-          order.update!(last_offer: new_last_offer)
-          expect { service.process! }.to raise_error do |e|
-            expect(e.type).to eq :validation
-            expect(e.code).to eq :invalid_offer
-          end
-        end
-      end
-
       Order::STATES.reject { |s| [Order::CANCELED, Order::PENDING].include? s }.each do |state|
         context "#{state} order" do
           let(:order_state) { state }
