@@ -30,6 +30,7 @@ class Types::OrderType < Types::BaseObject
     argument :from_id, String, required: false
     argument :from_type, String, required: false
   end
+  field :my_last_offer, Types::OfferType, null: true
   field :total_list_price_cents, Integer, null: false
   field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
   field :last_offer, Types::OfferType, null: true, description: 'Last submitted offer'

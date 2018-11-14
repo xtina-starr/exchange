@@ -145,7 +145,7 @@ describe Api::GraphqlController, type: :request do
           response_order = response.data.initial_offer.order_or_error.order
           expect(response_order.id).to eq(order_id)
           expect(response_order.total_list_price_cents).to eq 400
-          expect(response_order.last_offer).not_to be_nil
+          expect(response_order.last_offer).to be_nil
           expect(response_order.my_last_offer.amount_cents).to eq 500
           expect(response_order.my_last_offer.from.id).to eq user_id
           expect(response_order.my_last_offer.responds_to).to be_nil

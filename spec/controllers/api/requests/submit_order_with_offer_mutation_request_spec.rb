@@ -95,16 +95,6 @@ describe Api::GraphqlController, type: :request do
         expect(order.reload.state).to eq Order::ABANDONED
       end
 
-      it 'if the offer is not the last offer' do
-        Offers::InitialOfferService.new(order, 700_00, user_id).process!
-
-        response = client.execute(mutation, submit_order_input)
-        expect(response.data.submit_order_with_offer.order_or_error).not_to respond_to(:order)
-        expect(response.data.submit_order_with_offer.order_or_error.error.code).to eq 'invalid_offer'
-        expect(response.data.submit_order_with_offer.order_or_error.error.type).to eq 'validation'
-        expect(order.reload.state).to eq Order::PENDING
-      end
-
       it 'if the offer has already been submitted' do
         @offer.update!(submitted_at: Time.now.utc)
 
