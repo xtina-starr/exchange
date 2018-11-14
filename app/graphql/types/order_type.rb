@@ -34,7 +34,7 @@ class Types::OrderType < Types::BaseObject
   field :my_last_offer, Types::OfferType, null: true
   field :total_list_price_cents, Integer, null: false
   field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
-  field :last_offer, Types::OfferType, null: true
+  field :last_offer, Types::OfferType, null: true, description: 'Last submitted offer'
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true, seller_only: true
   field :updated_at, Types::DateTimeType, null: false

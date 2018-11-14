@@ -1,4 +1,4 @@
-class Mutations::InitialOffer < Mutations::BaseMutation
+class Mutations::AddOfferToPendingOrder < Mutations::BaseMutation
   null true
 
   argument :order_id, ID, required: true
