@@ -156,11 +156,13 @@ class Order < ApplicationRecord
 
   def waiting_buyer_response
     return unless mode == Order::OFFER
+
     state == Order::SUBMITTED && last_offer && last_offer.from_id == seller_id && last_offer.from_type == seller_type
   end
 
   def waiting_seller_response
     return unless mode == Order::OFFER
+
     state == Order::SUBMITTED && last_offer && last_offer.from_id == buyer_id && last_offer.from_type == buyer_type
   end
 
