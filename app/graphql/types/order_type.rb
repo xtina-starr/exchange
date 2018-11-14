@@ -38,6 +38,8 @@ class Types::OrderType < Types::BaseObject
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true, seller_only: true
   field :updated_at, Types::DateTimeType, null: false
+  field :waiting_buyer_response, Boolean, null: true
+  field :waiting_seller_response, Boolean, null: true
 
   def buyer
     OpenStruct.new(
