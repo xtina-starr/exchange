@@ -2,7 +2,7 @@ require 'rails_helper'
 require 'support/gravity_helper'
 
 describe Api::GraphqlController, type: :request do
-  describe 'add_offer_to_pending_order mutation' do
+  describe 'initial_offer mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
@@ -21,8 +21,8 @@ describe Api::GraphqlController, type: :request do
     end
     let(:mutation) do
       <<-GRAPHQL
-        mutation($input: AddOfferToPendingOrderInput!) {
-          addOfferToPendingOrder(input: $input) {
+        mutation($input: InitialOfferInput!) {
+          initialOffer(input: $input) {
             orderOrError {
               ... on OrderWithMutationSuccess {
                 order {
@@ -95,8 +95,8 @@ describe Api::GraphqlController, type: :request do
           let(:state) { state }
           it 'returns error' do
             response = client.execute(mutation, input: { orderId: order_id, amountCents: 100 })
-            expect(response.data.add_offer_to_pending_order.order_or_error.error.type).to eq('validation')
-            expect(response.data.add_offer_to_pending_order.order_or_error.error.code).to eq('cant_offer')
+            expect(response.data.initial_offer.order_or_error.error.type).to eq('validation')
+            expect(response.data.initial_offer.order_or_error.error.code).to eq('cant_offer')
           end
         end
       end
@@ -105,8 +105,8 @@ describe Api::GraphqlController, type: :request do
         let(:state_reason) { 'seller_lapsed' }
         it 'returns error' do
           response = client.execute(mutation, input: { orderId: order_id, amountCents: 100 })
-          expect(response.data.add_offer_to_pending_order.order_or_error.error.type).to eq('validation')
-          expect(response.data.add_offer_to_pending_order.order_or_error.error.code).to eq('cant_offer')
+          expect(response.data.initial_offer.order_or_error.error.type).to eq('validation')
+          expect(response.data.initial_offer.order_or_error.error.code).to eq('cant_offer')
         end
       end
       context 'Pending order' do
@@ -130,19 +130,19 @@ describe Api::GraphqlController, type: :request do
 
         it 'requires positive amount' do
           response = client.execute(mutation, input: { orderId: order_id, amountCents: -3 })
-          expect(response.data.add_offer_to_pending_order.order_or_error.error.type).to eq('validation')
-          expect(response.data.add_offer_to_pending_order.order_or_error.error.code).to eq('invalid_amount_cents')
+          expect(response.data.initial_offer.order_or_error.error.type).to eq('validation')
+          expect(response.data.initial_offer.order_or_error.error.code).to eq('invalid_amount_cents')
         end
 
         it 'requires nonzero positive amount' do
           response = client.execute(mutation, input: { orderId: order_id, amountCents: 0 })
-          expect(response.data.add_offer_to_pending_order.order_or_error.error.type).to eq('validation')
-          expect(response.data.add_offer_to_pending_order.order_or_error.error.code).to eq('invalid_amount_cents')
+          expect(response.data.initial_offer.order_or_error.error.type).to eq('validation')
+          expect(response.data.initial_offer.order_or_error.error.code).to eq('invalid_amount_cents')
         end
 
         it 'returns the order' do
           response = client.execute(mutation, input: mutation_input)
-          response_order = response.data.add_offer_to_pending_order.order_or_error.order
+          response_order = response.data.initial_offer.order_or_error.order
           expect(response_order.id).to eq(order_id)
           expect(response_order.total_list_price_cents).to eq 400
           expect(response_order.last_offer).to be_nil
