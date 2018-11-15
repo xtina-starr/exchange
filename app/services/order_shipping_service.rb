@@ -50,7 +50,7 @@ class OrderShippingService
       @order.line_items.map do |li|
         artwork_address = Address.new(artworks[li.artwork_id][:location])
         begin
-          service = SalesTaxService.new(li, @fulfillment_type, @shipping_address, shipping_total_cents, artwork_address, seller_addresses)
+          service = Tax::CalculatorService.new(li.total_amount_cents, li.effective_price_cents, li.quantity, @fulfillment_type, @shipping_address, shipping_total_cents, artwork_address, seller_addresses)
           li.update!(sales_tax_cents: service.sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
           service.sales_tax
         rescue Errors::ValidationError => e

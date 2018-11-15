@@ -1,12 +1,14 @@
 require 'rails_helper'
 require 'support/gravity_helper'
 
-describe SalesTaxService, type: :services do
+describe Tax::CalculatorService, type: :services do
   let(:taxjar_client) { double }
-  let(:order) { Fabricate(:order, id: 1) }
-  let!(:line_item) { Fabricate(:line_item, id: 1, order: order, list_price_cents: 2000_00, artwork_id: 'gravity_artwork_1', sales_tax_cents: 100) }
+  let(:line_item_total_cents) { 2000_00 }
+  let(:line_item_unit_price) { 2000_00 }
+  let(:line_item_quantity) { 1 }
   let(:shipping_total_cents) { 2222 }
-  let(:transaction_id) { "#{line_item.order.id}__#{line_item.id}" }
+  let(:refund_sales_tax_cents) { 100 }
+  let(:transaction_id) { 'order_id_line_item_id' }
   let(:shipping) do
     {
       country: 'US',
@@ -39,7 +41,7 @@ describe SalesTaxService, type: :services do
   let(:artwork_location) { Address.new(gravity_v1_artwork[:location]) }
   let(:base_tax_params) do
     {
-      amount: UnitConverter.convert_cents_to_dollars(line_item.list_price_cents),
+      amount: UnitConverter.convert_cents_to_dollars(line_item_unit_price),
       nexus_addresses: seller_addresses.map do |ad|
         {
           country: ad.country,
@@ -63,23 +65,23 @@ describe SalesTaxService, type: :services do
 
   before do
     silence_warnings do
-      SalesTaxService.const_set('REMITTING_STATES', ['fl'])
+      Tax::CalculatorService.const_set('REMITTING_STATES', ['fl'])
     end
     allow(Taxjar::Client).to receive(:new).with(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key'], api_url: nil).and_return(taxjar_client)
-    @service_ship = SalesTaxService.new(line_item, Order::SHIP, shipping_address, shipping_total_cents, artwork_location, seller_addresses)
-    @service_pickup = SalesTaxService.new(line_item, Order::PICKUP, Address.new({}), shipping_total_cents, artwork_location, seller_addresses)
+    @service_ship = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::SHIP, shipping_address, shipping_total_cents, artwork_location, seller_addresses)
+    @service_pickup = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::PICKUP, Address.new({}), shipping_total_cents, artwork_location, seller_addresses)
   end
 
   after do
     silence_warnings do
-      SalesTaxService.const_set('REMITTING_STATES', [])
+      Tax::CalculatorService.const_set('REMITTING_STATES', [])
     end
   end
 
   describe '#initialize' do
     context 'with a destination address in a remitting state' do
       it 'sets seller_nexus_addresses to only be taxable seller addresses' do
-        service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses + [untaxable_address])
+        service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses + [untaxable_address])
         expect(service.instance_variable_get(:@seller_nexus_addresses)).to eq seller_addresses
       end
     end
@@ -89,7 +91,7 @@ describe SalesTaxService, type: :services do
     context 'with a destination address in a remitting state' do
       it 'sets effective_shipping_total_cents to @shipping_total_cents' do
         shipping[:region] = 'FL'
-        service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
+        service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
         expect(service.send(:effective_shipping_total_cents)).to eq shipping_total_cents
       end
     end
@@ -128,7 +130,7 @@ describe SalesTaxService, type: :services do
         context 'with missing region' do
           it 'raises a missing_region error' do
             shipping[:region] = nil
-            service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
+            service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
             expect { service.send(:destination_address) }.to raise_error do |error|
               expect(error).to be_a Errors::ValidationError
               expect(error.type).to eq :validation
@@ -139,7 +141,7 @@ describe SalesTaxService, type: :services do
         context 'with missing postal code' do
           it 'raises a missing_postal_code error' do
             shipping[:postal_code] = nil
-            service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
+            service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
             expect { service.send(:destination_address) }.to raise_error do |error|
               expect(error).to be_a Errors::ValidationError
               expect(error.type).to eq :validation
@@ -159,7 +161,7 @@ describe SalesTaxService, type: :services do
         context 'with missing region' do
           it 'raises an invalid_artwork_address error' do
             invalid_artwork_location = Address.new(country: 'US', postal_code: '10013')
-            service = SalesTaxService.new(line_item, Order::PICKUP, Address.new(shipping), shipping_total_cents, invalid_artwork_location, seller_addresses)
+            service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::PICKUP, Address.new(shipping), shipping_total_cents, invalid_artwork_location, seller_addresses)
             expect { service.send(:destination_address) }.to raise_error do |error|
               expect(error).to be_a Errors::ValidationError
               expect(error.type).to eq :validation
@@ -170,7 +172,7 @@ describe SalesTaxService, type: :services do
         context 'with missing postal code' do
           it 'raises an invalid_artwork_address error' do
             invalid_artwork_location = Address.new(country: 'US', region: 'NY')
-            service = SalesTaxService.new(line_item, Order::PICKUP, Address.new(shipping), shipping_total_cents, invalid_artwork_location, seller_addresses)
+            service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::PICKUP, Address.new(shipping), shipping_total_cents, invalid_artwork_location, seller_addresses)
             expect { service.send(:destination_address) }.to raise_error do |error|
               expect(error).to be_a Errors::ValidationError
               expect(error.type).to eq :validation
@@ -187,8 +189,8 @@ describe SalesTaxService, type: :services do
       base_tax_params.merge(
         line_items: [
           {
-            quantity: line_item.quantity,
-            unit_price: UnitConverter.convert_cents_to_dollars(line_item.list_price_cents)
+            quantity: line_item_quantity,
+            unit_price: UnitConverter.convert_cents_to_dollars(line_item_unit_price)
           }
         ]
       )
@@ -200,77 +202,13 @@ describe SalesTaxService, type: :services do
     end
   end
 
-  describe '#record_tax_collected' do
-    context 'when Artsy needs to remit taxes and line item has sales tax' do
-      before do
-        expect(@service_ship).to receive(:artsy_should_remit_taxes?).and_return(true)
-      end
-      it 'calls post_transaction and saves the result to @transaction' do
-        expect(@service_ship).to receive(:post_transaction).and_return(double(transaction_id: '123'))
-        @service_ship.record_tax_collected
-        expect(@service_ship.transaction).to_not be_nil
-      end
-      context 'with an error from TaxJar' do
-        before do
-          order.submit!
-          order.approve!
-        end
-        it 'raises a ProcessingError with a code of tax_recording_failure' do
-          expect(taxjar_client).to receive(:create_order).and_raise(Taxjar::Error)
-          expect { @service_ship.record_tax_collected }.to raise_error do |error|
-            expect(error).to be_a Errors::ProcessingError
-            expect(error.type).to eq :processing
-            expect(error.code).to eq :tax_recording_failure
-          end
-        end
-      end
-    end
-    context 'when Artsy does not need to remit taxes' do
-      it 'does nothing' do
-        expect(@service_ship).to receive(:artsy_should_remit_taxes?).and_return(false)
-        expect(@service_ship).to_not receive(:post_transaction)
-        @service_ship.record_tax_collected
-      end
-    end
-    context 'when line item does not have sales tax' do
-      it 'does nothing' do
-        line_item.sales_tax_cents = 0
-        service = SalesTaxService.new(line_item, Order::SHIP, shipping_address, shipping_total_cents, artwork_location, seller_addresses)
-        allow(service).to receive(:artsy_should_remit_taxes?).and_return(true)
-        allow(service).to receive(:post_transaction)
-        service.record_tax_collected
-        expect(service).to_not have_received(:post_transaction)
-      end
-    end
-  end
-
-  describe '#post_transaction' do
-    let(:params) do
-      base_tax_params.merge(
-        transaction_id: transaction_id,
-        transaction_date: line_item.order.last_approved_at.iso8601,
-        sales_tax: UnitConverter.convert_cents_to_dollars(line_item.sales_tax_cents)
-      )
-    end
-    before do
-      # We need to trigger the state actions to generate the state history
-      # necessary for `last_updated_at`
-      order.submit!
-      order.approve!
-    end
-    it 'calls the Taxjar API with the correct parameters' do
-      expect(taxjar_client).to receive(:create_order).with(params)
-      @service_ship.send(:post_transaction)
-    end
-  end
-
   describe '#artsy_should_remit_taxes?' do
     context 'with an order that has a US-based destination address' do
       context 'with a state where we are required to remit taxes' do
         it 'returns true' do
-          SalesTaxService::REMITTING_STATES.each do |state|
+          Tax::CalculatorService::REMITTING_STATES.each do |state|
             shipping[:region] = state
-            service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
+            service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
             expect(service.send(:artsy_should_remit_taxes?)).to be true
           end
         end
@@ -284,59 +222,9 @@ describe SalesTaxService, type: :services do
     context 'with an order that has a non-US destination address' do
       it 'returns false' do
         shipping[:country] = 'FR'
-        service = SalesTaxService.new(line_item, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
+        service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
         expect(service.send(:artsy_should_remit_taxes?)).to be false
       end
-    end
-  end
-
-  describe '#refund_transaction' do
-    context 'with an existing transaction in Taxjar' do
-      it 'refunds the transaction' do
-        expect(taxjar_client).to receive(:show_order).with(transaction_id).and_return(double)
-        expect(@service_ship).to receive(:post_refund)
-        @service_ship.refund_transaction(Time.new(2018, 1, 1))
-      end
-    end
-    context 'without an existing transaction in Taxjar' do
-      it 'does nothing' do
-        expect(taxjar_client).to receive(:show_order).with(transaction_id).and_return(nil)
-        expect(@service_ship).to_not receive(:post_refund)
-        @service_ship.refund_transaction(Time.new(2018, 1, 1))
-      end
-    end
-    context 'with an error from TaxJar' do
-      it 'raises a ProcessingError with a code of tax_refund_failure' do
-        expect(taxjar_client).to receive(:show_order).and_raise(Taxjar::Error)
-        expect { @service_ship.refund_transaction(Time.new(2018, 1, 1)) }.to raise_error do |error|
-          expect(error).to be_a Errors::ProcessingError
-          expect(error.type).to eq :processing
-          expect(error.code).to eq :tax_refund_failure
-        end
-      end
-    end
-  end
-
-  describe '#get_transaction' do
-    it "returns nil if TaxJar can't find the associated record" do
-      expect(taxjar_client).to receive(:show_order).and_raise(Taxjar::Error::NotFound)
-      expect(@service_ship.send(:get_transaction, 'tx_id')).to be_nil
-    end
-  end
-
-  describe '#post_refund' do
-    let(:transaction_date) { Time.new(2018, 1, 1) }
-    let(:params) do
-      base_tax_params.merge(
-        transaction_id: "refund_#{transaction_id}",
-        transaction_date: transaction_date.iso8601,
-        transaction_reference_id: transaction_id,
-        sales_tax: UnitConverter.convert_cents_to_dollars(line_item.sales_tax_cents)
-      )
-    end
-    it 'calls the TaxJar API with the correct parameters' do
-      expect(taxjar_client).to receive(:create_refund).with(params)
-      @service_ship.send(:post_refund, transaction_date)
     end
   end
 
