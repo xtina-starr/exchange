@@ -101,18 +101,9 @@ describe SalesTaxService, type: :services do
   end
 
   describe '#sales_tax' do
-    context 'with a sales tax breakdown' do
-      it 'calls fetch_sales_tax and returns the amount of sales tax to collect on a state level' do
-        expect(@service_ship).to receive(:fetch_sales_tax).and_return(tax_response_with_breakdown)
-        expect(@service_ship.sales_tax).to eq 200
-      end
-    end
-    context 'without a sales tax breakdown' do
-      it 'calls fetch_sales_tax and returns the total amount to collect' do
-        expect(@service_ship).to receive(:fetch_sales_tax).and_return(tax_response)
-        expect(tax_response).to receive(:breakdown).and_return(nil)
-        expect(@service_ship.sales_tax).to eq 300
-      end
+    it 'calls fetch_sales_tax and returns the total amount to collect' do
+      expect(@service_ship).to receive(:fetch_sales_tax).and_return(tax_response)
+      expect(@service_ship.sales_tax).to eq 300
     end
     context 'with an error from TaxJar' do
       it 'raises a ProcessingError with a code of tax_calculator_failure' do
