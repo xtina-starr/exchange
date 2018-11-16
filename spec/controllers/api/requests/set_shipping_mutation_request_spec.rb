@@ -180,6 +180,11 @@ describe Api::GraphqlController, type: :request do
 
         context 'with a shipping address with an unrecognized country' do
           let(:shipping_country) { 'ASDF' }
+          before do
+            allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+            allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/locations?private=true").and_return([{ country: 'FR' }])
+          end
           it 'returns proper error' do
             response = client.execute(mutation, set_shipping_input)
             expect(response.data.set_shipping.order_or_error).to respond_to(:error)

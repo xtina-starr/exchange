@@ -10,8 +10,6 @@ class OrderShippingService
   def process!
     raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
 
-    validate_shipping_location! if @fulfillment_type == Order::SHIP
-
     Order.transaction do
       attrs = {
         shipping_total_cents: shipping_total_cents,
@@ -71,44 +69,7 @@ class OrderShippingService
     raise Errors::ValidationError, :missing_artwork_location if artwork[:location].blank?
   end
 
-  def validate_shipping_location!
-    raise Errors::ValidationError, :missing_country if @shipping_address&.country.blank?
-
-    domestic_shipping_only = artworks.any? do |(_, artwork)|
-      artwork[:international_shipping_fee_cents].nil? && international_shipping?(artwork[:location])
-    end
-
-    raise Errors::ValidationError.new(:unsupported_shipping_location, failure_code: :domestic_shipping_only) if domestic_shipping_only
-  end
-
   def shipping_total_cents
-    @shipping_total_cents ||= @order.line_items.map { |li| artwork_shipping_fee(artworks[li.artwork_id]) }.sum
-  end
-
-  def artwork_shipping_fee(artwork)
-    if @fulfillment_type == Order::PICKUP
-      0
-    elsif domestic_shipping?(artwork[:location])
-      calculate_domestic_shipping_fee(artwork)
-    else
-      calculate_international_shipping_fee(artwork)
-    end
-  end
-
-  def domestic_shipping?(artwork_location)
-    artwork_location[:country].casecmp(@shipping_address.country).zero? &&
-      (@shipping_address.country != Carmen::Country.coded('US').code || @shipping_address.continental_us?)
-  end
-
-  def international_shipping?(artwork_location)
-    !domestic_shipping?(artwork_location)
-  end
-
-  def calculate_domestic_shipping_fee(artwork)
-    artwork[:domestic_shipping_fee_cents] || raise(Errors::ValidationError, :missing_domestic_shipping_fee)
-  end
-
-  def calculate_international_shipping_fee(artwork)
-    artwork[:international_shipping_fee_cents] || raise(Errors::ValidationError, :missing_international_shipping_fee)
+    @shipping_total_cents ||= @order.line_items.map { |li| ShippingCalculatorService.new(artworks[li.artwork_id], @fulfillment_type, @shipping_address).shipping_cents }.sum
   end
 end
