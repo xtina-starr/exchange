@@ -1,38 +1,42 @@
 class OrderShippingService
-  def initialize(order, fulfillment_type:, shipping:)
+  def initialize(order, fulfillment_type:, shipping:, pending_offer: nil)
     @order = order
     @fulfillment_type = fulfillment_type
     @shipping_address = Address.new(shipping) if @fulfillment_type == Order::SHIP
     @buyer_name = shipping[:name]
     @buyer_phone_number = shipping[:phone_number]
+    @pending_offer = pending_offer
   end
 
   def process!
     raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
 
     Order.transaction do
-      attrs = {
-        shipping_total_cents: shipping_total_cents,
-        tax_total_cents: tax_total_cents
-      }
       @order.update!(
-        attrs.merge(
-          fulfillment_type: @fulfillment_type,
-          buyer_phone_number: @buyer_phone_number,
-          shipping_name: @buyer_name,
-          shipping_address_line1: @shipping_address&.street_line1,
-          shipping_address_line2: @shipping_address&.street_line2,
-          shipping_city: @shipping_address&.city,
-          shipping_region: @shipping_address&.region,
-          shipping_country: @shipping_address&.country,
-          shipping_postal_code: @shipping_address&.postal_code
-        )
+        fulfillment_type: @fulfillment_type,
+        buyer_phone_number: @buyer_phone_number,
+        shipping_name: @buyer_name,
+        shipping_address_line1: @shipping_address&.street_line1,
+        shipping_address_line2: @shipping_address&.street_line2,
+        shipping_city: @shipping_address&.city,
+        shipping_region: @shipping_address&.region,
+        shipping_country: @shipping_address&.country,
+        shipping_postal_code: @shipping_address&.postal_code
       )
+      @pending_offer.present? ? set_offer_totals! : set_order_totals!
       OrderTotalUpdaterService.new(@order).update_totals!
     end
   end
 
   private
+
+  def set_order_totals!
+    @order.update!(shipping_total_cents: shipping_total_cents, tax_total_cents: tax_total_cents)
+  end
+
+  def set_offer_totals!
+    @pending_offer.update!(shipping_total_cents: shipping_total_cents, tax_total_cents: offer_tax_total_cents)
+  end
 
   def artworks
     @artworks ||= Hash[@order.line_items.pluck(:artwork_id).uniq.map do |artwork_id|
@@ -59,6 +63,34 @@ class OrderShippingService
           0
         end
       end.sum
+    end
+  rescue Errors::AddressError => e
+    raise Errors::ValidationError, e.code
+  end
+
+  def offer_tax_total_cents
+    seller_addresses = GravityService.fetch_partner_locations(@order.seller_id)
+    artwork_id = @order.line_items.first.artwork_id # this is with assumption of Offer order only having one lineItem
+    artwork = @artworks[artwork_id]
+    @tax_total_cents ||= begin
+      artwork_address = Address.new(artwork[:location])
+      begin
+        Tax::CalculatorService.new(
+          @pending_offer.amount_cents,
+          @pending_offer.amount_cents / @order.line_items.first.quantity,
+          @order.line_items.first.quantity,
+          @order.fulfillment_type,
+          @order.shipping_address,
+          shipping_total_cents,
+          artwork_address,
+          seller_addresses
+        ).sales_tax
+      rescue Errors::ValidationError => e
+        raise e unless e.code == :no_taxable_addresses
+
+        # If there are no taxable addresses then we set the sales tax to 0.
+        0
+      end
     end
   rescue Errors::AddressError => e
     raise Errors::ValidationError, e.code

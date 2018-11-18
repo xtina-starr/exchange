@@ -10,7 +10,8 @@ class Mutations::SetShipping < Mutations::BaseMutation
   def resolve(id:, fulfillment_type:, shipping: {})
     order = Order.find(id)
     authorize_buyer_request!(order)
-    OrderShippingService.new(order, fulfillment_type: fulfillment_type, shipping: shipping).process!
+    current_pending_offer = order.offers.pending.where(creator_id: context[:current_user][:id]).first if order.mode == Order::OFFER
+    OrderShippingService.new(order, fulfillment_type: fulfillment_type, shipping: shipping, pending_offer: current_pending_offer).process!
     {
       order_or_error: { order: order.reload }
     }
