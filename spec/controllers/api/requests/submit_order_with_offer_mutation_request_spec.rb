@@ -1,4 +1,5 @@
 require 'rails_helper'
+require 'support/gravity_helper'
 
 describe Api::GraphqlController, type: :request do
   describe 'submit order with offer' do
@@ -6,8 +7,11 @@ describe Api::GraphqlController, type: :request do
 
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
-    let(:credit_card_id) { 'cc-1' }
-    let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
+    let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
+    let(:line_item_artwork_version) { artwork[:current_version_id] }
+    let(:credit_card_id) { 'grav_c_id1' }
+    let(:credit_card) { { external_id: 'cc-1', customer_account: { external_id: 'cus-1' }, deactivated_at: nil } }
+    let(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: artwork[:_id], artwork_version_id: line_item_artwork_version, quantity: 2) }
     let(:order) do
       Fabricate(
         :order,
@@ -27,11 +31,6 @@ describe Api::GraphqlController, type: :request do
         buyer_total_cents: 1000_00
       )
     end
-    let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
-    let(:line_item) do
-      Fabricate(:line_item, order: order, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1')
-    end
-
     let(:mutation) do
       <<-GRAPHQL
         mutation($input: SubmitOrderWithOfferInput!) {
@@ -86,6 +85,9 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'if the order is not in a pending state' do
+        allow(GravityService).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
+        allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
         order.update!(state: 'abandoned')
 
         response = client.execute(mutation, submit_order_input)
@@ -143,6 +145,11 @@ describe Api::GraphqlController, type: :request do
             offerId: @offer.id.to_s
           }
         }
+      end
+      before do
+        allow(GravityService).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
+        allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
       end
 
       it 'submits the order and updates submitted_at on the offer' do
