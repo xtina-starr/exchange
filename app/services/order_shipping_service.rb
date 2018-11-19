@@ -35,7 +35,8 @@ class OrderShippingService
   end
 
   def set_offer_totals!
-    @pending_offer.update!(shipping_total_cents: shipping_total_cents, tax_total_cents: offer_tax_total_cents)
+    @pending_offer.update!(shipping_total_cents: shipping_total_cents)
+    set_offer_tax_total_cents
   end
 
   def artworks
@@ -68,14 +69,14 @@ class OrderShippingService
     raise Errors::ValidationError, e.code
   end
 
-  def offer_tax_total_cents
+  def set_offer_tax_total_cents
     seller_addresses = GravityService.fetch_partner_locations(@order.seller_id)
     artwork_id = @order.line_items.first.artwork_id # this is with assumption of Offer order only having one lineItem
     artwork = @artworks[artwork_id]
     @tax_total_cents ||= begin
       artwork_address = Address.new(artwork[:location])
       begin
-        Tax::CalculatorService.new(
+        service = Tax::CalculatorService.new(
           @pending_offer.amount_cents,
           @pending_offer.amount_cents / @order.line_items.first.quantity,
           @order.line_items.first.quantity,
@@ -84,12 +85,13 @@ class OrderShippingService
           shipping_total_cents,
           artwork_address,
           seller_addresses
-        ).sales_tax
+        )
+        @pending_offer.update!(tax_total_cents: service.sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
       rescue Errors::ValidationError => e
         raise e unless e.code == :no_taxable_addresses
 
         # If there are no taxable addresses then we set the sales tax to 0.
-        0
+        @pending_offer.update!(tax_total_cents: 0, should_remit_sales_tax: false)
       end
     end
   rescue Errors::AddressError => e

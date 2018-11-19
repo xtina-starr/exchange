@@ -1,5 +1,4 @@
 class Tax::CollectorService
-  REMITTING_STATES = [].freeze
   attr_reader :transaction
   def initialize(
     line_item,

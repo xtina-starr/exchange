@@ -11,6 +11,7 @@ module Offers
       pre_process!
       @order.submit! do
         @offer.update!(submitted_at: Time.now.utc)
+        @order.line_items.first.update!(sales_tax_cents: @offer.tax_total_cents, should_remit_sales_tax: @offer.should_remit_sales_tax)
         @order.update!(last_offer: @offer, shipping_total_cents: @offer.shipping_total_cents, tax_total_cents: @offer.tax_total_cents)
         OrderTotalUpdaterService.new(@order, @partner[:effective_commission_rate]).update_totals!
       end
