@@ -287,6 +287,12 @@ type OfferEdge {
   node: Offer
 }
 
+enum OfferSidesEnum {
+  # Buyer
+  BUYER
+  SELLERSeller
+}
+
 # An Order
 type Order {
   buyer: OrderPartyUnion!
@@ -352,8 +358,7 @@ type Order {
   totalListPriceCents: Int!
   transactionFeeCents: Int
   updatedAt: DateTime!
-  waitingBuyerResponse: Boolean
-  waitingSellerResponse: Boolean
+  waitingResponseFrom: OfferSidesEnum
 }
 
 # Fields to sort by

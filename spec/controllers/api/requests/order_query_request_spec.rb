@@ -57,8 +57,7 @@ describe Api::GraphqlController, type: :request do
             buyerTotalCents
             createdAt
             displayCommissionRate
-            waitingBuyerResponse
-            waitingSellerResponse
+            waitingResponseFrom
             lastOffer {
               id
               amountCents
@@ -251,26 +250,18 @@ describe Api::GraphqlController, type: :request do
           expect(result.data.order.last_offer.responds_to.id).to eq buyer_offer.id
         end
         context 'last offer from seller' do
-          it 'returns true for waitingBuyerResponse' do
+          it 'returns BUYER for waitingResponseFrom' do
             result = client.execute(query, id: user1_order1.id)
-            expect(result.data.order.waiting_buyer_response).to eq true
-          end
-          it 'returns false for waitingSellerResponse' do
-            result = client.execute(query, id: user1_order1.id)
-            expect(result.data.order.waiting_seller_response).to eq false
+            expect(result.data.order.waiting_response_from).to eq 'BUYER'
           end
         end
         context 'last offer from buyer' do
           before do
             user1_order1.update! last_offer: buyer_offer
           end
-          it 'returns true for waitingBuyerResponse' do
+          it 'returns BUYER for waitingResponseFrom' do
             result = client.execute(query, id: user1_order1.id)
-            expect(result.data.order.waiting_buyer_response).to eq false
-          end
-          it 'returns false for waitingSellerResponse' do
-            result = client.execute(query, id: user1_order1.id)
-            expect(result.data.order.waiting_seller_response).to eq true
+            expect(result.data.order.waiting_response_from).to eq 'SELLER'
           end
         end
         describe 'offer filters' do

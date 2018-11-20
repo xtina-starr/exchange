@@ -38,8 +38,7 @@ class Types::OrderType < Types::BaseObject
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true, seller_only: true
   field :updated_at, Types::DateTimeType, null: false
-  field :waiting_buyer_response, Boolean, null: true
-  field :waiting_seller_response, Boolean, null: true
+  field :waiting_response_from, Types::OfferSidesEnum, null: true
 
   def buyer
     OpenStruct.new(
@@ -62,6 +61,16 @@ class Types::OrderType < Types::BaseObject
     return if object.fulfillment_type.blank?
 
     object
+  end
+
+  def waiting_response_from
+    return unless object.mode == Order::OFFER && object.state == Order::SUBMITTED
+
+    if object&.last_offer&.from_id == object.seller_id && object&.last_offer&.from_type == object.seller_type
+      'buyer'
+    elsif object&.last_offer&.from_id == object.buyer_id && object&.last_offer&.from_type == object.buyer_type
+      'seller'
+    end
   end
 
   def display_commission_rate
