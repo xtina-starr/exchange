@@ -41,8 +41,10 @@ describe Api::GraphqlController, type: :request do
                 order {
                   id
                   state
-                  lastOffer {
-                    submittedAt
+                  ... on OfferOrder {
+                    lastOffer {
+                      submittedAt
+                    }
                   }
                 }
               }

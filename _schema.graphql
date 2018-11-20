@@ -60,6 +60,7 @@ type BuyOrder implements Order {
   # Item total in cents, for Offer Orders this field reflects current offer
   itemsTotalCents: Int
   lastApprovedAt: DateTime
+  lastOffer: Offer @deprecated(reason: "Switch to OfferOrder lastOffer")
   lastSubmittedAt: DateTime
   lineItems(
     # Returns the elements in the list that come after the specified cursor.
@@ -422,6 +423,7 @@ interface Order {
   # Item total in cents, for Offer Orders this field reflects current offer
   itemsTotalCents: Int
   lastApprovedAt: DateTime
+  lastOffer: Offer @deprecated(reason: "Switch to OfferOrder lastOffer")
   lastSubmittedAt: DateTime
   lineItems(
     # Returns the elements in the list that come after the specified cursor.

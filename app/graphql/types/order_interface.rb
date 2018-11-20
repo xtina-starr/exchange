@@ -1,5 +1,7 @@
 module Types::OrderInterface
   include Types::BaseInterface
+  field_class Types::BaseField
+
   description 'Order'
   graphql_name 'Order'
 
@@ -9,7 +11,7 @@ module Types::OrderInterface
   field :buyer_phone_number, String, null: true
   field :buyer_total_cents, Integer, null: true
   field :buyer, Types::OrderPartyUnionType, null: false
-  field :commission_fee_cents, Integer, null: true# , seller_only: true
+  field :commission_fee_cents, Integer, null: true, seller_only: true
   field :commission_rate, Float, null: true
   field :created_at, Types::DateTimeType, null: false
   field :credit_card_id, String, null: true
@@ -20,7 +22,7 @@ module Types::OrderInterface
   field :last_submitted_at, Types::DateTimeType, null: true
   field :line_items, Types::LineItemType.connection_type, null: true
   field :requested_fulfillment, Types::RequestedFulfillmentUnionType, null: true
-  field :seller_total_cents, Integer, null: true# , seller_only: true
+  field :seller_total_cents, Integer, null: true, seller_only: true
   field :seller, Types::OrderPartyUnionType, null: false
   field :shipping_total_cents, Integer, null: true
   field :state_expires_at, Types::DateTimeType, null: true
@@ -40,9 +42,12 @@ module Types::OrderInterface
   field :total_list_price_cents, Integer, null: false
 >>>>>>> First pass in OrderInterface:app/graphql/types/order_interface.rb
   field :tax_total_cents, Integer, null: true
-  field :transaction_fee_cents, Integer, null: true# , seller_only: true
+  field :transaction_fee_cents, Integer, null: true, seller_only: true
   field :updated_at, Types::DateTimeType, null: false
   field :awaiting_response_from, Types::OrderParticipantEnum, null: true
+
+  # Deprecated
+  field :last_offer, Types::OfferType, null: true, deprecation_reason: 'Switch to OfferOrder lastOffer'
 
   orphan_types Types::BuyOrderType, Types::OfferOrderType
 
@@ -109,7 +114,7 @@ module Types::OrderInterface
   # Optional, see below
   definition_methods do
     # Optional: if this method is defined, it overrides `Schema.resolve_type`
-    def resolve_type(object, context)
+    def resolve_type(object, _context)
       case object.mode
       when Order::BUY then Types::BuyOrderType
       when Order::OFFER then Types::OfferOrderType

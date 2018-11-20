@@ -32,19 +32,21 @@ describe Api::GraphqlController, type: :request do
           order(id: $id) {
             id
             mode
-            myLastOffer {
-              id
-              amountCents
-              from {
-                ... on User {
-                  id
+            ... on OfferOrder {
+              myLastOffer {
+                id
+                amountCents
+                from {
+                  ... on User {
+                    id
+                  }
                 }
               }
-            }
-            offers{
-              edges {
-                node {
-                  id
+              offers{
+                edges {
+                  node {
+                    id
+                  }
                 }
               }
             }
