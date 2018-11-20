@@ -1,5 +1,6 @@
-class Types::OrderType < Types::BaseObject
-  description 'An Order'
+module Types::OrderInterface
+  include Types::BaseInterface
+  description 'Order'
   graphql_name 'Order'
 
   field :id, ID, null: false
@@ -8,7 +9,7 @@ class Types::OrderType < Types::BaseObject
   field :buyer_phone_number, String, null: true
   field :buyer_total_cents, Integer, null: true
   field :buyer, Types::OrderPartyUnionType, null: false
-  field :commission_fee_cents, Integer, null: true, seller_only: true
+  field :commission_fee_cents, Integer, null: true# , seller_only: true
   field :commission_rate, Float, null: true
   field :created_at, Types::DateTimeType, null: false
   field :credit_card_id, String, null: true
@@ -19,13 +20,14 @@ class Types::OrderType < Types::BaseObject
   field :last_submitted_at, Types::DateTimeType, null: true
   field :line_items, Types::LineItemType.connection_type, null: true
   field :requested_fulfillment, Types::RequestedFulfillmentUnionType, null: true
-  field :seller_total_cents, Integer, null: true, seller_only: true
+  field :seller_total_cents, Integer, null: true# , seller_only: true
   field :seller, Types::OrderPartyUnionType, null: false
   field :shipping_total_cents, Integer, null: true
   field :state_expires_at, Types::DateTimeType, null: true
   field :state_reason, String, null: true
   field :state_updated_at, Types::DateTimeType, null: true
   field :state, Types::OrderStateEnum, null: false
+<<<<<<< HEAD:app/graphql/types/order_type.rb
   field :offers, Types::OfferType.connection_type, null: true do
     argument :from_id, String, required: false
     argument :from_type, String, required: false
@@ -34,10 +36,15 @@ class Types::OrderType < Types::BaseObject
   field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
   field :last_offer, Types::OfferType, null: true, description: 'Last submitted offer'
   field :my_last_offer, Types::OfferType, null: true, description: 'Most recent offer for the current user'
+=======
+  field :total_list_price_cents, Integer, null: false
+>>>>>>> First pass in OrderInterface:app/graphql/types/order_interface.rb
   field :tax_total_cents, Integer, null: true
-  field :transaction_fee_cents, Integer, null: true, seller_only: true
+  field :transaction_fee_cents, Integer, null: true# , seller_only: true
   field :updated_at, Types::DateTimeType, null: false
   field :awaiting_response_from, Types::OrderParticipantEnum, null: true
+
+  orphan_types Types::BuyOrderType, Types::OfferOrderType
 
   def buyer
     OpenStruct.new(
@@ -82,6 +89,7 @@ class Types::OrderType < Types::BaseObject
     )
   end
 
+<<<<<<< HEAD:app/graphql/types/order_type.rb
   def offers(**args)
     offers = object.offers.submitted
     offers = offers.where(args.slice(:from_id, :from_type)) if args.keys.any? { |ar| %i[from_id from_type].include? ar }
@@ -97,5 +105,18 @@ class Types::OrderType < Types::BaseObject
     return unless context[:current_user][:id]
 
     object.offers.where(creator_id: context[:current_user][:id]).order(created_at: :desc).first
+=======
+  # Optional, see below
+  definition_methods do
+    # Optional: if this method is defined, it overrides `Schema.resolve_type`
+    def resolve_type(object, context)
+      case object.mode
+      when Order::BUY then Types::BuyOrderType
+      when Order::OFFER then Types::OfferOrderType
+      else
+        raise 'Unknown order type'
+      end
+    end
+>>>>>>> First pass in OrderInterface:app/graphql/types/order_interface.rb
   end
 end

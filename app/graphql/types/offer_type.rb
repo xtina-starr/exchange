@@ -8,7 +8,7 @@ class Types::OfferType < Types::BaseObject
   field :creator_id, String, null: false
   field :created_at, Types::DateTimeType, null: false
   field :submitted_at, Types::DateTimeType, null: true
-  field :order, Types::OrderType, null: false
+  field :order, Types::OrderInterface, null: false
   field :responds_to, Types::OfferType, null: true
 
   def from
