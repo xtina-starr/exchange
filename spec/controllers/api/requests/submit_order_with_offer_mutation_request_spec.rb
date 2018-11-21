@@ -41,6 +41,7 @@ describe Api::GraphqlController, type: :request do
                   id
                   state
                   lastOffer {
+                    id
                     submittedAt
                   }
                 }
@@ -156,6 +157,7 @@ describe Api::GraphqlController, type: :request do
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order_with_offer.order_or_error).not_to respond_to(:error)
         expect(response.data.submit_order_with_offer.order_or_error.order.state).to eq 'SUBMITTED'
+        expect(response.data.submit_order_with_offer.order_or_error.order.last_offer.id).to eq @offer.id
         expect(response.data.submit_order_with_offer.order_or_error.order.last_offer.submitted_at).to_not be_nil
         expect(order.reload.state).to eq Order::SUBMITTED
       end

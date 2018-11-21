@@ -354,8 +354,6 @@ type Order {
   totalListPriceCents: Int!
   transactionFeeCents: Int
   updatedAt: DateTime!
-  waitingBuyerResponse: Boolean
-  waitingSellerResponse: Boolean
 }
 
 # Fields to sort by
