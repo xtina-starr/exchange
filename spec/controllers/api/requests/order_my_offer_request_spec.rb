@@ -54,21 +54,25 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'user accessing their order' do
-      it 'returns empty myLastOffer' do
-        result = client.execute(query, id: order.id)
-        expect(result.data.order.my_last_offer).to be_nil
+      context 'with no offers' do
+        it 'returns empty myLastOffer' do
+          result = client.execute(query, id: order.id)
+          expect(result.data.order.my_last_offer).to be_nil
+        end
       end
       context 'with offers' do
         before do
           buyer_offer1
           buyer_offer2
           seller_offer
+          @result = client.execute(query, id: order.id)
         end
-        it 'returns myLastOffer' do
-          result = client.execute(query, id: order.id)
-          expect(result.data.order.offers.edges.count).to eq 2
-          expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [buyer_offer1.id, seller_offer.id]
-          expect(result.data.order.my_last_offer.id).to eq buyer_offer2.id
+        it 'returns current pending offer for myLastOffer' do
+          expect(@result.data.order.my_last_offer.id).to eq buyer_offer2.id
+        end
+        it 'returns all submitted offers for order.offers' do
+          expect(@result.data.order.offers.edges.count).to eq 2
+          expect(@result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [buyer_offer1.id, seller_offer.id]
         end
       end
     end
@@ -83,7 +87,7 @@ describe Api::GraphqlController, type: :request do
       end
       context "trusted account accessing another account's order" do
         let(:buyer_id) { 'some-user' }
-        it 'returns expected payload' do
+        it 'returns nil' do
           result = client.execute(query, id: order.id)
           expect(result.data.order.my_last_offer).to be_nil
         end

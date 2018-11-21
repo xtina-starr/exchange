@@ -289,6 +289,7 @@ type OfferEdge {
 
 # An Order
 type Order {
+  awaitingResponseFrom: OrderParticipantEnum
   buyer: OrderPartyUnion!
   buyerPhoneNumber: String
   buyerTotalCents: Int
@@ -322,6 +323,8 @@ type Order {
     last: Int
   ): LineItemConnection
   mode: OrderModeEnum
+
+  # Most recent offer for the current user
   myLastOffer: Offer
   offerTotalCents: Int! @deprecated(reason: "itemsTotalCents reflects offer total for offer orders.")
   offers(
@@ -351,7 +354,6 @@ type Order {
   totalListPriceCents: Int!
   transactionFeeCents: Int
   updatedAt: DateTime!
-  waitingResponseFrom: OrderParticipantEnum
 }
 
 # Fields to sort by
@@ -417,10 +419,10 @@ enum OrderModeEnum {
 union OrderOrFailureUnion = OrderWithMutationFailure | OrderWithMutationSuccess
 
 enum OrderParticipantEnum {
-  # Buyer
+  # Participant on the buyer side
   BUYER
 
-  # Seller
+  # Participant on the seller side
   SELLER
 }
 

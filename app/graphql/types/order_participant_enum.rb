@@ -1,4 +1,4 @@
 class Types::OrderParticipantEnum < Types::BaseEnum
-  value 'BUYER', 'Buyer', value: 'buyer'
-  value 'SELLER', 'Seller', value: 'seller'
+  value 'BUYER', 'Participant on the buyer side', value: 'buyer'
+  value 'SELLER', 'Participant on the seller side', value: 'seller'
 end

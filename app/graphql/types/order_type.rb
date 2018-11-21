@@ -33,11 +33,11 @@ class Types::OrderType < Types::BaseObject
   field :total_list_price_cents, Integer, null: false
   field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
   field :last_offer, Types::OfferType, null: true, description: 'Last submitted offer'
-  field :my_last_offer, Types::OfferType, null: true
+  field :my_last_offer, Types::OfferType, null: true, description: 'Most recent offer for the current user'
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true, seller_only: true
   field :updated_at, Types::DateTimeType, null: false
-  field :waiting_response_from, Types::OrderParticipantEnum, null: true
+  field :awaiting_response_from, Types::OrderParticipantEnum, null: true
 
   def buyer
     OpenStruct.new(
@@ -62,7 +62,7 @@ class Types::OrderType < Types::BaseObject
     object
   end
 
-  def waiting_response_from
+  def awaiting_response_from
     return unless object.mode == Order::OFFER && object.state == Order::SUBMITTED
 
     if object&.last_offer&.from_id == object.seller_id && object&.last_offer&.from_type == object.seller_type

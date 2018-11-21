@@ -57,7 +57,7 @@ describe Api::GraphqlController, type: :request do
             buyerTotalCents
             createdAt
             displayCommissionRate
-            waitingResponseFrom
+            awaitingResponseFrom
             lastOffer {
               id
               amountCents
@@ -250,21 +250,40 @@ describe Api::GraphqlController, type: :request do
           expect(result.data.order.last_offer.from.__typename).to eq 'Partner'
           expect(result.data.order.last_offer.responds_to.id).to eq buyer_offer.id
         end
-        context 'last offer from seller' do
-          it 'returns BUYER for waitingResponseFrom' do
-            result = client.execute(query, id: user1_order1.id)
-            expect(result.data.order.waiting_response_from).to eq 'BUYER'
+        describe 'awaiting_response_from' do
+          [Order::APPROVED, Order::PENDING, Order::FULFILLED, Order::REFUNDED, Order::ABANDONED].each do |state|
+            context "Order in #{state} state" do
+              let(:state) { state }
+              it 'returns nil' do
+                result = client.execute(query, id: user1_order1.id)
+                expect(result.data.order.awaiting_response_from).to be_nil
+              end
+            end
+          end
+          context 'withot lastOffer' do
+            it 'returns nil' do
+              user1_order1.update!(last_offer: nil)
+              result = client.execute(query, id: user1_order1.id)
+              expect(result.data.order.awaiting_response_from).to be_nil
+            end
+          end
+          context 'last offer from seller' do
+            it 'returns BUYER for awaitingResponseFrom' do
+              result = client.execute(query, id: user1_order1.id)
+              expect(result.data.order.awaiting_response_from).to eq 'BUYER'
+            end
+          end
+          context 'last offer from buyer' do
+            before do
+              user1_order1.update! last_offer: buyer_offer
+            end
+            it 'returns BUYER for awaitingResponseFrom' do
+              result = client.execute(query, id: user1_order1.id)
+              expect(result.data.order.awaiting_response_from).to eq 'SELLER'
+            end
           end
         end
-        context 'last offer from buyer' do
-          before do
-            user1_order1.update! last_offer: buyer_offer
-          end
-          it 'returns BUYER for waitingResponseFrom' do
-            result = client.execute(query, id: user1_order1.id)
-            expect(result.data.order.waiting_response_from).to eq 'SELLER'
-          end
-        end
+
         describe 'offer filters' do
           it 'filters by from id' do
             result = client.execute(query, id: user1_order1.id, offerFromId: user_id)
