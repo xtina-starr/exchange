@@ -13,8 +13,9 @@ describe Api::GraphqlController, type: :request do
     let!(:user1_order1) do
       Fabricate(
         :order,
+        mode: order_mode,
         seller_id: partner_id,
-        seller_type: 'partner',
+        seller_type: 'gallery',
         buyer_id: user_id,
         buyer_type: 'user',
         created_at: created_at,
@@ -33,7 +34,7 @@ describe Api::GraphqlController, type: :request do
 
     let(:query) do
       <<-GRAPHQL
-        query($id: ID, $offerFromId: String, $offerFromType: String, $offerIncludePending: Boolean) {
+        query($id: ID, $offerFromId: String, $offerFromType: String) {
           order(id: $id) {
             id
             mode
@@ -56,6 +57,7 @@ describe Api::GraphqlController, type: :request do
             buyerTotalCents
             createdAt
             displayCommissionRate
+            awaitingResponseFrom
             lastOffer {
               id
               amountCents
@@ -83,7 +85,7 @@ describe Api::GraphqlController, type: :request do
                 }
               }
             }
-            offers(fromId: $offerFromId, fromType: $offerFromType, includePending: $offerIncludePending) {
+            offers(fromId: $offerFromId, fromType: $offerFromType) {
               edges {
                 node {
                   id
@@ -224,53 +226,80 @@ describe Api::GraphqlController, type: :request do
       end
 
       context 'with offers' do
+        let(:state) { Order::SUBMITTED }
         let(:order_mode) { Order::OFFER }
-        let!(:offer1) { Fabricate(:offer, order: user1_order1, amount_cents: 200, from_id: user_id, from_type: Order::USER, submitted_at: Date.new(2018, 1, 1)) }
-        let!(:offer2) { Fabricate(:offer, order: user1_order1, amount_cents: 300, from_id: partner_id, from_type: 'gallery', responds_to_id: offer1.id) }
+        let!(:buyer_offer) { Fabricate(:offer, order: user1_order1, amount_cents: 200, from_id: user_id, from_type: Order::USER, submitted_at: Date.new(2018, 1, 1)) }
+        let!(:seller_offer) { Fabricate(:offer, order: user1_order1, amount_cents: 300, from_id: partner_id, from_type: 'gallery', responds_to_id: buyer_offer.id, submitted_at: Date.new(2018, 1, 2)) }
+        let!(:pending_buyer_offer) { Fabricate(:offer, order: user1_order1, amount_cents: 200, from_id: user_id, from_type: Order::USER) }
         before do
-          user1_order1.update! last_offer: offer2
+          user1_order1.update! last_offer: seller_offer
         end
         it 'excludes pending offers' do
           result = client.execute(query, id: user1_order1.id)
-          expect(result.data.order.offers.edges.count).to eq 1
-          expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [offer1.id]
-          expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200]
-          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id]
-          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User]
+          expect(result.data.order.offers.edges.count).to eq 2
+          expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [buyer_offer.id, seller_offer.id]
+          expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200, 300]
+          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id, partner_id]
+          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User Partner]
           expect(result.data.order.offers.edges.first.node.submitted_at).to eq '2018-01-01T00:00:00Z'
         end
         it 'includes last_offer' do
           result = client.execute(query, id: user1_order1.id)
-          expect(result.data.order.last_offer.id).to eq offer2.id
+          expect(result.data.order.last_offer.id).to eq seller_offer.id
           expect(result.data.order.last_offer.from.id).to eq partner_id
           expect(result.data.order.last_offer.from.__typename).to eq 'Partner'
-          expect(result.data.order.last_offer.responds_to.id).to eq offer1.id
+          expect(result.data.order.last_offer.responds_to.id).to eq buyer_offer.id
         end
+        describe 'awaiting_response_from' do
+          [Order::APPROVED, Order::PENDING, Order::FULFILLED, Order::REFUNDED, Order::ABANDONED].each do |state|
+            context "Order in #{state} state" do
+              let(:state) { state }
+              it 'returns nil' do
+                result = client.execute(query, id: user1_order1.id)
+                expect(result.data.order.awaiting_response_from).to be_nil
+              end
+            end
+          end
+          context 'withot lastOffer' do
+            it 'returns nil' do
+              user1_order1.update!(last_offer: nil)
+              result = client.execute(query, id: user1_order1.id)
+              expect(result.data.order.awaiting_response_from).to be_nil
+            end
+          end
+          context 'last offer from seller' do
+            it 'returns BUYER for awaitingResponseFrom' do
+              result = client.execute(query, id: user1_order1.id)
+              expect(result.data.order.awaiting_response_from).to eq 'BUYER'
+            end
+          end
+          context 'last offer from buyer' do
+            before do
+              user1_order1.update! last_offer: buyer_offer
+            end
+            it 'returns BUYER for awaitingResponseFrom' do
+              result = client.execute(query, id: user1_order1.id)
+              expect(result.data.order.awaiting_response_from).to eq 'SELLER'
+            end
+          end
+        end
+
         describe 'offer filters' do
           it 'filters by from id' do
-            result = client.execute(query, id: user1_order1.id, offerFromId: user_id, offerIncludePending: true)
+            result = client.execute(query, id: user1_order1.id, offerFromId: user_id)
             expect(result.data.order.offers.edges.count).to eq 1
-            expect(result.data.order.offers.edges.map(&:node).map(&:id)).to eq [offer1.id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:id)).to eq [buyer_offer.id]
             expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to eq [200]
             expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to eq [user_id]
             expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to eq %w[User]
           end
           it 'filters by from type' do
-            result = client.execute(query, id: user1_order1.id, offerFromType: 'gallery', offerIncludePending: true)
+            result = client.execute(query, id: user1_order1.id, offerFromType: 'gallery')
             expect(result.data.order.offers.edges.count).to eq 1
-            expect(result.data.order.offers.edges.map(&:node).map(&:id)).to eq [offer2.id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:id)).to eq [seller_offer.id]
             expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to eq [300]
             expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to eq [partner_id]
             expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to eq %w[Partner]
-          end
-          it 'includes pending offers when requested' do
-            result = client.execute(query, id: user1_order1.id, offerIncludePending: true)
-            expect(result.data.order.offers.edges.count).to eq 2
-            expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [offer1.id, offer2.id]
-            expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200, 300]
-            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id, partner_id]
-            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User Partner]
-            expect(result.data.order.offers.edges.first.node.submitted_at).to eq '2018-01-01T00:00:00Z'
           end
         end
       end

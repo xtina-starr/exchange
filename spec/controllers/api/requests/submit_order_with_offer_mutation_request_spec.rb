@@ -62,7 +62,7 @@ describe Api::GraphqlController, type: :request do
     before do
       order.line_items << line_item
       Offers::InitialOfferService.new(order, 800_00, user_id).process!
-      @offer = order.reload.last_offer
+      @offer = order.reload.offers.last
     end
 
     describe 'mutation is rejected' do
