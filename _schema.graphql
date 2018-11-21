@@ -335,7 +335,6 @@ type Order {
     first: Int
     fromId: String
     fromType: String
-    includePending: Boolean
 
     # Returns the last _n_ elements from the list.
     last: Int
