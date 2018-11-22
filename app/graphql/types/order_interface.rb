@@ -35,9 +35,25 @@ module Types::OrderInterface
   field :updated_at, Types::DateTimeType, null: false
 
   # Deprecated
+  field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
   field :last_offer, Types::OfferType, null: true, deprecation_reason: 'Switch to OfferOrder lastOffer'
+  field :offers, Types::OfferType.connection_type, deprecation_reason: 'Switch to OfferOrder offers', null: true do
+    argument :from_id, String, required: false
+    argument :from_type, String, required: false
+  end
 
   orphan_types Types::BuyOrderType, Types::OfferOrderType
+
+  def offers(**args)
+    offers = object.offers.submitted
+    offers = offers.where(args.slice(:from_id, :from_type)) if args.keys.any? { |ar| %i[from_id from_type].include? ar }
+    offers
+  end
+
+  def offer_total_cents
+    # This can be removed once reaction is updated to `itemsTotalCents`
+    object.items_total_cents
+  end
 
   def buyer
     OpenStruct.new(

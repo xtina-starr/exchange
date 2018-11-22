@@ -5,7 +5,6 @@ class Types::OfferOrderType < Types::BaseObject
     argument :from_id, String, required: false
     argument :from_type, String, required: false
   end
-  field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
   field :last_offer, Types::OfferType, null: true, description: 'Last submitted offer'
   field :my_last_offer, Types::OfferType, null: true
   field :awaiting_response_from, Types::OrderParticipantEnum, null: true
@@ -14,11 +13,6 @@ class Types::OfferOrderType < Types::BaseObject
     offers = object.offers.submitted
     offers = offers.where(args.slice(:from_id, :from_type)) if args.keys.any? { |ar| %i[from_id from_type].include? ar }
     offers
-  end
-
-  def offer_total_cents
-    # This can be removed once reaction is updated to `itemsTotalCents`
-    object.items_total_cents
   end
 
   def my_last_offer

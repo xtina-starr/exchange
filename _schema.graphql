@@ -76,6 +76,22 @@ type BuyOrder implements Order {
     last: Int
   ): LineItemConnection
   mode: OrderModeEnum
+  offerTotalCents: Int! @deprecated(reason: "itemsTotalCents reflects offer total for offer orders.")
+  offers(
+    # Returns the elements in the list that come after the specified cursor.
+    after: String
+
+    # Returns the elements in the list that come before the specified cursor.
+    before: String
+
+    # Returns the first _n_ elements from the list.
+    first: Int
+    fromId: String
+    fromType: String
+
+    # Returns the last _n_ elements from the list.
+    last: Int
+  ): OfferConnection @deprecated(reason: "Switch to OfferOrder offers")
   requestedFulfillment: RequestedFulfillmentUnion
   seller: OrderPartyUnion!
   sellerTotalCents: Int
@@ -432,6 +448,22 @@ interface Order {
     last: Int
   ): LineItemConnection
   mode: OrderModeEnum
+  offerTotalCents: Int! @deprecated(reason: "itemsTotalCents reflects offer total for offer orders.")
+  offers(
+    # Returns the elements in the list that come after the specified cursor.
+    after: String
+
+    # Returns the elements in the list that come before the specified cursor.
+    before: String
+
+    # Returns the first _n_ elements from the list.
+    first: Int
+    fromId: String
+    fromType: String
+
+    # Returns the last _n_ elements from the list.
+    last: Int
+  ): OfferConnection @deprecated(reason: "Switch to OfferOrder offers")
   requestedFulfillment: RequestedFulfillmentUnion
   seller: OrderPartyUnion!
   sellerTotalCents: Int
