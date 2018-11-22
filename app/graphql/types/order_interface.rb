@@ -29,22 +29,10 @@ module Types::OrderInterface
   field :state_reason, String, null: true
   field :state_updated_at, Types::DateTimeType, null: true
   field :state, Types::OrderStateEnum, null: false
-<<<<<<< HEAD:app/graphql/types/order_type.rb
-  field :offers, Types::OfferType.connection_type, null: true do
-    argument :from_id, String, required: false
-    argument :from_type, String, required: false
-  end
   field :total_list_price_cents, Integer, null: false
-  field :offer_total_cents, Integer, null: false, deprecation_reason: 'itemsTotalCents reflects offer total for offer orders.'
-  field :last_offer, Types::OfferType, null: true, description: 'Last submitted offer'
-  field :my_last_offer, Types::OfferType, null: true, description: 'Most recent offer for the current user'
-=======
-  field :total_list_price_cents, Integer, null: false
->>>>>>> First pass in OrderInterface:app/graphql/types/order_interface.rb
   field :tax_total_cents, Integer, null: true
   field :transaction_fee_cents, Integer, null: true, seller_only: true
   field :updated_at, Types::DateTimeType, null: false
-  field :awaiting_response_from, Types::OrderParticipantEnum, null: true
 
   # Deprecated
   field :last_offer, Types::OfferType, null: true, deprecation_reason: 'Switch to OfferOrder lastOffer'
@@ -74,16 +62,6 @@ module Types::OrderInterface
     object
   end
 
-  def awaiting_response_from
-    return unless object.mode == Order::OFFER && object.state == Order::SUBMITTED
-
-    if object&.last_offer&.from_id == object.seller_id && object&.last_offer&.from_type == object.seller_type
-      'buyer'
-    elsif object&.last_offer&.from_id == object.buyer_id && object&.last_offer&.from_type == object.buyer_type
-      'seller'
-    end
-  end
-
   def display_commission_rate
     return if object.commission_rate.nil?
 
@@ -94,23 +72,6 @@ module Types::OrderInterface
     )
   end
 
-<<<<<<< HEAD:app/graphql/types/order_type.rb
-  def offers(**args)
-    offers = object.offers.submitted
-    offers = offers.where(args.slice(:from_id, :from_type)) if args.keys.any? { |ar| %i[from_id from_type].include? ar }
-    offers
-  end
-
-  def offer_total_cents
-    # This can be removed once reaction is updated to `itemsTotalCents`
-    object.items_total_cents
-  end
-
-  def my_last_offer
-    return unless context[:current_user][:id]
-
-    object.offers.where(creator_id: context[:current_user][:id]).order(created_at: :desc).first
-=======
   # Optional, see below
   definition_methods do
     # Optional: if this method is defined, it overrides `Schema.resolve_type`
@@ -122,6 +83,5 @@ module Types::OrderInterface
         raise 'Unknown order type'
       end
     end
->>>>>>> First pass in OrderInterface:app/graphql/types/order_interface.rb
   end
 end

@@ -333,13 +333,8 @@ type OfferEdge {
   node: Offer
 }
 
-<<<<<<< HEAD
-# An Order
-type Order {
-  awaitingResponseFrom: OrderParticipantEnum
-=======
 type OfferOrder implements Order {
->>>>>>> First pass in OrderInterface
+  awaitingResponseFrom: OrderParticipantEnum
   buyer: OrderPartyUnion!
   buyerPhoneNumber: String
   buyerTotalCents: Int
@@ -373,8 +368,6 @@ type OfferOrder implements Order {
     last: Int
   ): LineItemConnection
   mode: OrderModeEnum
-
-  # Most recent offer for the current user
   myLastOffer: Offer
   offerTotalCents: Int! @deprecated(reason: "itemsTotalCents reflects offer total for offer orders.")
   offers(

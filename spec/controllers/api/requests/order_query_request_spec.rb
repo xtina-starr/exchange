@@ -77,7 +77,7 @@ describe Api::GraphqlController, type: :request do
                 }
               }
 
-              offers(fromId: $offerFromId, fromType: $offerFromType, includePending: $offerIncludePending) {
+              offers(fromId: $offerFromId, fromType: $offerFromType) {
                 edges {
                   node {
                     id
