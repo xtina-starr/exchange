@@ -39,39 +39,42 @@ describe Api::GraphqlController, type: :request do
                       id
                     }
                   }
-                  offers {
-                    edges {
-                      node {
-                        id
-                        amountCents
+                  ... on OfferOrder {
+                    offers {
+                      edges {
+                        node {
+                          id
+                          amountCents
+                        }
                       }
                     }
-                  }
-                  lastOffer {
-                    id
-                    amountCents
-                    from {
-                      ... on User {
-                        id
-                      }
-                    }
-                    creatorId
-                    respondsTo {
+                    lastOffer {
                       id
-                    }
-                  }
-                  myLastOffer {
-                    id
-                    amountCents
-                    submittedAt
-                    creatorId
-                    from {
-                      ... on User {
+                      amountCents
+                      from {
+                        ... on User {
+                          id
+                        }
+                      }
+                      creatorId
+                      respondsTo {
                         id
                       }
                     }
-                    respondsTo {
+
+                    myLastOffer {
                       id
+                      amountCents
+                      submittedAt
+                      creatorId
+                      from {
+                        ... on User {
+                          id
+                        }
+                      }
+                      respondsTo {
+                        id
+                      }
                     }
                   }
                 }

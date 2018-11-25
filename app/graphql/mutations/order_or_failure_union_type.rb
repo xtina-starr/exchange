@@ -1,6 +1,6 @@
 class Mutations::OrderWithMutationSuccess < Types::BaseObject
   description 'A successfully returned order type'
-  field :order, Types::OrderType, null: false
+  field :order, Types::OrderInterface, null: false
 end
 
 class Mutations::OrderWithMutationFailure < Types::BaseObject
