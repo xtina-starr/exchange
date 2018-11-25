@@ -5,6 +5,8 @@ class Types::OfferType < Types::BaseObject
   field :id, ID, null: false
   field :from, Types::OrderPartyUnionType, null: false
   field :amount_cents, Integer, null: false
+  field :tax_total_cents, Integer, null: true
+  field :shipping_total_cents, Integer, null: true
   field :creator_id, String, null: false
   field :created_at, Types::DateTimeType, null: false
   field :submitted_at, Types::DateTimeType, null: true
