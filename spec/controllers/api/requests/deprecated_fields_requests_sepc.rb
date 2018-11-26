@@ -32,7 +32,6 @@ describe Api::GraphqlController, type: :request do
           order(id: $id) {
             id
             mode
-            offerTotalCents
             lastOffer {
               id
             }
@@ -56,11 +55,6 @@ describe Api::GraphqlController, type: :request do
     it 'includes offers' do
       result = client.execute(query, id: order.id)
       expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [buyer_offer1.id]
-    end
-    it 'includes offerTotalCents' do
-      order.update!(last_offer: buyer_offer2)
-      result = client.execute(query, id: order.id)
-      expect(result.data.order.offer_total_cents).to eq 420
     end
   end
 end
