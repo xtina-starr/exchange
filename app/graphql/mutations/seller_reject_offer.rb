@@ -11,7 +11,7 @@ class Mutations::SellerRejectOffer < Mutations::BaseMutation
 
     authorize_seller_request!(order)
 
-    Offers::RejectOfferService.new(offer: offer, order: order).process!
+    Offers::RejectOfferService.new(offer: offer).process!
 
     { order_or_error: { order: order.reload } }
   rescue Errors::ApplicationError => e

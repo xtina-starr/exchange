@@ -4,7 +4,7 @@ describe Offers::RejectOfferService, type: :services do
   describe '#process!' do
     let!(:order) { Fabricate(:order, state: Order::SUBMITTED) }
     let!(:offer) { Fabricate(:offer, order: order) }
-    let(:service) { Offers::RejectOfferService.new(offer: offer, order: order) }
+    let(:service) { Offers::RejectOfferService.new(offer: offer) }
 
     context 'with a submitted offer' do
       it 'updates the state of the order' do
