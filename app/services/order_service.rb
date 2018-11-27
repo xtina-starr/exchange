@@ -9,22 +9,22 @@ module OrderService
     order
   end
 
-  def self.fulfill_at_once!(order, fulfillment, by)
+  def self.fulfill_at_once!(order, fulfillment, user_id)
     order.fulfill! do
       fulfillment = Fulfillment.create!(fulfillment.slice(:courier, :tracking_id, :estimated_delivery))
       order.line_items.each do |li|
         li.line_item_fulfillments.create!(fulfillment_id: fulfillment.id)
       end
     end
-    PostOrderNotificationJob.perform_later(order.id, Order::FULFILLED, by)
+    PostOrderNotificationJob.perform_later(order.id, Order::FULFILLED, user_id)
     order
   end
 
-  def self.confirm_pickup!(order, by)
+  def self.confirm_pickup!(order, user_id)
     raise Errors::ValidationError, :wrong_fulfillment_type unless order.fulfillment_type == Order::PICKUP
 
     order.fulfill!
-    PostOrderNotificationJob.perform_later(order.id, Order::FULFILLED, by)
+    PostOrderNotificationJob.perform_later(order.id, Order::FULFILLED, user_id)
     order
   end
 

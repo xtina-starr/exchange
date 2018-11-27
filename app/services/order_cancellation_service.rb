@@ -1,7 +1,7 @@
 class OrderCancellationService
-  def initialize(order, by = nil)
+  def initialize(order, user_id = nil)
     @order = order
-    @by = by
+    @user_id = user_id
     @transaction = nil
   end
 
@@ -18,7 +18,7 @@ class OrderCancellationService
     @order.reject! do
       process_refund
     end
-    PostOrderNotificationJob.perform_later(@order.id, Order::CANCELED, @by)
+    PostOrderNotificationJob.perform_later(@order.id, Order::CANCELED, @user_id)
   ensure
     @order.transactions << @transaction if @transaction.present?
   end
@@ -28,7 +28,7 @@ class OrderCancellationService
       process_refund
     end
     record_stats
-    PostOrderNotificationJob.perform_later(@order.id, Order::REFUNDED, @by)
+    PostOrderNotificationJob.perform_later(@order.id, Order::REFUNDED, @user_id)
   ensure
     @order.transactions << @transaction if @transaction.present?
   end
