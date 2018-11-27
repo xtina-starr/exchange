@@ -6,6 +6,12 @@ describe Offers::RejectOfferService, type: :services do
     let!(:offer) { Fabricate(:offer, order: order) }
     let(:service) { Offers::RejectOfferService.new(offer: offer, reject_reason: Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low]) }
 
+    before do
+      # last_offer is set in Orders::InitialOffer. "Stubbing" out the
+      # dependent behavior of this class to by setting last_offer directly
+      order.update!(last_offer: offer)
+    end
+
     context 'with a submitted offer' do
       it 'updates the state of the order' do
         expect do
@@ -34,6 +40,36 @@ describe Offers::RejectOfferService, type: :services do
         allow(dd_statsd).to receive(:increment).with('offer.reject')
 
         expect { service.process! }.to raise_error(Errors::ValidationError)
+
+        expect(dd_statsd).to_not have_received(:increment)
+      end
+    end
+
+    context 'attempting to reject not the last offer' do
+      let!(:another_offer) { Fabricate(:offer, order: order) }
+
+      before do
+        # last_offer is set in Orders::InitialOffer. "Stubbing" out the
+        # dependent behavior of this class to by setting last_offer directly
+        order.update!(last_offer: another_offer)
+      end
+
+      it 'raises a validation error' do
+        expect {  service.process! }
+          .to raise_error(Errors::ValidationError)
+      end
+
+      it 'does not approve the order' do
+        expect {  service.process! }.to raise_error(Errors::ValidationError)
+
+        expect(order.reload.state).to eq(Order::SUBMITTED)
+      end
+
+      it 'does not instrument' do
+        dd_statsd = stub_ddstatsd_instance
+        allow(dd_statsd).to receive(:increment).with('order.approve')
+
+        expect {  service.process! }.to raise_error(Errors::ValidationError)
 
         expect(dd_statsd).to_not have_received(:increment)
       end

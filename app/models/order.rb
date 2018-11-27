@@ -51,7 +51,7 @@ class Order < ApplicationRecord
   ACTIONS = %i[abandon submit approve reject fulfill seller_lapse refund].freeze
   ACTION_REASONS = {
     seller_lapse: REASONS[CANCELED][:seller_lapsed],
-    reject: REASONS[CANCELED][:seller_rejected]
+    reject: REASONS[CANCELED][:seller_rejected_other]
   }.freeze
 
   PARTY_TYPES = [
