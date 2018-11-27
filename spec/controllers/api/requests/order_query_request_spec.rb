@@ -57,21 +57,42 @@ describe Api::GraphqlController, type: :request do
             buyerTotalCents
             createdAt
             displayCommissionRate
-            awaitingResponseFrom
-            lastOffer {
-              id
-              amountCents
-              submittedAt
-              respondsTo {
+            ... on OfferOrder {
+              awaitingResponseFrom
+              lastOffer {
                 id
-              }
-              from {
-                __typename
-                ... on User {
+                amountCents
+                submittedAt
+                respondsTo {
                   id
                 }
-                ... on Partner {
-                  id
+                from {
+                  __typename
+                  ... on User {
+                    id
+                  }
+                  ... on Partner {
+                    id
+                  }
+                }
+              }
+
+              offers(fromId: $offerFromId, fromType: $offerFromType) {
+                edges {
+                  node {
+                    id
+                    amountCents
+                    submittedAt
+                    from {
+                      __typename
+                      ... on User {
+                        id
+                      }
+                      ... on Partner {
+                        id
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -82,24 +103,6 @@ describe Api::GraphqlController, type: :request do
                   priceCents
                   artworkId
                   editionSetId
-                }
-              }
-            }
-            offers(fromId: $offerFromId, fromType: $offerFromType) {
-              edges {
-                node {
-                  id
-                  amountCents
-                  submittedAt
-                  from {
-                    __typename
-                    ... on User {
-                      id
-                    }
-                    ... on Partner {
-                      id
-                    }
-                  }
                 }
               }
             }
@@ -131,20 +134,31 @@ describe Api::GraphqlController, type: :request do
             sellerTotalCents
             buyerTotalCents
             createdAt
-            lastOffer {
-              id
-              amountCents
-              submittedAt
-              respondsTo {
+            ... on OfferOrder {
+              lastOffer {
                 id
-              }
-              from {
-                __typename
-                ... on User {
+                amountCents
+                submittedAt
+                respondsTo {
                   id
                 }
-                ... on Partner {
-                  id
+                from {
+                  __typename
+                  ... on User {
+                    id
+                  }
+                  ... on Partner {
+                    id
+                  }
+                }
+              }
+              offers {
+                edges {
+                  node {
+                    id
+                    amountCents
+                    submittedAt
+                  }
                 }
               }
             }
@@ -153,15 +167,6 @@ describe Api::GraphqlController, type: :request do
                 node {
                   id
                   priceCents
-                }
-              }
-            }
-            offers {
-              edges {
-                node {
-                  id
-                  amountCents
-                  submittedAt
                 }
               }
             }

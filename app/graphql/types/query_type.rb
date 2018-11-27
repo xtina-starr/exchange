@@ -2,7 +2,7 @@ class Types::QueryType < Types::BaseObject
   # Add root-level fields here.
   # They will be entry points for queries on your schema.
 
-  field :order, Types::OrderType, null: true do
+  field :order, Types::OrderInterface, null: true do
     description 'Find an order by ID'
     argument :id, ID, required: false
     argument :code, String, required: false

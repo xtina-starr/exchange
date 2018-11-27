@@ -24,7 +24,7 @@ describe Api::GraphqlController, type: :request do
       )
     end
     let(:buyer_offer1) { Fabricate(:offer, order: order, amount_cents: 200, from_id: buyer_id, from_type: Order::USER, creator_id: buyer_id, submitted_at: 2.days.ago, created_at: 2.days.ago) }
-    let(:buyer_offer2) { Fabricate(:offer, order: order, amount_cents: 300, from_id: buyer_id, from_type: Order::USER, creator_id: buyer_id, created_at: 1.day.ago) }
+    let(:buyer_offer2) { Fabricate(:offer, order: order, amount_cents: 300, from_id: buyer_id, from_type: Order::USER, creator_id: buyer_id, created_at: 1.day.ago, shipping_total_cents: 100_00, tax_total_cents: 200_00) }
     let(:seller_offer) { Fabricate(:offer, order: order, amount_cents: 200, from_id: buyer_id, from_type: 'gallery', creator_id: seller_id, submitted_at: Date.new(2018, 1, 2)) }
     let(:query) do
       <<-GRAPHQL
@@ -32,19 +32,23 @@ describe Api::GraphqlController, type: :request do
           order(id: $id) {
             id
             mode
-            myLastOffer {
-              id
-              amountCents
-              from {
-                ... on User {
-                  id
+            ... on OfferOrder {
+              myLastOffer {
+                id
+                amountCents
+                shippingTotalCents
+                taxTotalCents
+                from {
+                  ... on User {
+                    id
+                  }
                 }
               }
-            }
-            offers{
-              edges {
-                node {
-                  id
+              offers{
+                edges {
+                  node {
+                    id
+                  }
                 }
               }
             }
@@ -69,6 +73,8 @@ describe Api::GraphqlController, type: :request do
         end
         it 'returns current pending offer for myLastOffer' do
           expect(@result.data.order.my_last_offer.id).to eq buyer_offer2.id
+          expect(@result.data.order.my_last_offer.shipping_total_cents).to eq 100_00
+          expect(@result.data.order.my_last_offer.tax_total_cents).to eq 200_00
         end
         it 'returns all submitted offers for order.offers' do
           expect(@result.data.order.offers.edges.count).to eq 2

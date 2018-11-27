@@ -1,5 +1,5 @@
 class Types::OrderEdgeType < GraphQL::Types::Relay::BaseEdge
-  node_type(Types::OrderType)
+  node_type(Types::OrderInterface)
 end
 
 class Types::OrderConnectionWithTotalCountType < GraphQL::Types::Relay::BaseConnection
