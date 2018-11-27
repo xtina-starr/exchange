@@ -10,7 +10,7 @@ AllCops:
     - 'db/migrate/**'
 
 Metrics/ParameterLists:
-  Max: 7
+  Max: 9
 
 Metrics/AbcSize:
   Max: 40

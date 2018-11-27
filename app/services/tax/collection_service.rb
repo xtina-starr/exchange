@@ -1,11 +1,7 @@
-class SalesTaxService
-  REMITTING_STATES = [].freeze
+class Tax::CollectionService
   attr_reader :transaction
   def initialize(
     line_item,
-    fulfillment_type,
-    shipping_address,
-    shipping_total_cents,
     artwork_location,
     nexus_addresses,
     tax_client = Taxjar::Client.new(
@@ -16,23 +12,17 @@ class SalesTaxService
 
     @seller_nexus_addresses = process_nexus_addresses!(nexus_addresses)
     @line_item = line_item
-    @fulfillment_type = fulfillment_type
+    @fulfillment_type = line_item.order.fulfillment_type
     @tax_client = tax_client
     @artwork_location = artwork_location
-    @shipping_address = shipping_address
-    @shipping_total_cents = shipping_total_cents
+    @shipping_address = line_item.order.shipping_address
+    @shipping_total_cents = line_item.order.shipping_total_cents
     @transaction = nil
     @refund = nil
   end
 
-  def sales_tax
-    @sales_tax ||= UnitConverter.convert_dollars_to_cents(fetch_sales_tax.amount_to_collect)
-  rescue Taxjar::Error => e
-    raise Errors::ProcessingError.new(:tax_calculator_failure, message: e.message)
-  end
-
   def record_tax_collected
-    @transaction = post_transaction if artsy_should_remit_taxes? && @line_item.sales_tax_cents&.positive?
+    @transaction = post_transaction if @line_item.should_remit_sales_tax? && @line_item.sales_tax_cents&.positive?
   rescue Taxjar::Error => e
     raise Errors::ProcessingError.new(:tax_recording_failure, message: e.message)
   end
@@ -44,24 +34,7 @@ class SalesTaxService
     raise Errors::ProcessingError.new(:tax_refund_failure, message: e.message)
   end
 
-  def artsy_should_remit_taxes?
-    return false unless address_taxable?(destination_address)
-
-    REMITTING_STATES.include? destination_address.region.downcase
-  end
-
   private
-
-  def fetch_sales_tax
-    @tax_client.tax_for_order(
-      construct_tax_params(
-        line_items: [{
-          unit_price: UnitConverter.convert_cents_to_dollars(@line_item.effective_price_cents),
-          quantity: @line_item.quantity
-        }]
-      )
-    )
-  end
 
   def construct_tax_params(args = {})
     {
@@ -85,7 +58,7 @@ class SalesTaxService
   end
 
   def effective_shipping_total_cents
-    @effective_shipping_total_cents ||= artsy_should_remit_taxes? ? @shipping_total_cents : 0
+    @effective_shipping_total_cents ||= @line_item.should_remit_sales_tax ? @shipping_total_cents : 0
   end
 
   def destination_address
