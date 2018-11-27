@@ -7,6 +7,7 @@ module Offers
 
     def process!
       validate_is_last_offer!
+      validate_offer_is_from_buyer!
 
       @offer.order.reject!(@reject_reason)
       instrument_offer_reject
