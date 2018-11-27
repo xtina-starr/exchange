@@ -22,7 +22,6 @@ module Offers
 
     def pre_process!
       assert_can_submit!
-      raise Errors::ValidationError, :missing_required_info unless @order.can_submit?
 
       @order.line_items.map do |li|
         artwork = GravityService.get_artwork(li[:artwork_id])

@@ -10,6 +10,7 @@ class OrderShippingService
 
   def process!
     raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
+    raise Errors::ValidationError, :invalid_state if @pending_offer.present? && @pending_offer.submitted_at?
 
     Order.transaction do
       @order.update!(
@@ -23,6 +24,8 @@ class OrderShippingService
         shipping_country: @shipping_address&.country,
         shipping_postal_code: @shipping_address&.postal_code
       )
+      # if user has pending offer, we want to set totals on pending offer
+      # and not on the order yet
       @pending_offer.present? ? set_offer_totals! : set_order_totals!
       OrderTotalUpdaterService.new(@order).update_totals!
     end

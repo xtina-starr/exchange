@@ -1,7 +1,7 @@
 require 'rails_helper'
 require 'support/gravity_helper'
 
-describe Tax::CollectorService, type: :services do
+describe Tax::CollectionService, type: :services do
   let(:taxjar_client) { double }
   let(:shipping_region) { 'NY' }
   let(:postal_code) { '10013' }
@@ -67,13 +67,13 @@ describe Tax::CollectorService, type: :services do
 
   before do
     allow(Taxjar::Client).to receive(:new).with(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key'], api_url: nil).and_return(taxjar_client)
-    @service = Tax::CollectorService.new(line_item, artwork_location, seller_addresses)
+    @service = Tax::CollectionService.new(line_item, artwork_location, seller_addresses)
   end
 
   describe '#initialize' do
     context 'with a destination address in a remitting state' do
       it 'sets seller_nexus_addresses to only be taxable seller addresses' do
-        service = Tax::CollectorService.new(line_item, artwork_location, seller_addresses + [untaxable_address])
+        service = Tax::CollectionService.new(line_item, artwork_location, seller_addresses + [untaxable_address])
         expect(service.instance_variable_get(:@seller_nexus_addresses)).to eq seller_addresses
       end
     end
@@ -90,7 +90,7 @@ describe Tax::CollectorService, type: :services do
         context 'with missing region' do
           let(:shipping_region) { nil }
           it 'raises a missing_region error' do
-            service = Tax::CollectorService.new(line_item, artwork_location, seller_addresses)
+            service = Tax::CollectionService.new(line_item, artwork_location, seller_addresses)
             expect { service.send(:destination_address) }.to raise_error do |error|
               expect(error).to be_a Errors::ValidationError
               expect(error.type).to eq :validation
@@ -101,7 +101,7 @@ describe Tax::CollectorService, type: :services do
         context 'with missing postal code' do
           let(:postal_code) { nil }
           it 'raises a missing_postal_code error' do
-            service = Tax::CollectorService.new(line_item, artwork_location, seller_addresses)
+            service = Tax::CollectionService.new(line_item, artwork_location, seller_addresses)
             expect { service.send(:destination_address) }.to raise_error do |error|
               expect(error).to be_a Errors::ValidationError
               expect(error.type).to eq :validation
@@ -122,7 +122,7 @@ describe Tax::CollectorService, type: :services do
         context 'with missing region' do
           it 'raises an invalid_artwork_address error' do
             invalid_artwork_location = Address.new(country: 'US', postal_code: '10013')
-            service = Tax::CollectorService.new(line_item, invalid_artwork_location, seller_addresses)
+            service = Tax::CollectionService.new(line_item, invalid_artwork_location, seller_addresses)
             expect { service.send(:destination_address) }.to raise_error do |error|
               expect(error).to be_a Errors::ValidationError
               expect(error.type).to eq :validation
@@ -133,7 +133,7 @@ describe Tax::CollectorService, type: :services do
         context 'with missing postal code' do
           it 'raises an invalid_artwork_address error' do
             invalid_artwork_location = Address.new(country: 'US', region: 'NY')
-            service = Tax::CollectorService.new(line_item, invalid_artwork_location, seller_addresses)
+            service = Tax::CollectionService.new(line_item, invalid_artwork_location, seller_addresses)
             expect { service.send(:destination_address) }.to raise_error do |error|
               expect(error).to be_a Errors::ValidationError
               expect(error.type).to eq :validation
@@ -177,7 +177,7 @@ describe Tax::CollectorService, type: :services do
     context 'when line item does not have sales tax' do
       it 'does nothing' do
         line_item.sales_tax_cents = 0
-        service = Tax::CollectorService.new(line_item, artwork_location, seller_addresses)
+        service = Tax::CollectionService.new(line_item, artwork_location, seller_addresses)
         allow(service).to receive(:post_transaction)
         service.record_tax_collected
         expect(service).to_not have_received(:post_transaction)

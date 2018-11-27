@@ -10,9 +10,9 @@ class ShippingCalculatorService
 
     validate_shipping_location!
     if domestic_shipping?
-      calculate_domestic_shipping_fee
+      @artwork[:domestic_shipping_fee_cents] || raise(Errors::ValidationError, :missing_domestic_shipping_fee)
     else
-      calculate_international_shipping_fee
+      @artwork[:international_shipping_fee_cents] || raise(Errors::ValidationError.new(:unsupported_shipping_location, failure_code: :domestic_shipping_only))
     end
   end
 
@@ -20,7 +20,6 @@ class ShippingCalculatorService
 
   def validate_shipping_location!
     raise Errors::ValidationError, :missing_country if @shipping_address&.country.blank?
-    raise Errors::ValidationError.new(:unsupported_shipping_location, failure_code: :domestic_shipping_only) if @artwork[:international_shipping_fee_cents].nil? && international_shipping?
   end
 
   def domestic_shipping?
@@ -30,13 +29,5 @@ class ShippingCalculatorService
 
   def international_shipping?
     !domestic_shipping?
-  end
-
-  def calculate_domestic_shipping_fee
-    @artwork[:domestic_shipping_fee_cents] || raise(Errors::ValidationError, :missing_domestic_shipping_fee)
-  end
-
-  def calculate_international_shipping_fee
-    @artwork[:international_shipping_fee_cents] || raise(Errors::ValidationError, :missing_international_shipping_fee)
   end
 end

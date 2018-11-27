@@ -30,7 +30,7 @@ describe RecordSalesTaxJob, type: :job do
       context 'with an order that does not have sales tax to remit' do
         let(:should_remit_sales_tax) { false }
         it 'does nothing' do
-          expect(Tax::CollectorService).to_not receive(:new)
+          expect(Tax::CollectionService).to_not receive(:new)
           RecordSalesTaxJob.perform_now(line_item.id)
           expect(line_item.reload.sales_tax_transaction_id).to be_nil
         end

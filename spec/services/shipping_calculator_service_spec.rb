@@ -71,10 +71,28 @@ describe ShippingCalculatorService, type: :services do
       it 'returns domestic cost' do
         expect(service_domestic_shipping.shipping_cents).to eq 100_00
       end
+      context 'with nil domestic shipping' do
+        it 'raises error' do
+          artwork[:domestic_shipping_fee_cents] = nil
+          expect { service_domestic_shipping.shipping_cents }.to raise_error do |error|
+            expect(error).to be_a(Errors::ValidationError)
+            expect(error.code).to eq :missing_domestic_shipping_fee
+          end
+        end
+      end
     end
     context 'with international address' do
       it 'returns international cost' do
         expect(service_international_shipping.shipping_cents).to eq 500_00
+      end
+      context 'with nil domestic shipping' do
+        it 'raises error' do
+          artwork[:international_shipping_fee_cents] = nil
+          expect { service_international_shipping.shipping_cents }.to raise_error do |error|
+            expect(error).to be_a(Errors::ValidationError)
+            expect(error.code).to eq :unsupported_shipping_location
+          end
+        end
       end
     end
   end
@@ -86,37 +104,6 @@ describe ShippingCalculatorService, type: :services do
 
     it 'returns false for artworks not in the same country as shipping' do
       expect(service_international_shipping.send(:domestic_shipping?)).to be false
-    end
-  end
-
-  describe '#calculate_domestic_shipping_fee' do
-    it 'returns domestic shipping cost' do
-      expect(service_domestic_shipping.send(:calculate_domestic_shipping_fee)).to eq 100_00
-    end
-
-    context 'with nil domestic shipping' do
-      it 'raises error' do
-        artwork[:domestic_shipping_fee_cents] = nil
-        expect { service_domestic_shipping.send(:calculate_domestic_shipping_fee) }.to raise_error do |error|
-          expect(error).to be_a(Errors::ValidationError)
-          expect(error.code).to eq :missing_domestic_shipping_fee
-        end
-      end
-    end
-  end
-
-  describe '#calculate_international_shipping_fee' do
-    it 'returns international shipping cost' do
-      expect(service_domestic_shipping.send(:calculate_international_shipping_fee)).to eq 500_00
-    end
-    context 'with nil domestic shipping' do
-      it 'raises error' do
-        artwork[:international_shipping_fee_cents] = nil
-        expect { service_domestic_shipping.send(:calculate_international_shipping_fee) }.to raise_error do |error|
-          expect(error).to be_a(Errors::ValidationError)
-          expect(error.code).to eq :missing_international_shipping_fee
-        end
-      end
     end
   end
 end

@@ -8,7 +8,7 @@ class RecordSalesTaxJob < ApplicationJob
     artwork = GravityService.get_artwork(line_item.artwork_id)
     artwork_address = Address.new(artwork[:location])
     seller_addresses = GravityService.fetch_partner_locations(line_item.order.seller_id)
-    service = Tax::CollectorService.new(line_item, artwork_address, seller_addresses)
+    service = Tax::CollectionService.new(line_item, artwork_address, seller_addresses)
     service.record_tax_collected
     line_item.update!(sales_tax_transaction_id: service.transaction.transaction_id) if service.transaction.present?
   end
