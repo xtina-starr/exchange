@@ -1,5 +1,7 @@
-require 'coveralls'
-Coveralls.wear!('rails')
+if ENV.fetch('CI', false)
+  require 'coveralls'
+  Coveralls.wear!('rails')
+end
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
