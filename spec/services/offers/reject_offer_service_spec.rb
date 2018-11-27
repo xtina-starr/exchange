@@ -4,7 +4,7 @@ describe Offers::RejectOfferService, type: :services do
   describe '#process!' do
     let!(:order) { Fabricate(:order, state: Order::SUBMITTED) }
     let!(:offer) { Fabricate(:offer, order: order) }
-    let(:service) { Offers::RejectOfferService.new(offer: offer) }
+    let(:service) { Offers::RejectOfferService.new(offer: offer, reject_reason: Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low]) }
 
     context 'with a submitted offer' do
       it 'updates the state of the order' do
@@ -12,7 +12,7 @@ describe Offers::RejectOfferService, type: :services do
           service.process!
         end.to change { order.state }.from(Order::SUBMITTED).to(Order::CANCELED)
                                      .and change { order.state_reason }
-          .from(nil).to(Order::REASONS[Order::CANCELED][:seller_rejected])
+          .from(nil).to(Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low])
       end
 
       it 'instruments an rejected offer' do

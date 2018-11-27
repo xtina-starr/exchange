@@ -1,11 +1,12 @@
 module Offers
   class RejectOfferService
-    def initialize(offer:)
+    def initialize(offer:, reject_reason:)
       @offer = offer
+      @reject_reason = reject_reason
     end
 
     def process!
-      @offer.order.reject!
+      @offer.order.reject!(@reject_reason)
       instrument_offer_reject
     end
 
