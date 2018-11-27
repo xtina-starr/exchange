@@ -1,6 +1,6 @@
 class OrderApproveService
   attr_reader :order
-  def initialize(order, by = nil)
+  def initialize(order, by)
     @order = order
     @by = by
     @transaction = nil
