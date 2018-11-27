@@ -31,7 +31,7 @@ describe Offers::RejectOfferService, type: :services do
       end
     end
 
-    context "when we can't approve the order" do
+    context "when we can't reject the order" do
       let(:order) { Fabricate(:order, state: Order::PENDING) }
       let(:offer) { Fabricate(:offer, order: order) }
 
@@ -59,7 +59,7 @@ describe Offers::RejectOfferService, type: :services do
           .to raise_error(Errors::ValidationError)
       end
 
-      it 'does not approve the order' do
+      it 'does not reject the order' do
         expect {  service.process! }.to raise_error(Errors::ValidationError)
 
         expect(order.reload.state).to eq(Order::SUBMITTED)
@@ -67,7 +67,7 @@ describe Offers::RejectOfferService, type: :services do
 
       it 'does not instrument' do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.approve')
+        allow(dd_statsd).to receive(:increment).with('order.reject')
 
         expect {  service.process! }.to raise_error(Errors::ValidationError)
 
