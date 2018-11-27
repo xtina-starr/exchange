@@ -6,6 +6,7 @@ class Types::MutationType < Types::BaseObject
   field :submit_order, mutation: Mutations::SubmitOrder
   field :approve_order, mutation: Mutations::ApproveOrder
   field :seller_accept_offer, mutation: Mutations::SellerAcceptOffer
+  field :seller_reject_offer, mutation: Mutations::SellerRejectOffer
   field :reject_order, mutation: Mutations::RejectOrder
   field :fulfill_at_once, mutation: Mutations::FulfillAtOnce
   field :confirm_pickup, mutation: Mutations::ConfirmPickup
