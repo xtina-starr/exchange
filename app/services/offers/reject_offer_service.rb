@@ -1,11 +1,13 @@
 module Offers
-  class RejectOfferService
+  class RejectOfferService < BaseOfferService
     def initialize(offer:, reject_reason:)
       @offer = offer
       @reject_reason = reject_reason
     end
 
     def process!
+      validate_is_last_offer!
+
       @offer.order.reject!(@reject_reason)
       instrument_offer_reject
     end
