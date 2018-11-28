@@ -4,10 +4,10 @@ class CommitOrderService
   end
 
   attr_accessor :order, :credit_card, :merchant_account, :partner
-  def initialize(order, by, order_state_action)
+  def initialize(order, order_state_action, by)
     @order = order
-    @by = by
     @order_state_action = order_state_action
+    @by = by
     @credit_card = nil
     @merchant_account = nil
     @partner = nil
@@ -78,7 +78,7 @@ class CommitOrderService
     PostTransactionNotificationJob.perform_later(@transaction.id, TransactionEvent::CREATED, @by)
   end
 
-  def construct_charge_params
+  def construct_charge_params(capture:)
     {
       credit_card: @credit_card,
       buyer_amount: @order.buyer_total_cents,
@@ -86,7 +86,8 @@ class CommitOrderService
       seller_amount: @order.seller_total_cents,
       currency_code: @order.currency_code,
       metadata: charge_metadata,
-      description: charge_description
+      description: charge_description,
+      capture: capture
     }
   end
 

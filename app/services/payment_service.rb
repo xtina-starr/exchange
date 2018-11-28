@@ -1,5 +1,5 @@
 module PaymentService
-  def self.authorize_charge(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {})
+  def self.authorize_charge(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:)
     charge = Stripe::Charge.create(
       amount: buyer_amount,
       currency: currency_code,
@@ -11,7 +11,7 @@ module PaymentService
         amount: seller_amount
       },
       metadata: metadata,
-      capture: false
+      capture: capture
     )
     Transaction.new(external_id: charge.id, source_id: charge.source.id, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::HOLD, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
