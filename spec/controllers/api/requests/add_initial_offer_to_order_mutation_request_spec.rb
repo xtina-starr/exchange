@@ -65,6 +65,7 @@ describe Api::GraphqlController, type: :request do
                     myLastOffer {
                       id
                       amountCents
+                      buyerTotalCents
                       submittedAt
                       creatorId
                       from {
@@ -154,6 +155,7 @@ describe Api::GraphqlController, type: :request do
           expect(response_order.my_last_offer.responds_to).to be_nil
           expect(response_order.my_last_offer.creator_id).to eq user_id
           expect(response_order.my_last_offer.submitted_at).to be_nil
+          expect(response_order.my_last_offer.buyer_total_cents).to be_nil # tax and shipping not yet set
           expect(response_order.offers.edges.count).to eq 0 # offer is not submitted yet
         end
       end
