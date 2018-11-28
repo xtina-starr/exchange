@@ -1,5 +1,6 @@
 module Offers
-  class AcceptService < BaseOfferService
+  class AcceptOfferService
+    include OfferValidationService
     def initialize(offer:, order:, user_id:)
       @offer = offer
       @order = order
@@ -7,6 +8,8 @@ module Offers
     end
 
     def process!
+      # Deduct artwork from inventory
+      # Charge buyer
       validate_is_last_offer!
 
       order.approve!

@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe Offers::AcceptService, type: :services do
+describe Offers::AcceptOfferService, type: :services do
   describe '#process!' do
     subject(:call_service) do
       described_class.new(
