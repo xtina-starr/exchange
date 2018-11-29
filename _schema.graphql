@@ -336,6 +336,7 @@ type Mutation {
 # An Offer
 type Offer {
   amountCents: Int!
+  buyerTotalCents: Int
   createdAt: DateTime!
   creatorId: String!
   from: OrderPartyUnion!

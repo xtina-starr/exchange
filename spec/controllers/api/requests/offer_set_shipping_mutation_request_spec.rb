@@ -50,6 +50,11 @@ describe Api::GraphqlController, type: :request do
                       id
                     }
                   }
+                  ... on OfferOrder {
+                    myLastOffer {
+                      buyerTotalCents
+                    }
+                  }
                 }
               }
               ... on OrderWithMutationFailure {
@@ -260,6 +265,10 @@ describe Api::GraphqlController, type: :request do
             expect(line_item.reload.sales_tax_cents).to be_nil
             expect(order.reload.tax_total_cents).to be_nil
             expect(offer.reload.tax_total_cents).to eq 116
+          end
+
+          it 'calculates offer buyer_total_cents as the sum of amount_cents, shipping_total_cents and tax_total_cents' do
+            expect(@response.data.set_shipping.order_or_error.order.my_last_offer.buyer_total_cents).to eq offer.amount_cents + offer.reload.tax_total_cents + offer.reload.shipping_total_cents
           end
         end
 

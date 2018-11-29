@@ -13,11 +13,16 @@ class Types::OfferType < Types::BaseObject
   field :order, Types::OrderInterface, null: false
   field :responds_to, Types::OfferType, null: true
   field :from_participant, Types::OrderParticipantEnum, null: true
+  field :buyer_total_cents, Integer, null: true
 
   def from
     OpenStruct.new(
       id: object.from_id,
       type: object.from_type
     )
+  end
+
+  def buyer_total_cents
+    object.amount_cents + object.tax_total_cents + object.shipping_total_cents if object.tax_total_cents.present? && object.shipping_total_cents.present?
   end
 end
