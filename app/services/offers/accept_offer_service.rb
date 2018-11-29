@@ -17,7 +17,8 @@ module Offers
 
     def pre_process!
       super
-      validate_is_last_offer!
+      validate_is_last_offer!(@offer)
+      validate_offer_is_from_buyer!(@offer)
     end
 
     def post_process!
