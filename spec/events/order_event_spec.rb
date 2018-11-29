@@ -109,6 +109,6 @@ describe OrderEvent, type: :events do
   it 'returns state_reason when available' do
     order.update!(state: Order::SUBMITTED)
     order.reject!
-    expect(event.properties[:state_reason]).to eq 'seller_rejected'
+    expect(event.properties[:state_reason]).to eq 'seller_rejected_other'
   end
 end

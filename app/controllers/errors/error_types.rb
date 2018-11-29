@@ -36,6 +36,7 @@ module Errors
       not_last_offer
       not_offerable
       offer_more_than_one_line_item
+      offer_not_from_buyer
       unknown_artwork
       unknown_edition_set
       unknown_partner

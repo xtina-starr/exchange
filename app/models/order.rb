@@ -30,7 +30,10 @@ class Order < ApplicationRecord
   REASONS = {
     CANCELED => {
       seller_lapsed: 'seller_lapsed'.freeze,
-      seller_rejected: 'seller_rejected'.freeze
+      seller_rejected_offer_too_low: 'seller_rejected_offer_too_low'.freeze,
+      seller_rejected_shipping_unavailable: 'seller_rejected_shipping_unavailable'.freeze,
+      seller_rejected_artwork_unavailable: 'seller_rejected_artwork_unavailable'.freeze,
+      seller_rejected_other: 'seller_rejected_other'.freeze
     }
   }.freeze
 
@@ -48,7 +51,7 @@ class Order < ApplicationRecord
   ACTIONS = %i[abandon submit approve reject fulfill seller_lapse refund].freeze
   ACTION_REASONS = {
     seller_lapse: REASONS[CANCELED][:seller_lapsed],
-    reject: REASONS[CANCELED][:seller_rejected]
+    reject: REASONS[CANCELED][:seller_rejected_other]
   }.freeze
 
   PARTY_TYPES = [

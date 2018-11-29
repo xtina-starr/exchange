@@ -31,7 +31,7 @@ describe OrderCancellationService, type: :services do
       end
       it 'updates the order state' do
         expect(order.state).to eq Order::CANCELED
-        expect(order.state_reason).to eq Order::REASONS[Order::CANCELED][:seller_rejected]
+        expect(order.state_reason).to eq Order::REASONS[Order::CANCELED][:seller_rejected_other]
       end
       it 'queues notification job' do
         expect(PostNotificationJob).to have_been_enqueued.with(order.id, Order::CANCELED, user_id)

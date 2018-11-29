@@ -1,5 +1,5 @@
 module Offers
-  class AcceptService
+  class AcceptService < BaseOfferService
     def initialize(offer:, order:)
       @offer = offer
       @order = order
@@ -7,6 +7,7 @@ module Offers
 
     def process!
       validate_is_last_offer!
+      validate_offer_is_from_buyer!
 
       order.approve!
       instrument_order_approved
@@ -15,10 +16,6 @@ module Offers
     private
 
     attr_reader :order, :offer
-
-    def validate_is_last_offer!
-      raise Errors::ValidationError.new(:not_last_offer, offer) unless offer.last_offer?
-    end
 
     def instrument_order_approved
       Exchange.dogstatsd.increment 'order.approve'
