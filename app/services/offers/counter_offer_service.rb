@@ -23,7 +23,7 @@ module Offers
       )
       @order.update!(last_offer: @pending_offer)
 
-      # set_offer_totals!
+      set_offer_totals!
 
       instrument_offer_counter
     end
@@ -36,7 +36,7 @@ module Offers
       Exchange.dogstatsd.increment 'offer.counter'
     end
 
-    # TODO REUSE METHODS  form order_submit_service.rb or move to helper
+    # TODO REUSE METHODS  form order_shipping_service.rb or move to helper
 
     def set_offer_totals!
       @pending_offer.update!(shipping_total_cents: shipping_total_cents)
@@ -108,7 +108,7 @@ module Offers
     end
 
     def shipping_total_cents
-      @shipping_total_cents ||= @order.line_items.map { |li| ShippingCalculatorService.new(artworks[li.artwork_id], @fulfillment_type, @shipping_address).shipping_cents }.sum
+      @shipping_total_cents ||= @order.line_items.map { |li| ShippingCalculatorService.new(artworks[li.artwork_id], @fulfillment_type, @order.shipping_address).shipping_cents }.sum
     end
   end
 end
