@@ -15,10 +15,4 @@ class Mutations::ApproveOrder < Mutations::BaseMutation
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end
-
-  private
-
-  def current_user_id
-    context[:current_user]['id']
-  end
 end
