@@ -246,7 +246,7 @@ describe Api::GraphqlController, type: :request do
           expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200, 300]
           expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id, partner_id]
           expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User Partner]
-          expect(result.data.order.offers.edges.first.node.submitted_at).to eq '2018-01-01T00:00:00Z'
+          expect(result.data.order.offers.edges.first.node.submitted_at).to eq '2018-01-02T00:00:00Z'
         end
         it 'includes last_offer' do
           result = client.execute(query, id: user1_order1.id)

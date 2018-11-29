@@ -12,6 +12,7 @@ class Types::OfferType < Types::BaseObject
   field :submitted_at, Types::DateTimeType, null: true
   field :order, Types::OrderInterface, null: false
   field :responds_to, Types::OfferType, null: true
+  field :from_participant, Types::OrderParticipantEnum, null: true
 
   def from
     OpenStruct.new(

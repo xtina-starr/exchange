@@ -12,7 +12,7 @@ class Types::OfferOrderType < Types::BaseObject
   def offers(**args)
     offers = object.offers.submitted
     offers = offers.where(args.slice(:from_id, :from_type)) if args.keys.any? { |ar| %i[from_id from_type].include? ar }
-    offers
+    offers.order(created_at: :desc)
   end
 
   def my_last_offer
@@ -24,10 +24,9 @@ class Types::OfferOrderType < Types::BaseObject
   def awaiting_response_from
     return unless object.mode == Order::OFFER && object.state == Order::SUBMITTED
 
-    if object&.last_offer&.from_id == object.seller_id && object&.last_offer&.from_type == object.seller_type
-      'buyer'
-    elsif object&.last_offer&.from_id == object.buyer_id && object&.last_offer&.from_type == object.buyer_type
-      'seller'
+    case object&.last_offer&.from_participant
+    when Order::BUYER then Order::SELLER
+    when Order::SELLER then Order::BUYER
     end
   end
 end

@@ -6,6 +6,12 @@ class Order < ApplicationRecord
     BUY = 'buy'.freeze,
     OFFER = 'offer'.freeze
   ].freeze
+
+  PARTICIPANTS = [
+    BUYER = 'buyer'.freeze,
+    SELLER = 'seller'.freeze
+  ].freeze
+
   # For more docs about states go to:
   # https://www.notion.so/artsy/37c311363ef046c3aa546047e60cc58a?v=de68d5bbc30748f88b0d92a059bc0ba8
   STATES = [
