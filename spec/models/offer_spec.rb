@@ -31,4 +31,20 @@ RSpec.describe Offer, type: :model do
       end
     end
   end
+
+  describe '#from_participant' do
+    let(:order) { Fabricate(:order, buyer_id: 'buyer1', buyer_type: 'user', seller_id: 'seller1', seller_type: 'gallery') }
+    let(:seller_offer) { Fabricate(:offer, order: order, from_id: 'seller1', from_type: 'gallery') }
+    let(:buyer_offer) { Fabricate(:offer, order: order, from_id: 'buyer1', from_type: 'user') }
+    let(:ufo_offer) { Fabricate(:offer, order: order, from_id: 'marse', from_type: 'ufo') }
+    it 'returns buyer for buyer_offer' do
+      expect(buyer_offer.from_participant).to eq Order::BUYER
+    end
+    it 'returns seller for seller_offer' do
+      expect(seller_offer.from_participant).to eq Order::SELLER
+    end
+    it 'returns nil for ufo_offer' do
+      expect(ufo_offer.from_participant).to be_nil
+    end
+  end
 end

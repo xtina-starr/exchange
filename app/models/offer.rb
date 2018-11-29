@@ -12,4 +12,12 @@ class Offer < ApplicationRecord
   def submitted?
     submitted_at.present?
   end
+
+  def from_participant
+    if from_id == order.seller_id && from_type == order.seller_type
+      Order::SELLER
+    elsif from_id == order.buyer_id && from_type == order.buyer_type
+      Order::BUYER
+    end
+  end
 end
