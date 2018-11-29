@@ -322,6 +322,7 @@ type Offer {
   createdAt: DateTime!
   creatorId: String!
   from: OrderPartyUnion!
+  fromParticipant: OrderParticipantEnum
   id: ID!
   order: Order!
   respondsTo: Offer
