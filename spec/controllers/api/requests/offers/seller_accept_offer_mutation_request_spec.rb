@@ -6,9 +6,31 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:order_seller_id) { jwt_partner_ids.first }
     let(:order_buyer_id) { jwt_user_id }
-    let(:order) { Fabricate(:order, state: order_state, seller_id: order_seller_id, seller_type: 'gallery', buyer_id: order_buyer_id, buyer_type: 'user') }
-    let(:offer) { Fabricate(:offer, order: order, from_id: order_buyer_id, from_type: 'user') }
     let(:order_state) { Order::SUBMITTED }
+    let(:order) do
+      Fabricate(
+        :order,
+        state: order_state,
+        seller_id: order_seller_id,
+        buyer_id: order_buyer_id,
+        credit_card_id: credit_card_id,
+        shipping_name: 'Fname Lname',
+        shipping_address_line1: '12 Vanak St',
+        shipping_address_line2: 'P 80',
+        shipping_city: 'Tehran',
+        shipping_postal_code: '02198',
+        buyer_phone_number: '00123456',
+        shipping_country: 'IR',
+        fulfillment_type: Order::SHIP,
+        items_total_cents: 1000_00,
+        seller_type: 'gallery',
+        buyer_type: 'user'
+      )
+    end
+    let!(:line_item) do
+      Fabricate(:line_item, order: order, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1')
+    end
+    let(:offer) { Fabricate(:offer, order: order, from_id: order_buyer_id, from_type: 'user', amount_cents: 800_00) }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -113,9 +135,28 @@ describe Api::GraphqlController, type: :request do
 
     context 'with proper permission' do
       it 'approves the order' do
-        expect do
-          client.execute(mutation, seller_accept_offer_input)
-        end.to change { order.reload.state }.from(Order::SUBMITTED).to(Order::APPROVED)
+        inventory_request = stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json)
+        expect(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
+        expect(GravityService).to receive(:get_credit_card).and_return(credit_card)
+        allow(GravityService).to receive(:get_artwork).and_return(artwork)
+        expect(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
+        response = client.execute(mutation, seller_accept_offer_input)
+
+        expect(inventory_request).to have_been_requested
+
+        expect(response.data.seller_accept_offer.order_or_error).to respond_to(:order)
+        expect(response.data.seller_accept_offer.order_or_error.order).not_to be_nil
+
+        response_order = response.data.seller_accept_offer.order_or_error.order
+        expect(response_order.id).to eq order.id.to_s
+        expect(response_order.state).to eq Order::APPROVED.upcase
+
+        expect(response.data.seller_accept_offer.order_or_error).not_to respond_to(:error)
+        expect(order.reload.state).to eq Order::APPROVED
+        expect(order.state_updated_at).not_to be_nil
+        expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
+        expect(order.reload.transactions.last.external_id).not_to be_nil
+        expect(order.reload.transactions.last.transaction_type).to eq Transaction::CAPTURE
       end
     end
   end
