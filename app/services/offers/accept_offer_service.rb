@@ -11,8 +11,8 @@ module Offers
     
     def process_payment
       super
-      @transaction = PaymentService.create_charge(construct_charge_params(capture: true))
-      raise Errors::ProcessingError.new(:charge_failed, @transaction.failure_data) if @transaction.failed?
+      @transaction = PaymentService.create_and_capture_charge(construct_charge_params)
+      raise Errors::ProcessingError.new(:capture_failed, @transaction.failure_data) if @transaction.failed?
     end
 
     def pre_process!

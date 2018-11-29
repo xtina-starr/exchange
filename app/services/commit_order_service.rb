@@ -78,7 +78,7 @@ class CommitOrderService
     PostTransactionNotificationJob.perform_later(@transaction.id, TransactionEvent::CREATED, @by)
   end
 
-  def construct_charge_params(capture:)
+  def construct_charge_params
     {
       credit_card: @credit_card,
       buyer_amount: @order.buyer_total_cents,
@@ -87,7 +87,6 @@ class CommitOrderService
       currency_code: @order.currency_code,
       metadata: charge_metadata,
       description: charge_description,
-      capture: capture
     }
   end
 

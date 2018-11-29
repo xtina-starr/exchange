@@ -19,7 +19,15 @@ module PaymentService
     generate_transaction_from_exception(e, transaction_type, credit_card: credit_card, merchant_account: merchant_account, buyer_amount: buyer_amount)
   end
 
-  def self.capture_charge(charge_id)
+  def self.create_and_authorize_charge(charge_params)
+    create_charge(charge_params.merge(capture: false))
+  end
+
+  def self.create_and_capture_charge(charge_params)
+    create_charge(charge_params.merge(capture: true))
+  end
+
+  def self.capture_authorized_charge(charge_id)
     charge = Stripe::Charge.retrieve(charge_id)
     charge.capture
     Transaction.new(external_id: charge.id, source_id: charge.source, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::CAPTURE, status: Transaction::SUCCESS)
