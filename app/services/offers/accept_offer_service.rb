@@ -1,29 +1,28 @@
 module Offers
-  class AcceptOfferService
+  class AcceptOfferService < CommitOrderService
     include OfferValidationService
-    def initialize(offer:, order:, user_id:)
+    attr_reader :order, :offer, user_id
+    def initialize(offer:, order:, user_id: nil)
+      super(order, :approve!, user_id)
       @offer = offer
-      @order = order
-      @user_id = user_id
-    end
-
-    def process!
-      # Deduct artwork from inventory
-      # Charge buyer
-      validate_is_last_offer!
-
-      order.approve!
-
-      publish_order_approved
-      instrument_order_approved
     end
 
     private
+    
+    def process_payment
+      super
+      @transaction = PaymentService.create_charge(construct_charge_params(capture: true))
+      raise Errors::ProcessingError.new(:charge_failed, @transaction.failure_data) if @transaction.failed?
+    end
 
-    attr_reader :order, :offer, :user_id
+    def pre_process!
+      super
+      validate_is_last_offer!
+    end
 
-    def publish_order_approved
-      PostOrderNotificationJob.perform_later(order.id, Order::APPROVED, user_id)
+    def post_process!
+      super
+      instrument_order_approved
     end
 
     def instrument_order_approved

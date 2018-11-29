@@ -1,5 +1,6 @@
 module PaymentService
-  def self.authorize_charge(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:)
+  def self.create_charge(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:)
+    transaction_type = capture ? Transaction::CAPTURE : Transaction::HOLD
     charge = Stripe::Charge.create(
       amount: buyer_amount,
       currency: currency_code,
@@ -13,9 +14,9 @@ module PaymentService
       metadata: metadata,
       capture: capture
     )
-    Transaction.new(external_id: charge.id, source_id: charge.source.id, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::HOLD, status: Transaction::SUCCESS)
+    Transaction.new(external_id: charge.id, source_id: charge.source.id, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: transaction_type, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
-    generate_transaction_from_exception(e, Transaction::HOLD, credit_card: credit_card, merchant_account: merchant_account, buyer_amount: buyer_amount)
+    generate_transaction_from_exception(e, transaction_type, credit_card: credit_card, merchant_account: merchant_account, buyer_amount: buyer_amount)
   end
 
   def self.capture_charge(charge_id)

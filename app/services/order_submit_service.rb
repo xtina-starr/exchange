@@ -11,7 +11,7 @@ class OrderSubmitService < CommitOrderService
   
   def process_payment
     super
-    @transaction = PaymentService.authorize_charge(construct_charge_params(capture: false))
+    @transaction = PaymentService.create_charge(construct_charge_params(capture: false))
     raise Errors::ProcessingError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
   end
 

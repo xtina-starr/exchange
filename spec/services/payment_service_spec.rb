@@ -22,9 +22,9 @@ describe PaymentService, type: :services do
     }
   end
 
-  describe '#authorize_charge' do
+  describe '#create_charge' do
     it "authorizes a charge on the user's credit card" do
-      transaction = PaymentService.authorize_charge(params)
+      transaction = PaymentService.create_charge(params)
       expect(transaction.amount_cents).to eq(20_00)
       expect(transaction.source_id).to eq(stripe_customer.default_source)
       expect(transaction.status).to eq(Transaction::SUCCESS)
@@ -34,7 +34,7 @@ describe PaymentService, type: :services do
     end
     it 'catches Stripe errors and returns a failed transaction' do
       StripeMock.prepare_card_error(:card_declined, :new_charge)
-      transaction = PaymentService.authorize_charge(params)
+      transaction = PaymentService.create_charge(params)
       expect(transaction.amount_cents).to eq buyer_amount
       expect(transaction.source_id).to eq stripe_customer.default_source
       expect(transaction.destination_id).to eq 'ma-1'

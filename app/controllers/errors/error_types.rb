@@ -49,6 +49,7 @@ module Errors
       artwork_version_mismatch
       capture_failed
       charge_authorization_failed
+      charge_failed
       insufficient_inventory
       refund_failed
       tax_recording_failure

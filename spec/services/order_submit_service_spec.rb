@@ -26,7 +26,7 @@ describe OrderSubmitService, type: :services do
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
   let(:partner_merchant_accounts) { [{ external_id: 'ma-1' }, { external_id: 'some_account' }] }
-  let(:authorize_charge_params) do
+  let(:create_charge_params) do
     {
       source_id: credit_card[:external_id],
       destination_id: merchant_account_id,
