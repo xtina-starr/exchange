@@ -20,13 +20,4 @@ class Types::OfferOrderType < Types::BaseObject
 
     object.offers.where(creator_id: context[:current_user][:id]).order(created_at: :desc).first
   end
-
-  def awaiting_response_from
-    return unless object.mode == Order::OFFER && object.state == Order::SUBMITTED
-
-    case object&.last_offer&.from_participant
-    when Order::BUYER then Order::SELLER
-    when Order::SELLER then Order::BUYER
-    end
-  end
 end

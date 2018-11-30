@@ -2,12 +2,12 @@ require 'rails_helper'
 require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
-  describe 'seller_approve_order mutation' do
+  describe 'seller_accept_offer mutation' do
     include_context 'GraphQL Client'
-    let(:partner_id) { jwt_partner_ids.first }
-    let(:user_id) { jwt_user_id }
-    let(:order) { Fabricate(:order, state: order_state, seller_id: partner_id, buyer_id: user_id) }
-    let(:offer) { Fabricate(:offer, order: order) }
+    let(:order_seller_id) { jwt_partner_ids.first }
+    let(:order_buyer_id) { jwt_user_id }
+    let(:order) { Fabricate(:order, state: order_state, seller_id: order_seller_id, seller_type: 'gallery', buyer_id: order_buyer_id, buyer_type: 'user') }
+    let(:offer) { Fabricate(:offer, order: order, from_id: order_buyer_id, from_type: 'user') }
     let(:order_state) { Order::SUBMITTED }
 
     let(:mutation) do
@@ -72,13 +72,25 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'with user without permission to this partner' do
-      let(:partner_id) { 'another-partner-id' }
+      let(:order_seller_id) { 'another-partner-id' }
 
       it 'returns permission error' do
         response = client.execute(mutation, seller_accept_offer_input)
 
         expect(response.data.seller_accept_offer.order_or_error.error.type).to eq 'validation'
         expect(response.data.seller_accept_offer.order_or_error.error.code).to eq 'not_found'
+        expect(order.reload.state).to eq Order::SUBMITTED
+      end
+    end
+
+    context 'offer from seller' do
+      let(:offer) { Fabricate(:offer, order: order, from_id: order_seller_id, from_type: 'gallery') }
+
+      it 'returns permission error' do
+        response = client.execute(mutation, seller_accept_offer_input)
+
+        expect(response.data.seller_accept_offer.order_or_error.error.type).to eq 'validation'
+        expect(response.data.seller_accept_offer.order_or_error.error.code).to eq 'cannot_accept_offer'
         expect(order.reload.state).to eq Order::SUBMITTED
       end
     end

@@ -163,6 +163,15 @@ class Order < ApplicationRecord
     shipping_info? && payment_info?
   end
 
+  def awaiting_response_from
+    return unless mode == Order::OFFER && state == Order::SUBMITTED
+
+    case last_offer&.from_participant
+    when Order::BUYER then Order::SELLER
+    when Order::SELLER then Order::BUYER
+    end
+  end
+
   private
 
   def state_reason_inclusion

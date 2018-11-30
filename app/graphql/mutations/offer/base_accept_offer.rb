@@ -1,4 +1,4 @@
-class Mutations::SellerAcceptOffer < Mutations::BaseMutation
+class Mutations::Offer::BaseAcceptOffer < Mutations::BaseMutation
   null true
 
   argument :offer_id, ID, required: true
@@ -9,7 +9,8 @@ class Mutations::SellerAcceptOffer < Mutations::BaseMutation
     offer = Offer.find(offer_id)
     order = offer.order
 
-    authorize_seller_request!(order)
+    authorize!(order)
+    raise Errors::ValidationError, :cannot_accept_offer unless waiting_for_accept?(offer)
 
     Offers::AcceptService.new(
       offer: offer,
@@ -20,5 +21,13 @@ class Mutations::SellerAcceptOffer < Mutations::BaseMutation
     { order_or_error: { order: order.reload } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
+  end
+
+  def authorize!(_order)
+    raise NotImplementedError
+  end
+
+  def waiting_for_accept?(_offer)
+    raise NotImplementedError
   end
 end
