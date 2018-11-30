@@ -1,4 +1,6 @@
 class Mutations::BaseMutation < GraphQL::Schema::RelayClassicMutation
+  private
+
   def authorize_seller_request!(order)
     raise Errors::ValidationError, :not_found unless authorized_to_sell?(order)
   end
@@ -11,7 +13,9 @@ class Mutations::BaseMutation < GraphQL::Schema::RelayClassicMutation
     raise Errors::ValidationError, :not_found unless context[:current_user]['id'] == offer.from_id && offer.from_type == Order::USER
   end
 
-  private
+  def current_user_id
+    context[:current_user]['id']
+  end
 
   def authorized_to_sell?(order)
     current_user_is_on_seller = context[:current_user]['partner_ids'].include?(order.seller_id)

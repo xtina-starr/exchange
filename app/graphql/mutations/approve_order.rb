@@ -8,7 +8,7 @@ class Mutations::ApproveOrder < Mutations::BaseMutation
   def resolve(id:)
     order = Order.find(id)
     authorize_seller_request!(order)
-    OrderApproveService.new(order, context[:current_user]['id']).process!
+    OrderApproveService.new(order, current_user_id).process!
     {
       order_or_error: { order: order.reload }
     }
