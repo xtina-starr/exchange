@@ -20,14 +20,5 @@ module Offers
       validate_is_last_offer!(@offer)
       validate_offer_is_from_buyer!(@offer)
     end
-
-    def post_process!
-      super
-      instrument_order_approved
-    end
-
-    def instrument_order_approved
-      Exchange.dogstatsd.increment 'order.approve'
-    end
   end
 end

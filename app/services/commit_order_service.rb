@@ -78,6 +78,7 @@ class CommitOrderService
 
   def post_process!
     @order.update!(external_charge_id: @transaction.external_id)
+    Exchange.dogstatsd.increment "order.#{@action}"
   end
 
   def notify_failed_charge
