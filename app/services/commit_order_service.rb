@@ -1,13 +1,12 @@
 class CommitOrderService
-  def self.call!(order, order_state_action:, by: nil)
-    new(order, order_state_action, by).process!
-  end
 
   attr_accessor :order, :credit_card, :merchant_account, :partner
 
-  def initialize(order, order_state_action, user_id)
+  COMMITTABLE_ACTIONS = %i[ approve submit ]
+
+  def initialize(order, action, user_id)
     @order = order
-    @order_state_action = order_state_action
+    @action = action
     @user_id = user_id
     @credit_card = nil
     @merchant_account = nil
@@ -37,7 +36,7 @@ class CommitOrderService
   end
 
   def commit_order!
-    @order.send(@order_state_action) do
+    @order.send("#{@action}!") do
       deduct_inventory
       process_payment
     end
@@ -61,6 +60,8 @@ class CommitOrderService
   end
 
   def pre_process!
+    raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? action
+
     @order.line_items.map do |li|
       artwork = GravityService.get_artwork(li[:artwork_id])
       Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
