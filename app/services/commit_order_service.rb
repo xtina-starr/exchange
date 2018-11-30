@@ -60,7 +60,7 @@ class CommitOrderService
   end
 
   def pre_process!
-    raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? action
+    raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? @action
 
     @order.line_items.map do |li|
       artwork = GravityService.get_artwork(li[:artwork_id])
@@ -106,7 +106,7 @@ class CommitOrderService
   end
 
   def charge_description
-    partner_name = (@partner[:name] || '').parameterize[0...12].upcase}
+    partner_name = (@partner[:name] || '').parameterize[0...12].upcase
     "#{partner_name} via Artsy"
   end
 
