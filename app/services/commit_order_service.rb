@@ -4,10 +4,11 @@ class CommitOrderService
   end
 
   attr_accessor :order, :credit_card, :merchant_account, :partner
-  def initialize(order, order_state_action, by)
+
+  def initialize(order, order_state_action, user_id)
     @order = order
     @order_state_action = order_state_action
-    @by = by
+    @user_id = user_id
     @credit_card = nil
     @merchant_account = nil
     @partner = nil
@@ -24,13 +25,16 @@ class CommitOrderService
     undeduct_inventory
     raise e
   ensure
-    if @transaction.present?
-      @order.transactions << @transaction
-      notify_failed_charge if @transaction.failed?
-    end
+    handle_transaction
   end
   
   protected
+
+  def handle_transaction
+    return unless @transaction.present?
+    @order.transactions << @transaction
+    notify_failed_charge if @transaction.failed?
+  end
 
   def commit_order!
     @order.send(@order_state_action) do
@@ -53,6 +57,7 @@ class CommitOrderService
   end
   
   def process_payment
+    raise UnimplementedError
   end
 
   def pre_process!
@@ -75,7 +80,7 @@ class CommitOrderService
   end
 
   def notify_failed_charge
-    PostTransactionNotificationJob.perform_later(@transaction.id, TransactionEvent::CREATED, @by)
+    PostTransactionNotificationJob.perform_later(@transaction.id, TransactionEvent::CREATED, @user_id)
   end
 
   def construct_charge_params
@@ -91,13 +96,16 @@ class CommitOrderService
   end
 
   def assert_credit_card!
-    raise Errors::ValidationError.new(:credit_card_missing_external_id, credit_card_id: @credit_card[:id]) if @credit_card[:external_id].blank?
-    raise Errors::ValidationError.new(:credit_card_missing_customer, credit_card_id: @credit_card[:id]) if @credit_card.dig(:customer_account, :external_id).blank?
-    raise Errors::ValidationError.new(:credit_card_deactivated, credit_card_id: @credit_card[:id]) unless @credit_card[:deactivated_at].nil?
+    error_type = nil
+    error_type = :credit_card_missing_external_id if @credit_card[:external_id].blank?
+    error_type = :credit_card_missing_customer if @credit_card.dig(:customer_account, :external_id).blank?
+    error_type = :credit_card_deactivated unless @credit_card[:deactivated_at].nil?
+    raise Errors::ValidationError.new(error_type, credit_card_id: @credit_card[:id]) if error_type
   end
 
   def charge_description
-    "#{(@partner[:name] || '').parameterize[0...12].upcase} via Artsy"
+    partner_name = (@partner[:name] || '').parameterize[0...12].upcase}
+    "#{partner_name} via Artsy"
   end
 
   def charge_metadata
