@@ -9,10 +9,11 @@ class Mutations::SellerCounterOffer < Mutations::BaseMutation
   def resolve(offer_id:, amount_cents:)
     offer = Offer.find(offer_id)
     order = offer.order
-
     authorize_seller_request!(order)
 
-    Offers::CounterOfferService.new(offer: offer, amount_cents: amount_cents, from_type: Order::PARTNER).process!
+      
+    service = Offers::CounterOfferService.new(offer: offer, amount_cents: amount_cents, from_type: Order::PARTNER)
+    service.process!
 
     { order_or_error: { order: order.reload } }
   rescue Errors::ApplicationError => e
