@@ -33,7 +33,7 @@ describe Offers::OfferTotalUpdaterService, type: :services do
     end
     let(:offer_tax) { 100 }
     let(:remit_tax) { false }
-    let(:text_calculator_service) { double }
+    let(:tax_calculator_service) { double }
     let(:service) { Offers::OfferTotalUpdaterService.new(offer: offer) }
 
     before do
@@ -46,9 +46,9 @@ describe Offers::OfferTotalUpdaterService, type: :services do
         1000,
         instance_of(Address),
         [partner_address]
-      ).and_return(text_calculator_service)
-      allow(text_calculator_service).to receive(:sales_tax).and_return(offer_tax)
-      allow(text_calculator_service).to receive(:artsy_should_remit_taxes?).and_return(remit_tax)
+      ).and_return(tax_calculator_service)
+      allow(tax_calculator_service).to receive(:sales_tax).and_return(offer_tax)
+      allow(tax_calculator_service).to receive(:artsy_should_remit_taxes?).and_return(remit_tax)
       allow(GravityService).to receive(:fetch_partner_locations).with(partner_id).and_return([partner_address])
       allow(GravityService).to receive(:get_artwork).and_return(artwork)
     end
