@@ -14,7 +14,6 @@ describe Offers::CounterOfferService, type: :services do
 
       allow(Offers::OfferTotalUpdaterService).to receive(:new).with(offer: instance_of(Offer)).and_return(offer_totol_updater_service)
       allow(offer_totol_updater_service).to receive(:process!)
-
     end
 
     context 'with a submitted offer' do

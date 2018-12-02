@@ -49,5 +49,4 @@ class BaseTotalCalculatorService
   rescue Errors::AddressError => e
     raise Errors::ValidationError, e.code
   end
-
 end

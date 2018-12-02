@@ -21,7 +21,7 @@ module Offers
         responds_to: @offer,
         submitted_at: @submitted_at
       )
-      # todo not to update last offer if it is a pending offer?!?!
+      # TODO: not to update last offer if it is a pending offer?!?!
       @order.update!(last_offer: @pending_offer)
       totals_service = OfferTotalUpdaterService.new(offer: @pending_offer)
       totals_service.process!
@@ -36,6 +36,5 @@ module Offers
     def instrument_offer_counter
       Exchange.dogstatsd.increment 'offer.counter'
     end
-
   end
 end

@@ -11,7 +11,6 @@ class Mutations::SellerCounterOffer < Mutations::BaseMutation
     order = offer.order
     authorize_seller_request!(order)
 
-      
     service = Offers::CounterOfferService.new(offer: offer, amount_cents: amount_cents, from_type: Order::PARTNER)
     service.process!
 
