@@ -10,9 +10,11 @@ class Mutations::SellerCounterOffer < Mutations::BaseMutation
     offer = Offer.find(offer_id)
     order = offer.order
     authorize_seller_request!(order)
+    init_service = Offers::InitialCounterOfferService.new(offer: offer, amount_cents: amount_cents)
+    pending_offer = init_service.process!
 
-    service = Offers::InitialCounterOfferService.new(offer: offer, amount_cents: amount_cents)
-    service.process!
+    submit_service = Offers::SubmitCounterOfferService.new(pending_offer: pending_offer)
+    submit_service.process!
 
     { order_or_error: { order: order.reload } }
   rescue Errors::ApplicationError => e

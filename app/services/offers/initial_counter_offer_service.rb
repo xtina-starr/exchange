@@ -22,6 +22,8 @@ module Offers
       totals_service.process!
 
       instrument_offer_counter
+
+      @pending_offer
     end
 
     private

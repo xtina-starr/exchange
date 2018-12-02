@@ -138,6 +138,14 @@ describe Api::GraphqlController, type: :request do
       it 'counters the order' do
         expect do
           client.execute(mutation, seller_counter_offer_input)
+          expect(order.reload.last_offer.responds_to).to eq(offer)
+          expect(order.reload.last_offer.amount_cents).to eq(10000)
+          expect(order.reload.last_offer.tax_total_cents).to eq(300)
+          expect(order.reload.last_offer.should_remit_sales_tax).to eq(false)
+          expect(order.reload.last_offer.amount_cents).to eq(10000)
+          expect(order.reload.last_offer.submitted_at).not_to eq(nil)
+          # shouldn't update order amounts until offer is accepted
+          expect(order.reload.items_total_cents).to eq(0)
         end.to change { order.reload.offers.count }.from(1).to(2)
       end
     end

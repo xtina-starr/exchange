@@ -11,12 +11,13 @@ describe Offers::InitialCounterOfferService, type: :services do
       # last_offer is set in Orders::InitialOffer. "Stubbing" out the
       # dependent behavior of this class to by setting last_offer directly
       order.update!(last_offer: offer)
-
-      allow(Offers::OfferTotalUpdaterService).to receive(:new).with(offer: instance_of(Offer)).and_return(offer_totol_updater_service)
-      allow(offer_totol_updater_service).to receive(:process!)
     end
 
     context 'with a submitted offer' do
+      before do
+        expect(Offers::OfferTotalUpdaterService).to receive(:new).with(offer: instance_of(Offer)).and_return(offer_totol_updater_service)
+        expect(offer_totol_updater_service).to receive(:process!).and_return(instance_of(offer))
+      end
       it 'adds a new offer to order and does not updates last offer' do
         service.process!
         expect(order.offers.count).to eq(2)
