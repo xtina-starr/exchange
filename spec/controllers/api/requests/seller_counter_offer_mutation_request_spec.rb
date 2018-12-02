@@ -92,7 +92,7 @@ describe Api::GraphqlController, type: :request do
       end
     end
 
-    context 'when attempting to counter not the last offer' do
+    context 'when attempting to counter not-the-last-offer' do
       it 'returns a validation error and does not change the order state' do
         create_order_and_original_offer
         create_another_offer

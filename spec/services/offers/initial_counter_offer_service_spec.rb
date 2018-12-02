@@ -1,10 +1,10 @@
 require 'rails_helper'
 
-describe Offers::CounterOfferService, type: :services do
+describe Offers::InitialCounterOfferService, type: :services do
   describe '#process!' do
     let(:order) { Fabricate(:order, state: Order::SUBMITTED) }
-    let(:offer) { Fabricate(:offer, order: order, amount_cents: 10000) }
-    let(:service) { Offers::CounterOfferService.new(offer: offer, amount_cents: 20000, from_type: Order::PARTNER) }
+    let(:offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
+    let(:service) { Offers::InitialCounterOfferService.new(offer: offer, amount_cents: 20000) }
     let(:offer_totol_updater_service) { double }
 
     before do
@@ -17,15 +17,16 @@ describe Offers::CounterOfferService, type: :services do
     end
 
     context 'with a submitted offer' do
-      it 'adds a new offer to order and updates last offer' do
+      it 'adds a new offer to order and does not updates last offer' do
         service.process!
         expect(order.offers.count).to eq(2)
-        expect(order.last_offer.amount_cents).to eq(20000)
-        expect(order.last_offer.responds_to).to eq(order.offers[0])
-        expect(order.last_offer.submitted_at).not_to be_nil
+        pending_offer = order.offers.reject { |offer| offer.id == order.last_offer.id }.first
+        expect(pending_offer.amount_cents).to eq(20000)
+        expect(pending_offer.responds_to).to eq(order.offers[0])
+        expect(pending_offer.submitted_at).to be_nil
       end
 
-      it 'instruments an rejected offer' do
+      it 'instruments counter offer' do
         dd_statsd = stub_ddstatsd_instance
         allow(dd_statsd).to receive(:increment).with('offer.counter')
 
@@ -49,15 +50,16 @@ describe Offers::CounterOfferService, type: :services do
           .to raise_error(Errors::ValidationError)
       end
 
-      it 'does not reject the order' do
+      it 'does not change order and offers' do
         expect {  service.process! }.to raise_error(Errors::ValidationError)
 
         expect(order.reload.state).to eq(Order::SUBMITTED)
+        expect(order.reload.offers.count).to eq(2)
       end
 
       it 'does not instrument' do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.reject')
+        allow(dd_statsd).to receive(:increment).with('order.counter')
 
         expect {  service.process! }.to raise_error(Errors::ValidationError)
 
@@ -73,15 +75,16 @@ describe Offers::CounterOfferService, type: :services do
           .to raise_error(Errors::ValidationError)
       end
 
-      it 'does not reject the order' do
+      it 'does not change order and offers' do
         expect {  service.process! }.to raise_error(Errors::ValidationError)
 
         expect(order.reload.state).to eq(Order::SUBMITTED)
+        expect(order.reload.offers.count).to eq(1)
       end
 
       it 'does not instrument' do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.reject')
+        allow(dd_statsd).to receive(:increment).with('order.counter')
 
         expect {  service.process! }.to raise_error(Errors::ValidationError)
 

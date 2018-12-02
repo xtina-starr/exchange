@@ -56,7 +56,6 @@ describe Offers::OfferTotalUpdaterService, type: :services do
     context 'with an offer' do
       it 'calculates tax and shipping for the offer' do
         service.process!
-        puts offer.inspect
         expect(offer.shipping_total_cents).to eq(1000)
         expect(offer.tax_total_cents).to eq(offer_tax)
         expect(offer.should_remit_sales_tax).to eq(false)
