@@ -37,7 +37,6 @@ describe Api::GraphqlController, type: :request do
     end
     let(:taxjar_client) { double }
     let(:tax_response) { double(amount_to_collect: 3.00) }
-    let(:service) { Offers::CounterOfferService.new(offer: offer, amount_cents: 20000, from_type: Order::PARTNER) }
 
     let(:mutation) do
       <<-GRAPHQL
