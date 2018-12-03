@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_11_29_132032) do
+ActiveRecord::Schema.define(version: 2018_12_03_203227) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -160,7 +160,7 @@ ActiveRecord::Schema.define(version: 2018_11_29_132032) do
 
   create_table "versions", force: :cascade do |t|
     t.string "item_type", null: false
-    t.string "item_id", null: false
+    t.uuid "item_id", null: false
     t.string "event", null: false
     t.string "whodunnit"
     t.jsonb "object"
