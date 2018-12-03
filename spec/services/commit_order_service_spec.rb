@@ -102,34 +102,6 @@ describe CommitOrderService, type: :services do
       service.send(:deduct_inventory)
       expect(service.instance_variable_get("@deducted_inventory").count).to eq line_items.count
     end
-    context 'with failed artwork inventory deduct' do
-      let(:artwork_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 400, body: { message: 'could not deduct' }.to_json) }
-      before do
-        artwork_inventory_deduct_request
-        edition_set_inventory_deduct_request
-        artwork_inventory_undeduct_request
-        edition_set_inventory_undeduct_request
-      end
-      it 'raises proper error response' do
-        expect do
-          service.send(:deduct_inventory)
-        end.to raise_error do |error|
-          expect(error).to be_a(Errors::ProcessingError)
-          expect(error.type).to eq :processing
-          expect(error.code).to eq :insufficient_inventory
-          expect(line_items.pluck(:id)).to include error.data[:line_item_id]
-        end
-      end
-      it 'does not call to update edition set inventory' do
-        expect do
-          service.send(:deduct_inventory)
-        end.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(0)
-        expect(artwork_inventory_deduct_request).to have_been_requested
-        expect(edition_set_inventory_deduct_request).to_not have_been_requested
-        expect(artwork_inventory_undeduct_request).not_to have_been_requested
-        expect(edition_set_inventory_undeduct_request).not_to have_been_requested
-      end
-    end
   end
 
   describe '#post_process!' do
