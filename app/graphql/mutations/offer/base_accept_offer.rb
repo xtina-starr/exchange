@@ -12,7 +12,7 @@ class Mutations::Offer::BaseAcceptOffer < Mutations::BaseMutation
     authorize!(order)
     raise Errors::ValidationError, :cannot_accept_offer unless waiting_for_accept?(offer)
 
-    Offers::AcceptService.new(
+    Offers::AcceptOfferService.new(
       offer: offer,
       order: order,
       user_id: current_user_id
