@@ -1,10 +1,10 @@
 require 'rails_helper'
 
-describe Offers::InitialCounterOfferService, type: :services do
+describe Offers::AddPendingCounterOfferService, type: :services do
   describe '#process!' do
     let(:order) { Fabricate(:order, state: Order::SUBMITTED) }
     let(:offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
-    let(:service) { Offers::InitialCounterOfferService.new(offer: offer, amount_cents: 20000) }
+    let(:service) { Offers::AddPendingCounterOfferService.new(offer: offer, amount_cents: 20000) }
     let(:offer_totol_updater_service) { double }
 
     before do
@@ -25,15 +25,6 @@ describe Offers::InitialCounterOfferService, type: :services do
         expect(pending_offer.amount_cents).to eq(20000)
         expect(pending_offer.responds_to).to eq(order.offers[0])
         expect(pending_offer.submitted_at).to be_nil
-      end
-
-      it 'instruments counter offer' do
-        dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('offer.counter')
-
-        service.process!
-
-        expect(dd_statsd).to have_received(:increment).with('offer.counter')
       end
     end
 
@@ -57,15 +48,6 @@ describe Offers::InitialCounterOfferService, type: :services do
         expect(order.reload.state).to eq(Order::SUBMITTED)
         expect(order.reload.offers.count).to eq(2)
       end
-
-      it 'does not instrument' do
-        dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.counter')
-
-        expect {  service.process! }.to raise_error(Errors::ValidationError)
-
-        expect(dd_statsd).to_not have_received(:increment)
-      end
     end
 
     context 'attempting to counter its own offer' do
@@ -81,15 +63,6 @@ describe Offers::InitialCounterOfferService, type: :services do
 
         expect(order.reload.state).to eq(Order::SUBMITTED)
         expect(order.reload.offers.count).to eq(1)
-      end
-
-      it 'does not instrument' do
-        dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.counter')
-
-        expect {  service.process! }.to raise_error(Errors::ValidationError)
-
-        expect(dd_statsd).to_not have_received(:increment)
       end
     end
   end

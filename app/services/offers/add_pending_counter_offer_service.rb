@@ -1,5 +1,5 @@
 module Offers
-  class InitialCounterOfferService < BaseOfferService
+  class AddPendingCounterOfferService < BaseOfferService
     def initialize(offer:, amount_cents:)
       @offer = offer
       @order = offer.order
@@ -21,8 +21,6 @@ module Offers
       totals_service = OfferTotalUpdaterService.new(offer: @pending_offer)
       totals_service.process!
 
-      instrument_offer_counter
-
       @pending_offer
     end
 
@@ -30,8 +28,5 @@ module Offers
 
     attr_reader :offer
 
-    def instrument_offer_counter
-      Exchange.dogstatsd.increment 'offer.counter'
-    end
   end
 end

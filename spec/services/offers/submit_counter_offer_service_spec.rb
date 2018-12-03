@@ -29,11 +29,11 @@ describe Offers::SubmitCounterOfferService, type: :services do
 
       it 'instruments an rejected offer' do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('offer.counter.submitted')
+        allow(dd_statsd).to receive(:increment).with('offer.counter')
 
         service.process!
 
-        expect(dd_statsd).to have_received(:increment).with('offer.counter.submitted')
+        expect(dd_statsd).to have_received(:increment).with('offer.counter')
       end
     end
 
@@ -46,7 +46,7 @@ describe Offers::SubmitCounterOfferService, type: :services do
 
       it 'does not instrument' do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.counter.submit')
+        allow(dd_statsd).to receive(:increment).with('order.counter')
 
         expect {  service.process! }.to raise_error(Errors::ValidationError)
 
@@ -71,7 +71,7 @@ describe Offers::SubmitCounterOfferService, type: :services do
 
       it 'does not instrument' do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.reject')
+        allow(dd_statsd).to receive(:increment).with('order.counter')
 
         expect {  service.process! }.to raise_error(Errors::ValidationError)
 

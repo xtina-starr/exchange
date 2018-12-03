@@ -24,7 +24,7 @@ module Offers
     attr_reader :offer
 
     def instrument_offer_counter
-      Exchange.dogstatsd.increment 'offer.counter.submitted'
+      Exchange.dogstatsd.increment 'offer.counter'
     end
 
     def validate_offer_not_submitted!(offer)

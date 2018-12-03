@@ -1,4 +1,4 @@
-class Mutations::SellerCounterOffer < Mutations::BaseMutation
+class Mutations::SellerCounterOfferOnOrder < Mutations::BaseMutation
   null true
 
   argument :offer_id, ID, required: true
@@ -10,7 +10,7 @@ class Mutations::SellerCounterOffer < Mutations::BaseMutation
     offer = Offer.find(offer_id)
     order = offer.order
     authorize_seller_request!(order)
-    init_service = Offers::InitialCounterOfferService.new(offer: offer, amount_cents: amount_cents)
+    init_service = Offers::AddPendingCounterOfferService.new(offer: offer, amount_cents: amount_cents)
     pending_offer = init_service.process!
 
     submit_service = Offers::SubmitCounterOfferService.new(pending_offer: pending_offer)

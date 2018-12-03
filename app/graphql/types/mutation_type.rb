@@ -12,7 +12,7 @@ class Types::MutationType < Types::BaseObject
   # Seller
   field :approve_order, mutation: Mutations::ApproveOrder
   field :seller_accept_offer, mutation: Mutations::Offer::SellerAcceptOffer
-  field :seller_counter_offer, mutation: Mutations::SellerCounterOffer
+  field :seller_counter_offer_on_order, mutation: Mutations::SellerCounterOfferOnOrder
   field :seller_reject_offer, mutation: Mutations::SellerRejectOffer
   field :reject_order, mutation: Mutations::RejectOrder
   field :fulfill_at_once, mutation: Mutations::FulfillAtOnce
