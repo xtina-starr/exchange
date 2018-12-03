@@ -2,11 +2,15 @@ require 'rails_helper'
 require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
+  include_context 'use stripe mock'
   describe 'seller_accept_offer mutation' do
     include_context 'GraphQL Client'
     let(:order_seller_id) { jwt_partner_ids.first }
     let(:order_buyer_id) { jwt_user_id }
     let(:order_state) { Order::SUBMITTED }
+    let(:credit_card_id) { 'cc-1' }
+    let(:merchant_account) { { external_id: 'ma-1' } }
+    let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
     let(:order) do
       Fabricate(
         :order,
@@ -31,6 +35,7 @@ describe Api::GraphqlController, type: :request do
       Fabricate(:line_item, order: order, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1')
     end
     let(:offer) { Fabricate(:offer, order: order, from_id: order_buyer_id, from_type: 'user', amount_cents: 800_00) }
+    let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
 
     let(:mutation) do
       <<-GRAPHQL

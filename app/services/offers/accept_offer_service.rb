@@ -18,5 +18,10 @@ module Offers
       super
       validate_is_last_offer!(@offer)
     end
+
+    def post_process!
+      super
+      PostOrderNotificationJob.perform_later(@order.id, Order::APPROVED, @user_id)
+    end
   end
 end

@@ -223,7 +223,7 @@ describe OrderSubmitService, type: :services do
               amount: 3369_00
             },
             capture: false
-          ).and_return(captured_charge)
+          ).and_return(uncaptured_charge)
           artwork_inventory_deduct_request
           edition_set_inventory_deduct_request
           service.process!
@@ -250,7 +250,7 @@ describe OrderSubmitService, type: :services do
                 amount: 3369_00
               },
               capture: false
-            ).and_return(captured_charge)
+            ).and_return(uncaptured_charge)
             artwork_inventory_deduct_request
             edition_set_inventory_deduct_request
             service.process!
