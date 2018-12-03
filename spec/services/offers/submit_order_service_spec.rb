@@ -26,7 +26,7 @@ describe Offers::SubmitOrderService, type: :services do
   let(:order) { Fabricate(:order, seller_id: partner_id, mode: order_mode, state: order_state, credit_card_id: credit_card_id, **shipping_info) }
   let!(:offer) { Fabricate(:offer, order: order, submitted_at: offer_submitted_at, amount_cents: 1000_00, tax_total_cents: 20_00, shipping_total_cents: 30_00) }
   let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: artwork[:_id], artwork_version_id: line_item_artwork_version, quantity: 2) }
-  let(:service) { described_class.new(offer, by: user_id) }
+  let(:service) { described_class.new(offer, user_id: user_id) }
   describe '#process!' do
     describe 'failed process' do
       before do

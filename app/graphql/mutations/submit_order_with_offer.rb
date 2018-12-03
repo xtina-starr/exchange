@@ -9,7 +9,7 @@ class Mutations::SubmitOrderWithOffer < Mutations::BaseMutation
     offer = Offer.find(offer_id)
     authorize_offer_owner_request!(offer)
 
-    service = Offers::SubmitOrderService.new(offer, by: context[:current_user]['id'])
+    service = Offers::SubmitOrderService.new(offer, user_id: context[:current_user]['id'])
     service.process!
 
     { order_or_error: { order: service.order } }

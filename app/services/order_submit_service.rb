@@ -1,12 +1,12 @@
 class OrderSubmitService
-  def self.call!(order, by: nil)
-    new(order, by).process!
+  def self.call!(order, user_id: nil)
+    new(order, user_id).process!
   end
 
   attr_accessor :order, :credit_card, :merchant_account, :partner
-  def initialize(order, by)
+  def initialize(order, user_id)
     @order = order
-    @by = by
+    @user_id = user_id
     @credit_card = nil
     @merchant_account = nil
     @partner = nil
@@ -60,13 +60,13 @@ class OrderSubmitService
 
   def post_process!
     Exchange.dogstatsd.increment 'order.submit'
-    PostOrderNotificationJob.perform_later(@order.id, Order::SUBMITTED, @by)
+    PostOrderNotificationJob.perform_later(@order.id, Order::SUBMITTED, @user_id)
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
     ReminderFollowUpJob.set(wait_until: @order.state_expires_at - 2.hours).perform_later(@order.id, @order.state)
   end
 
   def notify_failed_charge
-    PostTransactionNotificationJob.perform_later(@transaction.id, TransactionEvent::CREATED, @by)
+    PostTransactionNotificationJob.perform_later(@transaction.id, TransactionEvent::CREATED, @user_id)
   end
 
   def construct_charge_params
