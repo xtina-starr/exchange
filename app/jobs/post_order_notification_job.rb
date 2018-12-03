@@ -6,5 +6,3 @@ class PostOrderNotificationJob < ApplicationJob
     OrderEvent.post(order, action, user_id)
   end
 end
-
-PostNotificationJob = PostOrderNotificationJob
