@@ -5,6 +5,7 @@ describe Api::GraphqlController, type: :request do
   include_context 'use stripe mock'
   describe 'seller_accept_offer mutation' do
     include_context 'GraphQL Client'
+    let(:partner) { { effective_commission_rate: 0.1 } }
     let(:order_seller_id) { jwt_partner_ids.first }
     let(:order_buyer_id) { jwt_user_id }
     let(:order_state) { Order::SUBMITTED }
@@ -77,6 +78,8 @@ describe Api::GraphqlController, type: :request do
       let(:order_state) { Order::PENDING }
 
       it "returns invalid state transition error and doesn't change the order state" do
+        mock_pre_process_calls
+        
         response = client.execute(mutation, seller_accept_offer_input)
 
         expect(response.data.seller_accept_offer.order_or_error.error.type).to eq 'validation'
@@ -87,6 +90,8 @@ describe Api::GraphqlController, type: :request do
 
     context 'when attempting to accept not the last offer' do
       it 'returns a validation error and does not change the order state' do
+        mock_pre_process_calls
+
         create_order_and_original_offer
         create_another_offer
 
@@ -143,8 +148,8 @@ describe Api::GraphqlController, type: :request do
         inventory_request = stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json)
         expect(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
         expect(GravityService).to receive(:get_credit_card).and_return(credit_card)
-        allow(GravityService).to receive(:get_artwork).and_return(artwork)
-        expect(Adapters::GravityV1).to receive(:get).with("/partner/#{partner_id}/all").and_return(gravity_v1_partner)
+        expect(GravityService).to receive(:get_artwork).and_return(artwork)
+        expect(Adapters::GravityV1).to receive(:get).with("/partner/#{order_seller_id}/all").and_return(gravity_v1_partner)
         response = client.execute(mutation, seller_accept_offer_input)
 
         expect(inventory_request).to have_been_requested
@@ -174,5 +179,12 @@ describe Api::GraphqlController, type: :request do
   def create_another_offer
     another_offer = Fabricate(:offer, order: order)
     order.update!(last_offer: another_offer)
+  end
+
+  def mock_pre_process_calls
+    allow(GravityService).to receive(:get_artwork).and_return(artwork)
+    allow(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
+    allow(GravityService).to receive(:get_credit_card).and_return(credit_card)
+    allow(GravityService).to receive(:fetch_partner).and_return(partner)
   end
 end
