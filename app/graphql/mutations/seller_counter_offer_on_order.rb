@@ -9,8 +9,9 @@ class Mutations::SellerCounterOfferOnOrder < Mutations::BaseMutation
   def resolve(offer_id:, amount_cents:)
     offer = Offer.find(offer_id)
     order = offer.order
+    from_id = context[:current_user][:id]
     authorize_seller_request!(order)
-    init_service = Offers::AddPendingCounterOfferService.new(offer: offer, amount_cents: amount_cents)
+    init_service = Offers::AddPendingCounterOfferService.new(offer: offer, amount_cents: amount_cents, from_type: Order::PARTNER, from_id: from_id)
     pending_offer = init_service.process!
 
     submit_service = Offers::SubmitCounterOfferService.new(pending_offer: pending_offer)

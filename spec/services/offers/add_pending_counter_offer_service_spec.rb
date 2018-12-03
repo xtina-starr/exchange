@@ -2,9 +2,11 @@ require 'rails_helper'
 
 describe Offers::AddPendingCounterOfferService, type: :services do
   describe '#process!' do
+    let(:offer_from_id) { 'user-id' }
+    let(:offer_from_type) { Order::PARTNER }
     let(:order) { Fabricate(:order, state: Order::SUBMITTED) }
     let(:offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
-    let(:service) { Offers::AddPendingCounterOfferService.new(offer: offer, amount_cents: 20000) }
+    let(:service) { Offers::AddPendingCounterOfferService.new(offer: offer, amount_cents: 20000, from_id: offer_from_id, from_type: offer_from_type) }
     let(:offer_totol_updater_service) { double }
 
     before do
@@ -22,8 +24,11 @@ describe Offers::AddPendingCounterOfferService, type: :services do
         service.process!
         expect(order.offers.count).to eq(2)
         pending_offer = order.offers.reject { |offer| offer.id == order.last_offer.id }.first
+        puts pending_offer.inspect
         expect(pending_offer.amount_cents).to eq(20000)
         expect(pending_offer.responds_to).to eq(order.offers[0])
+        expect(pending_offer.from_id).to eq(offer_from_id)
+        expect(pending_offer.from_type).to eq(offer_from_type)
         expect(pending_offer.submitted_at).to be_nil
       end
     end

@@ -1,9 +1,11 @@
 module Offers
   class AddPendingCounterOfferService < BaseOfferService
-    def initialize(offer:, amount_cents:)
+    def initialize(offer:, amount_cents:, from_id:, from_type:)
       @offer = offer
       @order = offer.order
       @amount_cents = amount_cents
+      @from_id = from_id
+      @from_type = from_type
     end
 
     def process!
@@ -13,9 +15,9 @@ module Offers
 
       @pending_offer = @order.offers.create!(
         amount_cents: @amount_cents,
-        from_id: @user_id,
+        from_id: @from_id,
         from_type: @from_type,
-        creator_id: @user_id,
+        creator_id: @from_id,
         responds_to: @offer
       )
       totals_service = OfferTotalUpdaterService.new(offer: @pending_offer)
@@ -27,6 +29,5 @@ module Offers
     private
 
     attr_reader :offer
-
   end
 end
