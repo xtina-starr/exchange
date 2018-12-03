@@ -79,7 +79,7 @@ describe Api::GraphqlController, type: :request do
 
       it "returns invalid state transition error and doesn't change the order state" do
         mock_pre_process_calls
-        
+
         response = client.execute(mutation, buyer_accept_offer_input)
 
         expect(response.data.buyer_accept_offer.order_or_error.error.type).to eq 'validation'

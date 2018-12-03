@@ -1,8 +1,7 @@
 class CommitOrderService
+  attr_accessor :order
 
-  attr_accessor :order, :credit_card, :merchant_account, :partner
-
-  COMMITTABLE_ACTIONS = %i[ approve submit ]
+  COMMITTABLE_ACTIONS = %i[approve submit].freeze
 
   def initialize(order, action, user_id)
     @order = order
@@ -23,11 +22,12 @@ class CommitOrderService
   ensure
     handle_transaction
   end
-  
+
   protected
 
   def handle_transaction
-    return unless @transaction.present?
+    return if @transaction.blank?
+
     @order.transactions << @transaction
     notify_failed_charge if @transaction.failed?
   end
@@ -45,13 +45,13 @@ class CommitOrderService
   end
 
   def deduct_inventory
-      # Try holding artwork and deduct inventory
-      @order.line_items.each do |li|
-        GravityService.deduct_inventory(li)
-        @deducted_inventory << li
-      end
+    # Try holding artwork and deduct inventory
+    @order.line_items.each do |li|
+      GravityService.deduct_inventory(li)
+      @deducted_inventory << li
+    end
   end
-  
+
   def process_payment
     raise NotImplementedError
   end
@@ -63,10 +63,10 @@ class CommitOrderService
     validate_artwork_versions!
     validate_credit_card!
     validate_commission_rate!
-    
+
     OrderTotalUpdaterService.new(@order, partner[:effective_commission_rate]).update_totals!
   end
-  
+
   def validate_commission_rate!
     raise Errors::ValidationError.new(:missing_commission_rate, partner_id: partner[:id]) if partner[:effective_commission_rate].blank?
   end
@@ -77,7 +77,7 @@ class CommitOrderService
       if artwork[:current_version_id] != li[:artwork_version_id]
         Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
         raise Errors::ProcessingError, :artwork_version_mismatch
-      end  
+      end
     end
   end
 
@@ -110,7 +110,7 @@ class CommitOrderService
       seller_amount: @order.seller_total_cents,
       currency_code: @order.currency_code,
       metadata: charge_metadata,
-      description: charge_description,
+      description: charge_description
     }
   end
 

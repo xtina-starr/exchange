@@ -5,8 +5,8 @@ describe CommitOrderService, type: :services do
   include_context 'use stripe mock'
 
   let(:partner_id) { 'partner-1' }
-  let(:partner) { { id: partner_id, effective_commission_rate: 0.01} }
-  let(:partner_missing_commission_rate) { { id: partner_id, effective_commission_rate: nil} }
+  let(:partner) { { id: partner_id, effective_commission_rate: 0.01 } }
+  let(:partner_missing_commission_rate) { { id: partner_id, effective_commission_rate: nil } }
   let(:credit_card_id) { 'cc-1' }
   let(:user_id) { 'dr-collector' }
   let(:order) do
@@ -43,8 +43,7 @@ describe CommitOrderService, type: :services do
   let(:edition_set_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { undeduct: 2 }).to_return(status: 200, body: {}.to_json) }
   let(:service) { CommitOrderService.new(order, :submit, user_id) }
   let(:transaction) { Fabricate(:transaction, status: Transaction::SUCCESS) }
-  let(:failed_transaction) { Fabricate(:transaction, status: Transaction::FAILURE)}
-
+  let(:failed_transaction) { Fabricate(:transaction, status: Transaction::FAILURE) }
 
   describe '#pre_process!' do
     context 'with an uncommittable action' do
@@ -100,7 +99,7 @@ describe CommitOrderService, type: :services do
         expect(GravityService).to receive(:deduct_inventory).with(li)
       end
       service.send(:deduct_inventory)
-      expect(service.instance_variable_get("@deducted_inventory").count).to eq line_items.count
+      expect(service.instance_variable_get('@deducted_inventory').count).to eq line_items.count
     end
   end
 
@@ -154,7 +153,6 @@ describe CommitOrderService, type: :services do
       service.send(:undeduct_inventory)
     end
   end
-
 
   describe '#validate_credit_card!' do
     it 'raises an error if the credit card does not have an external id' do

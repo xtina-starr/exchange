@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 describe Offers::AcceptOfferService, type: :services do
-  include_context 'use stripe mock'  
+  include_context 'use stripe mock'
   describe '#process!' do
     subject(:call_service) do
       described_class.new(
@@ -22,7 +22,7 @@ describe Offers::AcceptOfferService, type: :services do
         fulfillment_type: Order::PICKUP,
         items_total_cents: 18000_00,
         tax_total_cents: 200_00,
-        shipping_total_cents: 100_00        
+        shipping_total_cents: 100_00
       )
     end
     let(:artwork1) { { _id: 'a-1', current_version_id: '1' } }

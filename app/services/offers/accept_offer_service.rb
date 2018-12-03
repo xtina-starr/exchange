@@ -8,7 +8,7 @@ module Offers
     end
 
     private
-    
+
     def process_payment
       @transaction = PaymentService.create_and_capture_charge(construct_charge_params)
       raise Errors::ProcessingError.new(:capture_failed, @transaction.failure_data) if @transaction.failed?
