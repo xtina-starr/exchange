@@ -60,16 +60,20 @@ class CommitOrderService
     raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? @action
 
     validate_artwork_versions!
-    assert_credit_card!
-    raise Errors::ValidationError.new(:missing_commission_rate, partner_id: partner[:id]) if partner[:effective_commission_rate].blank?
-
+    validate_credit_card!
+    validate_commission_rate!
+    
     OrderTotalUpdaterService.new(@order, partner[:effective_commission_rate]).update_totals!
+  end
+  
+  def validate_commission_rate!
+    raise Errors::ValidationError.new(:missing_commission_rate, partner_id: partner[:id]) if partner[:effective_commission_rate].blank?
   end
 
   def validate_artwork_versions!
     @order.line_items.each do |li|
-      artwork = GravityService.get_artwork(line_item[:artwork_id])
-      if artwork[:current_version_id] != line_item[:artwork_version_id]
+      artwork = GravityService.get_artwork(li[:artwork_id])
+      if artwork[:current_version_id] != li[:artwork_version_id]
         Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
         raise Errors::ProcessingError, :artwork_version_mismatch
       end  
@@ -109,7 +113,7 @@ class CommitOrderService
     }
   end
 
-  def assert_credit_card!
+  def validate_credit_card!
     error_type = nil
     error_type = :credit_card_missing_external_id if credit_card[:external_id].blank?
     error_type = :credit_card_missing_customer if credit_card.dig(:customer_account, :external_id).blank?

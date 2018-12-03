@@ -3,7 +3,7 @@ module Offers
     include OfferValidationService
     attr_reader :order, :offer, user_id
     def initialize(offer:, order:, user_id: nil)
-      super(order, :approve!, user_id)
+      super(order, :approve, user_id)
       @offer = offer
     end
 
