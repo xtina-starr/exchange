@@ -8,7 +8,6 @@ module Offers
 
     def process!
       validate_is_last_offer!
-      validate_offer_is_from_buyer!
 
       order.approve!
 
