@@ -58,6 +58,7 @@ class CommitOrderService
 
   def pre_process!
     raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? @action
+    raise Errors::ValidationError, :missing_required_info unless @order.can_commit?
 
     validate_artwork_versions!
     validate_credit_card!

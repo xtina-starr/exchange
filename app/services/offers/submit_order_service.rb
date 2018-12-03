@@ -46,7 +46,7 @@ module Offers
 
     def assert_can_submit!
       raise Errors::ValidationError, :cant_submit unless @order.mode == Order::OFFER
-      raise Errors::ValidationError, :missing_required_info unless @order.can_submit?
+      raise Errors::ValidationError, :missing_required_info unless @order.can_commit?
       raise Errors::ValidationError, :invalid_offer if @offer.submitted?
     end
 

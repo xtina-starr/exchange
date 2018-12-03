@@ -14,11 +14,6 @@ class OrderSubmitService < CommitOrderService
     raise Errors::ProcessingError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
   end
 
-  def pre_process!
-    super
-    raise Errors::ValidationError, :missing_required_info unless @order.can_submit?
-  end
-
   def post_process!
     super
     PostOrderNotificationJob.perform_later(@order.id, Order::SUBMITTED, @user_id)
