@@ -156,7 +156,7 @@ describe CommitOrderService, type: :services do
 
   describe '#validate_credit_card!' do
     it 'raises an error if the credit card does not have an external id' do
-      service.credit_card = { id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil }
+      allow(GravityService).to receive(:get_credit_card).and_return(id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil)
       expect { service.send(:validate_credit_card!) }.to raise_error do |error|
         expect(error).to be_a(Errors::ValidationError)
         expect(error.code).to eq :credit_card_missing_external_id
@@ -165,7 +165,7 @@ describe CommitOrderService, type: :services do
     end
 
     it 'raises an error if the credit card does not have a customer account' do
-      service.credit_card = { id: 'cc-1', external_id: 'cc-1' }
+      allow(GravityService).to receive(:get_credit_card).and_return(id: 'cc-1', external_id: 'cc-1')
       expect { service.send(:validate_credit_card!) }.to raise_error do |error|
         expect(error).to be_a(Errors::ValidationError)
         expect(error.code).to eq :credit_card_missing_customer
@@ -174,7 +174,7 @@ describe CommitOrderService, type: :services do
     end
 
     it 'raises an error if the credit card does not have a customer account external id' do
-      service.credit_card = { id: 'cc-1', external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil }
+      allow(GravityService).to receive(:get_credit_card).and_return(id: 'cc-1', external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil)
       expect { service.send(:validate_credit_card!) }.to raise_error do |error|
         expect(error).to be_a(Errors::ValidationError)
         expect(error.code).to eq :credit_card_missing_customer
@@ -183,7 +183,7 @@ describe CommitOrderService, type: :services do
     end
 
     it 'raises an error if the card is deactivated' do
-      service.credit_card = { id: 'cc-1', external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago }
+      allow(GravityService).to receive(:get_credit_card).and_return(id: 'cc-1', external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago)
       expect { service.send(:validate_credit_card!) }.to raise_error do |error|
         expect(error).to be_a(Errors::ValidationError)
         expect(error.code).to eq :credit_card_deactivated

@@ -23,7 +23,7 @@ class CommitOrderService
     handle_transaction
   end
 
-  protected
+  private
 
   def handle_transaction
     return if @transaction.blank?
