@@ -1,5 +1,4 @@
 require 'rails_helper'
-require 'shared_examples/shared_examples_for_versioned_models'
 
 RSpec.describe Order, type: :model do
   let(:order) { Fabricate(:order) }
