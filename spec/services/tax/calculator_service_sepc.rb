@@ -56,7 +56,7 @@ describe Tax::CalculatorService, type: :services do
       to_state: shipping_address.region,
       to_city: shipping_address.city,
       to_street: shipping_address.street_line1,
-      shipping: 0
+      shipping: UnitConverter.convert_cents_to_dollars(shipping_total_cents)
     }
   end
   let(:tax_response) { double(amount_to_collect: 3.00) }
@@ -83,21 +83,6 @@ describe Tax::CalculatorService, type: :services do
       it 'sets seller_nexus_addresses to only be taxable seller addresses' do
         service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses + [untaxable_address])
         expect(service.instance_variable_get(:@seller_nexus_addresses)).to eq seller_addresses
-      end
-    end
-  end
-
-  describe '#effective_shipping_total_cents' do
-    context 'with a destination address in a remitting state' do
-      it 'sets effective_shipping_total_cents to @shipping_total_cents' do
-        shipping[:region] = 'FL'
-        service = Tax::CalculatorService.new(line_item_total_cents, line_item_quantity, line_item_unit_price, Order::SHIP, Address.new(shipping), shipping_total_cents, artwork_location, seller_addresses)
-        expect(service.send(:effective_shipping_total_cents)).to eq shipping_total_cents
-      end
-    end
-    context 'with a destination address in a non-remitting state' do
-      it 'sets effective_shipping_total_cents to 0' do
-        expect(@service_ship.send(:effective_shipping_total_cents)).to eq 0
       end
     end
   end
