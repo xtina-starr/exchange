@@ -1,5 +1,4 @@
 class Mutations::Offer::BaseRejectOffer < Mutations::BaseMutation
-  null true # TODO: Find out what this does
 
   argument :offer_id, ID, required: true
   argument :reject_reason, Types::CancelReasonTypeEnum, required: false
@@ -13,9 +12,15 @@ class Mutations::Offer::BaseRejectOffer < Mutations::BaseMutation
     authorize!(order)
     raise Errors::ValidationError, :cannot_reject_offer unless waiting_for_response?(offer)
 
-    # TODO: if reject_reason is nil, we need to set it based on the user_id making the request
+    if reject_reason.nil?
+      reject_reason = if current_user_id.eql? offer.order.buyer_id
+                        Order::REASONS[Order::CANCELED][:buyer_rejected]
+                      else
+                        Order::REASONS[Order::CANCELED][:seller_rejected]
+                      end
+    end
 
-    Offers::RejectOfferService.new(offer: offer, reject_reason: reject_reason).process!
+    Offers::RejectOfferService.new(offer: offer, reject_reason: reject_reason, user_id: current_user_id).process!
 
     { order_or_error: { order: order.reload } }
   rescue Errors::ApplicationError => e

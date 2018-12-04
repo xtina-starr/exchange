@@ -3,8 +3,8 @@ require 'rails_helper'
 describe Offers::RejectOfferService, type: :services do
   describe '#process!' do
     let!(:order) { Fabricate(:order, state: Order::SUBMITTED) }
-    let!(:offer) { Fabricate(:offer, order: order) }
-    let(:service) { Offers::RejectOfferService.new(offer: offer, reject_reason: Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low]) }
+    let!(:offer) { Fabricate(:offer, order: order, from_id: 'buyer') }
+    let(:service) { Offers::RejectOfferService.new(offer: offer, reject_reason: Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low], user_id: 'seller') }
 
     before do
       # last_offer is set in Orders::InitialOffer. "Stubbing" out the
@@ -76,7 +76,7 @@ describe Offers::RejectOfferService, type: :services do
     end
 
     context 'attempting to reject its own offer' do
-      let!(:offer) { Fabricate(:offer, order: order, from_type: Order::PARTNER) }
+      let!(:offer) { Fabricate(:offer, order: order, from_id: 'seller') }
 
       it 'raises a validation error' do
         expect {  service.process! }
