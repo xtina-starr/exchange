@@ -1,13 +1,14 @@
 module Offers
   class SubmitCounterOfferService
     include OfferValidationService
-    def initialize(pending_offer:)
+    def initialize(pending_offer:, from_id:)
       @offer = pending_offer
       @order = offer.order
+      @from_id = from_id
     end
 
     def process!
-      # TODO: validate offer_from_my_side
+      validate_offer_is_mine(offer, @from_id)
       validate_offer_order_is_submitted!(offer)
       validate_offer_not_submitted!(offer)
 
@@ -27,6 +28,5 @@ module Offers
     def instrument_offer_counter
       Exchange.dogstatsd.increment 'offer.counter'
     end
-
   end
 end

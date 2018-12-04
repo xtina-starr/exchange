@@ -14,7 +14,7 @@ class Mutations::SellerCounterOfferOnOrder < Mutations::BaseMutation
     init_service = Offers::AddPendingCounterOfferService.new(offer: offer, amount_cents: amount_cents, from_type: Order::PARTNER, from_id: from_id)
     pending_offer = init_service.process!
 
-    submit_service = Offers::SubmitCounterOfferService.new(pending_offer: pending_offer)
+    submit_service = Offers::SubmitCounterOfferService.new(pending_offer: pending_offer, from_id: from_id)
     submit_service.process!
 
     { order_or_error: { order: order.reload } }
