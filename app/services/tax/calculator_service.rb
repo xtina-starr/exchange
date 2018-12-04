@@ -70,12 +70,8 @@ class Tax::CalculatorService
           street: ad.street_line1
         }
       end,
-      shipping: UnitConverter.convert_cents_to_dollars(@effective_shipping_total_cents)
+      shipping: UnitConverter.convert_cents_to_dollars(@shipping_total_cents)
     }.merge(args)
-  end
-
-  def effective_shipping_total_cents
-    @effective_shipping_total_cents ||= artsy_should_remit_taxes? ? @shipping_total_cents : 0
   end
 
   def destination_address
