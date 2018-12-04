@@ -6,6 +6,13 @@ RSpec.shared_examples 'a papertrail versioned model' do |model_symbol|
       .to change { model_instance.versions.count }.by(1)
   end
 
+  it 'saves the exact value in item_id as the version record' do
+    model_instance.update!(updated_at: Time.current)
+    last_version = model_instance.versions.last
+
+    expect(last_version.item_id).to eq(model_instance.id)
+  end
+
   it 'directly saves the data changed to versions' do
     model_instance.update!(updated_at: Time.current)
     last_version = model_instance.versions.last
