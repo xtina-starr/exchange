@@ -1,21 +1,10 @@
 require 'rails_helper'
+require 'shared_examples/shared_examples_for_versioned_models'
 
 RSpec.describe Order, type: :model do
   let(:order) { Fabricate(:order) }
 
-  describe 'versioning with papertrail' do
-    it 'creates a version record on data change' do
-      expect { order.update!(updated_at: Time.current) }
-        .to change { order.versions.count }.by(1)
-    end
-
-    it 'directly saves the data changed to versions' do
-      order.update!(updated_at: Time.current)
-      last_version = order.versions.last
-
-      expect(last_version.object_changes).to have_key('updated_at')
-    end
-  end
+  it_behaves_like 'a papertrail versioned model', :order
 
   describe 'validate currency' do
     it 'raises invalid record for unsupported currencies' do
