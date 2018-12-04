@@ -24,7 +24,7 @@ describe Offers::SubmitCounterOfferService, type: :services do
         expect(order.offers.count).to eq(2)
         expect(order.last_offer).to eq(pending_offer)
         expect(order.last_offer.amount_cents).to eq(20000)
-        expect(order.last_offer.responds_to).to eq(order.offers[0])
+        expect(order.last_offer.responds_to).to eq(offer)
         expect(pending_offer.submitted_at).not_to be_nil
       end
 
