@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_12_04_195640) do
+ActiveRecord::Schema.define(version: 2018_12_04_200720) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -67,6 +67,17 @@ ActiveRecord::Schema.define(version: 2018_12_04_195640) do
     t.datetime "updated_at", null: false
     t.index ["fulfillment_id"], name: "index_line_item_fulfillments_on_fulfillment_id"
     t.index ["line_item_id"], name: "index_line_item_fulfillments_on_line_item_id"
+  end
+
+  create_table "line_item_versions", force: :cascade do |t|
+    t.string "item_type", null: false
+    t.uuid "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.jsonb "object"
+    t.jsonb "object_changes"
+    t.datetime "created_at"
+    t.index ["item_type", "item_id"], name: "index_line_item_versions_on_item_type_and_item_id"
   end
 
   create_table "line_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
