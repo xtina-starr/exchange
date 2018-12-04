@@ -25,7 +25,7 @@ describe Offers::AddPendingCounterOfferService, type: :services do
         expect(order.offers.count).to eq(2)
         pending_offer = order.offers.reject { |offer| offer.id == order.last_offer.id }.first
         expect(pending_offer.amount_cents).to eq(20000)
-        expect(pending_offer.responds_to).to eq(order.offers[0])
+        expect(pending_offer.responds_to).to eq(offer)
         expect(pending_offer.from_id).to eq(offer_from_id)
         expect(pending_offer.from_type).to eq(offer_from_type)
         expect(pending_offer.submitted_at).to be_nil
