@@ -26,7 +26,7 @@ describe OrderSubmitService, type: :services do
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id }, deactivated_at: nil } }
   let(:merchant_account_id) { 'ma-1' }
   let(:partner_merchant_accounts) { [{ external_id: 'ma-1' }, { external_id: 'some_account' }] }
-  let(:authorize_charge_params) do
+  let(:create_charge_params) do
     {
       source_id: credit_card[:external_id],
       destination_id: merchant_account_id,
@@ -223,7 +223,7 @@ describe OrderSubmitService, type: :services do
               amount: 3369_00
             },
             capture: false
-          ).and_return(captured_charge)
+          ).and_return(uncaptured_charge)
           artwork_inventory_deduct_request
           edition_set_inventory_deduct_request
           service.process!
@@ -250,50 +250,12 @@ describe OrderSubmitService, type: :services do
                 amount: 3369_00
               },
               capture: false
-            ).and_return(captured_charge)
+            ).and_return(uncaptured_charge)
             artwork_inventory_deduct_request
             edition_set_inventory_deduct_request
             service.process!
           end
         end
-      end
-    end
-  end
-
-  describe '#assert_credit_card!' do
-    it 'raises an error if the credit card does not have an external id' do
-      service.credit_card = { id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil }
-      expect { service.send(:assert_credit_card!) }.to raise_error do |error|
-        expect(error).to be_a(Errors::ValidationError)
-        expect(error.code).to eq :credit_card_missing_external_id
-        expect(error.data).to match(credit_card_id: 'cc-1')
-      end
-    end
-
-    it 'raises an error if the credit card does not have a customer account' do
-      service.credit_card = { id: 'cc-1', external_id: 'cc-1' }
-      expect { service.send(:assert_credit_card!) }.to raise_error do |error|
-        expect(error).to be_a(Errors::ValidationError)
-        expect(error.code).to eq :credit_card_missing_customer
-        expect(error.data).to match(credit_card_id: 'cc-1')
-      end
-    end
-
-    it 'raises an error if the credit card does not have a customer account external id' do
-      service.credit_card = { id: 'cc-1', external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil }
-      expect { service.send(:assert_credit_card!) }.to raise_error do |error|
-        expect(error).to be_a(Errors::ValidationError)
-        expect(error.code).to eq :credit_card_missing_customer
-        expect(error.data).to match(credit_card_id: 'cc-1')
-      end
-    end
-
-    it 'raises an error if the card is deactivated' do
-      service.credit_card = { id: 'cc-1', external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago }
-      expect { service.send(:assert_credit_card!) }.to raise_error do |error|
-        expect(error).to be_a(Errors::ValidationError)
-        expect(error.code).to eq :credit_card_deactivated
-        expect(error.data).to match(credit_card_id: 'cc-1')
       end
     end
   end

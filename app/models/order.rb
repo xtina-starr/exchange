@@ -159,7 +159,7 @@ class Order < ApplicationRecord
     line_items.map(&:total_list_price_cents).sum
   end
 
-  def can_submit?
+  def can_commit?
     shipping_info? && payment_info?
   end
 
