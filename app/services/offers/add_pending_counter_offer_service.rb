@@ -1,5 +1,6 @@
 module Offers
-  class AddPendingCounterOfferService < BaseOfferService
+  class AddPendingCounterOfferService
+    include OfferValidationService
     def initialize(offer:, amount_cents:, from_id:, from_type:)
       @offer = offer
       @order = offer.order
@@ -9,9 +10,9 @@ module Offers
     end
 
     def process!
-      validate_is_last_offer!
-      validate_offer_is_from_buyer! # TODO: generalize to offer_from_other_side
-      validate_order_is_submitted!
+      validate_is_last_offer!(@offer)
+      validate_offer_is_from_buyer!(@offer) # TODO: generalize to offer_from_other_side
+      validate_offer_order_is_submitted!(@offer)
 
       @pending_offer = @order.offers.create!(
         amount_cents: @amount_cents,

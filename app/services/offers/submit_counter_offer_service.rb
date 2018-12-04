@@ -1,5 +1,6 @@
 module Offers
-  class SubmitCounterOfferService < BaseOfferService
+  class SubmitCounterOfferService
+    include OfferValidationService
     def initialize(pending_offer:)
       @offer = pending_offer
       @order = offer.order
@@ -7,7 +8,7 @@ module Offers
 
     def process!
       # TODO: validate offer_from_my_side
-      validate_order_is_submitted!
+      validate_offer_order_is_submitted!(offer)
       validate_offer_not_submitted!(offer)
 
       @offer.update!(submitted_at: Time.now.utc)
@@ -27,8 +28,5 @@ module Offers
       Exchange.dogstatsd.increment 'offer.counter'
     end
 
-    def validate_offer_not_submitted!(offer)
-      raise Errors::ValidationError.new(:invalid_state, offer) unless offer.submitted_at.nil?
-    end
   end
 end
