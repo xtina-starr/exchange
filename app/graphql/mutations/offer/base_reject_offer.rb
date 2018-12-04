@@ -12,8 +12,9 @@ class Mutations::Offer::BaseRejectOffer < Mutations::BaseMutation
 
     authorize!(order)
     raise Errors::ValidationError, :cannot_reject_offer unless waiting_for_response?(offer)
+
     # TODO: if reject_reason is nil, we need to set it based on the user_id making the request
-    
+
     Offers::RejectOfferService.new(offer: offer, reject_reason: reject_reason).process!
 
     { order_or_error: { order: order.reload } }
@@ -29,4 +30,3 @@ class Mutations::Offer::BaseRejectOffer < Mutations::BaseMutation
     raise NotImplementedError
   end
 end
-  

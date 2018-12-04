@@ -1,7 +1,7 @@
 require 'rails_helper'
 require 'support/use_stripe_mock'
 
-RSpec.shared_examples "rejecting an offer" do
+RSpec.shared_examples 'rejecting an offer' do
   before do
     order.update!(last_offer: offer)
   end
@@ -107,8 +107,8 @@ describe Api::GraphqlController, type: :request do
           rejectReason: reject_reason
         }
       }
-    end 
-    it_behaves_like "rejecting an offer" do 
+    end
+    it_behaves_like 'rejecting an offer' do
       let(:mutation) { seller_mutation }
       let(:input) { seller_input }
     end
