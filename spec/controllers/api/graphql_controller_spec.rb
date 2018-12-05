@@ -16,7 +16,7 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'authorized' do
-      let(:headers) { jwt_headers(user_id: 'user_id', partner_ids: ['partner_id']) }
+      let(:headers) { jwt_headers(user_id: 'user_id', seller_ids: ['partner_id']) }
       it 'returns schema' do
         post '/api/graphql', params: { query: query }, headers: headers
         expect(response.status).to eq 200
