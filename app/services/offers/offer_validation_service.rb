@@ -16,7 +16,7 @@ module Offers
       raise Errors::ValidationError.new(:invalid_state, offer) unless offer.submitted_at.nil?
     end
 
-    def validate_offer_is_mine(offer, from_id)
+    def validate_offer_is_mine!(offer, from_id)
       raise Errors::ValidationError.new(:offer_not_mine, offer) unless offer.from_id == from_id
     end
   end

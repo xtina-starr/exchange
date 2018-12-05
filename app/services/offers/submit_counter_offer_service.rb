@@ -8,7 +8,7 @@ module Offers
     end
 
     def process!
-      validate_offer_is_mine(offer, @from_id)
+      validate_offer_is_mine!(offer, @from_id)
       validate_offer_order_is_submitted!(offer)
       validate_offer_not_submitted!(offer)
 

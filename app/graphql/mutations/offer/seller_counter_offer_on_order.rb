@@ -11,8 +11,8 @@ class Mutations::Offer::SellerCounterOfferOnOrder < Mutations::BaseMutation
     order = offer.order
     from_id = context[:current_user][:id]
     authorize_seller_request!(order)
-    init_service = Offers::AddPendingCounterOfferService.new(offer: offer, amount_cents: amount_cents, from_type: Order::PARTNER, from_id: from_id)
-    pending_offer = init_service.process!
+    add_service = Offers::AddPendingCounterOfferService.new(offer: offer, amount_cents: amount_cents, from_type: Order::PARTNER, from_id: from_id)
+    pending_offer = add_service.process!
 
     submit_service = Offers::SubmitCounterOfferService.new(pending_offer: pending_offer, from_id: from_id)
     submit_service.process!

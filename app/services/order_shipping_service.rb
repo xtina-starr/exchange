@@ -37,14 +37,6 @@ class OrderShippingService < BaseTotalCalculatorService
     @order.update!(shipping_total_cents: shipping_total_cents, tax_total_cents: tax_total_cents)
   end
 
-  def artworks
-    @artworks ||= Hash[@order.line_items.pluck(:artwork_id).uniq.map do |artwork_id|
-      artwork = GravityService.get_artwork(artwork_id)
-      validate_artwork!(artwork)
-      [artwork[:_id], artwork]
-    end]
-  end
-
   def tax_total_cents
     @tax_total_cents ||= begin
       seller_addresses = GravityService.fetch_partner_locations(@order.seller_id)
