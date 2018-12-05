@@ -17,7 +17,7 @@ module Offers
     end
 
     def validate_offer_is_mine!(offer, from_id)
-      raise Errors::ValidationError.new(:offer_not_mine, offer) unless offer.from_id == from_id
+      raise Errors::ValidationError.new(:not_offerable, offer) unless offer.from_id == from_id
     end
   end
 end
