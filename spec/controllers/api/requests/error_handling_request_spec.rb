@@ -2,7 +2,7 @@ require 'rails_helper'
 
 describe Api::GraphqlController, type: :request do
   describe 'ErrorType' do
-    let(:auth_headers) { jwt_headers(user_id: 'user-id', seller_ids: ['p1'], roles: nil) }
+    let(:auth_headers) { jwt_headers(user_id: 'user-id', partner_ids: ['p1'], roles: nil) }
     let(:mutation_input) do
       {
         artworkId: 'test'
