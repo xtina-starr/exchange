@@ -2,7 +2,7 @@ require 'rails_helper'
 require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
-  describe 'seller_counter_order mutation' do
+  describe 'seller_counter_offer mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
@@ -40,8 +40,8 @@ describe Api::GraphqlController, type: :request do
 
     let(:mutation) do
       <<-GRAPHQL
-        mutation($input: SellerCounterOfferOnOrderInput!) {
-          sellerCounterOfferOnOrder(input: $input) {
+        mutation($input: SellerCounterOfferInput!) {
+          sellerCounterOffer(input: $input) {
             orderOrError {
               ... on OrderWithMutationSuccess {
                 order {
@@ -62,7 +62,7 @@ describe Api::GraphqlController, type: :request do
       GRAPHQL
     end
 
-    let(:seller_counter_offer_on_order_input) do
+    let(:seller_counter_offer_input) do
       {
         input: {
           offerId: offer.id.to_s,
@@ -84,10 +84,10 @@ describe Api::GraphqlController, type: :request do
       let(:order_state) { Order::PENDING }
 
       it "returns invalid state transition error and doesn't change the order state" do
-        response = client.execute(mutation, seller_counter_offer_on_order_input)
+        response = client.execute(mutation, seller_counter_offer_input)
 
-        expect(response.data.seller_counter_offer_on_order.order_or_error.error.type).to eq 'validation'
-        expect(response.data.seller_counter_offer_on_order.order_or_error.error.code).to eq 'invalid_state'
+        expect(response.data.seller_counter_offer.order_or_error.error.type).to eq 'validation'
+        expect(response.data.seller_counter_offer.order_or_error.error.code).to eq 'invalid_state'
         expect(order.reload.state).to eq Order::PENDING
       end
     end
@@ -97,10 +97,10 @@ describe Api::GraphqlController, type: :request do
         create_order_and_original_offer
         create_another_offer
 
-        response = client.execute(mutation, seller_counter_offer_on_order_input)
+        response = client.execute(mutation, seller_counter_offer_input)
 
-        expect(response.data.seller_counter_offer_on_order.order_or_error.error.type).to eq 'validation'
-        expect(response.data.seller_counter_offer_on_order.order_or_error.error.code).to eq 'not_last_offer'
+        expect(response.data.seller_counter_offer.order_or_error.error.type).to eq 'validation'
+        expect(response.data.seller_counter_offer.order_or_error.error.code).to eq 'not_last_offer'
         expect(order.reload.state).to eq Order::SUBMITTED
       end
     end
@@ -109,16 +109,16 @@ describe Api::GraphqlController, type: :request do
       let(:partner_id) { 'another-partner-id' }
 
       it 'returns permission error' do
-        response = client.execute(mutation, seller_counter_offer_on_order_input)
+        response = client.execute(mutation, seller_counter_offer_input)
 
-        expect(response.data.seller_counter_offer_on_order.order_or_error.error.type).to eq 'validation'
-        expect(response.data.seller_counter_offer_on_order.order_or_error.error.code).to eq 'not_found'
+        expect(response.data.seller_counter_offer.order_or_error.error.type).to eq 'validation'
+        expect(response.data.seller_counter_offer.order_or_error.error.code).to eq 'not_found'
         expect(order.reload.state).to eq Order::SUBMITTED
       end
     end
 
     context 'when the specified offer does not exist' do
-      let(:seller_counter_offer_on_order_input) do
+      let(:seller_counter_offer_input) do
         {
           input: {
             offerId: '-1',
@@ -128,7 +128,7 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'returns a not-found error' do
-        expect { client.execute(mutation, seller_counter_offer_on_order_input) }.to raise_error do |error|
+        expect { client.execute(mutation, seller_counter_offer_input) }.to raise_error do |error|
           expect(error.status_code).to eq(404)
         end
       end
@@ -137,7 +137,7 @@ describe Api::GraphqlController, type: :request do
     context 'with proper permission' do
       it 'counters the order' do
         expect do
-          client.execute(mutation, seller_counter_offer_on_order_input)
+          client.execute(mutation, seller_counter_offer_input)
           expect(order.reload.last_offer.responds_to).to eq(offer)
           expect(order.reload.last_offer.amount_cents).to eq(10000)
           expect(order.reload.last_offer.tax_total_cents).to eq(300)
