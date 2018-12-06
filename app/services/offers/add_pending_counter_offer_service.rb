@@ -1,11 +1,12 @@
 module Offers
   class AddPendingCounterOfferService
     include OfferValidationService
-    def initialize(offer:, amount_cents:, from_id:, from_type:)
+    def initialize(offer:, amount_cents:, from_id:, creator_id:, from_type:)
       @offer = offer
       @order = offer.order
       @amount_cents = amount_cents
       @from_id = from_id
+      @creator_id = creator_id
       @from_type = from_type
     end
 
@@ -18,7 +19,7 @@ module Offers
         amount_cents: @amount_cents,
         from_id: @from_id,
         from_type: @from_type,
-        creator_id: @from_id,
+        creator_id: @creator_id,
         responds_to: @offer
       )
       totals_service = OfferTotalUpdaterService.new(offer: @pending_offer)

@@ -144,6 +144,9 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.last_offer.should_remit_sales_tax).to eq(false)
           expect(order.reload.last_offer.amount_cents).to eq(10000)
           expect(order.reload.last_offer.submitted_at).not_to eq(nil)
+          # for partner counte offer creator_id and from_id are different
+          expect(order.reload.last_offer.creator_id).to eq(user_id)
+          expect(order.reload.last_offer.from_id).to eq(partner_id)
           # shouldn't update order amounts until offer is accepted
           expect(order.reload.items_total_cents).to eq(0)
         end.to change { order.reload.offers.count }.from(1).to(2)
