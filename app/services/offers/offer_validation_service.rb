@@ -5,7 +5,7 @@ module Offers
     end
 
     def validate_is_not_own_offer!(offer, user_id)
-      raise Errors::ValidationError.new(:cannot_reject_offer, offer) if offer.from_id == user_id
+      raise Errors::ValidationError.new(:cannot_reject_own_offer, offer) if offer.from_id == user_id
     end
   end
 end

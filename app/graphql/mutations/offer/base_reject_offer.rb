@@ -1,4 +1,5 @@
 class Mutations::Offer::BaseRejectOffer < Mutations::BaseMutation
+  null true
 
   argument :offer_id, ID, required: true
   argument :reject_reason, Types::CancelReasonTypeEnum, required: false
@@ -12,15 +13,7 @@ class Mutations::Offer::BaseRejectOffer < Mutations::BaseMutation
     authorize!(order)
     raise Errors::ValidationError, :cannot_reject_offer unless waiting_for_response?(offer)
 
-    if reject_reason.nil?
-      reject_reason = if current_user_id.eql? offer.order.buyer_id
-                        Order::REASONS[Order::CANCELED][:buyer_rejected]
-                      else
-                        Order::REASONS[Order::CANCELED][:seller_rejected]
-                      end
-    end
-
-    Offers::RejectOfferService.new(offer: offer, reject_reason: reject_reason, user_id: current_user_id).process!
+    Offers::RejectOfferService.new(offer: offer, reject_reason: sanitize_reject_reason(reject_reason), user_id: current_user_id).process!
 
     { order_or_error: { order: order.reload } }
   rescue Errors::ApplicationError => e
@@ -32,6 +25,10 @@ class Mutations::Offer::BaseRejectOffer < Mutations::BaseMutation
   end
 
   def waiting_for_response?(_offer)
+    raise NotImplementedError
+  end
+
+  def sanitize_reject_reason(_reject_reason)
     raise NotImplementedError
   end
 end

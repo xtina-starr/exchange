@@ -5,6 +5,7 @@ module Errors
       cant_submit
       cannot_accept_offer
       cannot_reject_offer
+      cannot_reject_own_offer
       credit_card_deactivated
       credit_card_missing_customer
       credit_card_missing_external_id
