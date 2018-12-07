@@ -4,8 +4,6 @@ require 'support/gravity_helper'
 describe OrderShippingService, type: :services do
   let(:order) { Fabricate(:order) }
   let(:continental_us_order) { Fabricate(:order) }
-  let!(:line_item) { Fabricate(:line_item, order: order, artwork_id: 'a-1') }
-  let!(:continental_us_line_item) { Fabricate(:line_item, order: continental_us_order, artwork_id: 'a-2') }
   let(:domestic_shipping) do
     {
       address_line1: '401 Broadway',
@@ -68,6 +66,8 @@ describe OrderShippingService, type: :services do
 
   describe '#process!' do
     context 'with domestic only shipping' do
+      let!(:line_item) { Fabricate(:line_item, order: order, artwork_id: 'a-1') }
+      let!(:continental_us_line_item) { Fabricate(:line_item, order: continental_us_order, artwork_id: 'a-2') }
       context 'with non-continental US shipping address' do
         it 'raises error' do
           allow(@service_continental_us_shipping).to receive(:artworks).and_return('a-2' => continental_us_artwork)
@@ -85,6 +85,93 @@ describe OrderShippingService, type: :services do
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq(:unsupported_shipping_location)
             expect(error.data[:failure_code]).to eq :domestic_shipping_only
+          end
+        end
+      end
+    end
+
+    describe 'tax' do
+      let(:artwork) { gravity_v1_artwork }
+      let(:partner) { { _id: 'partner-1', artsy_collects_sales_tax: artsy_collects_sales_tax } }
+      let(:order) { Fabricate(:order, seller_id: partner[:_id]) }
+      let(:line_items) { Array.new(2) { Fabricate(:line_item, order: order, artwork_id: artwork[:_id]) } }
+      let(:tax_calculator) { double('Tax Calculator', sales_tax: 3750, artsy_should_remit_taxes?: false) }
+      let(:service) { OrderShippingService.new(order, fulfillment_type: Order::SHIP, shipping: domestic_shipping) }
+      let(:artsy_collects_sales_tax) { true }
+
+      before do
+        expect(GravityService).to receive_messages(fetch_partner: partner, fetch_partner_locations: [])
+        expect(Tax::CalculatorService).to receive(:new)
+          .exactly(line_items.count).times.and_return(tax_calculator)
+        expect(service).to receive_messages(shipping_total_cents: 0, artworks: { artwork[:_id] => artwork })
+        line_items
+        service.process!
+      end
+
+      context 'without pending offer' do
+        context 'artsy collects sales tax' do
+          it 'sets sales_tax_cents on line items from tax calculator' do
+            order.line_items.each do |line_item|
+              expect(line_item.sales_tax_cents).to eq 3750
+            end
+          end
+
+          it 'sets tax_total_cents on order' do
+            expect(order.tax_total_cents).to eq 3750 * line_items.count
+          end
+        end
+
+        context 'seller opts out of tax collection' do
+          let(:artsy_collects_sales_tax) { false }
+
+          it 'sets sales_tax_cents on line items to 0' do
+            order.line_items.each do |line_item|
+              expect(line_item.sales_tax_cents).to eq 0
+            end
+          end
+
+          it 'sets tax_total_cents on order 0' do
+            expect(order.tax_total_cents).to eq 0
+          end
+        end
+      end
+
+      context 'with pending offer' do
+        let(:line_items) { [Fabricate(:line_item, order: order, artwork_id: artwork[:_id])] }
+        let(:pending_offer) { Fabricate(:offer, order: order, amount_cents: 20000) }
+        let(:service) { OrderShippingService.new(order, fulfillment_type: Order::SHIP, shipping: domestic_shipping, pending_offer: pending_offer) }
+
+        context 'artsy collects sales tax' do
+          it 'does not set sales_tax_cents on line items' do
+            order.line_items.each do |line_item|
+              expect(line_item.sales_tax_cents).to be_nil
+            end
+          end
+
+          it 'does not set tax_total_cents on order' do
+            expect(order.tax_total_cents).to be_nil
+          end
+
+          it 'sets tax_total_cents on pending offer from tax calculator' do
+            expect(pending_offer.tax_total_cents).to eq 3750 * line_items.count
+          end
+        end
+
+        context 'seller opts out of tax collection' do
+          let(:artsy_collects_sales_tax) { false }
+
+          it 'does not set sales_tax_cents on line items' do
+            line_items.each do |line_item|
+              expect(line_item.sales_tax_cents).to be_nil
+            end
+          end
+
+          it 'does not set tax_total_cents on order' do
+            expect(order.tax_total_cents).to be_nil
+          end
+
+          it 'sets tax_total_cents on pending offer to 0' do
+            expect(pending_offer.tax_total_cents).to eq 0
           end
         end
       end
