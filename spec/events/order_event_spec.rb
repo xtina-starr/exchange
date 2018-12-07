@@ -118,6 +118,7 @@ describe OrderEvent, type: :events do
         order.update!(last_offer: offer)
       end
       it 'includes last_offer' do
+        expect(event.properties[:last_offer][:id]).to eq offer.id
         expect(event.properties[:last_offer][:amount_cents]).to eq 200_00
         expect(event.properties[:last_offer][:shipping_total_cents]).to eq 100_00
         expect(event.properties[:last_offer][:tax_total_cents]).to eq 40_00

@@ -57,6 +57,7 @@ class OrderEvent < Events::BaseEvent
 
     last_offer = @object.last_offer
     {
+      id: last_offer.id,
       amount_cents: last_offer.amount_cents,
       shipping_total_cents: last_offer.shipping_total_cents,
       tax_total_cents: last_offer.tax_total_cents,
