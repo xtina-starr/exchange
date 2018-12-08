@@ -39,7 +39,6 @@ class BaseCreateOrderService
       )
       OrderTotalUpdaterService.new(@order).update_totals!
     end
-    Exchange.dogstatsd.increment 'order.create'
     post_process
   rescue ActiveRecord::RecordInvalid => e
     raise Errors::ValidationError.new(:invalid_order, message: e.message)
@@ -63,6 +62,7 @@ class BaseCreateOrderService
   end
 
   def post_process
+    Exchange.dogstatsd.increment 'order.create'
     # The official timeout
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
   end

@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe Offers::OfferTotalUpdaterService, type: :services do
+describe Offers::TotalUpdaterService, type: :services do
   describe '#process!' do
     let(:artsy_collects_sales_tax) { true }
     let(:partner) { { _id: 'partner-1', artsy_collects_sales_tax: artsy_collects_sales_tax } }

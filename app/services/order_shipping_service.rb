@@ -1,4 +1,6 @@
-class OrderShippingService < BaseTotalCalculatorService
+class OrderShippingService
+  include OrderDetails
+
   def initialize(order, fulfillment_type:, shipping:, pending_offer: nil)
     @order = order
     @fulfillment_type = fulfillment_type
@@ -32,6 +34,10 @@ class OrderShippingService < BaseTotalCalculatorService
   end
 
   private
+
+  def set_offer_totals!
+    Offers::TotalUpdaterService.new(@pending_offer).process!
+  end
 
   def set_order_totals!
     @order.update!(shipping_total_cents: shipping_total_cents, tax_total_cents: tax_total_cents)

@@ -21,7 +21,7 @@ module Offers
         creator_id: @creator_id,
         responds_to: @counter_on
       )
-      totals_service = OfferTotalUpdaterService.new(@offer)
+      totals_service = TotalUpdaterService.new(@offer)
       totals_service.process!
     end
 
