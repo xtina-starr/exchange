@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe Offers::OfferTotalUpdaterService, type: :services do
+describe Offers::TotalUpdaterService, type: :services do
   describe '#process!' do
     let!(:partner_id)  { 'partner-1' }
     let(:artwork_location) { { country: 'US' } }
@@ -34,7 +34,7 @@ describe Offers::OfferTotalUpdaterService, type: :services do
     let(:offer_tax) { 100 }
     let(:remit_tax) { false }
     let(:tax_calculator_service) { double }
-    let(:service) { Offers::OfferTotalUpdaterService.new(offer) }
+    let(:service) { Offers::TotalUpdaterService.new(offer) }
 
     before do
       allow(Tax::CalculatorService).to receive(:new).with(

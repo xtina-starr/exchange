@@ -18,7 +18,7 @@ describe Offers::AddPendingCounterOfferService, type: :services do
 
     context 'with a submitted offer' do
       before do
-        expect(Offers::OfferTotalUpdaterService).to receive(:new).with(instance_of(Offer)).and_return(offer_total_updater_service)
+        expect(Offers::TotalUpdaterService).to receive(:new).with(instance_of(Offer)).and_return(offer_total_updater_service)
         expect(offer_total_updater_service).to receive(:process!).and_return(instance_of(offer))
       end
       it 'adds a new offer to order and does not updates last offer' do
