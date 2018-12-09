@@ -5,8 +5,7 @@ describe Offers::AcceptOfferService, type: :services do
   describe '#process!' do
     subject(:call_service) do
       described_class.new(
-        offer: offer,
-        order: order,
+        offer,
         user_id: current_user_id
       ).process!
     end

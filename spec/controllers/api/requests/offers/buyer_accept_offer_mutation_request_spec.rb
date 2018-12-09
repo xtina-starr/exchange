@@ -151,7 +151,6 @@ describe Api::GraphqlController, type: :request do
         expect(GravityService).to receive(:get_artwork).and_return(artwork)
         expect(Adapters::GravityV1).to receive(:get).with("/partner/#{order_seller_id}/all").and_return(gravity_v1_partner)
         response = client.execute(mutation, buyer_accept_offer_input)
-
         expect(inventory_request).to have_been_requested
 
         expect(response.data.buyer_accept_offer.order_or_error).to respond_to(:order)

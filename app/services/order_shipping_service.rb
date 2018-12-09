@@ -11,8 +11,7 @@ class OrderShippingService
   end
 
   def process!
-    raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
-    raise Errors::ValidationError, :invalid_state if @pending_offer.present? && @pending_offer.submitted_at?
+    pre_process!
 
     Order.transaction do
       @order.update!(
@@ -34,6 +33,11 @@ class OrderShippingService
   end
 
   private
+
+  def pre_process!
+    raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
+    raise Errors::ValidationError, :invalid_state if @pending_offer.present? && @pending_offer.submitted_at?
+  end
 
   def set_offer_totals!
     Offers::TotalUpdaterService.new(@pending_offer).process!

@@ -7,23 +7,22 @@ class Mutations::Offers::BaseAcceptOffer < Mutations::BaseMutation
 
   def resolve(offer_id:)
     offer = Offer.find(offer_id)
-    order = offer.order
 
-    authorize!(order)
+    authorize!(offer)
     raise Errors::ValidationError, :cannot_accept_offer unless waiting_for_accept?(offer)
 
-    Offers::AcceptOfferService.new(
-      offer: offer,
-      order: order,
+    service = ::Offers::AcceptOfferService.new(
+      offer,
       user_id: current_user_id
-    ).process!
+    )
+    service.process!
 
-    { order_or_error: { order: order.reload } }
+    { order_or_error: { order: service.offer.order.reload } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end
 
-  def authorize!(_order)
+  def authorize!(_offer)
     raise NotImplementedError
   end
 

@@ -1,5 +1,7 @@
 module Offers
   class SubmitOrderService
+    include OrderValidator
+    include OrderDetails
     attr_reader :order, :offer
 
     def initialize(offer, user_id: nil)
@@ -21,15 +23,8 @@ module Offers
     def pre_process!
       assert_can_submit!
 
-      @order.line_items.map do |li|
-        artwork = GravityService.get_artwork(li[:artwork_id])
-        if artwork[:current_version_id] != li[:artwork_version_id]
-          Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
-          raise Errors::ProcessingError, :artwork_version_mismatch
-        end
-      end
-      @credit_card = GravityService.get_credit_card(@order.credit_card_id)
-      assert_credit_card!
+      validate_artwork_versions!(order)
+      validate_credit_card!(credit_card)
     end
 
     def post_process
@@ -42,12 +37,6 @@ module Offers
     def assert_can_submit!
       raise Errors::ValidationError, :cant_submit unless @order.mode == Order::OFFER
       raise Errors::ValidationError, :missing_required_info unless @order.can_commit?
-    end
-
-    def assert_credit_card!
-      raise Errors::ValidationError.new(:credit_card_missing_external_id, credit_card_id: @credit_card[:id]) if @credit_card[:external_id].blank?
-      raise Errors::ValidationError.new(:credit_card_missing_customer, credit_card_id: @credit_card[:id]) if @credit_card.dig(:customer_account, :external_id).blank?
-      raise Errors::ValidationError.new(:credit_card_deactivated, credit_card_id: @credit_card[:id]) unless @credit_card[:deactivated_at].nil?
     end
   end
 end
