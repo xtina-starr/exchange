@@ -1,4 +1,4 @@
-class Mutations::Offer::BuyerCounterOffer < Mutations::BaseMutation
+class Mutations::Offers::BuyerCounterOffer < Mutations::BaseMutation
   null true
 
   argument :offer_id, ID, required: true

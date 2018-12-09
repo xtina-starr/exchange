@@ -1,4 +1,6 @@
 class CommitOrderService
+  include OrderDetails
+  include OrderValidator
   attr_accessor :order
 
   COMMITTABLE_ACTIONS = %i[approve submit].freeze
@@ -60,37 +62,11 @@ class CommitOrderService
     raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? @action
     raise Errors::ValidationError, :missing_required_info unless @order.can_commit?
 
-    validate_artwork_versions!
-    validate_credit_card!
-    validate_commission_rate!
+    validate_artwork_versions!(order)
+    validate_credit_card!(credit_card)
+    validate_commission_rate!(partner)
 
-    OrderTotalUpdaterService.new(@order, partner[:effective_commission_rate]).update_totals!
-  end
-
-  def validate_commission_rate!
-    raise Errors::ValidationError.new(:missing_commission_rate, partner_id: partner[:id]) if partner[:effective_commission_rate].blank?
-  end
-
-  def validate_artwork_versions!
-    @order.line_items.each do |li|
-      artwork = GravityService.get_artwork(li[:artwork_id])
-      if artwork[:current_version_id] != li[:artwork_version_id]
-        Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
-        raise Errors::ProcessingError, :artwork_version_mismatch
-      end
-    end
-  end
-
-  def credit_card
-    @credit_card ||= GravityService.get_credit_card(@order.credit_card_id)
-  end
-
-  def partner
-    @partner ||= GravityService.fetch_partner(@order.seller_id)
-  end
-
-  def merchant_account
-    @merchant_account ||= GravityService.get_merchant_account(@order.seller_id)
+    OrderTotalUpdaterService.new(order, partner[:effective_commission_rate]).update_totals!
   end
 
   def post_process!
@@ -112,14 +88,6 @@ class CommitOrderService
       metadata: charge_metadata,
       description: charge_description
     }
-  end
-
-  def validate_credit_card!
-    error_type = nil
-    error_type = :credit_card_missing_external_id if credit_card[:external_id].blank?
-    error_type = :credit_card_missing_customer if credit_card.dig(:customer_account, :external_id).blank?
-    error_type = :credit_card_deactivated unless credit_card[:deactivated_at].nil?
-    raise Errors::ValidationError.new(error_type, credit_card_id: credit_card[:id]) if error_type
   end
 
   def charge_description

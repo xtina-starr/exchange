@@ -1,8 +1,11 @@
 module Offers
   class SubmitOfferService
+    include OrderValidator
+    include OrderDetails
     attr_reader :offer
     def initialize(offer)
       @offer = offer
+      @order = offer.order
     end
 
     def process!
@@ -18,16 +21,11 @@ module Offers
 
     def pre_process!
       assert_submit!
-      assert_partner!
+      validate_commission_rate!(partner)
     end
 
     def assert_submit!
       raise Errors::ValidationError, :invalid_offer if @offer.submitted?
-    end
-
-    def assert_partner!
-      @partner = GravityService.fetch_partner(@offer.order.seller_id)
-      raise Errors::ValidationError.new(:missing_commission_rate, partner_id: @partner[:id]) if @partner[:effective_commission_rate].blank?
     end
   end
 end

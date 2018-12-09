@@ -9,6 +9,7 @@ class Types::MutationType < Types::BaseObject
   field :buyer_reject_offer, mutation: Mutations::Offers::BuyerRejectOffer
   field :add_initial_offer_to_order, mutation: Mutations::Offers::AddInitialOfferToOrder
   field :submit_order_with_offer, mutation: Mutations::Offers::SubmitOrderWithOffer
+  field :buyer_counter_offer, mutation: Mutations::Offers::BuyerCounterOffer
 
   # Seller
   field :approve_order, mutation: Mutations::ApproveOrder
