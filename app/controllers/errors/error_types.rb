@@ -1,7 +1,7 @@
 module Errors
   ERROR_TYPES = {
     validation: %i[
-      cant_offer
+      cannot_offer
       cant_submit
       cannot_accept_offer
       cannot_counter

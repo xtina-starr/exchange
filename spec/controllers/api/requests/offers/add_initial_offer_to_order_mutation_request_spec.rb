@@ -100,7 +100,7 @@ describe Api::GraphqlController, type: :request do
           it 'returns error' do
             response = client.execute(mutation, input: { orderId: order_id, amountCents: 100 })
             expect(response.data.add_initial_offer_to_order.order_or_error.error.type).to eq('validation')
-            expect(response.data.add_initial_offer_to_order.order_or_error.error.code).to eq('cant_offer')
+            expect(response.data.add_initial_offer_to_order.order_or_error.error.code).to eq('cannot_offer')
           end
         end
       end
@@ -110,7 +110,7 @@ describe Api::GraphqlController, type: :request do
         it 'returns error' do
           response = client.execute(mutation, input: { orderId: order_id, amountCents: 100 })
           expect(response.data.add_initial_offer_to_order.order_or_error.error.type).to eq('validation')
-          expect(response.data.add_initial_offer_to_order.order_or_error.error.code).to eq('cant_offer')
+          expect(response.data.add_initial_offer_to_order.order_or_error.error.code).to eq('cannot_offer')
         end
       end
       context 'Pending order' do

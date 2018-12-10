@@ -15,7 +15,7 @@ describe Offers::InitialOfferService, type: :services do
       it 'raises error' do
         expect { service.process! }.to raise_error do |e|
           expect(e.type).to eq :validation
-          expect(e.code).to eq :cant_offer
+          expect(e.code).to eq :cannot_offer
         end
       end
     end
@@ -25,7 +25,7 @@ describe Offers::InitialOfferService, type: :services do
         it 'raises error' do
           expect { service.process! }.to raise_error do |e|
             expect(e.type).to eq :validation
-            expect(e.code).to eq :cant_offer
+            expect(e.code).to eq :cannot_offer
           end
         end
       end
@@ -36,7 +36,7 @@ describe Offers::InitialOfferService, type: :services do
       it 'raises error' do
         expect { service.process! }.to raise_error do |e|
           expect(e.type).to eq :validation
-          expect(e.code).to eq :cant_offer
+          expect(e.code).to eq :cannot_offer
         end
       end
     end
