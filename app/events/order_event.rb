@@ -43,13 +43,28 @@ class OrderEvent < Events::BaseEvent
   end
 
   def properties
-    PROPERTIES_ATTRS.map { |att| [att, @object.send(att)] }.to_h.merge(line_items: line_items_details)
+    PROPERTIES_ATTRS.map { |att| [att, @object.send(att)] }.to_h.merge(line_items: line_items_details, last_offer: last_offer)
   end
 
   private
 
   def line_items_details
     @object.line_items.map { |li| line_item_detail(li) }
+  end
+
+  def last_offer
+    return unless @object.last_offer
+
+    last_offer = @object.last_offer
+    {
+      id: last_offer.id,
+      amount_cents: last_offer.amount_cents,
+      shipping_total_cents: last_offer.shipping_total_cents,
+      tax_total_cents: last_offer.tax_total_cents,
+      from_participant: last_offer.from_participant,
+      creator_id: last_offer.creator_id,
+      responds_to: last_offer.responds_to_id
+    }
   end
 
   def line_item_detail(line_item)
