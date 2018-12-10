@@ -6,6 +6,7 @@ class Types::LineItemType < Types::BaseObject
   field :price_cents, Integer, null: false, deprecation_reason: 'switch to use listPriceCents'
   field :list_price_cents, Integer, null: false
   field :artwork_id, String, null: false
+  field :artwork_version_id, String, null: false
   field :edition_set_id, String, null: true
   field :quantity, Integer, null: false
   field :commission_fee_cents, Integer, null: true, seller_only: true
