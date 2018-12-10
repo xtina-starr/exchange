@@ -1,5 +1,6 @@
 class Order < ApplicationRecord
-  has_paper_trail
+  has_paper_trail class_name: 'PaperTrail::OrderVersion'
+
   SUPPORTED_CURRENCIES = %w[USD].freeze
 
   MODES = [
