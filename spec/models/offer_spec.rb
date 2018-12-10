@@ -46,7 +46,7 @@ RSpec.describe Offer, type: :model do
       expect(seller_offer.from_participant).to eq Order::SELLER
     end
     it 'raises error for offer that is not from a buyer or seller' do
-      expect{ ufo_offer.from_participant }.to raise_error do |error|
+      expect { ufo_offer.from_participant }.to raise_error do |error|
         expect(error.type).to eq :validation
         expect(error.code).to eq :unknown_participant_type
       end
