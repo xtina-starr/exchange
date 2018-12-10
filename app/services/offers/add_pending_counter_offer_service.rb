@@ -1,10 +1,10 @@
 module Offers
   class AddPendingCounterOfferService
-    attr_reader :offer
     include OrderValidator
-    def initialize(counter_on, amount_cents:, from_id:, from_type:, creator_id:)
-      @counter_on = counter_on
-      @order = counter_on.order
+    attr_reader :offer
+    def initialize(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
+      @responds_to = responds_to
+      @order = responds_to.order
       @amount_cents = amount_cents
       @from_id = from_id
       @creator_id = creator_id
@@ -19,7 +19,7 @@ module Offers
         from_id: @from_id,
         from_type: @from_type,
         creator_id: @creator_id,
-        responds_to: @counter_on
+        responds_to: @responds_to
       )
       totals_service = Offers::TotalUpdaterService.new(@offer)
       totals_service.process!
@@ -28,8 +28,8 @@ module Offers
     private
 
     def validate_action!
-      validate_is_last_offer!(@counter_on)
-      validate_order_submitted!(@counter_on.order)
+      validate_is_last_offer!(@responds_to)
+      validate_order_submitted!(@responds_to.order)
     end
   end
 end
