@@ -41,6 +41,7 @@ module Errors
       uncommittable_action
       unknown_artwork
       unknown_edition_set
+      unknown_participant_type
       unknown_partner
       unpublished_artwork
       unsupported_shipping_location

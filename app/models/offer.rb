@@ -20,6 +20,8 @@ class Offer < ApplicationRecord
       Order::SELLER
     elsif from_id == order.buyer_id && from_type == order.buyer_type
       Order::BUYER
+    else
+      raise Errors::ValidationError, :unknown_participant_type
     end
   end
 end
