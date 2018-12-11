@@ -124,7 +124,20 @@ describe OrderEvent, type: :events do
         expect(event.properties[:last_offer][:tax_total_cents]).to eq 40_00
         expect(event.properties[:last_offer][:from_participant]).to eq 'seller'
         expect(event.properties[:last_offer][:creator_id]).to eq 'partner-admin'
-        expect(event.properties[:last_offer][:responds_to_id]).to be_nil
+        expect(event.properties[:last_offer][:responds_to]).to be_nil
+      end
+    end
+    context 'with last_offer that responds to another offer' do
+      let(:previous_offer) { Fabricate(:offer, order: order, amount_cents: 100_00, shipping_total_cents: 50_00, tax_total_cents: 20_00, from_id: user_id, from_type: 'user', creator_id: user_id) }
+      let(:offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 40_00, from_id: seller_id, from_type: 'gallery', creator_id: 'partner-admin', responds_to: previous_offer) }
+      before do
+        order.update!(last_offer: offer)
+      end
+      it 'includes last_offer' do
+        expect(event.properties[:last_offer][:responds_to][:id]).to eq previous_offer.id
+        expect(event.properties[:last_offer][:responds_to][:amount_cents]).to eq previous_offer[:amount_cents]
+        expect(event.properties[:last_offer][:responds_to][:created_at]).to eq previous_offer[:created_at]
+        expect(event.properties[:last_offer][:responds_to][:from_participant]).to eq previous_offer.from_participant
       end
     end
   end
