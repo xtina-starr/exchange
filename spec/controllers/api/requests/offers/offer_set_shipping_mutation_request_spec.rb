@@ -17,7 +17,7 @@ describe Api::GraphqlController, type: :request do
     let(:fulfillment_type) { 'SHIP' }
     let(:total_sales_tax) { 2222 }
     let(:phone_number) { '00123456789' }
-    let(:partner) { { billing_location_id: '123abc' } }
+    let(:partner) { { id: seller_id, artsy_collects_sales_tax: true, billing_location_id: '123abc' } }
     let(:seller_addresses) { [Address.new(state: 'NY', country: 'US', postal_code: '10001'), Address.new(state: 'MA', country: 'US', postal_code: '02139')] }
     let(:untaxable_seller_address) { [Address.new(country: 'FR')] }
 
@@ -123,7 +123,10 @@ describe Api::GraphqlController, type: :request do
         let(:fulfillment_type) { 'PICKUP' }
         before do
           allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
-          allow(GravityService).to receive(:fetch_partner_locations).and_return(seller_addresses)
+          allow(GravityService).to receive_messages(
+            fetch_partner_locations: seller_addresses,
+            fetch_partner: partner
+          )
           @response = client.execute(mutation, set_shipping_input)
         end
         it 'sets fulfillment_type on the order' do
@@ -145,6 +148,9 @@ describe Api::GraphqlController, type: :request do
         end
       end
       context 'Ship Order' do
+        before do
+          allow(GravityService).to receive(:fetch_partner).and_return(partner)
+        end
         context 'without passing phone number' do
           let(:phone_number) { nil }
           it 'fails' do

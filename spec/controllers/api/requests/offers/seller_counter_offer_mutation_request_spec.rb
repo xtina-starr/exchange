@@ -5,6 +5,7 @@ describe Api::GraphqlController, type: :request do
   describe 'seller_counter_offer mutation' do
     include_context 'GraphQL Client'
     let(:partner_id) { jwt_partner_ids.first }
+    let(:partner) { { id: partner_id, artsy_collects_sales_tax: true } }
     let(:user_id) { jwt_user_id }
     let(:artwork_location) { { country: 'US' } }
     let(:artwork) { { _id: 'a-1', current_version_id: '1', location: artwork_location, domestic_shipping_fee_cents: 1000 } }
@@ -75,7 +76,10 @@ describe Api::GraphqlController, type: :request do
       order.update!(last_offer: offer)
 
       allow(GravityService).to receive(:fetch_partner_locations).with(partner_id).and_return([partner_address])
-      allow(GravityService).to receive(:get_artwork).and_return(artwork)
+      allow(GravityService).to receive_messages(
+        get_artwork: artwork,
+        fetch_partner: partner
+      )
       allow(Taxjar::Client).to receive(:new).with(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key'], api_url: nil).and_return(taxjar_client)
       allow(taxjar_client).to receive(:tax_for_order).with(any_args).and_return(tax_response)
     end
