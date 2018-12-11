@@ -45,7 +45,7 @@ describe Offers::TotalUpdaterService, type: :services do
         instance_of(Address),
         [partner_address]
       ).and_return(tax_calculator)
-      expect(GravityService).to receive_messages(
+      expect(Gravity).to receive_messages(
         fetch_partner: partner,
         fetch_partner_locations: [partner_address],
         get_artwork: artwork

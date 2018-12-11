@@ -1,13 +1,13 @@
 require 'rails_helper'
 require 'support/gravity_helper'
 
-describe GravityService, type: :services do
+describe Gravity, type: :services do
   let(:seller_id) { 'partner-1' }
   let(:partner) { { _id: 'partner-1', billing_location_id: 'location-1' } }
   describe '#fetch_partner' do
     it 'calls the /partner endpoint' do
       allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all")
-      GravityService.fetch_partner(seller_id)
+      Gravity.fetch_partner(seller_id)
       expect(Adapters::GravityV1).to have_received(:get).with("/partner/#{seller_id}/all")
     end
 
@@ -17,7 +17,7 @@ describe GravityService, type: :services do
       end
       it 'raises error' do
         expect do
-          GravityService.fetch_partner(seller_id)
+          Gravity.fetch_partner(seller_id)
         end.to raise_error do |error|
           expect(error).to be_a Errors::ValidationError
           expect(error.code).to eq :unknown_partner
@@ -31,13 +31,13 @@ describe GravityService, type: :services do
     let(:invalid_location) { [{ country: 'US', state: 'Floridada' }] }
     it 'calls the correct location Gravity endpoint' do
       expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true").and_return(valid_locations)
-      GravityService.fetch_partner_locations(seller_id)
+      Gravity.fetch_partner_locations(seller_id)
     end
     context 'with at least one partner location' do
       context 'with valid partner locations' do
         it 'returns new addresses for each location' do
           allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true").and_return(valid_locations)
-          partner_addresses = GravityService.fetch_partner_locations(seller_id)
+          partner_addresses = Gravity.fetch_partner_locations(seller_id)
           partner_addresses.each { |ad| expect(ad).to be_a Address }
         end
       end
@@ -45,7 +45,7 @@ describe GravityService, type: :services do
     context 'with no partner locations' do
       it 'raises error' do
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true").and_return([])
-        expect { GravityService.fetch_partner_locations(seller_id) }.to raise_error do |error|
+        expect { Gravity.fetch_partner_locations(seller_id) }.to raise_error do |error|
           expect(error).to be_a Errors::ValidationError
           expect(error.code).to eq :missing_partner_location
           expect(error.data[:partner_id]).to eq seller_id
@@ -61,18 +61,18 @@ describe GravityService, type: :services do
         allow(Adapters::GravityV1).to receive(:get).with('/merchant_accounts', params: { partner_id: seller_id }).and_return(partner_merchant_accounts)
       end
       it 'calls the /merchant_accounts Gravity endpoint' do
-        GravityService.get_merchant_account(seller_id)
+        Gravity.get_merchant_account(seller_id)
         expect(Adapters::GravityV1).to have_received(:get).with('/merchant_accounts', params: { partner_id: seller_id })
       end
       it "returns the first merchant account of the partner's merchant accounts" do
-        result = GravityService.get_merchant_account(seller_id)
+        result = Gravity.get_merchant_account(seller_id)
         expect(result).to be(partner_merchant_accounts.first)
       end
     end
 
     it 'raises an error if the partner does not have a merchant account' do
       allow(Adapters::GravityV1).to receive(:get).with('/merchant_accounts', params: { partner_id: seller_id }).and_return([])
-      expect { GravityService.get_merchant_account(seller_id) }.to raise_error do |error|
+      expect { Gravity.get_merchant_account(seller_id) }.to raise_error do |error|
         expect(error).to be_a(Errors::InternalError)
         expect(error.type).to eq :internal
         expect(error.code).to eq :gravity
@@ -85,7 +85,7 @@ describe GravityService, type: :services do
       end
       it 'raises error' do
         expect do
-          GravityService.get_merchant_account(seller_id)
+          Gravity.get_merchant_account(seller_id)
         end.to raise_error do |error|
           expect(error).to be_a Errors::ValidationError
           expect(error.code).to eq :missing_merchant_account
@@ -99,7 +99,7 @@ describe GravityService, type: :services do
     let(:credit_card) { { external_id: 'card-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil } }
     it 'calls the /credit_card Gravity endpoint' do
       allow(Adapters::GravityV1).to receive(:get).with("/credit_card/#{credit_card_id}").and_return(credit_card)
-      GravityService.get_credit_card(credit_card_id)
+      Gravity.get_credit_card(credit_card_id)
       expect(Adapters::GravityV1).to have_received(:get).with("/credit_card/#{credit_card_id}")
     end
 
@@ -109,7 +109,7 @@ describe GravityService, type: :services do
       end
       it 'raises error' do
         expect do
-          GravityService.get_credit_card(credit_card_id)
+          Gravity.get_credit_card(credit_card_id)
         end.to raise_error do |error|
           expect(error).to be_a Errors::ValidationError
           expect(error.code).to eq :credit_card_not_found
@@ -122,13 +122,13 @@ describe GravityService, type: :services do
     let(:artwork_id) { 'some-id' }
     it 'calls the /artwork endpoint' do
       allow(Adapters::GravityV1).to receive(:get).with("/artwork/#{artwork_id}")
-      GravityService.get_artwork(artwork_id)
+      Gravity.get_artwork(artwork_id)
       expect(Adapters::GravityV1).to have_received(:get).with("/artwork/#{artwork_id}")
     end
     context 'with failed gravity call' do
       it 'returns nil' do
         expect(Adapters::GravityV1).to receive(:get).and_raise(Adapters::GravityError, 'timeout')
-        expect(GravityService.get_artwork(artwork_id)).to be_nil
+        expect(Gravity.get_artwork(artwork_id)).to be_nil
       end
     end
   end
@@ -137,13 +137,13 @@ describe GravityService, type: :services do
     let(:user_id) { 'some-id' }
     it 'calls the /userid endpoint' do
       allow(Adapters::GravityV1).to receive(:get).with("/user/#{user_id}")
-      GravityService.get_user(user_id)
+      Gravity.get_user(user_id)
       expect(Adapters::GravityV1).to have_received(:get).with("/user/#{user_id}")
     end
     context 'with failed gravity call' do
       it 'returns nil' do
         expect(Adapters::GravityV1).to receive(:get).and_raise(Adapters::GravityError, 'timeout')
-        expect(GravityService.get_user(user_id)).to be_nil
+        expect(Gravity.get_user(user_id)).to be_nil
       end
     end
   end

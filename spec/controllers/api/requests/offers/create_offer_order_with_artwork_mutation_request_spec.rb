@@ -80,7 +80,7 @@ describe Api::GraphqlController, type: :request do
       context 'with successful artwork fetch' do
         let(:artwork) { gravity_v1_artwork }
         before do
-          expect(GravityService).to receive(:get_artwork).with(artwork_id).and_return(artwork)
+          expect(Gravity).to receive(:get_artwork).with(artwork_id).and_return(artwork)
         end
         context 'artwork with one edition set' do
           context 'without passing edition_set_id' do
@@ -270,7 +270,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with artwork price in unsupported currency' do
         before do
-          expect(GravityService).to receive(:get_artwork).with(artwork_id).and_return(gravity_v1_artwork(edition_sets: nil, price_currency: 'RIA'))
+          expect(Gravity).to receive(:get_artwork).with(artwork_id).and_return(gravity_v1_artwork(edition_sets: nil, price_currency: 'RIA'))
         end
         it 'returns error' do
           expect do
@@ -286,7 +286,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with not-offerable artwork' do
         before do
-          expect(GravityService).to receive(:get_artwork).with(artwork_id).and_return(gravity_v1_artwork(edition_sets: nil, offerable: false))
+          expect(Gravity).to receive(:get_artwork).with(artwork_id).and_return(gravity_v1_artwork(edition_sets: nil, offerable: false))
         end
         it 'returns error' do
           expect do

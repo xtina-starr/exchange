@@ -53,7 +53,7 @@ class BaseCreateOrderService
   private
 
   def pre_process!
-    @artwork = GravityService.get_artwork(@artwork_id)
+    @artwork = Gravity.get_artwork(@artwork_id)
     raise Errors::ValidationError.new(:unknown_artwork, artwork_id: @artwork_id) if @artwork.nil?
     raise Errors::ValidationError.new(:unpublished_artwork, artwork_id: @artwork_id) unless @artwork[:published]
 

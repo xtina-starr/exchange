@@ -41,7 +41,7 @@ describe Api::WebhooksController, type: :request do
     end
     it 'refunds the order' do
       allow(Stripe::Webhook).to receive(:construct_event).and_return(charge_refunded_event)
-      expect(GravityService).to receive(:undeduct_inventory).once.with(line_item)
+      expect(Gravity).to receive(:undeduct_inventory).once.with(line_item)
       post '/api/webhooks/stripe', params: charge_refunded_payload, headers: { 'HTTP_STRIPE_SIGNATURE' => 'test_header' }
       expect(response.status).to eq 204
       expect(order.reload.state).to eq Order::REFUNDED
@@ -60,7 +60,7 @@ describe Api::WebhooksController, type: :request do
       let(:fully_refunded) { false }
       it 'returns 200 and does not refund' do
         allow(Stripe::Webhook).to receive(:construct_event).and_return(charge_refunded_event)
-        expect(GravityService).not_to receive(:undeduct_inventory)
+        expect(Gravity).not_to receive(:undeduct_inventory)
         expect do
           post '/api/webhooks/stripe', params: charge_refunded_payload, headers: { 'HTTP_STRIPE_SIGNATURE' => 'test_header' }
           expect(response.status).to eq 200

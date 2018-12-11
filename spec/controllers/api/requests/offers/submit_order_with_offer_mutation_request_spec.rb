@@ -88,8 +88,8 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'if the order is not in a pending state' do
-        allow(GravityService).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-        allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+        allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
+        allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
         order.update!(state: 'abandoned')
 
@@ -101,8 +101,8 @@ describe Api::GraphqlController, type: :request do
       end
 
       it 'if the offer has already been submitted' do
-        allow(GravityService).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-        allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+        allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
+        allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         @offer.update!(submitted_at: Time.now.utc)
 
         response = client.execute(mutation, submit_order_input)
@@ -152,8 +152,8 @@ describe Api::GraphqlController, type: :request do
         }
       end
       before do
-        allow(GravityService).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-        allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+        allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
+        allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
       end
 

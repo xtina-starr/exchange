@@ -1,4 +1,4 @@
-module GravityService
+module Gravity
   def self.fetch_partner(partner_id)
     Adapters::GravityV1.get("/partner/#{partner_id}/all")
   rescue Adapters::GravityNotFoundError

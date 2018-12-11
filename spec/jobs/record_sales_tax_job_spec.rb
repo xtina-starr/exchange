@@ -21,8 +21,8 @@ describe RecordSalesTaxJob, type: :job do
     end
     context 'with an order that has sales tax to remit' do
       it 'posts a transaction to TaxJar and saves the transaction id' do
-        expect(GravityService).to receive(:get_artwork).with(line_item.artwork_id).and_return(gravity_v1_artwork(location: artwork_location))
-        expect(GravityService).to receive(:fetch_partner_locations).with(line_item.order.seller_id).and_return(seller_addresses)
+        expect(Gravity).to receive(:get_artwork).with(line_item.artwork_id).and_return(gravity_v1_artwork(location: artwork_location))
+        expect(Gravity).to receive(:fetch_partner_locations).with(line_item.order.seller_id).and_return(seller_addresses)
         expect(Address).to receive(:new).with(artwork_location).and_return(Address.new(artwork_location))
         RecordSalesTaxJob.perform_now(line_item.id)
         expect(line_item.reload.sales_tax_transaction_id).to eq '123'

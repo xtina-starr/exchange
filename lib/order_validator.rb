@@ -13,12 +13,17 @@ module OrderValidator
 
   def self.validate_artwork_versions!(order)
     order.line_items.each do |li|
-      artwork = GravityService.get_artwork(li[:artwork_id])
+      artwork = Gravity.get_artwork(li[:artwork_id])
       if artwork[:current_version_id] != li[:artwork_version_id]
         Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
         raise Errors::ProcessingError, :artwork_version_mismatch
       end
     end
+  end
+
+  def self.validate_artwork!(artwork)
+    raise Errors::ValidationError, :unknown_artwork unless artwork
+    raise Errors::ValidationError, :missing_artwork_location if artwork[:location].blank?
   end
 
   def self.validate_commission_rate!(partner)

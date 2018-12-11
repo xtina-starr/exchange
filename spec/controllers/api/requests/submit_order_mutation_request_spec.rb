@@ -100,7 +100,7 @@ describe Api::GraphqlController, type: :request do
           order.update_attributes! shipping_country: nil
         end
         it 'returns error' do
-          allow(GravityService).to receive(:get_artwork).and_return(artwork)
+          allow(Gravity).to receive(:get_artwork).and_return(artwork)
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
           expect(response.data.submit_order.order_or_error.error.code).to eq 'missing_required_info'
@@ -111,7 +111,7 @@ describe Api::GraphqlController, type: :request do
       context 'with order without credit card id' do
         let(:credit_card_id) { nil }
         it 'returns error' do
-          allow(GravityService).to receive(:get_artwork).and_return(artwork)
+          allow(Gravity).to receive(:get_artwork).and_return(artwork)
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
           expect(response.data.submit_order.order_or_error.error.code).to eq 'missing_required_info'
@@ -124,10 +124,10 @@ describe Api::GraphqlController, type: :request do
           order.update_attributes! state: Order::APPROVED
         end
         it 'returns error' do
-          allow(GravityService).to receive(:get_artwork).and_return(artwork)
-          allow(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
-          allow(GravityService).to receive(:get_credit_card).and_return(credit_card)
-          allow(GravityService).to receive(:fetch_partner).and_return(partner)
+          allow(Gravity).to receive(:get_artwork).and_return(artwork)
+          allow(Gravity).to receive(:get_merchant_account).and_return(merchant_account)
+          allow(Gravity).to receive(:get_credit_card).and_return(credit_card)
+          allow(Gravity).to receive(:fetch_partner).and_return(partner)
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
           expect(response.data.submit_order.order_or_error.error.code).to eq 'invalid_state'
@@ -139,12 +139,12 @@ describe Api::GraphqlController, type: :request do
       context 'with artwork version mismatch' do
         let(:artwork) { { _id: 'a-1', current_version_id: '2' } }
         before do
-          allow(GravityService).to receive(:get_artwork).and_return(artwork)
+          allow(Gravity).to receive(:get_artwork).and_return(artwork)
         end
         it 'raises processing error' do
-          expect(GravityService).not_to receive(:deduct_inventory)
-          expect(GravityService).not_to receive(:get_merchant_account)
-          expect(GravityService).not_to receive(:get_credit_card)
+          expect(Gravity).not_to receive(:deduct_inventory)
+          expect(Gravity).not_to receive(:get_merchant_account)
+          expect(Gravity).not_to receive(:get_credit_card)
           expect(Adapters::GravityV1).not_to receive(:get).with("/partner/#{seller_id}/all")
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error).not_to respond_to(:order)
@@ -156,9 +156,9 @@ describe Api::GraphqlController, type: :request do
 
       it 'submits the order' do
         inventory_request = stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json)
-        expect(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
-        expect(GravityService).to receive(:get_credit_card).and_return(credit_card)
-        allow(GravityService).to receive(:get_artwork).and_return(artwork)
+        expect(Gravity).to receive(:get_merchant_account).and_return(merchant_account)
+        expect(Gravity).to receive(:get_credit_card).and_return(credit_card)
+        allow(Gravity).to receive(:get_artwork).and_return(artwork)
         expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
         response = client.execute(mutation, submit_order_input)
 

@@ -59,7 +59,7 @@ describe OrderValidator, type: :services do
   describe '#validate_artwork_versions!' do
     context 'with mismatched artwork versions' do
       it 'raises an error and records the artwork mismatch in DataDog' do
-        expect(GravityService).to receive(:get_artwork).with(artwork1[:_id]).and_return(artwork1.merge(current_version_id: 2))
+        expect(Gravity).to receive(:get_artwork).with(artwork1[:_id]).and_return(artwork1.merge(current_version_id: 2))
         expect(Exchange).to receive_message_chain(:dogstatsd, :increment).with('submit.artwork_version_mismatch')
         expect { OrderValidator.validate_artwork_versions!(order) }.to raise_error do |error|
           expect(error).to be_a(Errors::ProcessingError)

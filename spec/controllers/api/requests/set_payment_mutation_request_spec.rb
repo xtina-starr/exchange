@@ -78,7 +78,7 @@ describe Api::GraphqlController, type: :request do
       context 'with an order in pending state' do
         context 'with a credit card that belongs to the buyer' do
           it 'sets payments on the order' do
-            expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+            expect(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
             response = client.execute(mutation, set_payment_input)
             expect(response.data.set_payment.order_or_error.order.id).to eq order.id.to_s
             expect(response.data.set_payment.order_or_error.order.state).to eq 'PENDING'
@@ -92,7 +92,7 @@ describe Api::GraphqlController, type: :request do
         context 'with a credit card that does not belong to the buyer' do
           let(:invalid_credit_card) { { id: credit_card_id, user: { _id: 'someone_else' } } }
           it 'raises an error' do
-            expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(invalid_credit_card)
+            expect(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(invalid_credit_card)
             response = client.execute(mutation, set_payment_input)
             expect(response.data.set_payment.order_or_error.error.type).to eq 'validation'
             expect(response.data.set_payment.order_or_error.error.code).to eq 'invalid_credit_card'

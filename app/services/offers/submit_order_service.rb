@@ -1,12 +1,12 @@
 module Offers
   class SubmitOrderService
-    include OrderDetails
     attr_reader :order, :offer
 
     def initialize(offer, user_id: nil)
       @offer = offer
       @order = @offer.order
       @user_id = user_id
+      @order_data = OrderData.new(@order)
     end
 
     def process!
@@ -23,7 +23,7 @@ module Offers
       assert_can_submit!
 
       OrderValidator.validate_artwork_versions!(order)
-      OrderValidator.validate_credit_card!(credit_card)
+      OrderValidator.validate_credit_card!(@order_data.credit_card)
     end
 
     def post_process
