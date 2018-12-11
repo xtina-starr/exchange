@@ -1,7 +1,6 @@
 module Offers
   class SubmitCounterOfferService
     attr_reader :offer
-    include OrderValidator
     def initialize(offer, user_id:)
       @offer = offer
       @order = offer.order
@@ -19,7 +18,7 @@ module Offers
     private
 
     def validate_counter_offer!
-      validate_order_submitted!(offer.order)
+      OrderValidator.validate_order_submitted!(offer.order)
     end
 
     def post_process!

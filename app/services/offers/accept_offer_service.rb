@@ -1,6 +1,5 @@
 module Offers
   class AcceptOfferService < CommitOrderService
-    include OrderValidator
     attr_reader :offer, :user_id
     def initialize(offer, user_id: nil)
       @offer = offer
@@ -16,7 +15,7 @@ module Offers
 
     def pre_process!
       super
-      validate_is_last_offer!(@offer)
+      OrderValidator.validate_is_last_offer!(@offer)
     end
 
     def post_process!

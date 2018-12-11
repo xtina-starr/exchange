@@ -1,6 +1,5 @@
 class CommitOrderService
   include OrderDetails
-  include OrderValidator
   attr_accessor :order
 
   COMMITTABLE_ACTIONS = %i[approve submit].freeze
@@ -62,9 +61,9 @@ class CommitOrderService
     raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? @action
     raise Errors::ValidationError, :missing_required_info unless @order.can_commit?
 
-    validate_artwork_versions!(order)
-    validate_credit_card!(credit_card)
-    validate_commission_rate!(partner)
+    OrderValidator.validate_artwork_versions!(order)
+    OrderValidator.validate_credit_card!(credit_card)
+    OrderValidator.validate_commission_rate!(partner)
 
     OrderTotalUpdaterService.new(order, partner[:effective_commission_rate]).update_totals!
   end

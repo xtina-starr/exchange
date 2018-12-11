@@ -1,6 +1,5 @@
 module Offers
   class SubmitOrderService
-    include OrderValidator
     include OrderDetails
     attr_reader :order, :offer
 
@@ -23,8 +22,8 @@ module Offers
     def pre_process!
       assert_can_submit!
 
-      validate_artwork_versions!(order)
-      validate_credit_card!(credit_card)
+      OrderValidator.validate_artwork_versions!(order)
+      OrderValidator.validate_credit_card!(credit_card)
     end
 
     def post_process

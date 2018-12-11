@@ -1,6 +1,5 @@
 module Offers
   class RejectOfferService
-    include OrderValidator
     def initialize(offer:, reject_reason:, user_id:)
       @offer = offer
       @reject_reason = reject_reason
@@ -18,7 +17,7 @@ module Offers
     private
 
     def pre_process!
-      validate_is_last_offer!(@offer)
+      OrderValidator.validate_is_last_offer!(@offer)
     end
 
     def post_process!

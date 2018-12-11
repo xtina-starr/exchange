@@ -41,19 +41,13 @@ describe OrderValidator, type: :services do
   let(:edition_set_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { deduct: 2 }).to_return(status: 200, body: {}.to_json) }
   let(:artwork_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }).to_return(status: 200, body: {}.to_json) }
   let(:edition_set_inventory_undeduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-2/edition_set/es-1/inventory").with(body: { undeduct: 2 }).to_return(status: 200, body: {}.to_json) }
-  let(:service) do
-    class TestService
-      include OrderValidator
-    end
-    TestService.new
-  end
   let(:transaction) { Fabricate(:transaction, status: Transaction::SUCCESS) }
   let(:failed_transaction) { Fabricate(:transaction, status: Transaction::FAILURE) }
 
   describe '#validate_commission_rate!' do
     context 'with a partner with missing commission rate' do
       it 'raises an error' do
-        expect { service.validate_commission_rate!(partner_missing_commission_rate) }.to raise_error do |error|
+        expect { OrderValidator.validate_commission_rate!(partner_missing_commission_rate) }.to raise_error do |error|
           expect(error).to be_a(Errors::ValidationError)
           expect(error.code).to eq :missing_commission_rate
           expect(error.data).to match(partner_id: seller_id)
@@ -67,7 +61,7 @@ describe OrderValidator, type: :services do
       it 'raises an error and records the artwork mismatch in DataDog' do
         expect(GravityService).to receive(:get_artwork).with(artwork1[:_id]).and_return(artwork1.merge(current_version_id: 2))
         expect(Exchange).to receive_message_chain(:dogstatsd, :increment).with('submit.artwork_version_mismatch')
-        expect { service.validate_artwork_versions!(order) }.to raise_error do |error|
+        expect { OrderValidator.validate_artwork_versions!(order) }.to raise_error do |error|
           expect(error).to be_a(Errors::ProcessingError)
           expect(error.code).to eq :artwork_version_mismatch
         end
@@ -77,7 +71,7 @@ describe OrderValidator, type: :services do
 
   describe '#validate_credit_card!' do
     it 'raises an error if the credit card does not have an external id' do
-      expect { service.validate_credit_card!(id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil) }.to raise_error do |error|
+      expect { OrderValidator.validate_credit_card!(id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil) }.to raise_error do |error|
         expect(error).to be_a(Errors::ValidationError)
         expect(error.code).to eq :credit_card_missing_external_id
         expect(error.data).to match(credit_card_id: 'cc-1')
@@ -85,7 +79,7 @@ describe OrderValidator, type: :services do
     end
 
     it 'raises an error if the credit card does not have a customer account' do
-      expect { service.validate_credit_card!(id: 'cc-1', external_id: 'cc-1') }.to raise_error do |error|
+      expect { OrderValidator.validate_credit_card!(id: 'cc-1', external_id: 'cc-1') }.to raise_error do |error|
         expect(error).to be_a(Errors::ValidationError)
         expect(error.code).to eq :credit_card_missing_customer
         expect(error.data).to match(credit_card_id: 'cc-1')
@@ -93,7 +87,7 @@ describe OrderValidator, type: :services do
     end
 
     it 'raises an error if the credit card does not have a customer account external id' do
-      expect { service.validate_credit_card!(id: 'cc-1', external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil) }.to raise_error do |error|
+      expect { OrderValidator.validate_credit_card!(id: 'cc-1', external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil) }.to raise_error do |error|
         expect(error).to be_a(Errors::ValidationError)
         expect(error.code).to eq :credit_card_missing_customer
         expect(error.data).to match(credit_card_id: 'cc-1')
@@ -101,7 +95,7 @@ describe OrderValidator, type: :services do
     end
 
     it 'raises an error if the card is deactivated' do
-      expect { service.validate_credit_card!(id: 'cc-1', external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago) }.to raise_error do |error|
+      expect { OrderValidator.validate_credit_card!(id: 'cc-1', external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago) }.to raise_error do |error|
         expect(error).to be_a(Errors::ValidationError)
         expect(error.code).to eq :credit_card_deactivated
         expect(error.data).to match(credit_card_id: 'cc-1')

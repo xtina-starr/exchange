@@ -1,17 +1,17 @@
 module OrderValidator
-  def validate_is_last_offer!(offer)
+  def self.validate_is_last_offer!(offer)
     raise Errors::ValidationError, :not_last_offer unless offer.last_offer?
   end
 
-  def validate_order_submitted!(order)
+  def self.validate_order_submitted!(order)
     raise Errors::ValidationError, :invalid_state unless order.state == Order::SUBMITTED
   end
 
-  def validate_owner!(offer, from_id)
+  def self.validate_owner!(offer, from_id)
     raise Errors::ValidationError, :not_offerable unless offer.from_id == from_id
   end
 
-  def validate_artwork_versions!(order)
+  def self.validate_artwork_versions!(order)
     order.line_items.each do |li|
       artwork = GravityService.get_artwork(li[:artwork_id])
       if artwork[:current_version_id] != li[:artwork_version_id]
@@ -21,11 +21,11 @@ module OrderValidator
     end
   end
 
-  def validate_commission_rate!(partner)
+  def self.validate_commission_rate!(partner)
     raise Errors::ValidationError.new(:missing_commission_rate, partner_id: partner[:id]) if partner[:effective_commission_rate].blank?
   end
 
-  def validate_credit_card!(credit_card)
+  def self.validate_credit_card!(credit_card)
     error_type = nil
     error_type = :credit_card_missing_external_id if credit_card[:external_id].blank?
     error_type = :credit_card_missing_customer if credit_card.dig(:customer_account, :external_id).blank?

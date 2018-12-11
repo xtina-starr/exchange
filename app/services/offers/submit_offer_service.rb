@@ -1,6 +1,5 @@
 module Offers
   class SubmitOfferService
-    include OrderValidator
     include OrderDetails
     attr_reader :offer
     def initialize(offer)
@@ -21,7 +20,7 @@ module Offers
 
     def pre_process!
       assert_submit!
-      validate_commission_rate!(partner)
+      OrderValidator.validate_commission_rate!(partner)
     end
 
     def assert_submit!

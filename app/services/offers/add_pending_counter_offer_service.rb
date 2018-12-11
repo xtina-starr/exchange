@@ -1,6 +1,5 @@
 module Offers
   class AddPendingCounterOfferService
-    include OrderValidator
     attr_reader :offer
     def initialize(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
       @responds_to = responds_to
@@ -28,8 +27,8 @@ module Offers
     private
 
     def validate_action!
-      validate_is_last_offer!(@responds_to)
-      validate_order_submitted!(@responds_to.order)
+      OrderValidator.validate_is_last_offer!(@responds_to)
+      OrderValidator.validate_order_submitted!(@responds_to.order)
     end
   end
 end
