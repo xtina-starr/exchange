@@ -3,6 +3,8 @@ require 'rails_helper'
 RSpec.describe Order, type: :model do
   let(:order) { Fabricate(:order) }
 
+  it_behaves_like 'a papertrail versioned model', :order
+
   describe 'validate currency' do
     it 'raises invalid record for unsupported currencies' do
       expect { order.update!(currency_code: 'CAD') }.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: Currency code is not included in the list')

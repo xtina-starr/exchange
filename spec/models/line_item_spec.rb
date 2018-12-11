@@ -4,6 +4,8 @@ describe LineItem, type: :model do
   let(:mode) { Order::BUY }
   let(:order) { Fabricate(:order, mode: mode) }
 
+  it_behaves_like 'a papertrail versioned model', :line_item
+
   describe 'validation' do
     context 'Buy Order' do
       it 'can create many line items' do

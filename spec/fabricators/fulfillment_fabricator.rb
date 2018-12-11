@@ -1,0 +1,2 @@
+Fabricator(:fulfillment) do
+end

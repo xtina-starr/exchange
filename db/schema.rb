@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_12_03_203227) do
+ActiveRecord::Schema.define(version: 2018_12_04_201628) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -40,6 +40,17 @@ ActiveRecord::Schema.define(version: 2018_12_03_203227) do
     t.index ["order_id"], name: "index_admin_notes_on_order_id"
   end
 
+  create_table "fulfillment_versions", force: :cascade do |t|
+    t.string "item_type", null: false
+    t.uuid "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.jsonb "object"
+    t.jsonb "object_changes"
+    t.datetime "created_at"
+    t.index ["item_type", "item_id"], name: "index_fulfillment_versions_on_item_type_and_item_id"
+  end
+
   create_table "fulfillments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "courier"
     t.string "tracking_id"
@@ -58,6 +69,17 @@ ActiveRecord::Schema.define(version: 2018_12_03_203227) do
     t.index ["line_item_id"], name: "index_line_item_fulfillments_on_line_item_id"
   end
 
+  create_table "line_item_versions", force: :cascade do |t|
+    t.string "item_type", null: false
+    t.uuid "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.jsonb "object"
+    t.jsonb "object_changes"
+    t.datetime "created_at"
+    t.index ["item_type", "item_id"], name: "index_line_item_versions_on_item_type_and_item_id"
+  end
+
   create_table "line_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id"
     t.string "artwork_id"
@@ -72,6 +94,17 @@ ActiveRecord::Schema.define(version: 2018_12_03_203227) do
     t.string "sales_tax_transaction_id"
     t.integer "commission_fee_cents"
     t.index ["order_id"], name: "index_line_items_on_order_id"
+  end
+
+  create_table "offer_versions", force: :cascade do |t|
+    t.string "item_type", null: false
+    t.uuid "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.jsonb "object"
+    t.jsonb "object_changes"
+    t.datetime "created_at"
+    t.index ["item_type", "item_id"], name: "index_offer_versions_on_item_type_and_item_id"
   end
 
   create_table "offers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -89,6 +122,17 @@ ActiveRecord::Schema.define(version: 2018_12_03_203227) do
     t.boolean "should_remit_sales_tax"
     t.index ["order_id"], name: "index_offers_on_order_id"
     t.index ["responds_to_id"], name: "index_offers_on_responds_to_id"
+  end
+
+  create_table "order_versions", force: :cascade do |t|
+    t.string "item_type", null: false
+    t.uuid "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.jsonb "object"
+    t.datetime "created_at"
+    t.jsonb "object_changes"
+    t.index ["item_type", "item_id"], name: "index_order_versions_on_item_type_and_item_id"
   end
 
   create_table "orders", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -143,6 +187,17 @@ ActiveRecord::Schema.define(version: 2018_12_03_203227) do
     t.index ["order_id"], name: "index_state_histories_on_order_id"
   end
 
+  create_table "transaction_versions", force: :cascade do |t|
+    t.string "item_type", null: false
+    t.uuid "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.jsonb "object"
+    t.jsonb "object_changes"
+    t.datetime "created_at"
+    t.index ["item_type", "item_id"], name: "index_transaction_versions_on_item_type_and_item_id"
+  end
+
   create_table "transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id"
     t.string "external_id"
@@ -156,16 +211,6 @@ ActiveRecord::Schema.define(version: 2018_12_03_203227) do
     t.datetime "updated_at", null: false
     t.string "transaction_type"
     t.index ["order_id"], name: "index_transactions_on_order_id"
-  end
-
-  create_table "versions", force: :cascade do |t|
-    t.string "item_type", null: false
-    t.uuid "item_id", null: false
-    t.string "event", null: false
-    t.string "whodunnit"
-    t.jsonb "object"
-    t.datetime "created_at"
-    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
   end
 
   add_foreign_key "admin_notes", "orders"

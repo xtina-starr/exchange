@@ -8,6 +8,7 @@ require 'rspec/rails'
 require 'webmock/rspec'
 require 'selenium/webdriver'
 # Add additional requires below this line. Rails is not loaded until this point!
+require 'paper_trail/frameworks/rspec'
 
 WebMock.disable_net_connect!(allow_localhost: true)
 

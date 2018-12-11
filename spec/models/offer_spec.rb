@@ -1,6 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe Offer, type: :model do
+  it_behaves_like 'a papertrail versioned model', :offer
+
   describe 'last_offer?' do
     it "returns true if the offer is the order's last offer" do
       order = Fabricate(:order)

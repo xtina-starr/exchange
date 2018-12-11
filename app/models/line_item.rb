@@ -1,4 +1,6 @@
 class LineItem < ApplicationRecord
+  has_paper_trail class_name: 'PaperTrail::LineItemVersion'
+
   belongs_to :order
   has_many :line_item_fulfillments, dependent: :destroy
   has_many :fulfillments, through: :line_item_fulfillments
