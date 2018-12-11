@@ -6,6 +6,7 @@ describe Api::GraphqlController, type: :request do
   describe 'seller_counter_offer mutation' do
     include_context 'GraphQL Client'
     let(:order_seller_id) { jwt_partner_ids.first }
+    let(:partner) { { id: order_seller_id, artsy_collects_sales_tax: true, effective_commission_rate: 0.4 } }
     let(:buyer_id) { jwt_user_id }
     let(:artwork_location) { { country: 'US' } }
     let(:artwork) { { _id: 'a-1', current_version_id: '1', location: artwork_location, domestic_shipping_fee_cents: 1000 } }
@@ -155,7 +156,8 @@ describe Api::GraphqlController, type: :request do
       end
       it 'counters the order' do
         expect do
-          client.execute(mutation, seller_counter_offer_input)
+          response = client.execute(mutation, seller_counter_offer_input)
+          expect(response.data.seller_counter_offer.order_or_error).not_to respond_to(:error)
           last_offer = order.reload.last_offer
           expect(last_offer.responds_to).to eq(offer)
           expect(last_offer.amount_cents).to eq(10000)
@@ -163,7 +165,7 @@ describe Api::GraphqlController, type: :request do
           expect(last_offer.should_remit_sales_tax).to eq(false)
           expect(last_offer.amount_cents).to eq(10000)
           expect(last_offer.submitted_at).not_to eq(nil)
-          # for partner counte offer creator_id and from_id are different
+          # for partner counter offer creator_id and from_id are different
           expect(last_offer.creator_id).to eq(buyer_id)
           expect(last_offer.from_id).to eq(order_seller_id)
           # should update order amounts when offer is submitted

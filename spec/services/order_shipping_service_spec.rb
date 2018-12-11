@@ -100,10 +100,10 @@ describe OrderShippingService, type: :services do
       let(:artsy_collects_sales_tax) { true }
 
       before do
-        expect(GravityService).to receive_messages(fetch_partner: partner, fetch_partner_locations: [])
+        expect(GravityService).to receive_messages(fetch_partner: partner, fetch_partner_locations: [], get_artwork: artwork)
         expect(Tax::CalculatorService).to receive(:new)
           .exactly(line_items.count).times.and_return(tax_calculator)
-        expect(service).to receive_messages(shipping_total_cents: 0, artworks: { artwork[:_id] => artwork })
+        allow_any_instance_of(ShippingCalculatorService).to receive(:shipping_cents).and_return(0)
         line_items
         service.process!
       end

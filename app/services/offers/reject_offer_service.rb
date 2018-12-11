@@ -1,7 +1,7 @@
 module Offers
   class RejectOfferService
     include OrderValidator
-    def initialize(offer:, reject_reason:)
+    def initialize(offer:, reject_reason:, user_id:)
       @offer = offer
       @reject_reason = reject_reason
       @user_id = user_id
