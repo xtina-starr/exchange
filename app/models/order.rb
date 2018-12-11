@@ -29,7 +29,7 @@ class Order < ApplicationRecord
     # Items have been deemed unavailable and hold is voided.
     CANCELED = 'canceled'.freeze,
     # Order is completely fulfilled by the seller
-    FULFILLED = 'fulfilled'.freeze.freeze,
+    FULFILLED = 'fulfilled'.freeze,
     # Order was refunded after approval/fulfillment
     REFUNDED = 'refunded'.freeze
   ].freeze
@@ -40,7 +40,9 @@ class Order < ApplicationRecord
       seller_rejected_offer_too_low: 'seller_rejected_offer_too_low'.freeze,
       seller_rejected_shipping_unavailable: 'seller_rejected_shipping_unavailable'.freeze,
       seller_rejected_artwork_unavailable: 'seller_rejected_artwork_unavailable'.freeze,
-      seller_rejected_other: 'seller_rejected_other'.freeze
+      seller_rejected_other: 'seller_rejected_other'.freeze,
+      seller_rejected: 'seller_rejected'.freeze,
+      buyer_rejected: 'buyer_rejected'.freeze
     }
   }.freeze
 

@@ -8,6 +8,10 @@ module Offers
       raise Errors::ValidationError.new(:offer_not_from_buyer, offer) unless offer.from_type == Order::USER
     end
 
+    def validate_is_not_own_offer!(offer, current_user_id)
+      raise Errors::ValidationError.new(:cannot_reject_own_offer, offer) if offer.from_id == current_user_id
+    end
+
     def validate_offer_order_is_submitted!(offer)
       raise Errors::ValidationError.new(:invalid_state, offer) unless offer.order.state == Order::SUBMITTED
     end
