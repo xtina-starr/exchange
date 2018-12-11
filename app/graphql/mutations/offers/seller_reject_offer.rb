@@ -1,4 +1,4 @@
-class Mutations::Offers::SellerRejectOffer < Mutations::Offer::BaseRejectOffer
+class Mutations::Offers::SellerRejectOffer < Mutations::Offers::BaseRejectOffer
   alias authorize! authorize_seller_request!
   def waiting_for_response?(offer)
     offer.from_participant == Order::BUYER
