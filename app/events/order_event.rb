@@ -56,6 +56,14 @@ class OrderEvent < Events::BaseEvent
     return unless @object.last_offer
 
     last_offer = @object.last_offer
+    in_response_to = if last_offer.responds_to
+                       {
+                         id: last_offer.responds_to.id,
+                         amount_cents: last_offer.responds_to.amount_cents,
+                         created_at: last_offer.responds_to.created_at,
+                         from_participant: last_offer.responds_to.from_participant
+                       }
+                     end
     {
       id: last_offer.id,
       amount_cents: last_offer.amount_cents,
@@ -63,7 +71,7 @@ class OrderEvent < Events::BaseEvent
       tax_total_cents: last_offer.tax_total_cents,
       from_participant: last_offer.from_participant,
       creator_id: last_offer.creator_id,
-      responds_to: last_offer.responds_to_id
+      in_response_to: in_response_to
     }
   end
 
