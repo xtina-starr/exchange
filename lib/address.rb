@@ -48,6 +48,7 @@ class Address
   end
 
   def parse_region(country, region)
+    region = region&.strip
     return region unless country&.code == UNITED_STATES.code || country&.code == Carmen::Country.coded('CA').code
 
     parsed_region = country.subregions.named(region) || country.subregions.coded(region)

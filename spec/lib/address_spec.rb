@@ -40,6 +40,11 @@ describe Address do
     end
   end
   describe '#parse_region' do
+    let(:united_states) { Carmen::Country.coded('US') }
+    it 'strips trailing and leading whitespace from the region' do
+      region = ' New York   '
+      expect(address.send(:parse_region, united_states, region)).to eq 'NY'
+    end
     context 'with a country that is not US or CA' do
       it 'returns the region unmodified' do
         australia = Carmen::Country.coded('AU')
@@ -47,7 +52,6 @@ describe Address do
       end
     end
     context 'with a country that is US or CA' do
-      let(:united_states) { Carmen::Country.coded('US') }
       it 'returns the region code if the country is US or CA' do
         canada = Carmen::Country.coded('CA')
         expect(address.send(:parse_region, united_states, 'Florida')).to eq 'FL'
