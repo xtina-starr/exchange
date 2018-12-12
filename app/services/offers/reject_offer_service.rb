@@ -1,6 +1,5 @@
 module Offers
   class RejectOfferService
-    include OfferValidationService
     def initialize(offer:, reject_reason:, user_id:)
       @offer = offer
       @reject_reason = reject_reason
@@ -8,18 +7,20 @@ module Offers
     end
 
     def process!
-      validate_is_last_offer!(@offer)
-      validate_is_not_own_offer!(@offer, @user_id)
+      pre_process!
 
       @offer.order.reject!(@reject_reason)
-      instrument_offer_reject
+
+      post_process!
     end
 
     private
 
-    attr_reader :offer
+    def pre_process!
+      OrderValidator.validate_is_last_offer!(@offer)
+    end
 
-    def instrument_offer_reject
+    def post_process!
       Exchange.dogstatsd.increment 'offer.reject'
     end
   end

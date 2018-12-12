@@ -1,9 +1,9 @@
 module Offers
   class AddPendingCounterOfferService
-    include OfferValidationService
-    def initialize(offer:, amount_cents:, from_id:, creator_id:, from_type:)
-      @offer = offer
-      @order = offer.order
+    attr_reader :offer
+    def initialize(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
+      @responds_to = responds_to
+      @order = responds_to.order
       @amount_cents = amount_cents
       @from_id = from_id
       @creator_id = creator_id
@@ -11,25 +11,24 @@ module Offers
     end
 
     def process!
-      validate_is_last_offer!(@offer)
-      validate_offer_is_from_buyer!(@offer) # TODO: generalize to offer_from_other_side
-      validate_offer_order_is_submitted!(@offer)
+      validate_action!
 
-      @pending_offer = @order.offers.create!(
+      @offer = @order.offers.create!(
         amount_cents: @amount_cents,
         from_id: @from_id,
         from_type: @from_type,
         creator_id: @creator_id,
-        responds_to: @offer
+        responds_to: @responds_to
       )
-      totals_service = OfferTotalUpdaterService.new(offer: @pending_offer)
+      totals_service = Offers::TotalUpdaterService.new(@offer)
       totals_service.process!
-
-      @pending_offer
     end
 
     private
 
-    attr_reader :offer
+    def validate_action!
+      OrderValidator.validate_is_last_offer!(@responds_to)
+      OrderValidator.validate_order_submitted!(@responds_to.order)
+    end
   end
 end

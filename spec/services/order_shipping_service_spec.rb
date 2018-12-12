@@ -70,7 +70,7 @@ describe OrderShippingService, type: :services do
       let!(:continental_us_line_item) { Fabricate(:line_item, order: continental_us_order, artwork_id: 'a-2') }
       context 'with non-continental US shipping address' do
         it 'raises error' do
-          allow(@service_continental_us_shipping).to receive(:artworks).and_return('a-2' => continental_us_artwork)
+          allow_any_instance_of(OrderData).to receive(:artworks).and_return('a-2' => continental_us_artwork)
           expect { @service_continental_us_shipping.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq(:unsupported_shipping_location)
@@ -80,7 +80,7 @@ describe OrderShippingService, type: :services do
       end
       context 'with international shipping address' do
         it 'raises error' do
-          allow(@service_international_shipping).to receive(:artworks).and_return('a-1' => continental_us_artwork)
+          allow_any_instance_of(OrderData).to receive(:artworks).and_return('a-1' => continental_us_artwork)
           expect { @service_international_shipping.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq(:unsupported_shipping_location)
@@ -100,10 +100,10 @@ describe OrderShippingService, type: :services do
       let(:artsy_collects_sales_tax) { true }
 
       before do
-        expect(GravityService).to receive_messages(fetch_partner: partner, fetch_partner_locations: [])
+        expect(Gravity).to receive_messages(fetch_partner: partner, fetch_partner_locations: [], get_artwork: artwork)
         expect(Tax::CalculatorService).to receive(:new)
           .exactly(line_items.count).times.and_return(tax_calculator)
-        expect(service).to receive_messages(shipping_total_cents: 0, artworks: { artwork[:_id] => artwork })
+        allow_any_instance_of(ShippingCalculatorService).to receive(:shipping_cents).and_return(0)
         line_items
         service.process!
       end

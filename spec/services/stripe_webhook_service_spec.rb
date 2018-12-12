@@ -44,7 +44,7 @@ describe StripeWebhookService, type: :services do
 
     context 'known charge id' do
       it 'stores transaction and refunds the charge' do
-        expect(GravityService).to receive(:undeduct_inventory).once.with(line_item)
+        expect(Gravity).to receive(:undeduct_inventory).once.with(line_item)
         expect { service.process! }.to change(order.transactions, :count).by(1)
         expect(order.reload.state).to eq Order::REFUNDED
         new_transaction = order.transactions.last
@@ -56,7 +56,7 @@ describe StripeWebhookService, type: :services do
     context 'already refunded order' do
       let(:state) { Order::REFUNDED }
       it 'does not update the order' do
-        expect(GravityService).not_to receive(:undeduct_inventory)
+        expect(Gravity).not_to receive(:undeduct_inventory)
         expect { service.process! }.to change(order.transactions, :count).by(0)
       end
     end

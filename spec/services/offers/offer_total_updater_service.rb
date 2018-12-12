@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe Offers::OfferTotalUpdaterService, type: :services do
+describe Offers::TotalUpdaterService, type: :services do
   describe '#process!' do
     let(:artsy_collects_sales_tax) { true }
     let(:partner) { { _id: 'partner-1', artsy_collects_sales_tax: artsy_collects_sales_tax } }
@@ -45,7 +45,7 @@ describe Offers::OfferTotalUpdaterService, type: :services do
         instance_of(Address),
         [partner_address]
       ).and_return(tax_calculator)
-      expect(GravityService).to receive_messages(
+      expect(Gravity).to receive_messages(
         fetch_partner: partner,
         fetch_partner_locations: [partner_address],
         get_artwork: artwork

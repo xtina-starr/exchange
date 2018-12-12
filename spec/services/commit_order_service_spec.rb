@@ -57,38 +57,12 @@ describe CommitOrderService, type: :services do
     end
     context 'with correctly validated data' do
       it 'updates order totals with the partner commission rate' do
-        allow(GravityService).to receive(:get_credit_card).and_return(credit_card)
-        allow(GravityService).to receive(:get_artwork).and_return(artwork1)
-        allow(GravityService).to receive(:get_artwork).and_return(artwork2)
-        expect(GravityService).to receive(:fetch_partner).with(seller_id).and_return(partner)
+        allow(Gravity).to receive(:get_credit_card).and_return(credit_card)
+        allow(Gravity).to receive(:get_artwork).and_return(artwork1)
+        allow(Gravity).to receive(:get_artwork).and_return(artwork2)
+        expect(Gravity).to receive(:fetch_partner).with(seller_id).and_return(partner)
         service.send(:pre_process!)
         expect(order.reload.commission_rate).to eq partner[:effective_commission_rate]
-      end
-    end
-  end
-
-  describe '#validate_commission_rate!' do
-    context 'with a partner with missing commission rate' do
-      it 'raises an error' do
-        allow(GravityService).to receive(:fetch_partner).and_return(partner_missing_commission_rate)
-        expect { service.send(:validate_commission_rate!) }.to raise_error do |error|
-          expect(error).to be_a(Errors::ValidationError)
-          expect(error.code).to eq :missing_commission_rate
-          expect(error.data).to match(partner_id: seller_id)
-        end
-      end
-    end
-  end
-
-  describe '#validate_artwork_versions!' do
-    context 'with mismatched artwork versions' do
-      it 'raises an error and records the artwork mismatch in DataDog' do
-        expect(GravityService).to receive(:get_artwork).with(artwork1[:_id]).and_return(artwork1.merge(current_version_id: 2))
-        expect(Exchange).to receive_message_chain(:dogstatsd, :increment).with('submit.artwork_version_mismatch')
-        expect { service.send(:validate_artwork_versions!) }.to raise_error do |error|
-          expect(error).to be_a(Errors::ProcessingError)
-          expect(error.code).to eq :artwork_version_mismatch
-        end
       end
     end
   end
@@ -96,7 +70,7 @@ describe CommitOrderService, type: :services do
   describe '#deduct_inventory' do
     it 'deducts inventory for each line item' do
       order.line_items.each do |li|
-        expect(GravityService).to receive(:deduct_inventory).with(li)
+        expect(Gravity).to receive(:deduct_inventory).with(li)
       end
       service.send(:deduct_inventory)
       expect(service.instance_variable_get('@deducted_inventory').count).to eq line_items.count
@@ -148,47 +122,9 @@ describe CommitOrderService, type: :services do
     it 'undeducts deducted inventory' do
       service.instance_variable_set('@deducted_inventory', line_items)
       line_items.each do |li|
-        expect(GravityService).to receive(:undeduct_inventory).with(li)
+        expect(Gravity).to receive(:undeduct_inventory).with(li)
       end
       service.send(:undeduct_inventory)
-    end
-  end
-
-  describe '#validate_credit_card!' do
-    it 'raises an error if the credit card does not have an external id' do
-      allow(GravityService).to receive(:get_credit_card).and_return(id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil)
-      expect { service.send(:validate_credit_card!) }.to raise_error do |error|
-        expect(error).to be_a(Errors::ValidationError)
-        expect(error.code).to eq :credit_card_missing_external_id
-        expect(error.data).to match(credit_card_id: 'cc-1')
-      end
-    end
-
-    it 'raises an error if the credit card does not have a customer account' do
-      allow(GravityService).to receive(:get_credit_card).and_return(id: 'cc-1', external_id: 'cc-1')
-      expect { service.send(:validate_credit_card!) }.to raise_error do |error|
-        expect(error).to be_a(Errors::ValidationError)
-        expect(error.code).to eq :credit_card_missing_customer
-        expect(error.data).to match(credit_card_id: 'cc-1')
-      end
-    end
-
-    it 'raises an error if the credit card does not have a customer account external id' do
-      allow(GravityService).to receive(:get_credit_card).and_return(id: 'cc-1', external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil)
-      expect { service.send(:validate_credit_card!) }.to raise_error do |error|
-        expect(error).to be_a(Errors::ValidationError)
-        expect(error.code).to eq :credit_card_missing_customer
-        expect(error.data).to match(credit_card_id: 'cc-1')
-      end
-    end
-
-    it 'raises an error if the card is deactivated' do
-      allow(GravityService).to receive(:get_credit_card).and_return(id: 'cc-1', external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago)
-      expect { service.send(:validate_credit_card!) }.to raise_error do |error|
-        expect(error).to be_a(Errors::ValidationError)
-        expect(error.code).to eq :credit_card_deactivated
-        expect(error.data).to match(credit_card_id: 'cc-1')
-      end
     end
   end
 end

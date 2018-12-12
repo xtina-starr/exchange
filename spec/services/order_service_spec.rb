@@ -15,7 +15,7 @@ describe OrderService, type: :services do
       context "with a credit card id for the buyer's credit card" do
         let(:credit_card) { { id: credit_card_id, user: { _id: 'b123' } } }
         it 'sets credit_card_id on the order' do
-          expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+          expect(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
           OrderService.set_payment!(order, credit_card_id)
           expect(order.reload.credit_card_id).to eq 'gravity-cc-1'
         end
@@ -23,7 +23,7 @@ describe OrderService, type: :services do
       context 'with a credit card id for credit card not belonging to the buyer' do
         let(:invalid_credit_card) { { id: credit_card_id, user: { _id: 'b456' } } }
         it 'raises an error' do
-          expect(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(invalid_credit_card)
+          expect(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(invalid_credit_card)
           expect { OrderService.set_payment!(order, credit_card_id) }.to raise_error do |error|
             expect(error).to be_a Errors::ValidationError
             expect(error.code).to eq :invalid_credit_card

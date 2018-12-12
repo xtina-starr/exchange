@@ -1,4 +1,4 @@
-class OrderShippingService < BaseTotalCalculatorService
+class OrderShippingService
   def initialize(order, fulfillment_type:, shipping:, pending_offer: nil)
     @order = order
     @fulfillment_type = fulfillment_type
@@ -6,11 +6,11 @@ class OrderShippingService < BaseTotalCalculatorService
     @buyer_name = shipping[:name]
     @buyer_phone_number = shipping[:phone_number]
     @pending_offer = pending_offer
+    @order_data = OrderData.new(order)
   end
 
   def process!
-    raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
-    raise Errors::ValidationError, :invalid_state if @pending_offer.present? && @pending_offer.submitted_at?
+    pre_process!
 
     Order.transaction do
       @order.update!(
@@ -33,18 +33,26 @@ class OrderShippingService < BaseTotalCalculatorService
 
   private
 
+  def pre_process!
+    raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
+    raise Errors::ValidationError, :invalid_state if @pending_offer.present? && @pending_offer.submitted_at?
+  end
+
+  def set_offer_totals!
+    Offers::TotalUpdaterService.new(@pending_offer).process!
+  end
+
   def set_order_totals!
-    @order.update!(shipping_total_cents: shipping_total_cents, tax_total_cents: tax_total_cents)
+    @order.update!(shipping_total_cents: @order_data.shipping_total_cents, tax_total_cents: tax_total_cents)
   end
 
   def tax_total_cents
     @tax_total_cents ||= begin
-      seller_addresses = GravityService.fetch_partner_locations(@order.seller_id)
       @order.line_items.map do |li|
-        artwork_address = Address.new(artworks[li.artwork_id][:location])
+        artwork_address = Address.new(@order_data.artworks[li.artwork_id][:location])
         begin
-          service = Tax::CalculatorService.new(li.total_amount_cents, li.effective_price_cents, li.quantity, @fulfillment_type, @shipping_address, shipping_total_cents, artwork_address, seller_addresses)
-          sales_tax = seller[:artsy_collects_sales_tax] ? service.sales_tax : 0
+          service = Tax::CalculatorService.new(li.total_amount_cents, li.effective_price_cents, li.quantity, @fulfillment_type, @shipping_address, @order_data.shipping_total_cents, artwork_address, @order_data.seller_locations)
+          sales_tax = @order_data.partner[:artsy_collects_sales_tax] ? service.sales_tax : 0
           li.update!(sales_tax_cents: sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
           sales_tax
         rescue Errors::ValidationError => e

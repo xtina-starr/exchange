@@ -1,11 +1,12 @@
 module Errors
   ERROR_TYPES = {
     validation: %i[
-      cant_offer
+      cannot_offer
       cant_submit
       cannot_accept_offer
       cannot_reject_offer
       cannot_reject_own_offer
+      cannot_counter
       credit_card_deactivated
       credit_card_missing_customer
       credit_card_missing_external_id

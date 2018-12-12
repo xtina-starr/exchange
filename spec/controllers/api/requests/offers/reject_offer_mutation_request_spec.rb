@@ -177,7 +177,7 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'with offer created by buyer' do
-      let(:offer) { Fabricate(:offer, order: order, from_id: buyer_id, from_type: 'user') }
+      let(:offer) { Fabricate(:offer, order: order, from_id: buyer_id, from_type: Order::USER) }
 
       it 'returns validation error and does not change the order state' do
         response = client.execute(buyer_mutation, buyer_input)

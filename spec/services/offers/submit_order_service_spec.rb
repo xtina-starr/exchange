@@ -36,16 +36,6 @@ describe Offers::SubmitOrderService, type: :services do
         expect(ReminderFollowUpJob).not_to receive(:perform_later)
       end
 
-      context 'with already submitted offer' do
-        let(:offer_submitted_at) { Time.now.utc }
-        it 'raises invalid_offer error' do
-          expect { service.process! }.to raise_error do |e|
-            expect(e.type).to eq :validation
-            expect(e.code).to eq :invalid_offer
-          end
-        end
-      end
-
       context 'without shipping info' do
         let(:shipping_info) { {} }
         it 'raises missing_required_info error' do
@@ -69,7 +59,7 @@ describe Offers::SubmitOrderService, type: :services do
       context 'artwork version mismatch' do
         let(:line_item_artwork_version) { 'some-other-version' }
         it 'raises artwork_version_mismatch error' do
-          expect(GravityService).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
+          expect(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
           expect(Exchange).to receive_message_chain(:dogstatsd, :increment).with('submit.artwork_version_mismatch')
           expect { service.process! }.to raise_error do |e|
             expect(e.type).to eq :processing
@@ -92,8 +82,8 @@ describe Offers::SubmitOrderService, type: :services do
         context "#{state} order" do
           let(:order_state) { state }
           before do
-            allow(GravityService).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-            allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+            allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
+            allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
             allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
           end
           it 'raises cant_submit error' do
@@ -107,10 +97,10 @@ describe Offers::SubmitOrderService, type: :services do
 
       describe '#assert_credit_card!' do
         before do
-          allow(GravityService).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
+          allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
         end
         it 'raises an error if the credit card does not have an external id' do
-          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil)
+          allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: nil)
           expect { service.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq :credit_card_missing_external_id
@@ -119,7 +109,7 @@ describe Offers::SubmitOrderService, type: :services do
         end
 
         it 'raises an error if the credit card does not have a customer account' do
-          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(id: 'cc-1', external_id: 'cc-1')
+          allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(id: 'cc-1', external_id: 'cc-1')
           expect { service.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq :credit_card_missing_customer
@@ -128,7 +118,7 @@ describe Offers::SubmitOrderService, type: :services do
         end
 
         it 'raises an error if the credit card does not have a customer account external id' do
-          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(id: 'cc-1', external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil)
+          allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(id: 'cc-1', external_id: 'cc-1', customer_account: { some_prop: 'some_val' }, deactivated_at: nil)
           expect { service.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq :credit_card_missing_customer
@@ -137,7 +127,7 @@ describe Offers::SubmitOrderService, type: :services do
         end
 
         it 'raises an error if the card is deactivated' do
-          allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(id: 'cc-1', external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago)
+          allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(id: 'cc-1', external_id: 'cc-1', customer_account: { external_id: 'cust-1' }, deactivated_at: 2.days.ago)
           expect { service.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq :credit_card_deactivated
@@ -150,8 +140,8 @@ describe Offers::SubmitOrderService, type: :services do
     describe 'successful process' do
       before do
         order.update!(last_offer: offer)
-        allow(GravityService).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-        allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+        allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
+        allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
         expect(Exchange).to receive_message_chain(:dogstatsd, :increment).with('order.submit')
         expect(PostOrderNotificationJob).to receive(:perform_later).once.with(order.id, Order::SUBMITTED, user_id)

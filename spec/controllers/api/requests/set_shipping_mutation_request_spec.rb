@@ -119,7 +119,7 @@ describe Api::GraphqlController, type: :request do
         before do
           allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
           allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
-          allow(GravityService).to receive_messages(
+          allow(Gravity).to receive_messages(
             fetch_partner_locations: seller_addresses,
             fetch_partner: partner
           )
@@ -144,7 +144,7 @@ describe Api::GraphqlController, type: :request do
       end
       context 'Ship Order' do
         before do
-          allow(GravityService).to receive(:fetch_partner).and_return(partner)
+          allow(Gravity).to receive(:fetch_partner).and_return(partner)
         end
         context 'without passing phone number' do
           let(:phone_number) { nil }
@@ -248,7 +248,7 @@ describe Api::GraphqlController, type: :request do
         it 'sets shipping info and sales tax on the order' do
           allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
           allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
-          allow(GravityService).to receive(:fetch_partner_locations).and_return(seller_addresses)
+          allow(Gravity).to receive(:fetch_partner_locations).and_return(seller_addresses)
           response = client.execute(mutation, set_shipping_input)
           expect(response.data.set_shipping.order_or_error.order.id).to eq order.id.to_s
           expect(response.data.set_shipping.order_or_error.order.state).to eq 'PENDING'
@@ -274,7 +274,7 @@ describe Api::GraphqlController, type: :request do
 
         describe '#shipping_total_cents' do
           before do
-            allow(GravityService).to receive(:fetch_partner_locations).and_return(seller_addresses)
+            allow(Gravity).to receive(:fetch_partner_locations).and_return(seller_addresses)
           end
           context 'with PICKUP as fulfillment type' do
             before do

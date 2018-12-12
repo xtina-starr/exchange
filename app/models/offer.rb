@@ -24,4 +24,13 @@ class Offer < ApplicationRecord
       raise Errors::ValidationError, :unknown_participant_type
     end
   end
+
+  def awaiting_response_from
+    return unless submitted?
+
+    case from_participant
+    when Order::BUYER then Order::SELLER
+    when Order::SELLER then Order::BUYER
+    end
+  end
 end

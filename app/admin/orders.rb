@@ -81,7 +81,7 @@ ActiveAdmin.register Order do
 
     table_for order.line_items do
       column '' do |line_item|
-        artwork_info = GravityService.get_artwork(line_item.artwork_id)
+        artwork_info = Gravity.get_artwork(line_item.artwork_id)
         if artwork_info.present?
           if artwork_info[:images].kind_of?(Array)
             square_image = artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
@@ -98,7 +98,7 @@ ActiveAdmin.register Order do
     end
 
     panel "Buyer Information" do
-      user_info = GravityService.get_user(order.buyer_id)
+      user_info = Gravity.get_user(order.buyer_id)
 
       attributes_table_for order do
         if user_info.present?
@@ -141,11 +141,11 @@ ActiveAdmin.register Order do
 
     panel "Seller Information" do
 
-      partner_info = GravityService.fetch_partner(order.seller_id)
+      partner_info = Gravity.fetch_partner(order.seller_id)
       if partner_info.present?
         valid_partner_location = true
         begin
-          partner_locations = GravityService.fetch_partner_locations(order.seller_id)
+          partner_locations = Gravity.fetch_partner_locations(order.seller_id)
         rescue Errors::ValidationError
           valid_partner_location = false
         end
@@ -234,7 +234,7 @@ ActiveAdmin.register Order do
       if order.credit_card_id.present?
         no_credit_card_found = false
         begin
-          credit_card_info = GravityService.get_credit_card(order.credit_card_id)
+          credit_card_info = Gravity.get_credit_card(order.credit_card_id)
           no_credit_card_found = !credit_card_info.present?
         rescue
           no_credit_card_found = true

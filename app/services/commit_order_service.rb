@@ -9,6 +9,7 @@ class CommitOrderService
     @user_id = user_id
     @transaction = nil
     @deducted_inventory = []
+    @order_data = OrderData.new(@order)
   end
 
   def process!
@@ -40,14 +41,14 @@ class CommitOrderService
   end
 
   def undeduct_inventory
-    @deducted_inventory.each { |li| GravityService.undeduct_inventory(li) }
+    @deducted_inventory.each { |li| Gravity.undeduct_inventory(li) }
     @deducted_inventory = []
   end
 
   def deduct_inventory
     # Try holding artwork and deduct inventory
     @order.line_items.each do |li|
-      GravityService.deduct_inventory(li)
+      Gravity.deduct_inventory(li)
       @deducted_inventory << li
     end
   end
@@ -60,37 +61,11 @@ class CommitOrderService
     raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? @action
     raise Errors::ValidationError, :missing_required_info unless @order.can_commit?
 
-    validate_artwork_versions!
-    validate_credit_card!
-    validate_commission_rate!
+    OrderValidator.validate_artwork_versions!(order)
+    OrderValidator.validate_credit_card!(@order_data.credit_card)
+    OrderValidator.validate_commission_rate!(@order_data.partner)
 
-    OrderTotalUpdaterService.new(@order, partner[:effective_commission_rate]).update_totals!
-  end
-
-  def validate_commission_rate!
-    raise Errors::ValidationError.new(:missing_commission_rate, partner_id: partner[:id]) if partner[:effective_commission_rate].blank?
-  end
-
-  def validate_artwork_versions!
-    @order.line_items.each do |li|
-      artwork = GravityService.get_artwork(li[:artwork_id])
-      if artwork[:current_version_id] != li[:artwork_version_id]
-        Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
-        raise Errors::ProcessingError, :artwork_version_mismatch
-      end
-    end
-  end
-
-  def credit_card
-    @credit_card ||= GravityService.get_credit_card(@order.credit_card_id)
-  end
-
-  def partner
-    @partner ||= GravityService.fetch_partner(@order.seller_id)
-  end
-
-  def merchant_account
-    @merchant_account ||= GravityService.get_merchant_account(@order.seller_id)
+    OrderTotalUpdaterService.new(order, @order_data.partner[:effective_commission_rate]).update_totals!
   end
 
   def post_process!
@@ -104,9 +79,9 @@ class CommitOrderService
 
   def construct_charge_params
     {
-      credit_card: credit_card,
+      credit_card: @order_data.credit_card,
       buyer_amount: @order.buyer_total_cents,
-      merchant_account: merchant_account,
+      merchant_account: @order_data.merchant_account,
       seller_amount: @order.seller_total_cents,
       currency_code: @order.currency_code,
       metadata: charge_metadata,
@@ -114,16 +89,8 @@ class CommitOrderService
     }
   end
 
-  def validate_credit_card!
-    error_type = nil
-    error_type = :credit_card_missing_external_id if credit_card[:external_id].blank?
-    error_type = :credit_card_missing_customer if credit_card.dig(:customer_account, :external_id).blank?
-    error_type = :credit_card_deactivated unless credit_card[:deactivated_at].nil?
-    raise Errors::ValidationError.new(error_type, credit_card_id: credit_card[:id]) if error_type
-  end
-
   def charge_description
-    partner_name = (partner[:name] || '').parameterize[0...12].upcase
+    partner_name = (@order_data.partner[:name] || '').parameterize[0...12].upcase
     "#{partner_name} via Artsy"
   end
 

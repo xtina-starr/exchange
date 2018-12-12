@@ -146,12 +146,11 @@ describe Api::GraphqlController, type: :request do
     context 'with proper permission' do
       it 'approves the order' do
         inventory_request = stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json)
-        expect(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
-        expect(GravityService).to receive(:get_credit_card).and_return(credit_card)
-        expect(GravityService).to receive(:get_artwork).and_return(artwork)
+        expect(Gravity).to receive(:get_merchant_account).and_return(merchant_account)
+        expect(Gravity).to receive(:get_credit_card).and_return(credit_card)
+        expect(Gravity).to receive(:get_artwork).and_return(artwork)
         expect(Adapters::GravityV1).to receive(:get).with("/partner/#{order_seller_id}/all").and_return(gravity_v1_partner)
         response = client.execute(mutation, buyer_accept_offer_input)
-
         expect(inventory_request).to have_been_requested
 
         expect(response.data.buyer_accept_offer.order_or_error).to respond_to(:order)
@@ -182,9 +181,9 @@ describe Api::GraphqlController, type: :request do
   end
 
   def mock_pre_process_calls
-    allow(GravityService).to receive(:get_artwork).and_return(artwork)
-    allow(GravityService).to receive(:get_merchant_account).and_return(merchant_account)
-    allow(GravityService).to receive(:get_credit_card).and_return(credit_card)
-    allow(GravityService).to receive(:fetch_partner).and_return(partner)
+    allow(Gravity).to receive(:get_artwork).and_return(artwork)
+    allow(Gravity).to receive(:get_merchant_account).and_return(merchant_account)
+    allow(Gravity).to receive(:get_credit_card).and_return(credit_card)
+    allow(Gravity).to receive(:fetch_partner).and_return(partner)
   end
 end

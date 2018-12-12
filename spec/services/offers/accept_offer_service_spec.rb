@@ -5,8 +5,7 @@ describe Offers::AcceptOfferService, type: :services do
   describe '#process!' do
     subject(:call_service) do
       described_class.new(
-        offer: offer,
-        order: order,
+        offer,
         user_id: current_user_id
       ).process!
     end
@@ -54,13 +53,13 @@ describe Offers::AcceptOfferService, type: :services do
       # last_offer is set in Orders::InitialOffer. "Stubbing" out the
       # dependent behavior of this class to by setting last_offer directly
       order.update!(last_offer: offer)
-      allow(GravityService).to receive(:get_merchant_account).with(seller_id).and_return(partner_merchant_accounts.first)
-      allow(GravityService).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-      allow(GravityService).to receive(:get_artwork).with(artwork1[:_id]).and_return(artwork1)
-      allow(GravityService).to receive(:get_artwork).with(artwork2[:_id]).and_return(artwork2)
+      allow(Gravity).to receive(:get_merchant_account).with(seller_id).and_return(partner_merchant_accounts.first)
+      allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+      allow(Gravity).to receive(:get_artwork).with(artwork1[:_id]).and_return(artwork1)
+      allow(Gravity).to receive(:get_artwork).with(artwork2[:_id]).and_return(artwork2)
       allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
       line_items.each do |li|
-        allow(GravityService).to receive(:deduct_inventory).with(li)
+        allow(Gravity).to receive(:deduct_inventory).with(li)
       end
     end
 
