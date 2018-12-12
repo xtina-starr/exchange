@@ -1,4 +1,4 @@
-class Mutations::Offers::AddInitialOfferToOrder < Mutations::BaseMutation
+class Mutations::AddInitialOfferToOrder < Mutations::BaseMutation
   argument :order_id, ID, required: true
   argument :amount_cents, Integer, required: true
 

@@ -1,4 +1,4 @@
-class Mutations::Offers::BaseAcceptOffer < Mutations::BaseMutation
+class Mutations::BaseAcceptOffer < Mutations::BaseMutation
   null true
 
   argument :offer_id, ID, required: true
@@ -11,7 +11,7 @@ class Mutations::Offers::BaseAcceptOffer < Mutations::BaseMutation
     authorize!(offer)
     raise Errors::ValidationError, :cannot_accept_offer unless waiting_for_accept?(offer)
 
-    service = ::Offers::AcceptOfferService.new(
+    service = Offers::AcceptOfferService.new(
       offer,
       user_id: current_user_id
     )
