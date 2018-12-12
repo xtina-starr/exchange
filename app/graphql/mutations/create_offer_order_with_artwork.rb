@@ -1,4 +1,4 @@
-class Mutations::Offers::CreateOfferOrderWithArtwork < Mutations::BaseMutation
+class Mutations::CreateOfferOrderWithArtwork < Mutations::BaseMutation
   null true
 
   argument :artwork_id, String, 'Artwork Id', required: true
