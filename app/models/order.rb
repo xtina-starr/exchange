@@ -42,6 +42,7 @@ class Order < ApplicationRecord
       seller_rejected_artwork_unavailable: 'seller_rejected_artwork_unavailable'.freeze,
       seller_rejected_other: 'seller_rejected_other'.freeze,
       seller_rejected: 'seller_rejected'.freeze,
+      admin_canceled: 'admin_canceled'.freeze,
       buyer_rejected: 'buyer_rejected'.freeze
     }
   }.freeze
