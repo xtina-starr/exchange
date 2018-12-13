@@ -11,13 +11,10 @@ class Mutations::SellerCounterOffer < Mutations::BaseMutation
     validate_request!(offer)
     order = offer.order
 
-    add_service = Offers::AddPendingCounterOfferService.new(offer, amount_cents: amount_cents, from_type: order.seller_type, from_id: order.seller_id, creator_id: current_user_id)
-    add_service.process!
+    pending_offer = OfferService.create_pending_offer(offer, amount_cents: amount_cents, from_type: order.seller_type, from_id: order.seller_id, creator_id: current_user_id)
 
-    submit_service = Offers::SubmitCounterOfferService.new(add_service.offer, user_id: current_user_id)
-    submit_service.process!
-
-    { order_or_error: { order: submit_service.offer.order } }
+    OfferService.submit_pending_offer(pending_offer)
+    { order_or_error: { order: order.reload } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end

@@ -64,7 +64,5 @@ class OrderShippingService
         end
       end.sum
     end
-  rescue Errors::AddressError => e
-    raise Errors::ValidationError, e.code
   end
 end
