@@ -67,6 +67,29 @@ describe Api::GraphqlController, type: :request do
       end
     end
 
+    context 'giving no query parameters' do
+      let(:query) do
+        <<-GRAPHQL
+          query {
+            orders {
+              totalCount
+            }
+          }
+        GRAPHQL
+      end
+      it 'returns missing_params validation error' do
+        expect do
+          client.execute(query, state: 'PENDING')
+        end.to raise_error do |error|
+          expect(error).to be_a(Graphlient::Errors::ServerError)
+          expect(error.message).to eq 'the server responded with status 400'
+          expect(error.status_code).to eq 400
+          expect(error.response['errors'].first['extensions']['code']).to eq 'missing_params'
+          expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
+        end
+      end
+    end
+
     context 'query with sellerId' do
       it 'returns not found error when query for sellerId not in jwt' do
         expect do

@@ -27,7 +27,7 @@ class Types::QueryType < Types::BaseObject
     order
   end
 
-  def orders(params)
+  def orders(params = {})
     validate_orders_request!(params)
     sort = params.delete(:sort)
     order_clause = sort_to_order[sort] || {}
