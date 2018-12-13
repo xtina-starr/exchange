@@ -14,10 +14,11 @@ class OrderCancellationService
     @order.transactions << @transaction if @transaction.present?
   end
 
-  def reject!
-    @order.reject! do
+  def reject!(rejection_reason = nil)
+    @order.reject!(rejection_reason) do
       process_refund if @order.mode == Order::BUY
     end
+    Exchange.dogstatsd.increment 'order.reject'
     PostOrderNotificationJob.perform_later(@order.id, Order::CANCELED, @user_id)
   ensure
     @order.transactions << @transaction if @transaction.present?

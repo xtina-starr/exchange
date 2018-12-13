@@ -49,6 +49,7 @@ RSpec.shared_examples 'rejecting an offer' do
 
   context 'with proper permission' do
     it 'rejects the order' do
+      expect(PostOrderNotificationJob).to receive(:perform_later).with(order.id, Order::CANCELED, 'user-id')
       expect do
         client.execute(mutation, input)
       end.to change { order.reload.state }.from(Order::SUBMITTED).to(Order::CANCELED)
@@ -73,7 +74,7 @@ describe Api::GraphqlController, type: :request do
   let(:buyer_id) { jwt_user_id }
   let(:order_state) { Order::SUBMITTED }
   let(:reject_reason) { 'SELLER_REJECTED_OFFER_TOO_LOW' }
-  let(:order) { Fabricate(:order, state: order_state, seller_id: seller_id, seller_type: 'gallery', buyer_id: buyer_id) }
+  let(:order) { Fabricate(:order, mode: 'offer', state: order_state, seller_id: seller_id, seller_type: 'gallery', buyer_id: buyer_id) }
   let(:offer) { Fabricate(:offer, order: order, from_id: buyer_id, from_type: Order::USER) }
 
   describe 'seller_reject_order mutation' do
@@ -114,6 +115,10 @@ describe Api::GraphqlController, type: :request do
       let(:input) { seller_input }
     end
 
+    before do
+      order.update!(last_offer: offer)
+    end
+
     context 'with user without permission to this partner' do
       let(:seller_id) { 'another-partner-id' }
 
@@ -137,7 +142,25 @@ describe Api::GraphqlController, type: :request do
         expect(order.reload.state).to eq Order::SUBMITTED
       end
     end
+
+    context 'with an offer that is not the last_offer' do
+      let(:another_offer) { Fabricate(:offer, order: order) }
+
+      before do
+        # last_offer is set in Orders::InitialOffer. "Stubbing" out the
+        # dependent behavior of this class to by setting last_offer directly
+        order.update!(last_offer: another_offer)
+      end
+
+      it 'raises a validation error' do
+        response = client.execute(seller_mutation, seller_input)
+        expect(response.data.response.order_or_error.error.type).to eq 'validation'
+        expect(response.data.response.order_or_error.error.code).to eq 'not_last_offer'
+        expect(order.reload.state).to eq Order::SUBMITTED
+      end
+    end
   end
+
   describe 'buyer_reject_order mutation' do
     let(:buyer_mutation) do
       <<-GRAPHQL
@@ -176,6 +199,10 @@ describe Api::GraphqlController, type: :request do
       let(:input) { buyer_input }
     end
 
+    before do
+      order.update!(last_offer: offer)
+    end
+
     context 'with offer created by buyer' do
       let(:offer) { Fabricate(:offer, order: order, from_id: buyer_id, from_type: Order::USER) }
 
@@ -197,6 +224,24 @@ describe Api::GraphqlController, type: :request do
         end.to change { order.reload.state }.from(Order::SUBMITTED).to(Order::CANCELED)
 
         expect(order.state_reason).to eq Order::REASONS[Order::CANCELED][:buyer_rejected]
+      end
+    end
+
+    context 'with an offer that is not the last_offer' do
+      let(:another_offer) { Fabricate(:offer, order: order) }
+
+      before do
+        # last_offer is set in Orders::InitialOffer. "Stubbing" out the
+        # dependent behavior of this class to by setting last_offer directly
+        order.update!(last_offer: another_offer)
+      end
+
+      it 'raises a validation error' do
+        response = client.execute(buyer_mutation, buyer_input)
+
+        expect(response.data.response.order_or_error.error.type).to eq 'validation'
+        expect(response.data.response.order_or_error.error.code).to eq 'not_last_offer'
+        expect(order.reload.state).to eq Order::SUBMITTED
       end
     end
   end
