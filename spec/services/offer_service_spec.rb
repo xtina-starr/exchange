@@ -68,7 +68,7 @@ describe OfferService, type: :services do
       allow(Adapters::GravityV1).to receive(:get).with("/partner/#{order_seller_id}/all").and_return(gravity_v1_partner)
     end
 
-    context 'with a submitted offer' do
+    context 'with counter on a submitted offer' do
       it 'submits the pending offer and updates last offer' do
         call_service
         expect(order.offers.count).to eq(2)
@@ -85,6 +85,11 @@ describe OfferService, type: :services do
         call_service
 
         expect(dd_statsd).to have_received(:increment).with('offer.submit')
+      end
+
+      it 'queues job for posting notification' do
+        call_service
+        expect(PostOrderNotificationJob).to have_been_enqueued
       end
     end
 

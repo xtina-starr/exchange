@@ -39,6 +39,9 @@ module OfferService
         seller_total_cents: order_calculator.seller_total_cents
       )
     end
+    # We are posting order.submitted event 👇, for now since Pulse (email service) is expecting that in case of submitting pending offer
+    # We need to send OfferEvent eventually in this case to be more accurate
+    PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, offer.creator_id)
     Exchange.dogstatsd.increment 'offer.submit'
     offer
   end
