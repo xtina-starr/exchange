@@ -77,7 +77,7 @@ describe Api::GraphqlController, type: :request do
           }
         GRAPHQL
       end
-      it 'returns error when missing both buyerId and sellerId and not even specifying in the query' do
+      it 'returns missing_params validation error' do
         expect do
           client.execute(query, state: 'PENDING')
         end.to raise_error do |error|
