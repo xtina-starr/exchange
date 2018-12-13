@@ -57,6 +57,52 @@ describe OrderCancellationService, type: :services do
         expect(edition_set_inventory_undeduct_request).not_to have_been_requested
       end
     end
+
+    context 'with an offer-mode order' do
+      let!(:offer) { Fabricate(:offer, order: order, from_id: 'buyer') }
+      let(:service) { OrderCancellationService.new(order, 'seller') }
+
+      before do
+        # last_offer is set in Orders::InitialOffer. "Stubbing" out the
+        # dependent behavior of this class to by setting last_offer directly
+        order.update!(last_offer: offer, mode: 'offer')
+      end
+
+      describe 'with a submitted offer' do
+        it 'updates the state of the order' do
+          expect do
+            service.reject!(Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low])
+          end.to change { order.state }.from(Order::SUBMITTED).to(Order::CANCELED)
+                                       .and change { order.state_reason }
+            .from(nil).to(Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low])
+        end
+
+        it 'instruments an rejected offer' do
+          dd_statsd = stub_ddstatsd_instance
+          expect(dd_statsd).to receive(:increment).with('order.reject')
+          service.reject!(Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low])
+        end
+
+        it 'sends a notification' do
+          expect(PostOrderNotificationJob).to receive(:perform_later).with(order.id, Order::CANCELED, 'seller')
+          service.reject!(Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low])
+        end
+      end
+
+      describe "when we can't reject the order" do
+        let(:order) { Fabricate(:order, state: Order::PENDING) }
+        let(:offer) { Fabricate(:offer, order: order) }
+
+        it "doesn't instrument" do
+          dd_statsd = stub_ddstatsd_instance
+          allow(dd_statsd).to receive(:increment).with('offer.reject')
+
+          expect { service.reject!(Order::REASONS[Order::CANCELED][:seller_rejected_offer_too_low]) }.to raise_error(Errors::ValidationError)
+
+          expect(dd_statsd).to_not have_received(:increment)
+        end
+      end
+    end
   end
 
   describe '#seller_lapse!' do
@@ -167,5 +213,12 @@ describe OrderCancellationService, type: :services do
         end
       end
     end
+  end
+
+  def stub_ddstatsd_instance
+    dd_statsd = double(Datadog::Statsd)
+    allow(Exchange).to receive(:dogstatsd).and_return(dd_statsd)
+
+    dd_statsd
   end
 end

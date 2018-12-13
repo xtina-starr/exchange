@@ -11,9 +11,12 @@ class Mutations::BaseRejectOffer < Mutations::BaseMutation
     order = offer.order
 
     authorize!(order)
+
+    # should check whether or not it's an offer-mode order
+    OrderValidator.validate_is_last_offer!(offer)
     raise Errors::ValidationError, :cannot_reject_offer unless waiting_for_response?(offer)
 
-    Offers::RejectOfferService.new(offer: offer, reject_reason: sanitize_reject_reason(reject_reason), user_id: current_user_id).process!
+    OrderCancellationService.new(offer.order, current_user_id).reject!(sanitize_reject_reason(reject_reason))
 
     { order_or_error: { order: order.reload } }
   rescue Errors::ApplicationError => e
