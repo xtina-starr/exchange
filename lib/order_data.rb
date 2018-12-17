@@ -30,4 +30,8 @@ class OrderData
   def seller_locations
     @seller_locations ||= Gravity.fetch_partner_locations(@order.seller_id)
   end
+
+  def commission_rate
+    @commission_rate ||= partner[:effective_commission_rate]
+  end
 end

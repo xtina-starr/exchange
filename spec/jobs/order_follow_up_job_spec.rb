@@ -1,5 +1,4 @@
 require 'rails_helper'
-require 'timecop'
 
 describe OrderFollowUpJob, type: :job do
   let(:state) { Order::PENDING }
