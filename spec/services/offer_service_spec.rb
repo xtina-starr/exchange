@@ -60,7 +60,6 @@ describe OfferService, type: :services do
     let(:offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
     let(:pending_offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 50_00, responds_to: offer, from_id: offer_from_id) }
     let(:call_service) { OfferService.submit_pending_offer(pending_offer) }
-    let(:offer_total_updater_service) { double }
 
     before do
       order.update!(last_offer: offer)
@@ -71,11 +70,22 @@ describe OfferService, type: :services do
     context 'with counter on a submitted offer' do
       it 'submits the pending offer and updates last offer' do
         call_service
+        expect(pending_offer.submitted_at).not_to be_nil
+      end
+
+      it 'updates order last offer' do
+        call_service
         expect(order.offers.count).to eq(2)
         expect(order.last_offer).to eq(pending_offer)
         expect(order.last_offer.amount_cents).to eq(20000)
         expect(order.last_offer.responds_to).to eq(offer)
-        expect(pending_offer.submitted_at).not_to be_nil
+      end
+
+      it 'updates order state expiration' do
+        Timecop.freeze(Date.new(2018, 12, 17)) do
+          call_service
+          expect(order.reload.state_expires_at).to eq Offer::EXPIRATION.from_now
+        end
       end
 
       it 'instruments a counter offer' do
@@ -90,6 +100,10 @@ describe OfferService, type: :services do
       it 'queues job for posting notification' do
         call_service
         expect(PostOrderNotificationJob).to have_been_enqueued
+      end
+      it 'queues job for order follow up' do
+        call_service
+        expect(OrderFollowUpJob).to have_been_enqueued
       end
     end
 

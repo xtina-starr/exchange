@@ -36,9 +36,11 @@ module OfferService
         buyer_total_cents: order_calculator.buyer_total_cents,
         commission_fee_cents: order_calculator.commission_fee_cents,
         transaction_fee_cents: order_calculator.transaction_fee_cents,
-        seller_total_cents: order_calculator.seller_total_cents
+        seller_total_cents: order_calculator.seller_total_cents,
+        state_expires_at: Offer::EXPIRATION.from_now # expand order expiration
       )
     end
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     # We are posting order.submitted event 👇, for now since Pulse (email service) is expecting that in case of submitting pending offer
     # We need to send OfferEvent eventually in this case to be more accurate
     PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, offer.creator_id)
