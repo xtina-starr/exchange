@@ -61,7 +61,6 @@ class CommitOrderService
     raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? @action
     raise Errors::ValidationError, :missing_required_info unless @order.can_commit?
 
-    OrderValidator.validate_artwork_versions!(order)
     OrderValidator.validate_credit_card!(@order_data.credit_card)
     OrderValidator.validate_commission_rate!(@order_data.partner)
 
