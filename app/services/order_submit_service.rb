@@ -9,6 +9,11 @@ class OrderSubmitService < CommitOrderService
 
   private
 
+  def pre_process!
+    OrderValidator.validate_artwork_versions!(order)
+    super
+  end
+
   def process_payment
     @transaction = PaymentService.create_and_authorize_charge(construct_charge_params)
     raise Errors::ProcessingError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
