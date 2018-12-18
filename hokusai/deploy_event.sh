@@ -6,8 +6,8 @@
 
 curl -X POST -H "Content-type: application/json" \
 -d "{
-      \"title\": \"test API key\",
-      \"text\": \"does this work with curl?\",
+      \"title\": \"$1 was deployed to $2\",
+      \"text\": \"version: $CIRCLE_SHA1\",
       \"priority\": \"normal\",
       \"tags\": [\"service:$1\", \"env:$2\"],
       \"alert_type\": \"info\"
