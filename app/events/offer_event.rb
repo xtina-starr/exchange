@@ -43,29 +43,6 @@ class OfferEvent < Events::BaseEvent
     @object.order.line_items.map { |li| line_item_detail(li) }
   end
 
-  def last_offer
-    return unless @object.order.last_offer
-
-    last_offer = @object.order.last_offer
-    in_response_to = if last_offer.responds_to
-                       {
-                         id: last_offer.responds_to.id,
-                         amount_cents: last_offer.responds_to.amount_cents,
-                         created_at: last_offer.responds_to.created_at,
-                         from_participant: last_offer.responds_to.from_participant
-                       }
-                     end
-    {
-      id: last_offer.id,
-      amount_cents: last_offer.amount_cents,
-      shipping_total_cents: last_offer.shipping_total_cents,
-      tax_total_cents: last_offer.tax_total_cents,
-      from_participant: last_offer.from_participant,
-      creator_id: last_offer.creator_id,
-      in_response_to: in_response_to
-    }
-  end
-
   def line_item_detail(line_item)
     {
       price_cents: line_item.list_price_cents,
