@@ -75,6 +75,12 @@ describe OfferEvent, type: :events do
     it 'includes expected offer properties' do
       expect(event.properties[:submitted_at]).not_to be_nil
       expect(event.properties[:from_participant]).to eq Order::BUYER
+      expect(event.properties[:from_id]).to eq offer.from_id
+      expect(event.properties[:from_type]).to eq offer.from_type
+      expect(event.properties[:creator_id]).to eq offer.creator_id
+      expect(event.properties[:responds_to]).to eq offer.responds_to_id
+      expect(event.properties[:shipping_total_cents]).to eq offer.shipping_total_cents
+      expect(event.properties[:tax_total_cents]).to eq offer.tax_total_cents
     end
     describe '#order' do
       context 'without last_offer' do
@@ -108,24 +114,6 @@ describe OfferEvent, type: :events do
           expect(order_prop[:shipping_region]).to eq 'IL'
           expect(order_prop[:state_expires_at]).to eq Time.parse('2018-08-18 15:48:00 -0400')
           expect(order_prop[:total_list_price_cents]).to eq(200)
-          expect(order_prop[:last_offer]).to be_nil
-        end
-      end
-      context 'with last_offer' do
-        let(:offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 40_00, from_id: seller_id, from_type: 'gallery', creator_id: 'partner-admin') }
-        before do
-          order.update!(last_offer: offer)
-        end
-        it 'includes last_offer' do
-          properties = event.properties
-          order_prop = properties[:order]
-          expect(order_prop[:last_offer][:id]).to eq offer.id
-          expect(order_prop[:last_offer][:amount_cents]).to eq 200_00
-          expect(order_prop[:last_offer][:shipping_total_cents]).to eq 100_00
-          expect(order_prop[:last_offer][:tax_total_cents]).to eq 40_00
-          expect(order_prop[:last_offer][:from_participant]).to eq 'seller'
-          expect(order_prop[:last_offer][:creator_id]).to eq 'partner-admin'
-          expect(order_prop[:last_offer][:responds_to]).to be_nil
         end
       end
     end

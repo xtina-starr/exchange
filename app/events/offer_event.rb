@@ -21,6 +21,13 @@ class OfferEvent < Events::BaseEvent
       amount_cents: @object.amount_cents,
       submitted_at: @object.submitted_at,
       from_participant: @object.from_participant,
+      last_offer: @object.last_offer?,
+      from_id: @object.from_id,
+      from_type: @object.from_type,
+      creator_id: @object.creator_id,
+      responds_to: @object.responds_to_id,
+      shipping_total_cents: @object.shipping_total_cents,
+      tax_total_cents: @object.tax_total_cents,
       order: order
     }
   end
@@ -29,7 +36,7 @@ class OfferEvent < Events::BaseEvent
 
   def order
     order = @object.order
-    OrderEvent::PROPERTIES_ATTRS.map { |att| [att, order.send(att)] }.to_h.merge(line_items: line_items_details, last_offer: last_offer)
+    OrderEvent::PROPERTIES_ATTRS.map { |att| [att, order.send(att)] }.to_h.merge(line_items: line_items_details)
   end
 
   def line_items_details
