@@ -19,15 +19,10 @@ describe OrderFollowUpJob, type: :job do
         let(:buyer_type) { Order::USER }
         let(:seller_id) { 'partner_id' }
         let(:buyer_id) { 'user_id' }
-        let(:offer) { Fabricate(:offer, from_id: seller_id, from_type: seller_type, submitted_at: Time.now.utc) }
-        let(:order) { Fabricate(:order, mode: Order::OFFER, last_offer: offer, state: state, buyer_id: buyer_id, seller_id: seller_id, seller_type: seller_type, buyer_type: buyer_type) }
-        # let(:awaiting_response_from) { Order::PARTNER }
-        # let(:offer) { Fabricate(:offer, submitted_at: Time.now.utc) }
-        # let(:order) { Fabricate(:order, mode: Order::OFFER, last_offer: offer, state: state) }
-
+        let(:mode) { Order::BUY }
+        let(:order) { Fabricate(:order, mode: mode, state: state, buyer_id: buyer_id, seller_id: seller_id, seller_type: seller_type, buyer_type: buyer_type) }
         context 'Buy order' do
           it 'transitions a submitted order to seller_lapsed' do
-            # expect(offer).to receive(:awaiting_response_from).and_return(awaiting_response_from)
             Timecop.freeze(order.state_expires_at + 1.second) do
               expect_any_instance_of(OrderCancellationService).to receive(:seller_lapse!)
               OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
@@ -35,21 +30,24 @@ describe OrderFollowUpJob, type: :job do
           end
         end
         context 'Offer order' do
-          context 'Last offer from seller' do
-            it 'transitions a submitted order to seller_lapsed' do
-              # expect(offer).to receive(:awaiting_response_from).and_return(awaiting_response_from)
+          let(:mode) { Order::OFFER }
+          let(:offer) { Fabricate(:offer, from_id: seller_id, order: order, from_type: seller_type, submitted_at: Time.now.utc) }
+          before do
+            order.update!(last_offer: offer)
+          end
+          context 'Last offer from seller (awaiting response from buyer)' do
+            it 'transitions a submitted order to buyer_lapsed' do
               Timecop.freeze(order.state_expires_at + 1.second) do
-                expect_any_instance_of(OrderCancellationService).to receive(:seller_lapse!)
+                expect_any_instance_of(OrderCancellationService).to receive(:buyer_lapse!)
                 OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
               end
             end
           end
-          context 'Last offer from buyer' do
-            let(:awaiting_response_from) { Order::BUYER }
+          context 'Last offer from buyer (awaiting response from seller)' do
+            let(:offer) { Fabricate(:offer, from_id: buyer_id, order: order, from_type: buyer_type, submitted_at: Time.now.utc) }
             it 'transitions a submitted order to seller_lapsed' do
-              expect_any_instance_of(Offer).to receive(:awaiting_response_from).and_return(awaiting_response_from)
               Timecop.freeze(order.state_expires_at + 1.second) do
-                expect_any_instance_of(OrderCancellationService).to receive(:buyer_lapse!)
+                expect_any_instance_of(OrderCancellationService).to receive(:seller_lapse!)
                 OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
               end
             end
