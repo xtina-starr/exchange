@@ -9,11 +9,20 @@ class OrderFollowUpJob < ApplicationJob
     when Order::PENDING
       OrderService.abandon!(order)
     when Order::SUBMITTED
-      OrderCancellationService.new(order).seller_lapse!
+      cancel_submitted_order(order)
     when Order::APPROVED
       # Order was approved but has not yet fulfilled,
       # post an event so we can contact partner
       OrderEvent.post(order, 'unfulfilled', nil)
     end
+  end
+
+  def cancel_submitted_order(order)
+    cancelation_service = OrderCancellationService.new(order)
+    buyer_lapsed_offer?(order) ? cancelation_service.buyer_lapse! : cancelation_service.seller_lapse!
+  end
+
+  def buyer_lapsed_offer?(order)
+    order.mode == Order::OFFER && order&.last_offer&.awaiting_response_from == Order::BUYER
   end
 end

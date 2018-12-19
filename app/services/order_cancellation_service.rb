@@ -14,6 +14,11 @@ class OrderCancellationService
     @order.transactions << @transaction if @transaction.present?
   end
 
+  def buyer_lapse!
+    @order.buyer_lapse!
+    PostOrderNotificationJob.perform_later(@order.id, Order::CANCELED)
+  end
+
   def reject!(rejection_reason = nil)
     @order.reject!(rejection_reason) do
       process_refund if @order.mode == Order::BUY
