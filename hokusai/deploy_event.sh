@@ -4,6 +4,8 @@
 # ./deploy_event exchange production
 # Must have DD_API_KEY set to datadog api key.
 
+[ -z "$DD_API_KEY" ] && echo "Need to set DD_API_KEY" && exit 1;
+
 curl -X POST -H "Content-type: application/json" \
 -d "{
       \"title\": \"$1 was deployed to $2\",
