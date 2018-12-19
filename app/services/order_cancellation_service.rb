@@ -17,8 +17,6 @@ class OrderCancellationService
   def buyer_lapse!
     @order.buyer_lapse!
     PostOrderNotificationJob.perform_later(@order.id, Order::CANCELED)
-  ensure
-    @order.transactions << @transaction if @transaction.present?
   end
 
   def reject!(rejection_reason = nil)
