@@ -35,7 +35,7 @@ describe Api::GraphqlController, type: :request do
       )
     end
     let(:current_offer) { Fabricate(:offer, order: order, from_id: seller_id, from_type: 'gallery', amount_cents: 300) }
-    let(:counter_offer) { Fabricate(:offer, order: order, from_id: buyer_id, from_type: Order::USER, amount_cents: 350, responds_to: current_offer) }
+    let(:counter_offer) { Fabricate(:offer, order: order, from_id: buyer_id, from_type: Order::USER, amount_cents: 350, tax_total_cents: 10, shipping_total_cents: 15, responds_to: current_offer) }
     let(:mutation) do
       <<-GRAPHQL
         mutation($input: SubmitPendingOfferInput!) {

@@ -51,7 +51,7 @@ class OrderShippingService
       @order.line_items.map do |li|
         artwork_address = Address.new(@order_data.artworks[li.artwork_id][:location])
         begin
-          service = Tax::CalculatorService.new(li.total_amount_cents, li.effective_price_cents, li.quantity, @fulfillment_type, @shipping_address, @order_data.shipping_total_cents, artwork_address, @order_data.seller_locations)
+          service = Tax::CalculatorService.new(li.total_list_price_cents, li.list_price_cents, li.quantity, @fulfillment_type, @shipping_address, @order_data.shipping_total_cents, artwork_address, @order_data.seller_locations)
           sales_tax = @order_data.partner[:artsy_collects_sales_tax] ? service.sales_tax : 0
           li.update!(sales_tax_cents: sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
           sales_tax

@@ -26,21 +26,20 @@ module OfferService
     raise Errors::ValidationError, :invalid_offer if offer.submitted?
     raise Errors::ProcessingError, :insufficient_inventory unless order_data.inventory?
 
-    offer_calculator = OfferCalculator.new(order, offer.amount_cents)
+    order = offer.order
+    offer_totals = OfferTotalCalculator.new(offer)
     order.with_lock do
       offer.update!(submitted_at: Time.now.utc)
-      order.update!(last_offer: offer)
-      order.line_items.first.update!(sales_tax_cents: offer.tax_total_cents, should_remit_sales_tax: offer.should_remit_sales_tax, commission_fee_cents: offer_calculator.commission_fee_cents)
-      order_calculator = OrderCalculator.new(line_items: order.line_items, shipping_total_cents: offer.shipping_total_cents, tax_total_cents: offer.tax_total_cents, commission_rate: offer_calculator.commission_rate)
       order.update!(
-        shipping_total_cents: offer.shipping_total_cents,
-        tax_total_cents: offer.tax_total_cents,
-        commission_rate: offer_calculator.commission_rate,
-        items_total_cents: order_calculator.items_total_cents,
-        buyer_total_cents: order_calculator.buyer_total_cents,
-        commission_fee_cents: order_calculator.commission_fee_cents,
-        transaction_fee_cents: order_calculator.transaction_fee_cents,
-        seller_total_cents: order_calculator.seller_total_cents,
+        last_offer: offer,
+        shipping_total_cents: offer_totals.shipping_total_cents,
+        tax_total_cents: offer_totals.tax_total_cents,
+        commission_rate: offer_totals.commission_rate,
+        items_total_cents: offer_totals.items_total_cents,
+        buyer_total_cents: offer_totals.buyer_total_cents,
+        commission_fee_cents: offer_totals.commission_fee_cents,
+        transaction_fee_cents: offer_totals.transaction_fee_cents,
+        seller_total_cents: offer_totals.seller_total_cents,
         state_expires_at: Offer::EXPIRATION.from_now # expand order expiration
       )
     end

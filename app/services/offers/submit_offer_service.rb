@@ -13,7 +13,7 @@ module Offers
       offer.update!(submitted_at: Time.now.utc)
       offer.order.line_items.first.update!(sales_tax_cents: offer.tax_total_cents, should_remit_sales_tax: offer.should_remit_sales_tax)
       offer.order.update!(last_offer: offer, shipping_total_cents: offer.shipping_total_cents, tax_total_cents: offer.tax_total_cents)
-      OrderTotalUpdaterService.new(offer.order, @order_data.partner[:effective_commission_rate]).update_totals!
+      OrderTotalUpdaterService.new(offer.order, @order_data.partner[:effective_commission_rate], offer: offer).update_totals!
     end
 
     private

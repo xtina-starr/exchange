@@ -76,7 +76,7 @@ describe OrderTotalUpdaterService, type: :service do
           let(:tax_total_cents) { 60_00 }
           context 'without commission rate' do
             it 'sets correct totals on the order' do
-              OrderTotalUpdaterService.new(order).update_totals!
+              OrderTotalUpdaterService.new(order, offer: offer).update_totals!
               expect(order.items_total_cents).to eq 300_00
               expect(order.buyer_total_cents).to eq(300_00 + 50_00 + 60_00)
               expect(order.transaction_fee_cents).to eq 12_19
@@ -86,19 +86,19 @@ describe OrderTotalUpdaterService, type: :service do
           end
           context 'with commission rate' do
             it 'raises error for commission rate > 1' do
-              expect { OrderTotalUpdaterService.new(order, 2) }.to raise_error do |error|
+              expect { OrderTotalUpdaterService.new(order, 2, offer: offer) }.to raise_error do |error|
                 expect(error).to be_a(Errors::ValidationError)
                 expect(error.code).to eq :invalid_commission_rate
               end
             end
             it 'raises error for commission rate < 0' do
-              expect { OrderTotalUpdaterService.new(order, -0.2) }.to raise_error do |error|
+              expect { OrderTotalUpdaterService.new(order, -0.2, offer: offer) }.to raise_error do |error|
                 expect(error).to be_a(Errors::ValidationError)
                 expect(error.code).to eq :invalid_commission_rate
               end
             end
             it 'sets correct totals on the order' do
-              OrderTotalUpdaterService.new(order, 0.40).update_totals!
+              OrderTotalUpdaterService.new(order, 0.40, offer: offer).update_totals!
               expect(order.items_total_cents).to eq 300_00
               expect(order.buyer_total_cents).to eq(300_00 + 50_00 + 60_00)
               expect(order.transaction_fee_cents).to eq 12_19
@@ -106,8 +106,8 @@ describe OrderTotalUpdaterService, type: :service do
               expect(order.seller_total_cents).to eq(410_00 - (12_19 + 120_00))
             end
             it 'does not set commission on line items' do
-              OrderTotalUpdaterService.new(order, 0.40).update_totals!
-              expect(line_item1.reload.commission_fee_cents).to eq 12000
+              OrderTotalUpdaterService.new(order, 0.40, offer: offer).update_totals!
+              expect(line_item1.reload.commission_fee_cents).to be_nil
             end
           end
         end

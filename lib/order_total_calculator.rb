@@ -1,4 +1,4 @@
-class OrderCalculator
+class OrderTotalCalculator
   def initialize(line_items:, shipping_total_cents:, tax_total_cents:, commission_rate: nil)
     @line_items = line_items
     @shipping_total_cents = shipping_total_cents
@@ -20,10 +20,7 @@ class OrderCalculator
   end
 
   def transaction_fee_cents
-    0 unless buyer_total_cents.positive?
-
-    # This is based on Stripe US fee, it will be different for other countries https://stripe.com/us/pricing
-    @transaction_fee_cents ||= buyer_total_cents.positive? ? (Money.new(buyer_total_cents * 2.9 / 100, 'USD') + Money.new(30, 'USD')).cents : 0
+    TransactionFeeCalculator.calculate(buyer_total_cents)
   end
 
   def seller_total_cents

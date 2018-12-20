@@ -38,7 +38,7 @@ class Tax::CollectionService
 
   def construct_tax_params(args = {})
     {
-      amount: UnitConverter.convert_cents_to_dollars(@line_item.total_amount_cents),
+      amount: UnitConverter.convert_cents_to_dollars(@line_item.total_list_price_cents),
       to_country: destination_address.country,
       to_zip: destination_address.postal_code,
       to_state: destination_address.region,
