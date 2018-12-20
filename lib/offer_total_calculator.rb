@@ -2,7 +2,7 @@ class OfferTotalCalculator
   attr_reader :offer
   delegate :tax_total_cents, to: :offer
   delegate :should_remit_sales_tax, to: :offer
-  delegate :commission_rate, to: :order_data
+  delegate :commission_rate, to: :order_helper
   delegate :shipping_total_cents, to: :offer
   delegate :tax_total_cents, to: :offer
   delegate :buyer_total_cents, to: :offer
@@ -31,7 +31,7 @@ class OfferTotalCalculator
 
   private
 
-  def order_data
-    @order_data ||= OrderData.new(@order)
+  def order_helper
+    @order_helper ||= OrderHelper.new(@order)
   end
 end

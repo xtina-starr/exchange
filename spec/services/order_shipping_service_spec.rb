@@ -70,7 +70,7 @@ describe OrderShippingService, type: :services do
       let!(:continental_us_line_item) { Fabricate(:line_item, order: continental_us_order, artwork_id: 'a-2') }
       context 'with non-continental US shipping address' do
         it 'raises error' do
-          allow_any_instance_of(OrderData).to receive(:artworks).and_return('a-2' => continental_us_artwork)
+          allow_any_instance_of(OrderHelper).to receive(:artworks).and_return('a-2' => continental_us_artwork)
           expect { @service_continental_us_shipping.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq(:unsupported_shipping_location)
@@ -80,7 +80,7 @@ describe OrderShippingService, type: :services do
       end
       context 'with international shipping address' do
         it 'raises error' do
-          allow_any_instance_of(OrderData).to receive(:artworks).and_return('a-1' => continental_us_artwork)
+          allow_any_instance_of(OrderHelper).to receive(:artworks).and_return('a-1' => continental_us_artwork)
           expect { @service_international_shipping.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq(:unsupported_shipping_location)

@@ -1,4 +1,16 @@
 module OfferService
+  def self.submit_order_with_offer(offer)
+    order = offer.order
+    validate_order_submission!(order)
+
+    order.submit! do
+      submit_pending_offer(offer)
+    end
+
+    Exchange.dogstatsd.increment 'order.submit'
+    ReminderFollowUpJob.set(wait_until: order.state_expires_at - 2.hours).perform_later(order.id, order.state)
+  end
+
   def self.create_pending_offer(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
     order = responds_to.order
     raise Errors::ValidationError, :invalid_amount_cents unless amount_cents.positive?
@@ -56,6 +68,19 @@ module OfferService
       # We are posting order.submitted event 👇, for now since Pulse (email service) is expecting that in case of submitting pending offer
       PostOrderNotificationJob.perform_later(offer.order.id, Order::SUBMITTED, offer.creator_id)
       Exchange.dogstatsd.increment 'offer.submit'
+    end
+
+    def validate_order_submission!(order)
+      order_helper = OrderHelper.new(order)
+      raise Errors::ValidationError, :cant_submit unless order.mode == Order::OFFER
+      raise Errors::ValidationError, :missing_required_info unless order.can_commit?
+
+      unless order_helper.valid_artwork_version?
+        Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
+        raise Errors::ProcessingError, :artwork_version_mismatch
+      end
+      credit_card_error = order_helper.assert_credit_card
+      raise Errors::ValidationError, credit_card_error if credit_card_error
     end
   end
 end

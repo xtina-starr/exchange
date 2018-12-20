@@ -52,7 +52,7 @@ class OrderTotalUpdaterService
   end
 
   def calculate_transaction_fee
-    return 0 unless @order.buyer_total_cents.positive?
+    return 0 unless @order.buyer_total_cents&.positive?
 
     # This is based on Stripe US fee, it will be different for other countries
     # https://stripe.com/us/pricing

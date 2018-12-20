@@ -6,8 +6,8 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
 
     let(:seller_id) { jwt_partner_ids.first }
-    let(:user_id) { jwt_user_id }
-    let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
+    let(:buyer_id) { jwt_user_id }
+    let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1') }
     let(:line_item_artwork_version) { artwork[:current_version_id] }
     let(:credit_card_id) { 'grav_c_id1' }
     let(:credit_card) { { external_id: 'cc-1', customer_account: { external_id: 'cus-1' }, deactivated_at: nil } }
@@ -17,7 +17,7 @@ describe Api::GraphqlController, type: :request do
         :order,
         mode: Order::OFFER,
         seller_id: seller_id,
-        buyer_id: user_id,
+        buyer_id: buyer_id,
         credit_card_id: credit_card_id,
         shipping_name: 'Fname Lname',
         shipping_address_line1: '12 Vanak St',
@@ -31,6 +31,7 @@ describe Api::GraphqlController, type: :request do
         buyer_total_cents: 1000_00
       )
     end
+    let(:offer) { Fabricate(:offer, order: order, from_id: buyer_id, from_type: Order::USER, amount_cents: 300_00, shipping_total_cents: 100_00, tax_total_cents: 50_00) }
     let(:mutation) do
       <<-GRAPHQL
         mutation($input: SubmitOrderWithOfferInput!) {
@@ -63,22 +64,20 @@ describe Api::GraphqlController, type: :request do
 
     before do
       order.line_items << line_item
-      Offers::InitialOfferService.new(order, 800_00, user_id).process!
-      @offer = order.reload.offers.last
     end
 
     describe 'mutation is rejected' do
       let(:submit_order_input) do
         {
           input: {
-            offerId: @offer.id.to_s
+            offerId: offer.id.to_s
           }
         }
       end
 
       it 'if the offer from_id does not match the current user id' do
         user_id = 'random-user-id-on-another-order'
-        @offer.update!(from_id: user_id)
+        offer.update!(from_id: user_id)
 
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order_with_offer.order_or_error).not_to respond_to(:order)
@@ -103,7 +102,7 @@ describe Api::GraphqlController, type: :request do
       it 'if the offer has already been submitted' do
         allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
         allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-        @offer.update!(submitted_at: Time.now.utc)
+        offer.update!(submitted_at: Time.now.utc)
 
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order_with_offer.order_or_error).not_to respond_to(:order)
@@ -147,7 +146,7 @@ describe Api::GraphqlController, type: :request do
       let(:submit_order_input) do
         {
           input: {
-            offerId: @offer.id.to_s
+            offerId: offer.id.to_s
           }
         }
       end
@@ -161,7 +160,7 @@ describe Api::GraphqlController, type: :request do
         response = client.execute(mutation, submit_order_input)
         expect(response.data.submit_order_with_offer.order_or_error).not_to respond_to(:error)
         expect(response.data.submit_order_with_offer.order_or_error.order.state).to eq 'SUBMITTED'
-        expect(response.data.submit_order_with_offer.order_or_error.order.last_offer.id).to eq @offer.id
+        expect(response.data.submit_order_with_offer.order_or_error.order.last_offer.id).to eq offer.id
         expect(response.data.submit_order_with_offer.order_or_error.order.last_offer.submitted_at).to_not be_nil
         expect(order.reload.state).to eq Order::SUBMITTED
       end
