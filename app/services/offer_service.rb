@@ -40,11 +40,19 @@ module OfferService
         state_expires_at: Offer::EXPIRATION.from_now # expand order expiration
       )
     end
-    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
-    # We are posting order.submitted event 👇, for now since Pulse (email service) is expecting that in case of submitting pending offer
-    # We need to send OfferEvent eventually in this case to be more accurate
-    PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, offer.creator_id)
-    Exchange.dogstatsd.increment 'offer.submit'
+    post_submit_offer(offer)
     offer
+  end
+
+  class << self
+    private
+
+    def post_submit_offer(offer)
+      OrderFollowUpJob.set(wait_until: offer.order.state_expires_at).perform_later(offer.order.id, offer.order.state)
+      PostOfferNotificationJob.perform_later(offer.id, OfferEvent::SUBMITTED, offer.creator_id)
+      # We are posting order.submitted event 👇, for now since Pulse (email service) is expecting that in case of submitting pending offer
+      PostOrderNotificationJob.perform_later(offer.order.id, Order::SUBMITTED, offer.creator_id)
+      Exchange.dogstatsd.increment 'offer.submit'
+    end
   end
 end
