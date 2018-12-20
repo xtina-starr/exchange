@@ -13,7 +13,7 @@ Metrics/ParameterLists:
   Max: 9
 
 Metrics/AbcSize:
-  Max: 41
+  Max: 42
   Exclude:
     - "db/migrate/*"
 
