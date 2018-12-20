@@ -39,7 +39,12 @@ class OrderShippingService
   end
 
   def set_offer_totals!
-    Offers::TotalUpdaterService.new(@pending_offer).process!
+    offer_calculator = OfferCalculator.new(@order, @pending_offer.amount_cents)
+    @pending_offer.update!(
+      shipping_total_cents: offer_calculator.shipping_total_cents,
+      tax_total_cents: offer_calculator.tax_total_cents,
+      should_remit_sales_tax: offer_calculator.should_remit_sales_tax
+    )
   end
 
   def set_order_totals!
