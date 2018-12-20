@@ -1,7 +1,6 @@
 class OrderTotalUpdaterService
-  def initialize(order, commission_rate = nil, offer: nil)
+  def initialize(order, commission_rate = nil)
     @order = order
-    @offer = offer
     raise Errors::ValidationError, :invalid_commission_rate if commission_rate.present? && (commission_rate > 1 || commission_rate.negative?)
 
     @commission_rate = commission_rate
@@ -11,7 +10,7 @@ class OrderTotalUpdaterService
     return unless can_calculate?
 
     @order.with_lock do
-      @order.items_total_cents = @offer.present? ? @offer.amount_cents : @order.line_items.map(&:total_list_price_cents).sum
+      @order.items_total_cents = @order.line_items.map(&:total_list_price_cents).sum
       if @order.items_total_cents.present?
         @order.buyer_total_cents = @order.items_total_cents + @order.shipping_total_cents.to_i + @order.tax_total_cents.to_i
         if @commission_rate.present?
@@ -29,8 +28,8 @@ class OrderTotalUpdaterService
 
   def can_calculate?
     case @order.mode
-    when Order::BUY then @order.line_items.all? { |li| li.list_price_cents.present? }
-    when Order::OFFER then @offer.present?
+    when Order::BUY then @order.line_items.present? && @order.line_items.all? { |li| li.list_price_cents.present? }
+    when Order::OFFER then false # deprecated: we use OfferTotalCalculator for this
     end
   end
 
@@ -52,10 +51,6 @@ class OrderTotalUpdaterService
   end
 
   def calculate_transaction_fee
-    return 0 unless @order.buyer_total_cents&.positive?
-
-    # This is based on Stripe US fee, it will be different for other countries
-    # https://stripe.com/us/pricing
-    (Money.new(@order.buyer_total_cents * 2.9 / 100, 'USD') + Money.new(30, 'USD')).cents
+    TransactionFeeCalculator.calculate(@order.buyer_total_cents)
   end
 end

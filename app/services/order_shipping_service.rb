@@ -24,10 +24,7 @@ class OrderShippingService
         shipping_country: @shipping_address&.country,
         shipping_postal_code: @shipping_address&.postal_code
       )
-      # if user has pending offer, we want to set totals on pending offer
-      # and not on the order yet
-      @pending_offer.present? ? set_offer_totals! : set_order_totals!
-      OrderTotalUpdaterService.new(@order).update_totals!
+      @order.mode == Order::OFFER ? set_offer_totals! : set_order_totals!
     end
   end
 
@@ -49,6 +46,7 @@ class OrderShippingService
 
   def set_order_totals!
     @order.update!(shipping_total_cents: @order_helper.shipping_total_cents, tax_total_cents: tax_total_cents)
+    OrderTotalUpdaterService.new(@order).update_totals!
   end
 
   def tax_total_cents

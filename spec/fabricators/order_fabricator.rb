@@ -6,6 +6,5 @@ Fabricator(:order) do
   seller_id { sequence(:seller_id) { |i| "partner-id-#{i}" } }
   seller_type { 'gallery' }
   state { Order::PENDING }
-  items_total_cents { 0 }
   currency_code { 'USD' }
 end

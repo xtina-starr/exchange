@@ -2,8 +2,9 @@ require 'rails_helper'
 require 'support/gravity_helper'
 
 describe OrderShippingService, type: :services do
+  let(:order_mode) { Order::BUY }
   let(:order) { Fabricate(:order) }
-  let(:continental_us_order) { Fabricate(:order) }
+  let(:continental_us_order) { Fabricate(:order, mode: order_mode) }
   let(:domestic_shipping) do
     {
       address_line1: '401 Broadway',
@@ -93,7 +94,7 @@ describe OrderShippingService, type: :services do
     describe 'tax' do
       let(:artwork) { gravity_v1_artwork }
       let(:partner) { { _id: 'partner-1', artsy_collects_sales_tax: artsy_collects_sales_tax } }
-      let(:order) { Fabricate(:order, seller_id: partner[:_id]) }
+      let(:order) { Fabricate(:order, seller_id: partner[:_id], mode: order_mode) }
       let(:line_items) { Array.new(2) { Fabricate(:line_item, order: order, artwork_id: artwork[:_id]) } }
       let(:tax_calculator) { double('Tax Calculator', sales_tax: 3750, artsy_should_remit_taxes?: false) }
       let(:service) { OrderShippingService.new(order, fulfillment_type: Order::SHIP, shipping: domestic_shipping) }
@@ -108,7 +109,7 @@ describe OrderShippingService, type: :services do
         service.process!
       end
 
-      context 'without pending offer' do
+      context 'Buy Order' do
         context 'artsy collects sales tax' do
           it 'sets sales_tax_cents on line items from tax calculator' do
             order.line_items.each do |line_item|
@@ -136,7 +137,8 @@ describe OrderShippingService, type: :services do
         end
       end
 
-      context 'with pending offer' do
+      context 'Offer Order' do
+        let(:order_mode) { Order::OFFER }
         let(:line_items) { [Fabricate(:line_item, order: order, artwork_id: artwork[:_id])] }
         let(:pending_offer) { Fabricate(:offer, order: order, amount_cents: 20000) }
         let(:service) { OrderShippingService.new(order, fulfillment_type: Order::SHIP, shipping: domestic_shipping, pending_offer: pending_offer) }
