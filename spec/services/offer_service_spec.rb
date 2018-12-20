@@ -55,7 +55,7 @@ describe OfferService, type: :services do
   describe '#submit_pending_offer!' do
     let(:offer_from_id) { 'user-id' }
     let(:order_seller_id) { 'partner-1' }
-    let(:order) { Fabricate(:order, state: Order::SUBMITTED, seller_id: order_seller_id) }
+    let(:order) { Fabricate(:order, mode: Order::OFFER, state: Order::SUBMITTED, seller_id: order_seller_id) }
     let(:line_item) { Fabricate(:line_item, order: order) }
     let(:offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
     let(:pending_offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 50_00, responds_to: offer, from_id: offer_from_id) }
@@ -79,6 +79,17 @@ describe OfferService, type: :services do
         expect(order.last_offer).to eq(pending_offer)
         expect(order.last_offer.amount_cents).to eq(20000)
         expect(order.last_offer.responds_to).to eq(offer)
+      end
+
+      it 'updates orders totals' do
+        call_service
+        expect(order.items_total_cents).to eq 200_00
+        expect(order.shipping_total_cents).to eq 100_00
+        expect(order.tax_total_cents).to eq 50_00
+        expect(order.commission_fee_cents).to eq 200_00 * 0.8
+        expect(order.buyer_total_cents).to eq 350_00
+        expect(order.transaction_fee_cents).to eq((350_00 * 2.9 / 100) + 30)
+        expect(order.seller_total_cents).to eq 350_00 - order.commission_fee_cents - order.transaction_fee_cents
       end
 
       it 'updates order state expiration' do

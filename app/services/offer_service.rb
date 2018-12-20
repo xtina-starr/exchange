@@ -25,10 +25,10 @@ module OfferService
     offer_calculator = OfferCalculator.new(order, offer.amount_cents)
     order.with_lock do
       offer.update!(submitted_at: Time.now.utc)
+      order.update!(last_offer: offer)
       order.line_items.first.update!(sales_tax_cents: offer.tax_total_cents, should_remit_sales_tax: offer.should_remit_sales_tax, commission_fee_cents: offer_calculator.commission_fee_cents)
       order_calculator = OrderCalculator.new(line_items: order.line_items, shipping_total_cents: offer.shipping_total_cents, tax_total_cents: offer.tax_total_cents, commission_rate: offer_calculator.commission_rate)
       order.update!(
-        last_offer: offer,
         shipping_total_cents: offer.shipping_total_cents,
         tax_total_cents: offer.tax_total_cents,
         commission_rate: offer_calculator.commission_rate,
