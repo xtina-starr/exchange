@@ -31,6 +31,22 @@ describe OfferService, type: :services do
       end
     end
 
+    it 'raises error for 0  offer amount' do
+      expect {  OfferService.create_pending_offer(current_offer, amount_cents: 0, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
+        .to raise_error do |e|
+          expect(e.type).to eq :validation
+          expect(e.code).to eq :invalid_amount_cents
+        end
+    end
+
+    it 'raises error for negative offer amount' do
+      expect {  OfferService.create_pending_offer(current_offer, amount_cents: -10, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
+        .to raise_error do |e|
+          expect(e.type).to eq :validation
+          expect(e.code).to eq :invalid_amount_cents
+        end
+    end
+
     context 'attempting to counter not the last offer' do
       let!(:another_offer) { Fabricate(:offer, order: order) }
 
