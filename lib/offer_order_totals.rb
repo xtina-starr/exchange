@@ -1,4 +1,5 @@
-class OfferTotalCalculator
+class OfferOrderTotals
+  # Given an offer, it calculate totals on the order
   attr_reader :offer
   delegate :tax_total_cents, to: :offer
   delegate :should_remit_sales_tax, to: :offer
@@ -6,7 +7,6 @@ class OfferTotalCalculator
   delegate :shipping_total_cents, to: :offer
   delegate :tax_total_cents, to: :offer
   delegate :buyer_total_cents, to: :offer
-  delegate :items_total_cents, to: :offer
 
   def initialize(offer)
     @offer = offer
@@ -22,14 +22,20 @@ class OfferTotalCalculator
   end
 
   def transaction_fee_cents
-    @transaction_fee_cents ||= TransactionFeeCalculator.calculate(offer.buyer_total_cents)
+    @transaction_fee_cents ||= TransactionFeeCalculator.calculate(buyer_total_cents)
   end
 
   def seller_total_cents
-    offer.buyer_total_cents - transaction_fee_cents - commission_fee_cents
+    return unless buyer_total_cents && commission_fee_cents && transaction_fee_cents
+
+    @seller_total_cents ||= buyer_total_cents - commission_fee_cents - transaction_fee_cents - calculate_remittable_sales_tax
   end
 
   private
+
+  def calculate_remittable_sales_tax
+    @offer.should_remit_sales_tax? ? @offer.tax_total_cents : 0
+  end
 
   def order_helper
     @order_helper ||= OrderHelper.new(@order)

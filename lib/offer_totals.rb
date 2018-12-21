@@ -1,7 +1,7 @@
-class OfferCalculator
+class OfferTotals
+  # Given an Order and amount of offer, it calculates tax, shipping based on offer amount
   delegate :tax_total_cents, to: :tax_data
   delegate :should_remit_sales_tax, to: :tax_data
-  delegate :commission_rate, to: :order_helper
   delegate :shipping_total_cents, to: :order_helper
 
   def initialize(order, offer_amount = nil)
@@ -9,18 +9,11 @@ class OfferCalculator
     @order = order
   end
 
-  def commission_fee_cents
-    commission_rate * @offer_amount
-  end
-
   private
 
-  def artwork
-    artwork_id = @order.line_items.first.artwork_id # this is with assumption of Offer order only having one lineItem
-    order_helper.artworks[artwork_id]
-  end
-
   def artwork_location
+    artwork_id = @order.line_items.first.artwork_id # this is with assumption of Offer order only having one lineItem
+    artwork = order_helper.artworks[artwork_id]
     @artwork_location ||= Address.new(artwork[:location])
   end
 

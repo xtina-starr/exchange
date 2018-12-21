@@ -27,15 +27,12 @@ class OrderTotalUpdaterService
   private
 
   def can_calculate?
-    case @order.mode
-    when Order::BUY then @order.line_items.present? && @order.line_items.all? { |li| li.list_price_cents.present? }
-    when Order::OFFER then false # deprecated: we use OfferTotalCalculator for this
-    end
+    return unless @order.mode == Order::BUY
+
+    @order.line_items.present? && @order.line_items.all? { |li| li.list_price_cents.present? }
   end
 
   def calculate_commission_cents
-    return @offer.amount_cents * @commission_rate if @offer.present?
-
     set_commission_on_line_items
     @order.line_items.map(&:commission_fee_cents).sum
   end

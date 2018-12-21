@@ -189,7 +189,7 @@ describe OfferService, type: :services do
     context 'counter on last_offer' do
       before do
         order.update!(last_offer: current_offer)
-        expect_any_instance_of(OfferCalculator).to receive_messages(shipping_total_cents: 100, tax_total_cents: 200, should_remit_sales_tax: false)
+        expect_any_instance_of(OfferTotals).to receive_messages(shipping_total_cents: 100, tax_total_cents: 200, should_remit_sales_tax: false)
       end
       it 'adds a new offer to order and does not updates last offer' do
         OfferService.create_pending_offer(current_offer, amount_cents: 20000, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type)
@@ -242,10 +242,11 @@ describe OfferService, type: :services do
   end
 
   describe '#submit_new_offer!' do
+    let(:artwork) { gravity_v1_artwork }
     let(:offer_from_id) { 'user-id' }
     let(:order_seller_id) { 'partner-1' }
     let(:order) { Fabricate(:order, mode: Order::OFFER, state: Order::SUBMITTED, seller_id: order_seller_id) }
-    let(:line_item) { Fabricate(:line_item, order: order) }
+    let(:line_item) { Fabricate(:line_item, order: order, artwork_id: artwork[:_id]) }
     let(:current_offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
     let(:new_offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 50_00, responds_to: current_offer, from_id: offer_from_id) }
     let(:call_service) { OfferService.submit_pending_offer(new_offer) }
@@ -366,7 +367,7 @@ describe OfferService, type: :services do
       let(:artwork) { gravity_v1_artwork(inventory: { count: 0, unlimited: true }) }
       it 'raises a processing error' do
         call_service
-        expect(pending_offer.submitted_at).not_to be_nil
+        expect(new_offer.submitted_at).not_to be_nil
       end
     end
   end

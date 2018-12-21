@@ -17,7 +17,7 @@ module OfferService
     raise Errors::ValidationError, :not_last_offer unless responds_to.last_offer?
     raise Errors::ValidationError, :invalid_state unless order.state == Order::SUBMITTED
 
-    offer_calculator = OfferCalculator.new(order, amount_cents)
+    offer_totals = OfferTotals.new(order, amount_cents)
 
     order.offers.create!(
       amount_cents: amount_cents,
@@ -25,33 +25,33 @@ module OfferService
       from_type: from_type,
       creator_id: creator_id,
       responds_to: responds_to,
-      shipping_total_cents: offer_calculator.shipping_total_cents,
-      tax_total_cents: offer_calculator.tax_total_cents,
-      should_remit_sales_tax: offer_calculator.should_remit_sales_tax
+      shipping_total_cents: offer_totals.shipping_total_cents,
+      tax_total_cents: offer_totals.tax_total_cents,
+      should_remit_sales_tax: offer_totals.should_remit_sales_tax
     )
   end
 
   def self.submit_pending_offer(offer)
     order = offer.order
-    order_data = OrderData.new(order)
+    order_helper = OrderHelper.new(order)
 
     raise Errors::ValidationError, :invalid_offer if offer.submitted?
-    raise Errors::ProcessingError, :insufficient_inventory unless order_data.inventory?
+    raise Errors::ProcessingError, :insufficient_inventory unless order_helper.inventory?
 
     order = offer.order
-    offer_totals = OfferTotalCalculator.new(offer)
+    offer_order_totals = OfferOrderTotals.new(offer)
     order.with_lock do
       offer.update!(submitted_at: Time.now.utc)
       order.update!(
         last_offer: offer,
-        shipping_total_cents: offer_totals.shipping_total_cents,
-        tax_total_cents: offer_totals.tax_total_cents,
-        commission_rate: offer_totals.commission_rate,
-        items_total_cents: offer_totals.items_total_cents,
-        buyer_total_cents: offer_totals.buyer_total_cents,
-        commission_fee_cents: offer_totals.commission_fee_cents,
-        transaction_fee_cents: offer_totals.transaction_fee_cents,
-        seller_total_cents: offer_totals.seller_total_cents,
+        shipping_total_cents: offer_order_totals.shipping_total_cents,
+        tax_total_cents: offer_order_totals.tax_total_cents,
+        commission_rate: offer_order_totals.commission_rate,
+        items_total_cents: offer_order_totals.items_total_cents,
+        buyer_total_cents: offer_order_totals.buyer_total_cents,
+        commission_fee_cents: offer_order_totals.commission_fee_cents,
+        transaction_fee_cents: offer_order_totals.transaction_fee_cents,
+        seller_total_cents: offer_order_totals.seller_total_cents,
         state_expires_at: Offer::EXPIRATION.from_now # expand order expiration
       )
     end
