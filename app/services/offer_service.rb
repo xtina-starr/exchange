@@ -19,9 +19,12 @@ module OfferService
   end
 
   def self.submit_pending_offer(offer)
-    raise Errors::ValidationError, :invalid_offer if offer.submitted?
-
     order = offer.order
+    order_data = OrderData.new(order)
+
+    raise Errors::ValidationError, :invalid_offer if offer.submitted?
+    raise Errors::ProcessingError, :insufficient_inventory unless order_data.inventory?
+
     offer_calculator = OfferCalculator.new(order, offer.amount_cents)
     order.with_lock do
       offer.update!(submitted_at: Time.now.utc)

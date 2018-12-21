@@ -53,10 +53,12 @@ describe OfferService, type: :services do
   end
 
   describe '#submit_pending_offer!' do
+    let(:artwork) { gravity_v1_artwork }
     let(:offer_from_id) { 'user-id' }
     let(:order_seller_id) { 'partner-1' }
     let(:order) { Fabricate(:order, mode: Order::OFFER, state: Order::SUBMITTED, seller_id: order_seller_id) }
-    let(:line_item) { Fabricate(:line_item, order: order) }
+    let(:line_item_edition_set_id) { nil }
+    let(:line_item) { Fabricate(:line_item, order: order, artwork_id: artwork[:_id], edition_set_id: line_item_edition_set_id) }
     let(:offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
     let(:pending_offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 50_00, responds_to: offer, from_id: offer_from_id) }
     let(:call_service) { OfferService.submit_pending_offer(pending_offer) }
@@ -65,6 +67,7 @@ describe OfferService, type: :services do
       order.update!(last_offer: offer)
       order.line_items << line_item
       allow(Adapters::GravityV1).to receive(:get).with("/partner/#{order_seller_id}/all").and_return(gravity_v1_partner)
+      allow(Adapters::GravityV1).to receive(:get).with("/artwork/#{line_item.artwork_id}").and_return(artwork)
     end
 
     context 'with counter on a submitted offer' do
@@ -121,8 +124,7 @@ describe OfferService, type: :services do
     context 'attempting to submit already submitted offer' do
       let(:pending_offer) { Fabricate(:offer, order: order, amount_cents: 20000, responds_to: offer, submitted_at: 1.minute.ago, from_id: offer_from_id) }
       it 'raises a validation error' do
-        expect {  call_service }
-          .to raise_error(Errors::ValidationError)
+        expect {  call_service }.to raise_error(Errors::ValidationError)
       end
 
       it 'does not instrument' do
@@ -149,6 +151,24 @@ describe OfferService, type: :services do
         expect { call_service }.to raise_error(Errors::ValidationError)
 
         expect(dd_statsd).to_not have_received(:increment)
+      end
+    end
+
+    context 'without enough inventory' do
+      let(:artwork) { gravity_v1_artwork(inventory: { count: 0, unlimited: false }) }
+      it 'raises a processing error' do
+        expect { call_service }.to raise_error do |e|
+          expect(e.type).to eq :processing
+          expect(e.code).to eq :insufficient_inventory
+        end
+      end
+    end
+
+    context 'without unlimited inventory' do
+      let(:artwork) { gravity_v1_artwork(inventory: { count: 0, unlimited: true }) }
+      it 'raises a processing error' do
+        call_service
+        expect(pending_offer.submitted_at).not_to be_nil
       end
     end
   end
