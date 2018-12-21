@@ -9,7 +9,7 @@ describe Api::GraphqlController, type: :request do
     let(:partner) { { id: order_seller_id, artsy_collects_sales_tax: true, effective_commission_rate: 0.4 } }
     let(:buyer_id) { jwt_user_id }
     let(:artwork_location) { { country: 'US' } }
-    let(:artwork) { { _id: 'a-1', current_version_id: '1', location: artwork_location, domestic_shipping_fee_cents: 1000 } }
+    let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1', location: artwork_location, domestic_shipping_fee_cents: 1000) }
     let(:order_state) { Order::SUBMITTED }
     let!(:order) { Fabricate(:order, state: order_state, seller_id: order_seller_id, buyer_id: buyer_id, **shipping_info) }
     let!(:offer) { Fabricate(:offer, order: order, amount_cents: 10000, from_id: buyer_id, from_type: Order::USER, submitted_at: Time.now.utc) }
@@ -153,6 +153,7 @@ describe Api::GraphqlController, type: :request do
     context 'with proper permission' do
       before do
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{order_seller_id}/all").and_return(gravity_v1_partner)
+        allow(Adapters::GravityV1).to receive(:get).with("/artwork/#{line_item.artwork_id}").and_return(artwork)
       end
       it 'counters the order' do
         expect do

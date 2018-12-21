@@ -34,4 +34,12 @@ class OrderData
   def commission_rate
     @commission_rate ||= partner[:effective_commission_rate]
   end
+
+  def inventory?
+    @order.line_items.all? do |li|
+      artwork = artworks[li.artwork_id]
+      inventory = li.edition_set_id.present? ? artwork[:edition_sets][li.edition_set_id][:inventory] : artwork[:inventory]
+      inventory[:count].positive? || inventory[:unlimited] == true
+    end
+  end
 end
