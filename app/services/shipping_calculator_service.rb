@@ -8,7 +8,6 @@ class ShippingCalculatorService
   def shipping_cents
     return 0 if @fulfillment_type == Order::PICKUP
 
-    validate_shipping_location!
     if domestic_shipping?
       @artwork[:domestic_shipping_fee_cents] || raise(Errors::ValidationError, :missing_domestic_shipping_fee)
     else
@@ -17,10 +16,6 @@ class ShippingCalculatorService
   end
 
   private
-
-  def validate_shipping_location!
-    raise Errors::ValidationError, :missing_country if @shipping_address&.country.blank?
-  end
 
   def domestic_shipping?
     @artwork[:location][:country].casecmp(@shipping_address.country).zero? &&

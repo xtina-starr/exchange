@@ -9,6 +9,8 @@ class OfferOrderTotals
   delegate :buyer_total_cents, to: :offer
 
   def initialize(offer)
+    raise NotImplementedError unless offer.order.mode == Order::OFFER
+
     @offer = offer
     @order = offer.order
   end

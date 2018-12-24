@@ -1,4 +1,21 @@
 module OfferService
+  def self.create_pending_offer(order, amount_cents:, from_id:, from_type:, creator_id:, responds_to: nil)
+    raise Errors::ValidationError, :cannot_offer unless order.mode == Order::OFFER
+    raise Errors::ValidationError, :invalid_amount_cents unless amount_cents.positive?
+
+    offer_totals = OfferTotals.new(order, amount_cents)
+    order.offers.create!(
+      amount_cents: amount_cents,
+      from_id: from_id,
+      from_type: from_type,
+      creator_id: creator_id,
+      responds_to: responds_to,
+      shipping_total_cents: offer_totals.shipping_total_cents,
+      tax_total_cents: offer_totals.tax_total_cents,
+      should_remit_sales_tax: offer_totals.should_remit_sales_tax
+    )
+  end
+
   def self.submit_order_with_offer(offer)
     order = offer.order
     validate_order_submission!(order)
@@ -11,24 +28,10 @@ module OfferService
     ReminderFollowUpJob.set(wait_until: order.state_expires_at - 2.hours).perform_later(order.id, order.state)
   end
 
-  def self.create_pending_offer(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
-    order = responds_to.order
-    raise Errors::ValidationError, :invalid_amount_cents unless amount_cents.positive?
+  def self.counter(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
     raise Errors::ValidationError, :not_last_offer unless responds_to.last_offer?
-    raise Errors::ValidationError, :invalid_state unless order.state == Order::SUBMITTED
 
-    offer_totals = OfferTotals.new(order, amount_cents)
-
-    order.offers.create!(
-      amount_cents: amount_cents,
-      from_id: from_id,
-      from_type: from_type,
-      creator_id: creator_id,
-      responds_to: responds_to,
-      shipping_total_cents: offer_totals.shipping_total_cents,
-      tax_total_cents: offer_totals.tax_total_cents,
-      should_remit_sales_tax: offer_totals.should_remit_sales_tax
-    )
+    create_pending_offer(responds_to.order, amount_cents: amount_cents, from_id: from_id, from_type: from_type, creator_id: creator_id, responds_to: responds_to)
   end
 
   def self.submit_pending_offer(offer)
