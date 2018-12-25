@@ -79,13 +79,10 @@ describe Offers::AcceptOfferService, type: :services do
         expect(dd_statsd).to have_received(:increment).with('order.approve')
       end
 
-      it 'queues a PostOrderNotificationJob with the current user id with the approved action' do
-        allow(PostOrderNotificationJob).to receive(:perform_later)
-
+      it 'queues a event with the current user id with the approved action' do
+        expect(OrderEvent).to receive(:delay_post)
+          .with(order, Order::APPROVED, current_user_id)
         call_service
-
-        expect(PostOrderNotificationJob).to have_received(:perform_later)
-          .with(order.id, Order::APPROVED, current_user_id)
       end
 
       describe 'Stripe call' do
@@ -132,12 +129,10 @@ describe Offers::AcceptOfferService, type: :services do
       end
 
       it 'does not queue a PostOrderNotificationJob' do
-        allow(PostOrderNotificationJob).to receive(:perform_later)
+        expect(OrderEvent).to_not receive(:delay_post)
+          .with(order.id, Order::APPROVED, current_user_id)
 
         expect { call_service }.to raise_error(Errors::ValidationError)
-
-        expect(PostOrderNotificationJob).to_not have_received(:perform_later)
-          .with(order.id, Order::APPROVED, current_user_id)
       end
     end
 

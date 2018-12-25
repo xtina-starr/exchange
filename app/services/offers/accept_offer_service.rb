@@ -20,7 +20,7 @@ module Offers
 
     def post_process!
       super
-      PostOrderNotificationJob.perform_later(@order.id, Order::APPROVED, @user_id)
+      OrderEvent.delay_post(@order, Order::APPROVED, @user_id)
     end
   end
 end

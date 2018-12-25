@@ -49,7 +49,7 @@ RSpec.shared_examples 'rejecting an offer' do
 
   context 'with proper permission' do
     it 'rejects the order' do
-      expect(PostOrderNotificationJob).to receive(:perform_later).with(order.id, Order::CANCELED, 'user-id')
+      expect(OrderEvent).to receive(:delay_post).with(order, Order::CANCELED, 'user-id')
       expect do
         client.execute(mutation, input)
       end.to change { order.reload.state }.from(Order::SUBMITTED).to(Order::CANCELED)

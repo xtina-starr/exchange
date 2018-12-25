@@ -144,7 +144,7 @@ describe Offers::SubmitOrderService, type: :services do
         allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
         expect(Exchange).to receive_message_chain(:dogstatsd, :increment).with('order.submit')
-        expect(PostOrderNotificationJob).to receive(:perform_later).once.with(order.id, Order::SUBMITTED, user_id)
+        expect(OrderEvent).to receive(:delay_post).once.with(order, Order::SUBMITTED, user_id)
       end
       it 'submits the offer' do
         expect do

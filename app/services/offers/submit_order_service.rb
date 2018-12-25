@@ -28,7 +28,7 @@ module Offers
 
     def post_process
       Exchange.dogstatsd.increment 'order.submit'
-      PostOrderNotificationJob.perform_later(@order.id, Order::SUBMITTED, @user_id)
+      OrderEvent.delay_post(@order, Order::SUBMITTED, @user_id)
       OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
       ReminderFollowUpJob.set(wait_until: @order.state_expires_at - 2.hours).perform_later(@order.id, @order.state)
     end

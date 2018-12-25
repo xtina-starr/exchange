@@ -103,7 +103,7 @@ describe Api::GraphqlController, type: :request do
 
           it 'queues a job for posting events' do
             client.execute(mutation, confirm_pickup_input)
-            expect(PostOrderNotificationJob).to have_been_enqueued
+            expect(PostEventJob).to have_been_enqueued.with(kind_of(String), 'order.fulfilled')
           end
         end
       end

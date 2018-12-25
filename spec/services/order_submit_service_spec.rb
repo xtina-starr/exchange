@@ -126,7 +126,7 @@ describe OrderSubmitService, type: :services do
         end
 
         it 'queues a job for posting event' do
-          expect(PostOrderNotificationJob).to have_been_enqueued
+          expect(PostEventJob).to have_been_enqueued.with(kind_of(String), 'order.submitted')
         end
 
         it 'does not queue a job for posting transaction event' do

@@ -16,7 +16,7 @@ module OrderService
         li.line_item_fulfillments.create!(fulfillment_id: fulfillment.id)
       end
     end
-    PostOrderNotificationJob.perform_later(order.id, Order::FULFILLED, user_id)
+    OrderEvent.delay_post(order, Order::FULFILLED, user_id)
     order
   end
 
@@ -24,7 +24,7 @@ module OrderService
     raise Errors::ValidationError, :wrong_fulfillment_type unless order.fulfillment_type == Order::PICKUP
 
     order.fulfill!
-    PostOrderNotificationJob.perform_later(order.id, Order::FULFILLED, user_id)
+    OrderEvent.delay_post(order, Order::FULFILLED, user_id)
     order
   end
 
