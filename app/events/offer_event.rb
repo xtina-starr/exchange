@@ -10,6 +10,11 @@ class OfferEvent < Events::BaseEvent
     Artsy::EventService.post_event(topic: TOPIC, event: event)
   end
 
+  def self.delay_post(offer, action)
+    event = new(user: offer.creator_id, action: action, model: offer)
+    PostEventJob.perform_later(event.to_json, event.routing_key)
+  end
+
   def subject
     {
       id: @subject

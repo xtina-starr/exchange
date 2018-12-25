@@ -348,7 +348,7 @@ describe OfferService, type: :services do
 
       it 'queues job for posting notification' do
         call_service
-        expect(PostOfferNotificationJob).to have_been_enqueued
+        expect(PostEventJob).to have_been_enqueued
       end
       it 'queues job for order follow up' do
         call_service
