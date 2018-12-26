@@ -67,7 +67,7 @@ describe OfferService, type: :services do
     describe 'failed process' do
       before do
         order.update!(last_offer: offer)
-        expect(PostOrderNotificationJob).not_to receive(:perform_later)
+        expect(OfferEvent).not_to receive(:delay_post)
         expect(OrderFollowUpJob).not_to receive(:perform_later)
         expect(OfferRespondReminderJob).not_to receive(:perform_later)
       end
@@ -178,8 +178,8 @@ describe OfferService, type: :services do
         allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
         allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
-        expect(PostOfferNotificationJob).to receive(:perform_later).once.with(offer.id, OfferEvent::SUBMITTED, buyer_id)
-        expect(PostOrderNotificationJob).to receive(:perform_later).once.with(order.id, Order::SUBMITTED, buyer_id)
+        expect(OrderEvent).to receive(:delay_post).once.with(order, Order::SUBMITTED, buyer_id)
+        expect(OfferEvent).to receive(:delay_post).once.with(offer, OfferEvent::SUBMITTED)
       end
       it 'submits the offer' do
         expect do

@@ -57,6 +57,7 @@ module OfferService
       submit_pending_offer(offer)
     end
 
+    OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
     Exchange.dogstatsd.increment 'order.submit'
     PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, user_id)
   end
