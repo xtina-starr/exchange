@@ -9,7 +9,7 @@ class CommitOrderService
     @user_id = user_id
     @transaction = nil
     @deducted_inventory = []
-    @order_data = OrderData.new(@order)
+    @order_helper = OrderHelper.new(@order)
   end
 
   def process!
@@ -61,10 +61,10 @@ class CommitOrderService
     raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? @action
     raise Errors::ValidationError, :missing_required_info unless @order.can_commit?
 
-    OrderValidator.validate_credit_card!(@order_data.credit_card)
-    OrderValidator.validate_commission_rate!(@order_data.partner)
+    OrderValidator.validate_credit_card!(@order_helper.credit_card)
+    OrderValidator.validate_commission_rate!(@order_helper.partner)
 
-    OrderTotalUpdaterService.new(order, @order_data.partner[:effective_commission_rate]).update_totals!
+    OrderTotalUpdaterService.new(order, @order_helper.partner[:effective_commission_rate]).update_totals!
   end
 
   def post_process!
@@ -78,9 +78,9 @@ class CommitOrderService
 
   def construct_charge_params
     {
-      credit_card: @order_data.credit_card,
+      credit_card: @order_helper.credit_card,
       buyer_amount: @order.buyer_total_cents,
-      merchant_account: @order_data.merchant_account,
+      merchant_account: @order_helper.merchant_account,
       seller_amount: @order.seller_total_cents,
       currency_code: @order.currency_code,
       metadata: charge_metadata,
@@ -89,7 +89,7 @@ class CommitOrderService
   end
 
   def charge_description
-    partner_name = (@order_data.partner[:name] || '').parameterize[0...12].upcase
+    partner_name = (@order_helper.partner[:name] || '').parameterize[0...12].upcase
     "#{partner_name} via Artsy"
   end
 

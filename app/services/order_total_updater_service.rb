@@ -10,7 +10,7 @@ class OrderTotalUpdaterService
     return unless can_calculate?
 
     @order.with_lock do
-      @order.items_total_cents = @order.line_items.map(&:total_amount_cents).sum
+      @order.items_total_cents = @order.line_items.map(&:total_list_price_cents).sum
       if @order.items_total_cents.present?
         @order.buyer_total_cents = @order.items_total_cents + @order.shipping_total_cents.to_i + @order.tax_total_cents.to_i
         if @commission_rate.present?
@@ -27,10 +27,9 @@ class OrderTotalUpdaterService
   private
 
   def can_calculate?
-    case @order.mode
-    when Order::BUY then @order.line_items.all? { |li| li.list_price_cents.present? }
-    when Order::OFFER then @order.last_offer.present?
-    end
+    return unless @order.mode == Order::BUY
+
+    @order.line_items.present? && @order.line_items.all? { |li| li.list_price_cents.present? }
   end
 
   def calculate_commission_cents
@@ -40,7 +39,7 @@ class OrderTotalUpdaterService
 
   def set_commission_on_line_items
     @order.line_items.each do |li|
-      li.update!(commission_fee_cents: li.total_amount_cents * @commission_rate)
+      li.update!(commission_fee_cents: li.total_list_price_cents * @commission_rate)
     end
   end
 
@@ -49,10 +48,6 @@ class OrderTotalUpdaterService
   end
 
   def calculate_transaction_fee
-    return 0 unless @order.buyer_total_cents.positive?
-
-    # This is based on Stripe US fee, it will be different for other countries
-    # https://stripe.com/us/pricing
-    (Money.new(@order.buyer_total_cents * 2.9 / 100, 'USD') + Money.new(30, 'USD')).cents
+    TransactionFeeCalculator.calculate(@order.buyer_total_cents)
   end
 end

@@ -21,8 +21,4 @@ class Types::OfferType < Types::BaseObject
       type: object.from_type
     )
   end
-
-  def buyer_total_cents
-    object.amount_cents + object.tax_total_cents + object.shipping_total_cents if object.tax_total_cents.present? && object.shipping_total_cents.present?
-  end
 end

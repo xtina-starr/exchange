@@ -49,9 +49,12 @@ describe Offers::InitialOfferService, type: :services do
         expect(offer.from_id).to eq user_id
         expect(offer.from_type).to eq Order::USER
         expect(offer.creator_id).to eq user_id
+      end
+      it 'does not update order totals and state' do
+        service.process!
         expect(order.reload.state).to eq state
         expect(order.last_offer).to be_nil
-        expect(order.items_total_cents).to eq 0
+        expect(order.items_total_cents).to eq nil
       end
     end
   end

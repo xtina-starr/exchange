@@ -1,12 +1,24 @@
-class OrderData
+class OrderHelper
   def initialize(order)
     @order = order
+  end
+
+  def valid_artwork_version?
+    @order.line_items.all? { |li| order_helper.artworks[li[:artwork_id]][:current_version_id] == li[:artwork_version_id] }
+  end
+
+  def assert_credit_card
+    case order_helper.credit_card
+    when ->(cc) { cc[:external_id].blank? } then :credit_card_missing_external_id
+    when ->(cc) { cc.dig(:customer_account, :external_id).blank? } then :credit_card_missing_customer
+    when ->(cc) { cc[:deactivated_at].present? } then :credit_card_deactivated
+    end
   end
 
   def artworks
     @artworks ||= Hash[@order.line_items.pluck(:artwork_id).uniq.map do |artwork_id|
       artwork = Gravity.get_artwork(artwork_id)
-      OrderValidator.validate_artwork!(artwork)
+      validate_artwork!(artwork)
       [artwork[:_id], artwork]
     end]
   end
@@ -41,5 +53,16 @@ class OrderData
       inventory = li.edition_set_id.present? ? artwork[:edition_sets][li.edition_set_id][:inventory] : artwork[:inventory]
       inventory[:count].positive? || inventory[:unlimited] == true
     end
+  end
+
+  private
+
+  def order_helper
+    @order_helper ||= OrderHelper.new(@order)
+  end
+
+  def validate_artwork!(artwork)
+    raise Errors::ValidationError, :unknown_artwork unless artwork
+    raise Errors::ValidationError, :missing_artwork_location if artwork[:location].blank?
   end
 end

@@ -170,7 +170,7 @@ describe Api::GraphqlController, type: :request do
           expect(last_offer.creator_id).to eq(buyer_id)
           expect(last_offer.from_id).to eq(order_seller_id)
           # should update order amounts when offer is submitted
-          expect(order.items_total_cents).to eq(400000)
+          expect(order.items_total_cents).to eq(10000)
         end.to change { order.reload.offers.count }.from(1).to(2)
       end
     end

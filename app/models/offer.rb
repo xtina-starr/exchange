@@ -17,6 +17,12 @@ class Offer < ApplicationRecord
     submitted_at.present?
   end
 
+  def buyer_total_cents
+    return unless shipping_total_cents.present? && tax_total_cents.present?
+
+    amount_cents + shipping_total_cents + tax_total_cents
+  end
+
   def from_participant
     if from_id == order.seller_id && from_type == order.seller_type
       Order::SELLER

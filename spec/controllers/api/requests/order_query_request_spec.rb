@@ -30,7 +30,7 @@ describe Api::GraphqlController, type: :request do
         state_reason: state == Order::CANCELED ? 'seller_lapsed' : nil
       )
     end
-    let!(:user2_order1) { Fabricate(:order, seller_id: second_seller_id, seller_type: 'gallery', buyer_id: second_user, buyer_type: 'user') }
+    let!(:user2_order1) { Fabricate(:order, seller_id: second_seller_id, seller_type: 'gallery', buyer_id: second_user, buyer_type: 'user', items_total_cents: 0) }
 
     let(:query) do
       <<-GRAPHQL
@@ -383,7 +383,7 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.seller.id).to eq seller_id
         expect(result.data.order.currency_code).to eq 'USD'
         expect(result.data.order.state).to eq 'PENDING'
-        expect(result.data.order.items_total_cents).to eq 0
+        expect(result.data.order.items_total_cents).to be_nil
       end
     end
   end
