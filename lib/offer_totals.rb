@@ -11,7 +11,7 @@ class OfferTotals
   def shipping_total_cents
     return unless @order.shipping_info?
 
-    @shipping_total_cents ||= ShippingCalculatorService.new(artwork, @order.fulfillment_type, @order.shipping_address).shipping_cents
+    @shipping_total_cents ||= ShippingHelper.calculate(artwork, @order.fulfillment_type, @order.shipping_address)
   end
 
   private

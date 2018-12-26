@@ -110,7 +110,7 @@ describe OrderShippingService, type: :services do
         expect(Gravity).to receive_messages(fetch_partner: partner, fetch_partner_locations: [], get_artwork: artwork)
         expect(Tax::CalculatorService).to receive(:new)
           .exactly(line_items.count).times.and_return(tax_calculator)
-        allow_any_instance_of(ShippingCalculatorService).to receive(:shipping_cents).and_return(0)
+        allow(ShippingHelper).to receive(:calculate).and_return(0)
         line_items
         service.process!
       end
