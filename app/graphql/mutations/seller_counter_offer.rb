@@ -11,7 +11,7 @@ class Mutations::SellerCounterOffer < Mutations::BaseMutation
     validate_request!(offer)
     order = offer.order
 
-    pending_offer = OfferService.create_pending_offer(offer, amount_cents: amount_cents, from_type: order.seller_type, from_id: order.seller_id, creator_id: current_user_id)
+    pending_offer = OfferService.counter(offer, amount_cents: amount_cents, from_type: order.seller_type, from_id: order.seller_id, creator_id: current_user_id)
 
     OfferService.submit_pending_offer(pending_offer)
     { order_or_error: { order: order.reload } }

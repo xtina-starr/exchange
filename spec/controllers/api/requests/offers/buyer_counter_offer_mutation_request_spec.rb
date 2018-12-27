@@ -10,7 +10,7 @@ describe Api::GraphqlController, type: :request do
     let(:artwork_location) { { country: 'US' } }
     let(:artwork) { { _id: 'a-1', current_version_id: '1', location: artwork_location, domestic_shipping_fee_cents: 1000 } }
     let(:order_state) { Order::SUBMITTED }
-    let!(:order) { Fabricate(:order, state: order_state, seller_id: order_seller_id, buyer_id: buyer_id, items_total_cents: 421, **shipping_info) }
+    let!(:order) { Fabricate(:order, mode: Order::OFFER, state: order_state, seller_id: order_seller_id, buyer_id: buyer_id, items_total_cents: 421, **shipping_info) }
     let!(:seller_offer) { Fabricate(:offer, order: order, amount_cents: 10000, from_id: order_seller_id, from_type: 'gallery', submitted_at: Time.now.utc) }
     let(:line_item_artwork_version) { artwork[:current_version_id] }
     let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: artwork[:_id], artwork_version_id: line_item_artwork_version, quantity: 2) }

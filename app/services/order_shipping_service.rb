@@ -33,6 +33,7 @@ class OrderShippingService
   def pre_process!
     raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
     raise Errors::ValidationError, :invalid_state if @pending_offer.present? && @pending_offer.submitted_at?
+    raise Errors::ValidationError, :missing_country if @fulfillment_type == Order::SHIP && @shipping_address&.country.blank?
   end
 
   def set_offer_totals!

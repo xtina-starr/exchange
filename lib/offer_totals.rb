@@ -2,22 +2,34 @@ class OfferTotals
   # Given an Order and amount of offer, it calculates tax, shipping based on offer amount
   delegate :tax_total_cents, to: :tax_data
   delegate :should_remit_sales_tax, to: :tax_data
-  delegate :shipping_total_cents, to: :order_helper
 
   def initialize(order, offer_amount = nil)
     @offer_amount = offer_amount
     @order = order
   end
 
+  def shipping_total_cents
+    return unless @order.shipping_info?
+
+    @shipping_total_cents ||= ShippingCalculatorService.new(artwork, @order.fulfillment_type, @order.shipping_address).shipping_cents
+  end
+
   private
 
+  def artwork
+    @artwork ||= begin
+      artwork_id = @order.line_items.first.artwork_id # this is with assumption of Offer order only having one lineItem
+      order_helper.artworks[artwork_id]
+    end
+  end
+
   def artwork_location
-    artwork_id = @order.line_items.first.artwork_id # this is with assumption of Offer order only having one lineItem
-    artwork = order_helper.artworks[artwork_id]
     @artwork_location ||= Address.new(artwork[:location])
   end
 
   def tax_data
+    return OpenStruct.new(tax_total_cents: nil, should_remit_sales_tax: nil) unless @order.shipping_info?
+
     @tax_data ||= begin
       service = Tax::CalculatorService.new(
         @offer_amount,
@@ -25,7 +37,7 @@ class OfferTotals
         @order.line_items.first.quantity,
         @order.fulfillment_type,
         @order.shipping_address,
-        order_helper.shipping_total_cents,
+        shipping_total_cents,
         artwork_location,
         order_helper.seller_locations
       )

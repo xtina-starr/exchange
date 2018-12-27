@@ -11,7 +11,9 @@ describe OrderShippingService, type: :services do
       country: 'US',
       city: 'New York',
       region: 'NY',
-      postal_code: '10013'
+      postal_code: '10013',
+      phone_number: '123123',
+      name: 'Buyer Name'
     }
   end
   let(:non_continental_us_shipping) do
@@ -20,7 +22,9 @@ describe OrderShippingService, type: :services do
       country: 'US',
       city: 'Anchorage',
       region: 'AK',
-      postal_code: '99503'
+      postal_code: '99503',
+      phone_number: '123123',
+      name: 'Buyer Name'
     }
   end
   let(:international_shipping) do
@@ -30,7 +34,9 @@ describe OrderShippingService, type: :services do
       city: 'Whitechapel',
       region: 'London',
       postal_code: 'E1 8PY',
-      country: 'GB'
+      country: 'GB',
+      phone_number: '123123',
+      name: 'Buyer Name'
     }
   end
   let(:domestic_artwork_config) do
@@ -155,7 +161,7 @@ describe OrderShippingService, type: :services do
           end
 
           it 'sets tax_total_cents on pending offer from tax calculator' do
-            expect(pending_offer.tax_total_cents).to eq 3750 * line_items.count
+            expect(pending_offer.tax_total_cents).to eq 3750
           end
         end
 
