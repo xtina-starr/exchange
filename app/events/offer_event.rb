@@ -24,7 +24,7 @@ class OfferEvent < Events::BaseEvent
       from_id: @object.from_id,
       from_type: @object.from_type,
       creator_id: @object.creator_id,
-      responds_to_id: @object.responds_to_id,
+      in_response_to: in_response_to,
       shipping_total_cents: @object.shipping_total_cents,
       tax_total_cents: @object.tax_total_cents,
       order: order
@@ -50,6 +50,17 @@ class OfferEvent < Events::BaseEvent
       edition_set_id: line_item.edition_set_id,
       quantity: line_item.quantity,
       commission_fee_cents: line_item.commission_fee_cents
+    }
+  end
+
+  def in_response_to
+    return if @object.responds_to.blank?
+
+    {
+      id: @object.responds_to.id,
+      amount_cents: @object.responds_to.amount_cents,
+      created_at: @object.responds_to.created_at,
+      from_participant: @object.responds_to.from_participant
     }
   end
 end
