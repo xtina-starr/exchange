@@ -29,6 +29,7 @@ module OfferService
   end
 
   def self.counter(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
+    raise Errors::ValidationError, :invalid_state unless responds_to.order.state == Order::SUBMITTED
     raise Errors::ValidationError, :not_last_offer unless responds_to.last_offer?
 
     create_pending_offer(responds_to.order, amount_cents: amount_cents, from_id: from_id, from_type: from_type, creator_id: creator_id, responds_to: responds_to)
