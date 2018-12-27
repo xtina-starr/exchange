@@ -1,7 +1,6 @@
 class OfferEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
   ACTIONS = [
-    CREATED = 'created'.freeze,
     SUBMITTED = 'submitted'.freeze
   ].freeze
 
@@ -25,7 +24,7 @@ class OfferEvent < Events::BaseEvent
       from_id: @object.from_id,
       from_type: @object.from_type,
       creator_id: @object.creator_id,
-      responds_to: @object.responds_to_id,
+      responds_to_id: @object.responds_to_id,
       shipping_total_cents: @object.shipping_total_cents,
       tax_total_cents: @object.tax_total_cents,
       order: order
