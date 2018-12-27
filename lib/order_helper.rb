@@ -24,7 +24,7 @@ class OrderHelper
   end
 
   def shipping_total_cents
-    @shipping_total_cents ||= @order.line_items.map { |li| ShippingCalculatorService.new(artworks[li.artwork_id], @order.fulfillment_type, @order.shipping_address).shipping_cents }.sum
+    @shipping_total_cents ||= @order.line_items.map { |li| ShippingHelper.calculate(artworks[li.artwork_id], @order.fulfillment_type, @order.shipping_address) }.sum
   end
 
   def credit_card
