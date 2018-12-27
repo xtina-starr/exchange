@@ -36,7 +36,8 @@ describe OfferEvent, type: :events do
     )
   end
   let!(:line_item1) { Fabricate(:line_item, list_price_cents: 200, order: order, commission_fee_cents: 40) }
-  let(:offer) { Fabricate(:offer, order: order, from_id: order.buyer_id, from_type: Order::USER, submitted_at: Time.now.utc, amount_cents: 120) }
+  let(:old_offer) { Fabricate(:offer, order: order, from_id: order.seller_id, from_type: 'gallery', amount_cents: 240) }
+  let(:offer) { Fabricate(:offer, order: order, from_id: order.buyer_id, from_type: Order::USER, submitted_at: Time.now.utc, amount_cents: 120, responds_to: old_offer) }
 
   let(:expected_line_item_properties) do
     [
@@ -78,9 +79,14 @@ describe OfferEvent, type: :events do
       expect(event.properties[:from_id]).to eq offer.from_id
       expect(event.properties[:from_type]).to eq offer.from_type
       expect(event.properties[:creator_id]).to eq offer.creator_id
-      expect(event.properties[:responds_to]).to eq offer.responds_to_id
       expect(event.properties[:shipping_total_cents]).to eq offer.shipping_total_cents
       expect(event.properties[:tax_total_cents]).to eq offer.tax_total_cents
+    end
+    it 'includes in_response_to' do
+      in_response_to = event.properties[:in_response_to]
+      expect(in_response_to).not_to be_nil
+      expect(in_response_to[:id]).to eq old_offer.id
+      expect(in_response_to[:amount_cents]).to eq 240
     end
     describe '#order' do
       context 'without last_offer' do
