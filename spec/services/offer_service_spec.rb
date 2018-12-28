@@ -229,7 +229,7 @@ describe OfferService, type: :services do
       end
       it 'adds a new offer to order and does not updates last offer' do
         expect_any_instance_of(OfferTotals).to receive_messages(shipping_total_cents: 100, tax_total_cents: 200, should_remit_sales_tax: false)
-        OfferService.counter(current_offer, amount_cents: 20000, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type)
+        OfferService.create_pending_counter_offer(current_offer, amount_cents: 20000, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type)
         expect(order.offers.count).to eq(2)
         new_offer = order.offers.reject { |offer| offer.id == order.last_offer.id }.first
         expect(new_offer.amount_cents).to eq(20000)
@@ -240,14 +240,14 @@ describe OfferService, type: :services do
         expect(new_offer.submitted_at).to be_nil
       end
       it 'raises error for 0  offer amount' do
-        expect { OfferService.counter(current_offer, amount_cents: 0, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
+        expect { OfferService.create_pending_counter_offer(current_offer, amount_cents: 0, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
           .to raise_error do |e|
             expect(e.type).to eq :validation
             expect(e.code).to eq :invalid_amount_cents
           end
       end
       it 'raises error for negative offer amount' do
-        expect { OfferService.counter(current_offer, amount_cents: -10, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
+        expect { OfferService.create_pending_counter_offer(current_offer, amount_cents: -10, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
           .to raise_error do |e|
             expect(e.type).to eq :validation
             expect(e.code).to eq :invalid_amount_cents
@@ -263,12 +263,12 @@ describe OfferService, type: :services do
       end
 
       it 'raises a validation error' do
-        expect {  OfferService.counter(current_offer, amount_cents: 20000, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
+        expect {  OfferService.create_pending_counter_offer(current_offer, amount_cents: 20000, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
           .to raise_error(Errors::ValidationError)
       end
 
       it 'does not change order and offers' do
-        expect {  OfferService.counter(current_offer, amount_cents: 20000, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }.to raise_error(Errors::ValidationError)
+        expect {  OfferService.create_pending_counter_offer(current_offer, amount_cents: 20000, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }.to raise_error(Errors::ValidationError)
 
         expect(order.reload.state).to eq(Order::SUBMITTED)
         expect(order.reload.offers.count).to eq(2)
@@ -363,7 +363,7 @@ describe OfferService, type: :services do
 
       it 'does not instrument' do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.counter')
+        allow(dd_statsd).to receive(:increment).with('order.create_pending_counter_offer')
 
         expect { call_service }.to raise_error(Errors::ValidationError)
 
@@ -380,7 +380,7 @@ describe OfferService, type: :services do
 
       it 'does not instrument' do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.counter')
+        allow(dd_statsd).to receive(:increment).with('order.create_pending_counter_offer')
 
         expect { call_service }.to raise_error(Errors::ValidationError)
 

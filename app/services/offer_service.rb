@@ -16,19 +16,7 @@ module OfferService
     )
   end
 
-  def self.submit_order_with_offer(offer)
-    order = offer.order
-    validate_order_submission!(order)
-
-    order.submit! do
-      submit_pending_offer(offer)
-    end
-
-    Exchange.dogstatsd.increment 'order.submit'
-    ReminderFollowUpJob.set(wait_until: order.state_expires_at - 2.hours).perform_later(order.id, order.state)
-  end
-
-  def self.counter(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
+  def self.create_pending_counter_offer(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
     raise Errors::ValidationError, :invalid_state unless responds_to.order.state == Order::SUBMITTED
     raise Errors::ValidationError, :not_last_offer unless responds_to.last_offer?
 
@@ -61,6 +49,18 @@ module OfferService
     end
     post_submit_offer(offer)
     offer
+  end
+
+  def self.submit_order_with_offer(offer)
+    order = offer.order
+    validate_order_submission!(order)
+
+    order.submit! do
+      submit_pending_offer(offer)
+    end
+
+    Exchange.dogstatsd.increment 'order.submit'
+    ReminderFollowUpJob.set(wait_until: order.state_expires_at - 2.hours).perform_later(order.id, order.state)
   end
 
   class << self
