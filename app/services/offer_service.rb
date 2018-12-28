@@ -23,6 +23,18 @@ module OfferService
     create_pending_offer(responds_to.order, amount_cents: amount_cents, from_id: from_id, from_type: from_type, creator_id: creator_id, responds_to: responds_to)
   end
 
+  def self.submit_order_with_offer(offer, user_id)
+    order = offer.order
+    validate_order_submission!(order)
+
+    order.submit! do
+      submit_pending_offer(offer)
+    end
+
+    Exchange.dogstatsd.increment 'order.submit'
+    PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, user_id)
+  end
+
   def self.submit_pending_offer(offer)
     order = offer.order
     order_helper = OrderHelper.new(order)
@@ -51,26 +63,30 @@ module OfferService
     offer
   end
 
-  def self.submit_order_with_offer(offer, user_id)
-    order = offer.order
-    validate_order_submission!(order)
-
-    order.submit! do
-      submit_pending_offer(offer)
-    end
-
-    Exchange.dogstatsd.increment 'order.submit'
-    PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, user_id)
-    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
-  end
-
   class << self
     private
 
     def post_submit_offer(offer)
       OrderFollowUpJob.set(wait_until: offer.order.state_expires_at).perform_later(offer.order.id, offer.order.state)
       PostOfferNotificationJob.perform_later(offer.id, OfferEvent::SUBMITTED, offer.creator_id)
+      schedule_reminder(offer)
       Exchange.dogstatsd.increment 'offer.submit'
+    end
+
+    def schedule_reminder(offer)
+      waiting_for = offer.awaiting_response_from
+      order = offer.order
+
+      if waiting_for == Order::SELLER && offer.responds_to.blank?
+        # schedule offer reminder job for seller
+        ReminderFollowUpJob.set(wait_until: order.state_expires_at - 2.hours).perform_later(order.id, order.state)
+      elsif waiting_for == Order::SELLER && offer.responds_to.present?
+        # schedule counteroffer reminder job for seller
+        ReminderFollowUpJob.set(wait_until: order.state_expires_at - 2.hours)
+                           .perform_later(order.id, order.state)
+      elsif waiting_for == Order::BUYER
+        # schedule counteroffer reminder job for buyer
+      end
     end
 
     def validate_order_submission!(order)

@@ -154,6 +154,11 @@ describe Api::GraphqlController, type: :request do
       before do
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{order_seller_id}/all").and_return(gravity_v1_partner)
         allow(Adapters::GravityV1).to receive(:get).with("/artwork/#{line_item.artwork_id}").and_return(artwork)
+        order.update!(credit_card_id: '4242')
+        allow(Gravity).to receive(:get_credit_card).with('4242').and_return(
+          external_id: 'bar',
+          customer_account: { external_id: 'foo' }
+        )
       end
       it 'counters the order' do
         expect do

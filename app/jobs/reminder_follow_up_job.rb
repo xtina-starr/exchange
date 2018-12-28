@@ -8,7 +8,7 @@ class ReminderFollowUpJob < ApplicationJob
     order = Order.find(order_id)
     return unless order.state == state && Time.now <= order.state_expires_at
 
-    case order.state
+    case state
     when Order::SUBMITTED
       OrderEvent.post(order, Order::REMINDER_EVENT_VERB[:pending_approval], nil)
 

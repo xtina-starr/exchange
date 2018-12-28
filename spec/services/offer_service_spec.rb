@@ -38,7 +38,7 @@ describe OfferService, type: :services do
     end
   end
 
-  describe '#submit_order_with_offer!' do
+  describe '#submit_order_with_offer' do
     let(:buyer_id) { 'user-id' }
     let(:seller_id) { 'partner-1' }
     let(:order_mode) { Order::OFFER }
@@ -61,7 +61,7 @@ describe OfferService, type: :services do
     let(:credit_card_id) { 'grav_c_id1' }
     let(:credit_card) { { external_id: 'cc-1', customer_account: { external_id: 'cus-1' }, deactivated_at: nil } }
     let(:order) { Fabricate(:order, buyer_id: buyer_id, seller_id: seller_id, mode: order_mode, state: order_state, credit_card_id: credit_card_id, **shipping_info) }
-    let!(:offer) { Fabricate(:offer, order: order, submitted_at: offer_submitted_at, amount_cents: 1000_00, tax_total_cents: 20_00, shipping_total_cents: 30_00, creator_id: buyer_id) }
+    let!(:offer) { Fabricate(:offer, order: order, submitted_at: offer_submitted_at, amount_cents: 1000_00, tax_total_cents: 20_00, shipping_total_cents: 30_00, creator_id: buyer_id, from_id: buyer_id) }
     let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: artwork[:_id], artwork_version_id: line_item_artwork_version, quantity: 2) }
     let(:call_service) { OfferService.submit_order_with_offer(offer, buyer_id) }
     describe 'failed process' do
@@ -123,7 +123,7 @@ describe OfferService, type: :services do
             allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
             allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
           end
-          it 'raises cant_submit error' do
+          it 'raises invalid_state error' do
             expect { call_service }.to raise_error do |e|
               expect(e.type).to eq :validation
               expect(e.code).to eq :invalid_state
@@ -192,7 +192,7 @@ describe OfferService, type: :services do
       it 'queues related jobs' do
         call_service
         expect(OrderFollowUpJob).to have_been_enqueued
-        expect(ReminderFollowUpJob).to have_been_enqueued
+        expect(ReminderFollowUpJob).to have_been_enqueued.with(order.id, Order::SUBMITTED)
       end
 
       it 'updates orders last_offer' do
@@ -211,7 +211,7 @@ describe OfferService, type: :services do
     end
   end
 
-  describe '#counter' do
+  describe '#create_pending_counter_offer' do
     let(:offer_creator_id) { 'user-id' }
     let(:offer_from_id) { 'partner-id' }
     let(:offer_from_type) { Order::PARTNER }
@@ -277,11 +277,11 @@ describe OfferService, type: :services do
     end
   end
 
-  describe '#submit_new_offer!' do
+  describe '#submit_pending_offer' do
     let(:artwork) { gravity_v1_artwork }
     let(:offer_from_id) { 'user-id' }
     let(:order_seller_id) { 'partner-1' }
-    let(:order) { Fabricate(:order, mode: Order::OFFER, state: Order::SUBMITTED, seller_id: order_seller_id) }
+    let(:order) { Fabricate(:order, mode: Order::OFFER, state: Order::SUBMITTED, buyer_id: offer_from_id, seller_id: order_seller_id) }
     let(:line_item) { Fabricate(:line_item, order: order, artwork_id: artwork[:_id]) }
     let(:current_offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
     let(:new_offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 50_00, responds_to: current_offer, from_id: offer_from_id) }
@@ -353,6 +353,16 @@ describe OfferService, type: :services do
       it 'queues job for order follow up' do
         call_service
         expect(OrderFollowUpJob).to have_been_enqueued
+      end
+      context 'reminders' do
+        it 'queues order submission reminder' do
+          call_service
+          expect(ReminderFollowUpJob).to have_been_enqueued.with(order.id, Order::SUBMITTED)
+        end
+        it 'queues counteroffer reminder' do
+          call_service
+          expect(ReminderFollowUpJob).to have_been_enqueued.with(order.id, Order::SUBMITTED)
+        end
       end
     end
 
