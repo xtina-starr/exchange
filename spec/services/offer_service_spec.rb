@@ -178,7 +178,7 @@ describe OfferService, type: :services do
         allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
         allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
-        expect(PostOrderNotificationJob).to receive(:perform_later).once.with(order.id, Order::SUBMITTED, buyer_id)
+        expect(PostOfferNotificationJob).to receive(:perform_later).once.with(offer.id, OfferEvent::SUBMITTED, buyer_id)
       end
       it 'submits the offer' do
         expect do
@@ -347,7 +347,7 @@ describe OfferService, type: :services do
 
       it 'queues job for posting notification' do
         call_service
-        expect(PostOrderNotificationJob).to have_been_enqueued
+        expect(PostOfferNotificationJob).to have_been_enqueued
       end
       it 'queues job for order follow up' do
         call_service
