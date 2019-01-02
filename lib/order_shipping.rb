@@ -33,10 +33,11 @@ class OrderShipping
   private
 
   def update_totals!
-    pending_offer? ? set_offer_totals! : set_order_totals!
+    @order.mode == Order::OFFER ? set_offer_totals! : set_order_totals!
   end
 
   def set_offer_totals!
+    return unless pending_offer?
     offer_totals = OfferTotals.new(@order, pending_offer.amount_cents)
     pending_offer.update!(
       shipping_total_cents: offer_totals.shipping_total_cents,
