@@ -232,6 +232,18 @@ ActiveAdmin.register Order do
 
     end
 
+    if order.mode == Order::OFFER
+      panel "Negotiation (#{order.offers.submitted.count})" do
+        table_for(order.offers.order(created_at: :desc)) do
+          column 'Date', :created_at
+          column 'Source', :from_participant
+          column 'Amount' do |offer|
+            offer.amount_cents.to_f/100
+          end
+        end
+      end
+    end
+
     panel "Transaction" do
 
       if order.credit_card_id.present?
@@ -249,27 +261,31 @@ ActiveAdmin.register Order do
         end
       end
 
+      list_price = order.total_list_price_cents.to_f/100
       items_total = order.total_list_price_cents.to_f/100
       shipping_total = order.shipping_total_cents.to_f/100
       tax_total = order.tax_total_cents.to_f/100
-      sub_total = items_total + shipping_total + tax_total
+      buyer_total = order.buyer_total_cents.to_f/100
 
       transaction_fee = order.transaction_fee_cents.to_f/100
       commission_fee = order.commission_fee_cents.to_f/100
-      seller_payout = sub_total - transaction_fee - commission_fee
+      seller_payout = order.seller_total_cents.to_f/100
 
       attributes_table_for order do
-        row "Artwork List Price" do |order|
-          number_to_currency items_total
+        row "Artwork List Price" do |_order|
+          number_to_currency list_price
         end
+        row "Accepted Offer" do |_order|
+          number_to_currency items_total
+        end if order.mode == Order::OFFER
         row "Shipping" do |order|
           number_to_currency shipping_total
         end
         row "Sales Tax" do |order|
           number_to_currency tax_total
         end
-        row "Subtotal" do |order|
-          number_to_currency(sub_total)
+        row "Buyer Paid" do |order|
+          number_to_currency buyer_total
         end
         row "Processing Fee" do |order|
           number_to_currency(-transaction_fee, negative_format: "( %u%n )")
