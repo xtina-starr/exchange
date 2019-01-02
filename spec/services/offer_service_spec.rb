@@ -398,11 +398,33 @@ describe OfferService, type: :services do
       end
     end
 
-    context 'without unlimited inventory' do
+    context 'with unlimited inventory' do
       let(:artwork) { gravity_v1_artwork(inventory: { count: 0, unlimited: true }) }
-      it 'raises a processing error' do
+      it 'submits the offer' do
         call_service
         expect(new_offer.submitted_at).not_to be_nil
+      end
+    end
+
+    context 'with order on edition set' do
+      before do
+        line_item.update!(edition_set_id: 'edition-set-id')
+      end
+      it 'submits the offer' do
+        call_service
+        expect(new_offer.submitted_at).not_to be_nil
+      end
+    end
+
+    context 'with order on wrong edition set' do
+      before do
+        line_item.update!(edition_set_id: 'random-edition-set')
+      end
+      it 'submits the offer' do
+        expect { call_service }.to raise_error do |e|
+          expect(e.type).to eq :validation
+          expect(e.code).to eq :unknown_edition_set
+        end
       end
     end
   end
