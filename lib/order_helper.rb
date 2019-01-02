@@ -50,7 +50,14 @@ class OrderHelper
   def inventory?
     @order.line_items.all? do |li|
       artwork = artworks[li.artwork_id]
-      inventory = li.edition_set_id.present? ? artwork[:edition_sets][li.edition_set_id][:inventory] : artwork[:inventory]
+      inventory = if li.edition_set_id.present?
+                    edition_set = artwork[:edition_sets].detect { |a| a[:id] == li.edition_set_id }
+                    raise Errors::ValidationError, :unknown_edition_set unless edition_set
+
+                    edition_set[:inventory]
+                  else
+                    artwork[:inventory]
+                  end
       inventory[:count].positive? || inventory[:unlimited] == true
     end
   end

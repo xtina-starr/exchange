@@ -172,7 +172,7 @@ def gravity_v1_artwork(options={})
     attribution_class: 'limited edition',
     domestic_shipping_fee_cents: 100_00,
     international_shipping_fee_cents: 500_00
-  }.merge(options).with_indifferent_access
+  }.merge(options)
 end
 
 def gravity_v1_partner(options={})
@@ -207,5 +207,5 @@ def gravity_v1_partner(options={})
     payments_enabled: true,
     commission_rate: 0.7,
     effective_commission_rate: 0.8,
-  }.merge(options).with_indifferent_access
+  }.merge(options)
 end
