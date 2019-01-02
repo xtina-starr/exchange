@@ -4,10 +4,11 @@ ActiveAdmin.register Order do
   config.sort_order = 'state_updated_at_desc'
 
   scope :all
-  scope('Active Orders', default: true) { |scope| scope.active }
-  scope('Pickup Orders') { |scope| scope.where(state: [ Order::APPROVED, Order::FULFILLED, Order::SUBMITTED ], fulfillment_type: Order::PICKUP ) }
+  scope('Submitted', default: true) { |scope| scope.where(state: Order::SUBMITTED) }
+  scope('Active', default: true) { |scope| scope.active }
+  scope('Pickup') { |scope| scope.where(state: [ Order::APPROVED, Order::FULFILLED, Order::SUBMITTED ], fulfillment_type: Order::PICKUP ) }
   scope('Fulfillment Overdue') { |scope| scope.approved.where('state_expires_at < ?', Time.now) }
-  scope('Pending & Abandoned Orders') { |scope| scope.where(state: [ Order::ABANDONED, Order::PENDING ]) }
+  scope('Completed') { |scope| scope.where(state: Order::FULFILLED) }
   scope('Case Closed') { |scope| scope.by_last_admin_note(AdminNote::TYPES[:case_closed]) }
   scope('Case Still Open') { |scope| scope.by_last_admin_note(AdminNote::TYPES.except(:case_closed).values) }
 
@@ -25,13 +26,15 @@ ActiveAdmin.register Order do
     column :code do |order|
       link_to order.code, admin_order_path(order.id)
     end
-    column :state
-    column :fulfillment_type
+    column 'Fulfillment', :fulfillment_type
     column 'Last Admin Action' do |order|
       order.last_admin_note&.note_type&.humanize
     end
-    column 'Submitted At', :created_at
-    column 'Last Updated At', :updated_at
+    column :mode
+    column :state
+    column 'At' do |order|
+      order.state_updated_at.strftime('%b %e')
+    end
     column :state_expires_at
     column 'Items Total' do |order|
        number_to_currency(order.items_total_cents.to_f/100)
