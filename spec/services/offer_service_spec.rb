@@ -279,12 +279,12 @@ describe OfferService, type: :services do
 
   describe '#submit_pending_offer' do
     let(:artwork) { gravity_v1_artwork }
-    let(:offer_from_id) { 'user-id' }
+    let(:buyer_id) { 'user-id' }
     let(:order_seller_id) { 'partner-1' }
-    let(:order) { Fabricate(:order, mode: Order::OFFER, state: Order::SUBMITTED, buyer_id: offer_from_id, seller_id: order_seller_id) }
+    let(:order) { Fabricate(:order, mode: Order::OFFER, state: Order::SUBMITTED, seller_id: order_seller_id, seller_type: 'gallery', buyer_id: buyer_id, buyer_type: Order::USER) }
     let(:line_item) { Fabricate(:line_item, order: order, artwork_id: artwork[:_id]) }
-    let(:current_offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
-    let(:new_offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 50_00, responds_to: current_offer, from_id: offer_from_id) }
+    let(:current_offer) { Fabricate(:offer, order: order, from_id: order.seller_id, from_type: order.seller_type, amount_cents: 10000, submitted_at: 1.day.ago) }
+    let(:new_offer) { Fabricate(:offer, order: order, from_id: order.buyer_id, from_type: order.buyer_type, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 50_00, responds_to: current_offer) }
     let(:call_service) { OfferService.submit_pending_offer(new_offer) }
 
     before do
@@ -363,7 +363,7 @@ describe OfferService, type: :services do
     end
 
     context 'attempting to submit already submitted offer' do
-      let(:new_offer) { Fabricate(:offer, order: order, amount_cents: 20000, responds_to: current_offer, submitted_at: 1.minute.ago, from_id: offer_from_id) }
+      let(:new_offer) { Fabricate(:offer, order: order, amount_cents: 20000, responds_to: current_offer, submitted_at: 1.minute.ago, from_id: buyer_id, from_type: Order::USER) }
       it 'raises a validation error' do
         expect {  call_service }.to raise_error(Errors::ValidationError)
       end

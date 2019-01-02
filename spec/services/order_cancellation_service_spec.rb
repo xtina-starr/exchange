@@ -4,7 +4,7 @@ describe OrderCancellationService, type: :services do
   include_context 'use stripe mock'
   let(:order_state) { Order::SUBMITTED }
   let(:order_mode) { Order::BUY }
-  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: order_state, mode: order_mode) }
+  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: order_state, mode: order_mode, buyer_id: 'buyer', buyer_type: Order::USER) }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
   let(:service) { OrderCancellationService.new(order, user_id) }
@@ -47,7 +47,7 @@ describe OrderCancellationService, type: :services do
     end
 
     context 'with an offer-mode order' do
-      let!(:offer) { Fabricate(:offer, order: order, from_id: 'buyer') }
+      let!(:offer) { Fabricate(:offer, order: order, from_id: order.buyer_id, from_type: order.buyer_type) }
       let(:service) { OrderCancellationService.new(order, 'seller') }
 
       before do
