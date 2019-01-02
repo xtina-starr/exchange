@@ -51,7 +51,7 @@ module OfferService
     offer
   end
 
-  def self.submit_order_with_offer(offer)
+  def self.submit_order_with_offer(offer, user_id)
     order = offer.order
     validate_order_submission!(order)
 
@@ -60,6 +60,7 @@ module OfferService
     end
 
     Exchange.dogstatsd.increment 'order.submit'
+    PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, user_id)
     ReminderFollowUpJob.set(wait_until: order.state_expires_at - 2.hours).perform_later(order.id, order.state)
   end
 

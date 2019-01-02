@@ -63,7 +63,7 @@ describe OfferService, type: :services do
     let(:order) { Fabricate(:order, buyer_id: buyer_id, seller_id: seller_id, mode: order_mode, state: order_state, credit_card_id: credit_card_id, **shipping_info) }
     let!(:offer) { Fabricate(:offer, order: order, submitted_at: offer_submitted_at, amount_cents: 1000_00, tax_total_cents: 20_00, shipping_total_cents: 30_00, creator_id: buyer_id) }
     let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: artwork[:_id], artwork_version_id: line_item_artwork_version, quantity: 2) }
-    let(:call_service) { OfferService.submit_order_with_offer(offer) }
+    let(:call_service) { OfferService.submit_order_with_offer(offer, buyer_id) }
     describe 'failed process' do
       before do
         order.update!(last_offer: offer)
@@ -179,6 +179,7 @@ describe OfferService, type: :services do
         allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
         expect(PostOfferNotificationJob).to receive(:perform_later).once.with(offer.id, OfferEvent::SUBMITTED, buyer_id)
+        expect(PostOrderNotificationJob).to receive(:perform_later).once.with(order.id, Order::SUBMITTED, buyer_id)
       end
       it 'submits the offer' do
         expect do
