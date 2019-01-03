@@ -82,6 +82,7 @@ describe OrderEvent, type: :events do
   describe '#properties' do
     context 'without last_offer' do
       it 'returns correct properties for a submitted order' do
+        expect(event.properties[:id]).to eq order.id
         expect(event.properties[:mode]).to eq Order::BUY
         expect(event.properties[:code]).to eq order.code
         expect(event.properties[:currency_code]).to eq 'USD'

@@ -74,6 +74,7 @@ describe OfferEvent, type: :events do
 
   describe '#properties' do
     it 'includes expected offer properties' do
+      expect(event.properties[:id]).to eq offer.id
       expect(event.properties[:submitted_at]).not_to be_nil
       expect(event.properties[:from_participant]).to eq Order::BUYER
       expect(event.properties[:from_id]).to eq offer.from_id
@@ -93,6 +94,7 @@ describe OfferEvent, type: :events do
         it 'returns correct properties for a submitted order' do
           properties = event.properties
           order_prop = properties[:order]
+          expect(order_prop[:id]).to eq order.id
           expect(order_prop[:mode]).to eq Order::BUY
           expect(order_prop[:code]).to eq order.code
           expect(order_prop[:currency_code]).to eq 'USD'

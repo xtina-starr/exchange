@@ -17,6 +17,7 @@ class OfferEvent < Events::BaseEvent
 
   def properties
     {
+      id: @object.id,
       amount_cents: @object.amount_cents,
       submitted_at: @object.submitted_at,
       from_participant: @object.from_participant,
