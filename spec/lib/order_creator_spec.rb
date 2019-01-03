@@ -239,20 +239,22 @@ describe OrderCreator, type: :services do
     end
     context 'with existing order in pending state in different mode' do
       let(:existing_order) { Fabricate(:order, buyer_id: 'user1', buyer_type: Order::USER, state: order_state, mode: Order::OFFER) }
-      it 'creates new order' do
+      it 'creates new Buy order' do
         expect do
           order = order_creator.find_or_create!
           expect(order.id).not_to eq existing_order.id
+          expect(order.mode).to eq Order::BUY
         end.to change(Order, :count).by(1)
       end
     end
     [Order::APPROVED, Order::FULFILLED, Order::REFUNDED, Order::ABANDONED].each do |state|
       context "with existing order in #{state}" do
         let(:order_state) { state }
-        it 'creates new order' do
+        it 'creates new Buy order' do
           expect do
             order = order_creator.find_or_create!
             expect(order.id).not_to eq existing_order.id
+            expect(order.mode).to eq Order::BUY
           end.to change(Order, :count).by(1)
         end
         it 'calls the block' do
