@@ -23,6 +23,6 @@ class OrderSubmitService < CommitOrderService
     super
     PostOrderNotificationJob.perform_later(@order.id, Order::SUBMITTED, @user_id)
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
-    ReminderFollowUpJob.set(wait_until: @order.initial_reminder_time).perform_later(@order.id, @order.state)
+    ReminderFollowUpJob.set(wait_until: @order.state_expiration_reminder_time).perform_later(@order.id, @order.state)
   end
 end

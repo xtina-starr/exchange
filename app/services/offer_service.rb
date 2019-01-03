@@ -61,7 +61,7 @@ module OfferService
 
     Exchange.dogstatsd.increment 'order.submit'
     PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, user_id)
-    ReminderFollowUpJob.set(wait_until: order.initial_reminder_time).perform_later(order.id, order.state)
+    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
   end
 
   class << self
