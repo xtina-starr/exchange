@@ -282,10 +282,10 @@ ActiveAdmin.register Order do
           format_money_cents order.buyer_total_cents
         end
         row "Processing Fee" do |order|
-          format_money_cents(-order.transaction_fee_cents)
+          format_money_cents(order.transaction_fee_cents, negate: true)
         end
         row "Artsy Fee" do |order|
-          format_money_cents(-order.commission_fee_cents)
+          format_money_cents(order.commission_fee_cents, negate: true)
         end
         row "Seller Payout" do |order|
           format_money_cents order.seller_total_cents

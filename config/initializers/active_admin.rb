@@ -294,8 +294,4 @@ ActiveAdmin.setup do |config|
 end
 
 ActiveAdmin::ViewHelpers.include UrlHelper
-
-module ActiveAdmin::ViewHelpers
-  include UrlHelper
-  include AdminHelper
-end
+ActiveAdmin::ViewHelpers.include AdminHelper
