@@ -18,7 +18,7 @@ class OrderCreator
   end
 
   def find_or_create!(&post_create_block)
-    existing_order = Order.joins(:line_items).find_by(buyer_id: @buyer_id, buyer_type: @buyer_type, state: [Order::PENDING, Order::SUBMITTED], line_items: { artwork_id: @artwork_id, edition_set_id: edition_set_id })
+    existing_order = Order.joins(:line_items).find_by(buyer_id: @buyer_id, buyer_type: @buyer_type, state: [Order::PENDING, Order::SUBMITTED], line_items: { artwork_id: @artwork_id, edition_set_id: edition_set_id, quantity: @quantity })
     existing_order || create!(&post_create_block)
   end
 

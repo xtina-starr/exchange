@@ -1,8 +1,8 @@
 module OrderService
-  def self.create_with_artwork!(buyer_id:, buyer_type:, mode:, quantity:, artwork_id:, edition_set_id: nil, user_agent:, user_ip:)
+  def self.create_with_artwork!(buyer_id:, buyer_type:, mode:, quantity:, artwork_id:, edition_set_id: nil, user_agent:, user_ip:, find_active_or_create: false)
     order_creator = OrderCreator.new(buyer_id: buyer_id, buyer_type: buyer_type, mode: mode, quantity: quantity, artwork_id: artwork_id, edition_set_id: edition_set_id, user_agent: user_agent, user_ip: user_ip)
     # in case of Offer orders, we want to reuse existing pending/submitted offers
-    create_method = mode == Order::OFFER ? :find_or_create! : :create!
+    create_method = find_active_or_create ? :find_or_create! : :create!
     order_creator.send(create_method) do |created_order|
       Exchange.dogstatsd.increment 'order.create'
       OrderFollowUpJob.set(wait_until: created_order.state_expires_at).perform_later(created_order.id, created_order.state)
