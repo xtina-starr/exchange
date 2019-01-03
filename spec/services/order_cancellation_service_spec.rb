@@ -14,7 +14,7 @@ describe OrderCancellationService, type: :services do
         service.reject!
       end
       it 'queues undeduct inventory job' do
-        expect(UndeductInventoryJob).to have_been_enqueued.with(order.id)
+        expect(UndeductLineItemInventoryJob).to have_been_enqueued.with(line_items.first.id)
       end
       it 'records the transaction' do
         expect(order.transactions.last.external_id).to_not eq nil
@@ -42,7 +42,7 @@ describe OrderCancellationService, type: :services do
         expect(order.transactions.last.status).to eq Transaction::FAILURE
       end
       it 'does not queue undeduct inventory job' do
-        expect(UndeductInventoryJob).not_to have_been_enqueued.with(order.id)
+        expect(UndeductLineItemInventoryJob).not_to have_been_enqueued.with(line_items.first.id)
       end
     end
 
@@ -100,7 +100,7 @@ describe OrderCancellationService, type: :services do
           service.seller_lapse!
         end
         it 'queues undeduct inventory job' do
-          expect(UndeductInventoryJob).to have_been_enqueued.with(order.id)
+          expect(UndeductLineItemInventoryJob).to have_been_enqueued.with(line_items.first.id)
         end
         it 'records the transaction' do
           expect(order.transactions.last.external_id).to_not eq nil
@@ -128,7 +128,7 @@ describe OrderCancellationService, type: :services do
           expect(order.transactions.last.status).to eq Transaction::FAILURE
         end
         it 'does not queue undeduct inventory job' do
-          expect(UndeductInventoryJob).not_to have_been_enqueued.with(order.id)
+          expect(UndeductLineItemInventoryJob).not_to have_been_enqueued.with(line_items.first.id)
         end
       end
     end
@@ -174,7 +174,7 @@ describe OrderCancellationService, type: :services do
             service.refund!
           end
           it 'queues undeduct inventory job' do
-            expect(UndeductInventoryJob).to have_been_enqueued.with(order.id)
+            expect(UndeductLineItemInventoryJob).to have_been_enqueued.with(line_items.first.id)
           end
           it 'records the transaction' do
             expect(order.transactions.last.external_id).to_not eq nil
@@ -201,7 +201,7 @@ describe OrderCancellationService, type: :services do
             expect(order.transactions.last.status).to eq Transaction::FAILURE
           end
           it 'does not queue undeduct inventory job' do
-            expect(UndeductInventoryJob).not_to have_been_enqueued.with(order.id)
+            expect(UndeductLineItemInventoryJob).not_to have_been_enqueued.with(line_items.first.id)
           end
         end
       end

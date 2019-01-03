@@ -9,7 +9,7 @@ class OrderCancellationService
     @order.seller_lapse! do
       process_stripe_refund if @order.mode == Order::BUY
     end
-    UndeductInventoryJob.perform_later(@order.id)
+    process_inventory_undeduction
     PostOrderNotificationJob.perform_later(@order.id, Order::CANCELED)
   ensure
     @order.transactions << @transaction if @transaction.present?
@@ -25,7 +25,7 @@ class OrderCancellationService
       process_stripe_refund if @order.mode == Order::BUY
     end
     Exchange.dogstatsd.increment 'order.reject'
-    UndeductInventoryJob.perform_later(@order.id)
+    process_inventory_undeduction
     PostOrderNotificationJob.perform_later(@order.id, Order::CANCELED, @user_id)
   ensure
     @order.transactions << @transaction if @transaction.present?
@@ -36,13 +36,17 @@ class OrderCancellationService
       process_stripe_refund
     end
     record_stats
-    UndeductInventoryJob.perform_later(@order.id)
+    process_inventory_undeduction
     PostOrderNotificationJob.perform_later(@order.id, Order::REFUNDED, @user_id)
   ensure
     @order.transactions << @transaction if @transaction.present?
   end
 
   private
+
+  def process_inventory_undeduction
+    @order.line_items.each { |li| UndeductLineItemInventoryJob.perform_later(li.id) }
+  end
 
   def process_stripe_refund
     @transaction = PaymentService.refund_charge(@order.external_charge_id)
