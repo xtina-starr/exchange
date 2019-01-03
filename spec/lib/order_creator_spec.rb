@@ -8,7 +8,7 @@ describe OrderCreator, type: :services do
   let(:order_mode) { Order::BUY }
   let(:order_creator) { OrderCreator.new(buyer_id: 'user1', buyer_type: Order::USER, mode: order_mode, quantity: 1, artwork_id: artwork_id, edition_set_id: edition_set_id, user_agent: '007', user_ip: '0.0.7') }
   before do
-    expect(Adapters::GravityV1).to receive(:get).with("/artwork/#{artwork_id}").once.and_return(gravity_artwork)
+    allow(Adapters::GravityV1).to receive(:get).with("/artwork/#{artwork_id}").once.and_return(gravity_artwork)
   end
   describe '#valid?' do
     context 'unknown artwork' do
@@ -203,9 +203,10 @@ describe OrderCreator, type: :services do
 
   describe '#find_or_create!' do
     let(:order_state) { Order::PENDING }
-    let(:existing_order) { Fabricate(:order, buyer_id: 'user1', buyer_type: Order::USER, state: order_state) }
-    let!(:line_item) { Fabricate(:line_item, order: existing_order, artwork_id: 'artwork-id', edition_set_id: 'edition-set-id') }
-    context 'with existing order in pending state' do
+    let(:existing_order) { Fabricate(:order, buyer_id: 'user1', buyer_type: Order::USER, state: order_state, mode: order_mode) }
+    let(:edition_set_id) { 'edition-set-id' }
+    let!(:line_item) { Fabricate(:line_item, order: existing_order, artwork_id: 'artwork-id', edition_set_id: edition_set_id) }
+    context 'with existing order in pending state with same mode' do
       it 'returns existing order' do
         expect do
           order = order_creator.find_or_create!
@@ -220,7 +221,7 @@ describe OrderCreator, type: :services do
         end
       end
     end
-    context 'with existing order in submitted state' do
+    context 'with existing order in submitted state with same mode' do
       let(:order_state) { Order::SUBMITTED }
       it 'returns existing order' do
         expect do
@@ -236,13 +237,24 @@ describe OrderCreator, type: :services do
         end
       end
     end
+    context 'with existing order in pending state in different mode' do
+      let(:existing_order) { Fabricate(:order, buyer_id: 'user1', buyer_type: Order::USER, state: order_state, mode: Order::OFFER) }
+      it 'creates new Buy order' do
+        expect do
+          order = order_creator.find_or_create!
+          expect(order.id).not_to eq existing_order.id
+          expect(order.mode).to eq Order::BUY
+        end.to change(Order, :count).by(1)
+      end
+    end
     [Order::APPROVED, Order::FULFILLED, Order::REFUNDED, Order::ABANDONED].each do |state|
       context "with existing order in #{state}" do
         let(:order_state) { state }
-        it 'creates new order' do
+        it 'creates new Buy order' do
           expect do
             order = order_creator.find_or_create!
             expect(order.id).not_to eq existing_order.id
+            expect(order.mode).to eq Order::BUY
           end.to change(Order, :count).by(1)
         end
         it 'calls the block' do
