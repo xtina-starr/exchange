@@ -264,6 +264,15 @@ describe Api::GraphqlController, type: :request do
                 expect(order.reload.state).to eq Order::PENDING
               end.to change(Order, :count).by(0)
             end
+
+            it 'creates a new one when find_active_or_create is set to false' do
+              expect do
+                response = client.execute(mutation, input: { artworkId: artwork_id, findActiveOrCreate: false })
+                expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
+                expect(order.reload.state).to eq Order::PENDING
+              end.to change(Order, :count).by(1)
+            end
           end
         end
       end
