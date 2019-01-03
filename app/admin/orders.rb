@@ -37,10 +37,10 @@ ActiveAdmin.register Order do
     end
     column :state_expires_at
     column 'Items Total' do |order|
-       number_to_currency(order.items_total_cents.to_f/100)
+       format_money_cents(order.items_total_cents)
     end
     column 'Buyer Total' do |order|
-       number_to_currency(order.buyer_total_cents.to_f/100)
+      format_money_cents(order.buyer_total_cents)
     end
   end
 
@@ -234,11 +234,14 @@ ActiveAdmin.register Order do
 
     if order.mode == Order::OFFER
       panel "Negotiation (#{order.offers.submitted.count})" do
-        table_for(order.offers.order(created_at: :desc)) do
+        table_for(order.offers.submitted.order(created_at: :desc)) do
           column 'Date', :created_at
           column 'Source', :from_participant
+          column 'Action' do |offer|
+            offer.responds_to ? 'Sent Counter' : 'Offer Submitted'
+          end
           column 'Amount' do |offer|
-            offer.amount_cents.to_f/100
+            format_money_cents(offer.amount_cents)
           end
         end
       end
@@ -255,46 +258,37 @@ ActiveAdmin.register Order do
           no_credit_card_found = true
         end
         if no_credit_card_found
-          h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
+          h5 "Paid #{format_money_cents(order.buyer_total_cents)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
         else
-          h5 "Paid #{number_to_currency(order.buyer_total_cents.to_f/100)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
+          h5 "Paid #{format_money_cents(order.buyer_total_cents)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
         end
       end
 
-      list_price = order.total_list_price_cents.to_f/100
-      items_total = order.total_list_price_cents.to_f/100
-      shipping_total = order.shipping_total_cents.to_f/100
-      tax_total = order.tax_total_cents.to_f/100
-      buyer_total = order.buyer_total_cents.to_f/100
-
-      transaction_fee = order.transaction_fee_cents.to_f/100
-      commission_fee = order.commission_fee_cents.to_f/100
-      seller_payout = order.seller_total_cents.to_f/100
-
       attributes_table_for order do
         row "Artwork List Price" do |_order|
-          number_to_currency list_price
+          format_money_cents order.total_list_price_cents
         end
         row "Accepted Offer" do |_order|
-          number_to_currency items_total
+          format_money_cents order.items_total_cents
         end if order.mode == Order::OFFER
+
         row "Shipping" do |order|
-          number_to_currency shipping_total
+          format_money_cents order.shipping_total_cents
         end
         row "Sales Tax" do |order|
-          number_to_currency tax_total
+          format_money_cents order.tax_total_cents
         end
         row "Buyer Paid" do |order|
-          number_to_currency buyer_total
+          format_money_cents order.buyer_total_cents
         end
         row "Processing Fee" do |order|
-          number_to_currency(-transaction_fee, negative_format: "( %u%n )")
+          format_money_cents(-order.transaction_fee_cents)
         end
         row "Artsy Fee" do |order|
-          number_to_currency(-commission_fee, negative_format: "( %u%n )")
+          format_money_cents(-order.commission_fee_cents)
         end
         row "Seller Payout" do |order|
-          number_to_currency(seller_payout)
+          format_money_cents order.seller_total_cents
         end
 
       end
