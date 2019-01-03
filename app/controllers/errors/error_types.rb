@@ -61,6 +61,7 @@ module Errors
       tax_recording_failure
       tax_refund_failure
       unknown_event_charge
+      undeduct_inventory_failure
     ],
     internal: %i[
       generic
