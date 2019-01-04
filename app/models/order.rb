@@ -3,6 +3,8 @@ class Order < ApplicationRecord
 
   SUPPORTED_CURRENCIES = %w[USD].freeze
 
+  DEFAULT_EXPIRATION_REMINDER = 5.hours
+
   MODES = [
     BUY = 'buy'.freeze,
     OFFER = 'offer'.freeze
@@ -172,6 +174,10 @@ class Order < ApplicationRecord
     return unless mode == Order::OFFER && state == Order::SUBMITTED
 
     last_offer&.awaiting_response_from
+  end
+
+  def state_expiration_reminder_time(time_to_expiration = DEFAULT_EXPIRATION_REMINDER)
+    state_expires_at - time_to_expiration
   end
 
   private
