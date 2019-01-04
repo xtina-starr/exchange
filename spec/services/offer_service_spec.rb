@@ -69,7 +69,7 @@ describe OfferService, type: :services do
         order.update!(last_offer: offer)
         expect(PostOrderNotificationJob).not_to receive(:perform_later)
         expect(OrderFollowUpJob).not_to receive(:perform_later)
-        expect(ReminderFollowUpJob).not_to receive(:perform_later)
+        expect(OfferRespondReminderJob).not_to receive(:perform_later)
       end
 
       context 'without shipping info' do
@@ -192,7 +192,7 @@ describe OfferService, type: :services do
       it 'queues related jobs' do
         call_service
         expect(OrderFollowUpJob).to have_been_enqueued
-        expect(ReminderFollowUpJob).to have_been_enqueued.with(order.id, Order::SUBMITTED)
+        expect(OfferRespondReminderJob).to have_been_enqueued.with(order.id, order.last_offer.id)
       end
 
       it 'updates orders last_offer' do
@@ -355,13 +355,9 @@ describe OfferService, type: :services do
         expect(OrderFollowUpJob).to have_been_enqueued
       end
       context 'reminders' do
-        it 'queues order submission reminder' do
+        it 'queues pending offer reminder' do
           call_service
-          expect(ReminderFollowUpJob).to have_been_enqueued.with(order.id, Order::SUBMITTED)
-        end
-        it 'queues counteroffer reminder' do
-          call_service
-          expect(ReminderFollowUpJob).to have_been_enqueued.with(order.id, Order::SUBMITTED)
+          expect(OfferRespondReminderJob).to have_been_enqueued.with(order.id, order.last_offer.id)
         end
       end
     end
