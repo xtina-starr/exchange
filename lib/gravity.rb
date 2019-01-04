@@ -63,7 +63,7 @@ module Gravity
       Adapters::GravityV1.put("/artwork/#{line_item.artwork_id}/inventory", params: { undeduct: line_item.quantity })
     end
   rescue Adapters::GravityNotFoundError
-    Rails.logger.info "Line item #{line_item.id} has deleted artwork, skipping inventory undeduction"
+    raise Errors::ValidationError.new(:unknown_artwork, line_item_id: line_item.id)
   rescue Adapters::GravityError
     raise Errors::ProcessingError.new(:undeduct_inventory_failure, line_item_id: line_item.id)
   end
