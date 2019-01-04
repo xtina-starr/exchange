@@ -181,12 +181,11 @@ ActiveAdmin.register Order do
 
     panel "Order Summary" do
       attributes_table_for order do
-        row "Code" do |order|
-          order.code
+        row :code
+        row 'Type' do |order|
+          order.mode
         end
-        row "State" do |order|
-          order.state
-        end
+        row :state
         row 'Reason' do |order|
           order.state_reason
         end
