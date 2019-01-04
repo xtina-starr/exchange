@@ -44,14 +44,32 @@ describe ShippingHelper, type: :services do
       }
     }
   end
+  let(:missing_artwork_location_config) do
+    {
+      _id: 'a-3',
+      domestic_shipping_fee_cents: 100_00,
+      international_shipping_fee_cents: 500_00,
+      location: nil
+    }
+  end
 
   let(:artwork) { gravity_v1_artwork }
   let(:continental_us_artwork) { gravity_v1_artwork(continental_us_artwork_config) }
   let(:artwork_in_italy) { gravity_v1_artwork(artwork_in_italy_config) }
+  let(:artwork_missing_location) { gravity_v1_artwork(missing_artwork_location_config) }
   describe '#calculate' do
     context 'with pickup fulfillment type' do
       it 'returns 0' do
         expect(ShippingHelper.calculate(artwork, Order::PICKUP)).to eq 0
+      end
+    end
+    context 'with missing artowrk location' do
+      it 'raises an error' do
+        expect { ShippingHelper.calculate(artwork_missing_location, Order::SHIP, us_shipping) }.to raise_error do |error|
+          expect(error).to be_a(Errors::ValidationError)
+          expect(error.code).to eq :missing_artwork_location
+          expect(error.data[:artwork_id]).to eq artwork_missing_location[:_id]
+        end
       end
     end
     context 'continental us artwork' do
