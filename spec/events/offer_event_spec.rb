@@ -27,6 +27,7 @@ describe OfferEvent, type: :events do
       seller_id: 'partner-1',
       seller_type: 'gallery',
       currency_code: 'usd',
+      mode: Order::OFFER,
       shipping_total_cents: 50,
       tax_total_cents: 30,
       items_total_cents: 300,
@@ -95,7 +96,7 @@ describe OfferEvent, type: :events do
           properties = event.properties
           order_prop = properties[:order]
           expect(order_prop[:id]).to eq order.id
-          expect(order_prop[:mode]).to eq Order::BUY
+          expect(order_prop[:mode]).to eq Order::OFFER
           expect(order_prop[:code]).to eq order.code
           expect(order_prop[:currency_code]).to eq 'USD'
           expect(order_prop[:state]).to eq 'submitted'

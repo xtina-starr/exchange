@@ -1,7 +1,8 @@
 class OfferEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
   ACTIONS = [
-    SUBMITTED = 'submitted'.freeze
+    SUBMITTED = 'submitted'.freeze,
+    PENDING_RESPONSE = 'pending_response'.freeze
   ].freeze
 
   def self.post(offer, action, user_id)
