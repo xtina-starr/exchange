@@ -6,7 +6,7 @@ class OrderShippingService
     @buyer_name = shipping[:name]
     @buyer_phone_number = shipping[:phone_number]
     @pending_offer = pending_offer
-    @order_data = OrderData.new(order)
+    @order_helper = OrderHelper.new(order)
   end
 
   def process!
@@ -24,10 +24,7 @@ class OrderShippingService
         shipping_country: @shipping_address&.country,
         shipping_postal_code: @shipping_address&.postal_code
       )
-      # if user has pending offer, we want to set totals on pending offer
-      # and not on the order yet
-      @pending_offer.present? ? set_offer_totals! : set_order_totals!
-      OrderTotalUpdaterService.new(@order).update_totals!
+      @order.mode == Order::OFFER ? set_offer_totals! : set_order_totals!
     end
   end
 
@@ -36,23 +33,30 @@ class OrderShippingService
   def pre_process!
     raise Errors::ValidationError.new(:invalid_state, state: @order.state) unless @order.state == Order::PENDING
     raise Errors::ValidationError, :invalid_state if @pending_offer.present? && @pending_offer.submitted_at?
+    raise Errors::ValidationError, :missing_country if @fulfillment_type == Order::SHIP && @shipping_address&.country.blank?
   end
 
   def set_offer_totals!
-    Offers::TotalUpdaterService.new(@pending_offer).process!
+    offer_totals = OfferTotals.new(@order, @pending_offer.amount_cents)
+    @pending_offer.update!(
+      shipping_total_cents: offer_totals.shipping_total_cents,
+      tax_total_cents: offer_totals.tax_total_cents,
+      should_remit_sales_tax: offer_totals.should_remit_sales_tax
+    )
   end
 
   def set_order_totals!
-    @order.update!(shipping_total_cents: @order_data.shipping_total_cents, tax_total_cents: tax_total_cents)
+    @order.update!(shipping_total_cents: @order_helper.shipping_total_cents, tax_total_cents: tax_total_cents)
+    OrderTotalUpdaterService.new(@order).update_totals!
   end
 
   def tax_total_cents
     @tax_total_cents ||= begin
       @order.line_items.map do |li|
-        artwork_address = Address.new(@order_data.artworks[li.artwork_id][:location])
+        artwork_address = Address.new(@order_helper.artworks[li.artwork_id][:location])
         begin
-          service = Tax::CalculatorService.new(li.total_amount_cents, li.effective_price_cents, li.quantity, @fulfillment_type, @shipping_address, @order_data.shipping_total_cents, artwork_address, @order_data.seller_locations)
-          sales_tax = @order_data.partner[:artsy_collects_sales_tax] ? service.sales_tax : 0
+          service = Tax::CalculatorService.new(li.total_list_price_cents, li.list_price_cents, li.quantity, @fulfillment_type, @shipping_address, @order_helper.shipping_total_cents, artwork_address, @order_helper.seller_locations)
+          sales_tax = @order_helper.partner[:artsy_collects_sales_tax] ? service.sales_tax : 0
           li.update!(sales_tax_cents: sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
           sales_tax
         rescue Errors::ValidationError => e

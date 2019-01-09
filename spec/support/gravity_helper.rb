@@ -77,6 +77,10 @@ def gravity_v1_artwork(options={})
         editions: 'Edition of 15',
         display_price_currency: 'USD (United States Dollar)',
         availability: 'for sale',
+        inventory: {
+          count: 1,
+          unlimited: false
+        },
       }],
     artists: [{
         _id: 'artist-id',
@@ -116,6 +120,10 @@ def gravity_v1_artwork(options={})
       },
     _id: 'artwork-id',
     id: 'artwork-slug',
+    inventory: {
+      count: 1,
+      unlimited: false
+    },
     current_version_id: 'current-version-id',
     title: 'Untitled Pl. 13 (from Men in the Cities)',
     display: 'BNMOsy, Untitled Pl. 13 (from Men in the Cities) (2005)',
@@ -164,7 +172,7 @@ def gravity_v1_artwork(options={})
     attribution_class: 'limited edition',
     domestic_shipping_fee_cents: 100_00,
     international_shipping_fee_cents: 500_00
-  }.merge(options).with_indifferent_access
+  }.merge(options)
 end
 
 def gravity_v1_partner(options={})
@@ -199,5 +207,5 @@ def gravity_v1_partner(options={})
     payments_enabled: true,
     commission_rate: 0.7,
     effective_commission_rate: 0.8,
-  }.merge(options).with_indifferent_access
+  }.merge(options)
 end

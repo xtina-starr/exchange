@@ -7,7 +7,7 @@ describe Api::GraphqlController, type: :request do
 
     let(:seller_id) { jwt_partner_ids.first }
     let(:buyer_id) { jwt_user_id }
-    let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
+    let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1') }
     let(:line_item_artwork_version) { artwork[:current_version_id] }
     let(:credit_card_id) { 'grav_c_id1' }
     let(:credit_card) { { external_id: 'cc-1', customer_account: { external_id: 'cus-1' }, deactivated_at: nil } }
@@ -35,7 +35,7 @@ describe Api::GraphqlController, type: :request do
       )
     end
     let(:current_offer) { Fabricate(:offer, order: order, from_id: seller_id, from_type: 'gallery', amount_cents: 300) }
-    let(:counter_offer) { Fabricate(:offer, order: order, from_id: buyer_id, from_type: Order::USER, amount_cents: 350, responds_to: current_offer) }
+    let(:counter_offer) { Fabricate(:offer, order: order, from_id: buyer_id, from_type: Order::USER, amount_cents: 350, tax_total_cents: 10, shipping_total_cents: 15, responds_to: current_offer) }
     let(:mutation) do
       <<-GRAPHQL
         mutation($input: SubmitPendingOfferInput!) {
@@ -106,6 +106,7 @@ describe Api::GraphqlController, type: :request do
         allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
         allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
+        allow(Adapters::GravityV1).to receive(:get).with("/artwork/#{line_item.artwork_id}").and_return(artwork)
       end
 
       it 'submits the order and updates submitted_at on the offer' do

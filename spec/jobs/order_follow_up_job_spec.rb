@@ -15,10 +15,42 @@ describe OrderFollowUpJob, type: :job do
       end
       context 'expired SUBMITTED' do
         let(:state) { Order::SUBMITTED }
-        it 'transitions a submitted order to seller_lapsed' do
-          Timecop.freeze(order.state_expires_at + 1.second) do
-            expect_any_instance_of(OrderCancellationService).to receive(:seller_lapse!)
-            OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
+        let(:seller_type) { Order::PARTNER }
+        let(:buyer_type) { Order::USER }
+        let(:seller_id) { 'partner_id' }
+        let(:buyer_id) { 'user_id' }
+        let(:mode) { Order::BUY }
+        let(:order) { Fabricate(:order, mode: mode, state: state, buyer_id: buyer_id, seller_id: seller_id, seller_type: seller_type, buyer_type: buyer_type) }
+        context 'Buy order' do
+          it 'transitions a submitted order to seller_lapsed' do
+            Timecop.freeze(order.state_expires_at + 1.second) do
+              expect_any_instance_of(OrderCancellationService).to receive(:seller_lapse!)
+              OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
+            end
+          end
+        end
+        context 'Offer order' do
+          let(:mode) { Order::OFFER }
+          let(:offer) { Fabricate(:offer, from_id: seller_id, order: order, from_type: seller_type, submitted_at: Time.now.utc) }
+          before do
+            order.update!(last_offer: offer)
+          end
+          context 'Last offer from seller (awaiting response from buyer)' do
+            it 'transitions a submitted order to buyer_lapsed' do
+              Timecop.freeze(order.state_expires_at + 1.second) do
+                expect_any_instance_of(OrderCancellationService).to receive(:buyer_lapse!)
+                OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
+              end
+            end
+          end
+          context 'Last offer from buyer (awaiting response from seller)' do
+            let(:offer) { Fabricate(:offer, from_id: buyer_id, order: order, from_type: buyer_type, submitted_at: Time.now.utc) }
+            it 'transitions a submitted order to seller_lapsed' do
+              Timecop.freeze(order.state_expires_at + 1.second) do
+                expect_any_instance_of(OrderCancellationService).to receive(:seller_lapse!)
+                OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
+              end
+            end
           end
         end
       end

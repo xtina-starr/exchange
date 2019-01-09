@@ -7,17 +7,8 @@ class LineItem < ApplicationRecord
 
   validate :offer_order_lacks_line_items, on: :create
 
-  def total_amount_cents
-    order.mode == Order::BUY ? total_list_price_cents : order.last_offer&.amount_cents
-  end
-
   def total_list_price_cents
     list_price_cents * quantity
-  end
-
-  def effective_price_cents
-    # calculates effective price considering order type
-    total_amount_cents / quantity
   end
 
   private

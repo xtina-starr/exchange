@@ -13,7 +13,7 @@ Metrics/ParameterLists:
   Max: 9
 
 Metrics/AbcSize:
-  Max: 41
+  Max: 42
   Exclude:
     - "db/migrate/*"
 
@@ -26,7 +26,7 @@ Metrics/MethodLength:
     - "db/migrate/*"
 
 Metrics/ClassLength:
-  Max: 183
+  Max: 190
 
 Metrics/ModuleLength:
   Max: 151

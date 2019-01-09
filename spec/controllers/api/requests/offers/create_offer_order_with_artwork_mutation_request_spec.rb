@@ -23,6 +23,7 @@ describe Api::GraphqlController, type: :request do
               ... on OrderWithMutationSuccess {
                 order {
                   id
+                  mode
                   itemsTotalCents
                   totalListPriceCents
                   buyer {
@@ -80,7 +81,7 @@ describe Api::GraphqlController, type: :request do
       context 'with successful artwork fetch' do
         let(:artwork) { gravity_v1_artwork }
         before do
-          expect(Gravity).to receive(:get_artwork).with(artwork_id).and_return(artwork)
+          expect(Gravity).to receive(:get_artwork).once.with(artwork_id).and_return(artwork)
         end
         context 'artwork with one edition set' do
           context 'without passing edition_set_id' do
@@ -250,16 +251,43 @@ describe Api::GraphqlController, type: :request do
               end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
             end
           end
-          context 'with existing pending order for artwork' do
+          context 'with existing pending buy now order for artwork' do
             let!(:order) do
-              order = Fabricate(:order, buyer_id: jwt_user_id, state: Order::PENDING)
+              order = Fabricate(:order, buyer_id: jwt_user_id, state: Order::PENDING, mode: Order::BUY)
               order.line_items = [Fabricate(:line_item, artwork_id: artwork_id)]
               order
             end
-            it 'creates a new order' do
+            it 'creates a new offer order' do
+              expect do
+                response = client.execute(mutation, input: { artworkId: artwork_id, findActiveOrCreate: false })
+                expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to eq order.id
+                expect(response.data.create_offer_order_with_artwork.order_or_error.order.mode).to eq 'OFFER'
+                expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
+                expect(order.reload.state).to eq Order::PENDING
+              end.to change(Order, :count).by(1)
+            end
+          end
+          context 'with existing pending offer order for artwork' do
+            let!(:order) do
+              order = Fabricate(:order, buyer_id: jwt_user_id, state: Order::PENDING, mode: Order::OFFER)
+              order.line_items = [Fabricate(:line_item, artwork_id: artwork_id)]
+              order
+            end
+            it 'returns existing order' do
               expect do
                 response = client.execute(mutation, input: { artworkId: artwork_id })
+                expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
+                expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).to eq order.id
+                expect(order.reload.state).to eq Order::PENDING
+              end.to change(Order, :count).by(0)
+            end
+
+            it 'creates a new order when find_active_or_create is set to false' do
+              expect do
+                response = client.execute(mutation, input: { artworkId: artwork_id, findActiveOrCreate: false })
                 expect(response.data.create_offer_order_with_artwork.order_or_error.order.id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error.order.mode).to eq 'OFFER'
                 expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
                 expect(order.reload.state).to eq Order::PENDING
               end.to change(Order, :count).by(1)

@@ -1,6 +1,7 @@
 class OrderEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
   PROPERTIES_ATTRS = %i[
+    id
     mode
     buyer_id
     buyer_type

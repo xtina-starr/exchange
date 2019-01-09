@@ -2,15 +2,18 @@ require 'rails_helper'
 require 'support/gravity_helper'
 
 describe OrderShippingService, type: :services do
+  let(:order_mode) { Order::BUY }
   let(:order) { Fabricate(:order) }
-  let(:continental_us_order) { Fabricate(:order) }
+  let(:continental_us_order) { Fabricate(:order, mode: order_mode) }
   let(:domestic_shipping) do
     {
       address_line1: '401 Broadway',
       country: 'US',
       city: 'New York',
       region: 'NY',
-      postal_code: '10013'
+      postal_code: '10013',
+      phone_number: '123123',
+      name: 'Buyer Name'
     }
   end
   let(:non_continental_us_shipping) do
@@ -19,7 +22,9 @@ describe OrderShippingService, type: :services do
       country: 'US',
       city: 'Anchorage',
       region: 'AK',
-      postal_code: '99503'
+      postal_code: '99503',
+      phone_number: '123123',
+      name: 'Buyer Name'
     }
   end
   let(:international_shipping) do
@@ -29,7 +34,9 @@ describe OrderShippingService, type: :services do
       city: 'Whitechapel',
       region: 'London',
       postal_code: 'E1 8PY',
-      country: 'GB'
+      country: 'GB',
+      phone_number: '123123',
+      name: 'Buyer Name'
     }
   end
   let(:domestic_artwork_config) do
@@ -70,7 +77,7 @@ describe OrderShippingService, type: :services do
       let!(:continental_us_line_item) { Fabricate(:line_item, order: continental_us_order, artwork_id: 'a-2') }
       context 'with non-continental US shipping address' do
         it 'raises error' do
-          allow_any_instance_of(OrderData).to receive(:artworks).and_return('a-2' => continental_us_artwork)
+          allow_any_instance_of(OrderHelper).to receive(:artworks).and_return('a-2' => continental_us_artwork)
           expect { @service_continental_us_shipping.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq(:unsupported_shipping_location)
@@ -80,7 +87,7 @@ describe OrderShippingService, type: :services do
       end
       context 'with international shipping address' do
         it 'raises error' do
-          allow_any_instance_of(OrderData).to receive(:artworks).and_return('a-1' => continental_us_artwork)
+          allow_any_instance_of(OrderHelper).to receive(:artworks).and_return('a-1' => continental_us_artwork)
           expect { @service_international_shipping.process! }.to raise_error do |error|
             expect(error).to be_a(Errors::ValidationError)
             expect(error.code).to eq(:unsupported_shipping_location)
@@ -93,7 +100,7 @@ describe OrderShippingService, type: :services do
     describe 'tax' do
       let(:artwork) { gravity_v1_artwork }
       let(:partner) { { _id: 'partner-1', artsy_collects_sales_tax: artsy_collects_sales_tax } }
-      let(:order) { Fabricate(:order, seller_id: partner[:_id]) }
+      let(:order) { Fabricate(:order, seller_id: partner[:_id], mode: order_mode) }
       let(:line_items) { Array.new(2) { Fabricate(:line_item, order: order, artwork_id: artwork[:_id]) } }
       let(:tax_calculator) { double('Tax Calculator', sales_tax: 3750, artsy_should_remit_taxes?: false) }
       let(:service) { OrderShippingService.new(order, fulfillment_type: Order::SHIP, shipping: domestic_shipping) }
@@ -103,12 +110,12 @@ describe OrderShippingService, type: :services do
         expect(Gravity).to receive_messages(fetch_partner: partner, fetch_partner_locations: [], get_artwork: artwork)
         expect(Tax::CalculatorService).to receive(:new)
           .exactly(line_items.count).times.and_return(tax_calculator)
-        allow_any_instance_of(ShippingCalculatorService).to receive(:shipping_cents).and_return(0)
+        allow(ShippingHelper).to receive(:calculate).and_return(0)
         line_items
         service.process!
       end
 
-      context 'without pending offer' do
+      context 'Buy Order' do
         context 'artsy collects sales tax' do
           it 'sets sales_tax_cents on line items from tax calculator' do
             order.line_items.each do |line_item|
@@ -136,7 +143,8 @@ describe OrderShippingService, type: :services do
         end
       end
 
-      context 'with pending offer' do
+      context 'Offer Order' do
+        let(:order_mode) { Order::OFFER }
         let(:line_items) { [Fabricate(:line_item, order: order, artwork_id: artwork[:_id])] }
         let(:pending_offer) { Fabricate(:offer, order: order, amount_cents: 20000) }
         let(:service) { OrderShippingService.new(order, fulfillment_type: Order::SHIP, shipping: domestic_shipping, pending_offer: pending_offer) }
@@ -153,7 +161,7 @@ describe OrderShippingService, type: :services do
           end
 
           it 'sets tax_total_cents on pending offer from tax calculator' do
-            expect(pending_offer.tax_total_cents).to eq 3750 * line_items.count
+            expect(pending_offer.tax_total_cents).to eq 3750
           end
         end
 

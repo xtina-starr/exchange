@@ -18,7 +18,7 @@ describe ReminderFollowUpJob, type: :job do
       end
       context 'APPROVED' do
         let(:state) { Order::APPROVED }
-        it 'sends an internal message to admins about buyerr lapsing' do
+        it 'sends an internal message to admins about buyer lapsing' do
           expect(OrderEvent).to receive(:post)
             .with(order, Order::REMINDER_EVENT_VERB[:pending_fulfillment], nil)
 
@@ -28,15 +28,15 @@ describe ReminderFollowUpJob, type: :job do
     end
     context 'with an order in a different state than when the job was made' do
       it 'does nothing' do
-        order.update!(state: Order::SUBMITTED, state_expires_at: 1.hour.ago)
+        order.update!(state: Order::SUBMITTED)
         expect(OrderEvent).to_not receive(:post)
 
         ReminderFollowUpJob.perform_now(order.id, Order::PENDING)
       end
     end
     context 'with an order in the same state after its expiration time' do
-      let(:state_expires_at) { 1.hour.ago }
       it 'does nothing' do
+        order.update!(state_expires_at: 1.hour.ago)
         expect(OrderEvent).to_not receive(:post)
         ReminderFollowUpJob.perform_now(order.id, Order::PENDING)
       end

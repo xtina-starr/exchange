@@ -8,11 +8,11 @@ describe OrderTotalUpdaterService, type: :service do
   describe '#update_order_totals!' do
     context 'BUY order' do
       context 'without line items' do
-        it 'returns 0 for everything' do
+        it 'returns nil for everything' do
           OrderTotalUpdaterService.new(order).update_totals!
-          expect(order.reload.items_total_cents).to eq 0
-          expect(order.buyer_total_cents).to eq 0
-          expect(order.seller_total_cents).to eq 0
+          expect(order.reload.items_total_cents).to eq nil
+          expect(order.buyer_total_cents).to eq nil
+          expect(order.seller_total_cents).to eq nil
         end
       end
       context 'with line items' do
@@ -57,57 +57,6 @@ describe OrderTotalUpdaterService, type: :service do
               OrderTotalUpdaterService.new(order, 0.40).update_totals!
               expect(line_item1.reload.commission_fee_cents).to eq 40_00
               expect(line_item2.reload.commission_fee_cents).to eq 160_00
-            end
-          end
-        end
-      end
-    end
-    context 'OFFER order' do
-      let(:mode) { Order::OFFER }
-      let!(:line_item1) { Fabricate(:line_item, order: order, list_price_cents: 200_00, quantity: 2, sales_tax_cents: 10_00, should_remit_sales_tax: false) }
-
-      context 'with last_offer' do
-        let(:offer) { Fabricate(:offer, order: order, amount_cents: 300_00) }
-        before do
-          order.update!(last_offer: offer)
-        end
-        context 'with shipping and tax' do
-          let(:shipping_total_cents) { 50_00 }
-          let(:tax_total_cents) { 60_00 }
-          context 'without commission rate' do
-            it 'sets correct totals on the order' do
-              OrderTotalUpdaterService.new(order).update_totals!
-              expect(order.items_total_cents).to eq 300_00
-              expect(order.buyer_total_cents).to eq(300_00 + 50_00 + 60_00)
-              expect(order.transaction_fee_cents).to eq 12_19
-              expect(order.commission_fee_cents).to be_nil
-              expect(order.seller_total_cents).to eq(300_00 + 50_00 + 60_00 - 12_19)
-            end
-          end
-          context 'with commission rate' do
-            it 'raises error for commission rate > 1' do
-              expect { OrderTotalUpdaterService.new(order, 2) }.to raise_error do |error|
-                expect(error).to be_a(Errors::ValidationError)
-                expect(error.code).to eq :invalid_commission_rate
-              end
-            end
-            it 'raises error for commission rate < 0' do
-              expect { OrderTotalUpdaterService.new(order, -0.2) }.to raise_error do |error|
-                expect(error).to be_a(Errors::ValidationError)
-                expect(error.code).to eq :invalid_commission_rate
-              end
-            end
-            it 'sets correct totals on the order' do
-              OrderTotalUpdaterService.new(order, 0.40).update_totals!
-              expect(order.items_total_cents).to eq 300_00
-              expect(order.buyer_total_cents).to eq(300_00 + 50_00 + 60_00)
-              expect(order.transaction_fee_cents).to eq 12_19
-              expect(order.commission_fee_cents).to eq 120_00
-              expect(order.seller_total_cents).to eq(410_00 - (12_19 + 120_00))
-            end
-            it 'does not set commission on line items' do
-              OrderTotalUpdaterService.new(order, 0.40).update_totals!
-              expect(line_item1.reload.commission_fee_cents).to eq 12000
             end
           end
         end

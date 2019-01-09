@@ -9,9 +9,9 @@ describe Api::GraphqlController, type: :request do
     let(:partner) { { id: order_seller_id, artsy_collects_sales_tax: true, effective_commission_rate: 0.4 } }
     let(:buyer_id) { jwt_user_id }
     let(:artwork_location) { { country: 'US' } }
-    let(:artwork) { { _id: 'a-1', current_version_id: '1', location: artwork_location, domestic_shipping_fee_cents: 1000 } }
+    let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1', location: artwork_location, domestic_shipping_fee_cents: 1000) }
     let(:order_state) { Order::SUBMITTED }
-    let!(:order) { Fabricate(:order, state: order_state, seller_id: order_seller_id, buyer_id: buyer_id, **shipping_info) }
+    let!(:order) { Fabricate(:order, mode: Order::OFFER, state: order_state, seller_id: order_seller_id, buyer_id: buyer_id, **shipping_info) }
     let!(:offer) { Fabricate(:offer, order: order, amount_cents: 10000, from_id: buyer_id, from_type: Order::USER, submitted_at: Time.now.utc) }
     let(:line_item_artwork_version) { artwork[:current_version_id] }
     let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: artwork[:_id], artwork_version_id: line_item_artwork_version, quantity: 2) }
@@ -153,6 +153,12 @@ describe Api::GraphqlController, type: :request do
     context 'with proper permission' do
       before do
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{order_seller_id}/all").and_return(gravity_v1_partner)
+        allow(Adapters::GravityV1).to receive(:get).with("/artwork/#{line_item.artwork_id}").and_return(artwork)
+        order.update!(credit_card_id: '4242')
+        allow(Gravity).to receive(:get_credit_card).with('4242').and_return(
+          external_id: 'bar',
+          customer_account: { external_id: 'foo' }
+        )
       end
       it 'counters the order' do
         expect do
@@ -169,7 +175,7 @@ describe Api::GraphqlController, type: :request do
           expect(last_offer.creator_id).to eq(buyer_id)
           expect(last_offer.from_id).to eq(order_seller_id)
           # should update order amounts when offer is submitted
-          expect(order.items_total_cents).to eq(400000)
+          expect(order.items_total_cents).to eq(10000)
         end.to change { order.reload.offers.count }.from(1).to(2)
       end
     end
