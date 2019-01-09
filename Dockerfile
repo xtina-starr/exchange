@@ -11,7 +11,8 @@ RUN apk --no-cache add \
       git \
       nodejs \
       postgresql-dev \
-      tzdata
+      tzdata \
+      bash # debugging and datadog events
 
 COPY .ruby-version Gemfile* ./
 
