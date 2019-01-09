@@ -13,7 +13,7 @@ ActiveAdmin.register Order do
   scope('Case Still Open') { |scope| scope.by_last_admin_note(AdminNote::TYPES.except(:case_closed).values) }
 
   filter :id_eq, label: 'Order Id'
-  filter :mode, as: :check_boxes, collection: proc { Order::MODES }, label: 'Mode'
+  filter :mode, as: :check_boxes, collection: proc { Order::MODES }, label: 'Type'
   filter :code_eq, label: 'Order Code'
   filter :seller_id_eq, label: 'Seller Id'
   filter :buyer_id_eq, label: 'Buyer Id'
@@ -27,9 +27,6 @@ ActiveAdmin.register Order do
       link_to order.code, admin_order_path(order.id)
     end
     column 'Fulfillment', :fulfillment_type
-    column 'Last Admin Action' do |order|
-      order.last_admin_note&.note_type&.humanize
-    end
     column :mode
     column :state
     column 'At' do |order|
@@ -38,9 +35,6 @@ ActiveAdmin.register Order do
     column :state_expires_at
     column 'Items Total' do |order|
        format_money_cents(order.items_total_cents)
-    end
-    column 'Buyer Total' do |order|
-      format_money_cents(order.buyer_total_cents)
     end
   end
 
