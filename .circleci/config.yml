@@ -32,9 +32,6 @@ jobs:
       - run:
           name: Deploy
           command: hokusai staging deploy $CIRCLE_SHA1
-      - run:
-          name: Deploy Event
-          command: hokusai/deploy_event.sh exchange staging
 workflows:
   version: 2
   default:
