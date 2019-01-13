@@ -19,6 +19,11 @@ class Types::QueryType < Types::BaseObject
     argument :mode, Types::OrderModeEnum, required: false
   end
 
+  field :line_items, Types::LineItemType.connection_type, null: true, connection: true do
+    argument :artwork_id, String, required: false
+    argument :edition_set_id, String, required: false
+  end
+
   def order(args)
     raise Error::ValidationError.new(:missing_required_param, message: 'id or code is required') unless args[:id].present? || args[:code].present?
 
@@ -32,6 +37,11 @@ class Types::QueryType < Types::BaseObject
     sort = params.delete(:sort)
     order_clause = sort_to_order[sort] || {}
     Order.where(params).order(order_clause)
+  end
+
+  def line_items(args)
+    validate_line_items_request!(args)
+    LineItem.where(args.slice(:artwork_id, :edition_set_id))
   end
 
   private
@@ -57,6 +67,11 @@ class Types::QueryType < Types::BaseObject
               (order.seller_type != Order::USER && context[:current_user][:partner_ids].include?(order.seller_id))
 
     raise ActiveRecord::RecordNotFound
+  end
+
+  def validate_line_items_request!(params)
+    raise Errors::ValidationError, :missing_params unless params[:artwork_id] || params[:edition_set_id]
+    return if trusted?
   end
 
   def validate_orders_request!(params)
