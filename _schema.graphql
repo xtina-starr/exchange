@@ -697,6 +697,7 @@ type Query {
 
     # Returns the last _n_ elements from the list.
     last: Int
+    states: [OrderStateEnum!]
   ): LineItemConnection
 
   # Find an order by ID
