@@ -22,7 +22,7 @@ class Types::QueryType < Types::BaseObject
   field :line_items, Types::LineItemType.connection_type, null: true, connection: true do
     argument :artwork_id, String, required: false
     argument :edition_set_id, String, required: false
-    argument :states, [Types::OrderStateEnum], required: false
+    argument :order_states, [Types::OrderStateEnum], required: false
   end
 
   def order(args)
@@ -40,11 +40,11 @@ class Types::QueryType < Types::BaseObject
     Order.where(params).order(order_clause)
   end
 
-  def line_items(args)
+  def line_items(args = {})
     validate_line_items_request!(args)
-    items = LineItem.where(args.slice(:artwork_id, :edition_set_id))
-    items = items.select { |item| args[:states].include? item.order.state } unless args[:states].nil?
-    items
+    query = LineItem.where(args.slice(:artwork_id, :edition_set_id))
+    query = query.joins(:order).where(orders: { state: args[:order_states] }) if args[:order_states].present?
+    query
   end
 
   private
@@ -73,8 +73,8 @@ class Types::QueryType < Types::BaseObject
   end
 
   def validate_line_items_request!(params)
+    raise Errors::ValidationError, :not_found unless trusted?
     raise Errors::ValidationError, :missing_params unless params[:artwork_id] || params[:edition_set_id]
-    return if trusted?
   end
 
   def validate_orders_request!(params)
