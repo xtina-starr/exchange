@@ -38,6 +38,7 @@ class OrderShipping
 
   def set_offer_totals!
     return unless pending_offer?
+
     offer_totals = OfferTotals.new(@order, pending_offer.amount_cents)
     pending_offer.update!(
       shipping_total_cents: offer_totals.shipping_total_cents,
@@ -49,14 +50,13 @@ class OrderShipping
   def set_order_totals!
     order_helper = OrderHelper.new(@order)
     # update order line items
-    line_items_totals = @order.line_items.map do |li|
+    @order.line_items.map do |li|
       line_item_totals = LineItemTotals.new(li, fulfillment_type: @order.fulfillment_type, shipping_address: @order.shipping_address, seller_locations: order_helper.seller_locations, artsy_collects_sales_tax: order_helper.artsy_collects_sales_tax?)
-      li.update!(sales_tax_cents: line_item_totals.tax_total_cents, should_remit_sales_tax: line_item_totals.should_remit_sales_tax)
-      line_item_totals
+      li.update!(shipping_total_cents: line_item_totals.shipping_total_cents, sales_tax_cents: line_item_totals.tax_total_cents, should_remit_sales_tax: line_item_totals.should_remit_sales_tax)
     end
-    @order.update!(shipping_total_cents: line_items_totals.map(&:shipping_total_cents).sum)
     buy_order_totals = BuyOrderTotals.new(@order)
     @order.update!(
+      shipping_total_cents: buy_order_totals.shipping_total_cents,
       tax_total_cents: buy_order_totals.tax_total_cents,
       buyer_total_cents: buy_order_totals.buyer_total_cents
     )

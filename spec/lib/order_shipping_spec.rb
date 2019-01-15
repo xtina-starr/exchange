@@ -5,7 +5,7 @@ describe OrderShipping, type: :services do
   let(:buyer_id) { 'user_id' }
   let(:seller_id) { 'partner-1' }
   let(:artwork_id) { 'artwork-id' }
-  let(:order) { Fabricate(:order, buyer_id: buyer_id, buyer_type: Order::USER, seller_id: seller_id, seller_type: 'gallery')}
+  let(:order) { Fabricate(:order, buyer_id: buyer_id, buyer_type: Order::USER, seller_id: seller_id, seller_type: 'gallery') }
   let(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 500, quantity: 2, artwork_id: artwork_id) }
   let(:order_shipping) { OrderShipping.new(order) }
   before do

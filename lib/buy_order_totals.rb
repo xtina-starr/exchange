@@ -18,7 +18,7 @@ class BuyOrderTotals
   end
 
   def shipping_total_cents
-    @shipping_total_cents ||= @order.shipping_total_cents
+    @shipping_total_cents ||= @order.line_items.map(&:shipping_total_cents).sum
   end
 
   def buyer_total_cents
@@ -26,7 +26,7 @@ class BuyOrderTotals
   end
 
   def transaction_fee_cents
-    @transaction_fee_cents ||= @transaction_fee_cents || TransactionFeeCalculator.calculate(buyer_total_cents)
+    @transaction_fee_cents ||= @order.transaction_fee_cents || TransactionFeeCalculator.calculate(buyer_total_cents)
   end
 
   def seller_total_cents

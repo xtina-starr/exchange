@@ -15,7 +15,10 @@ class LineItemTotals
   def shipping_total_cents
     return unless @order.shipping_info? && artwork_location.present?
 
-    @shipping_total_cents ||= ShippingHelper.calculate(artwork, @order.fulfillment_type, @order.shipping_address)
+    @shipping_total_cents ||= begin
+      per_item_shipping_cents = ShippingHelper.calculate(artwork, @order.fulfillment_type, @order.shipping_address)
+      per_item_shipping_cents * @line_item.quantity
+    end
   end
 
   private
