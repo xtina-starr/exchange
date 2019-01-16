@@ -48,10 +48,9 @@ class OrderShipping
   end
 
   def set_order_totals!
-    order_helper = OrderHelper.new(@order)
     # update order line items
     @order.line_items.map do |li|
-      line_item_totals = LineItemTotals.new(li, fulfillment_type: @order.fulfillment_type, shipping_address: @order.shipping_address, seller_locations: order_helper.seller_locations, artsy_collects_sales_tax: order_helper.artsy_collects_sales_tax?)
+      line_item_totals = LineItemTotals.new(li, fulfillment_type: @order.fulfillment_type, shipping_address: @order.shipping_address, seller_locations: @order.seller_locations, artsy_collects_sales_tax: @order.artsy_collects_sales_tax?)
       li.update!(shipping_total_cents: line_item_totals.shipping_total_cents, sales_tax_cents: line_item_totals.tax_total_cents, should_remit_sales_tax: line_item_totals.should_remit_sales_tax)
     end
     buy_order_totals = BuyOrderTotals.new(@order)

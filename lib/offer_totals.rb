@@ -19,7 +19,7 @@ class OfferTotals
   def artwork
     @artwork ||= begin
       artwork_id = @order.line_items.first.artwork_id # this is with assumption of Offer order only having one lineItem
-      order_helper.artworks[artwork_id]
+      @order.artworks[artwork_id]
     end
   end
 
@@ -39,9 +39,9 @@ class OfferTotals
         @order.shipping_address,
         shipping_total_cents,
         artwork_location,
-        order_helper.seller_locations
+        @order.seller_locations
       )
-      sales_tax = order_helper.partner[:artsy_collects_sales_tax] ? service.sales_tax : 0
+      sales_tax = @order.partner[:artsy_collects_sales_tax] ? service.sales_tax : 0
       OpenStruct.new(tax_total_cents: sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
     end
   rescue Errors::ValidationError => e
@@ -49,9 +49,5 @@ class OfferTotals
 
     # If there are no taxable addresses then we set the sales tax to 0.
     OpenStruct.new(tax_total_cents: 0, should_remit_sales_tax: false)
-  end
-
-  def order_helper
-    @order_helper ||= OrderHelper.new(@order)
   end
 end

@@ -3,7 +3,7 @@ class OfferOrderTotals
   attr_reader :offer
   delegate :tax_total_cents, to: :offer
   delegate :should_remit_sales_tax, to: :offer
-  delegate :commission_rate, to: :order_helper
+  delegate :commission_rate, to: :order
   delegate :shipping_total_cents, to: :offer
   delegate :tax_total_cents, to: :offer
   delegate :buyer_total_cents, to: :offer
@@ -15,6 +15,10 @@ class OfferOrderTotals
 
   def items_total_cents
     offer.amount_cents
+  end
+
+  def commission_rate
+    @commission_rate ||= @order.partner[:effective_commission_rate]
   end
 
   def commission_fee_cents
@@ -35,9 +39,5 @@ class OfferOrderTotals
 
   def calculate_remittable_sales_tax
     @offer.should_remit_sales_tax? ? @offer.tax_total_cents : 0
-  end
-
-  def order_helper
-    @order_helper ||= OrderHelper.new(@order)
   end
 end

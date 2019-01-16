@@ -25,10 +25,8 @@ module OfferService
 
   def self.submit_pending_offer(offer)
     order = offer.order
-    order_helper = OrderHelper.new(order)
-
     raise Errors::ValidationError, :invalid_offer if offer.submitted?
-    raise Errors::ProcessingError, :insufficient_inventory unless order_helper.inventory?
+    raise Errors::ProcessingError, :insufficient_inventory unless order.inventory?
 
     order = offer.order
     offer_order_totals = OfferOrderTotals.new(offer)
@@ -75,15 +73,14 @@ module OfferService
     end
 
     def validate_order_submission!(order)
-      order_helper = OrderHelper.new(order)
       raise Errors::ValidationError, :cant_submit unless order.mode == Order::OFFER
       raise Errors::ValidationError, :missing_required_info unless order.can_commit?
 
-      unless order_helper.valid_artwork_version?
+      unless order.valid_artwork_version?
         Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
         raise Errors::ProcessingError, :artwork_version_mismatch
       end
-      credit_card_error = order_helper.assert_credit_card
+      credit_card_error = order.assert_credit_card
       raise Errors::ValidationError, credit_card_error if credit_card_error
     end
   end
