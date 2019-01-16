@@ -77,19 +77,8 @@ describe Api::GraphqlController, type: :request do
       end
     end
 
-    context 'trusted user rules' do
-      let(:jwt_user_id) { 'rando' }
-
-      context 'trusted app' do
-        let(:jwt_roles) { 'trusted' }
-        it 'allows access' do
-          expect do
-            client.execute(query, artworkId: artwork_id)
-          end.to_not raise_error
-        end
-      end
-
-      context 'untrusted  app' do
+    context 'authentication' do
+      context 'untrusted app' do
         let(:jwt_roles) { 'foobar' }
         it 'raises error' do
           expect do
