@@ -1,4 +1,6 @@
 class LineItem < ApplicationRecord
+  include LineItemHelper
+
   has_paper_trail class_name: 'PaperTrail::LineItemVersion'
 
   belongs_to :order

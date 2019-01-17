@@ -340,6 +340,7 @@ type LineItem {
   order: Order!
   priceCents: Int! @deprecated(reason: "switch to use listPriceCents")
   quantity: Int!
+  shippingTotalCents: Int
   updatedAt: DateTime!
 }
 

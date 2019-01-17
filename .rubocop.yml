@@ -17,6 +17,9 @@ Metrics/AbcSize:
   Exclude:
     - "db/migrate/*"
 
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: variable
+
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
