@@ -13,6 +13,7 @@ class Types::LineItemType < Types::BaseObject
   field :created_at, Types::DateTimeType, null: false
   field :updated_at, Types::DateTimeType, null: false
   field :fulfillments, Types::FulfillmentType.connection_type, null: true
+  field :order, Types::OrderInterface, null: false
 
   def price_cents
     object.list_price_cents
