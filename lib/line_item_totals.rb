@@ -13,25 +13,15 @@ class LineItemTotals
   end
 
   def shipping_total_cents
-    return unless @order.shipping_info? && artwork_location.present?
+    return unless @order.shipping_info? && @line_item.artwork_location.present?
 
     @shipping_total_cents ||= begin
-      per_item_shipping_cents = ShippingHelper.calculate(artwork, @order.fulfillment_type, @order.shipping_address)
+      per_item_shipping_cents = ShippingHelper.calculate(@line_item.artwork, @order.fulfillment_type, @order.shipping_address)
       per_item_shipping_cents * @line_item.quantity
     end
   end
 
   private
-
-  def artwork
-    @artwork ||= Gravity.get_artwork(@line_item.artwork_id) || raise(Errors::ValidationError, :unknown_artwork)
-  end
-
-  def artwork_location
-    raise Errors::ValidationError, :missing_artwork_location if artwork[:location].blank?
-
-    @artwork_location ||= Address.new(artwork[:location])
-  end
 
   def tax_data
     return OpenStruct.new(tax_total_cents: nil, should_remit_sales_tax: nil) unless @order.shipping_info?
@@ -44,7 +34,7 @@ class LineItemTotals
         @fulfillment_type,
         @shipping_address,
         shipping_total_cents,
-        artwork_location,
+        @line_item.artwork_location,
         @seller_locations
       )
       sales_tax = @artsy_collects_sales_tax ? service.sales_tax : 0

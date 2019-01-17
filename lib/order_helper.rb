@@ -1,6 +1,6 @@
 module OrderHelper
   def valid_artwork_version?
-    line_items.all? { |li| artworks[li[:artwork_id]][:current_version_id] == li[:artwork_version_id] }
+    line_items.all?(&:latest_artwork_version?)
   end
 
   def assert_credit_card
@@ -12,11 +12,7 @@ module OrderHelper
   end
 
   def artworks
-    @artworks ||= Hash[line_items.pluck(:artwork_id).uniq.map do |artwork_id|
-      artwork = Gravity.get_artwork(artwork_id)
-      validate_artwork!(artwork)
-      [artwork[:_id], artwork]
-    end]
+    @artworks ||= line_items.uniq.map { |li| [li.artwork_id, li.artwork] }.to_h
   end
 
   def credit_card
@@ -36,28 +32,10 @@ module OrderHelper
   end
 
   def inventory?
-    line_items.all? do |li|
-      artwork = artworks[li.artwork_id]
-      inventory = if li.edition_set_id.present?
-                    edition_set = artwork[:edition_sets].detect { |a| a[:id] == li.edition_set_id }
-                    raise Errors::ValidationError, :unknown_edition_set unless edition_set
-
-                    edition_set[:inventory]
-                  else
-                    artwork[:inventory]
-                  end
-      inventory[:count].positive? || inventory[:unlimited] == true
-    end
+    line_items.all?(&:inventory?)
   end
 
   def artsy_collects_sales_tax?
     @artsy_collects_sales_tax ||= partner[:artsy_collects_sales_tax]
-  end
-
-  private
-
-  def validate_artwork!(artwork)
-    raise Errors::ValidationError, :unknown_artwork unless artwork
-    raise Errors::ValidationError, :missing_artwork_location if artwork[:location].blank?
   end
 end
