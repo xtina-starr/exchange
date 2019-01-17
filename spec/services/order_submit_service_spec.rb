@@ -49,6 +49,17 @@ describe OrderSubmitService, type: :services do
         allow(Gravity).to receive(:get_artwork).with(artwork2[:_id]).and_return(artwork2)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
       end
+      context 'with failed validation' do
+        before do
+          order.update!(fulfillment_type: nil)
+        end
+        it 'does not call gravity undeduct' do
+          expect do
+            service.process!
+          end.to raise_error(Errors::ValidationError)
+          expect(artwork_inventory_undeduct_request).not_to have_been_requested
+        end
+      end
       context 'with failed artwork inventory deduct' do
         let(:artwork_inventory_deduct_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 400, body: { message: 'could not deduct' }.to_json) }
         before do
