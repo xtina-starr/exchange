@@ -9,14 +9,14 @@ module LineItemHelper
 
   def inventory?
     inventory = if edition_set_id.present?
-                  edition_set = artwork[:edition_sets].detect { |a| a[:id] == edition_set_id }
-                  raise Errors::ValidationError, :unknown_edition_set unless edition_set
+      edition_set = artwork[:edition_sets].detect { |a| a[:id] == edition_set_id }
+      raise Errors::ValidationError, :unknown_edition_set unless edition_set
 
-                  edition_set[:inventory]
-                else
-                  artwork[:inventory]
-                end
-    inventory[:count].positive? || inventory[:unlimited] == true
+      edition_set[:inventory]
+    else
+      artwork[:inventory]
+    end
+    inventory[:count].positive? || inventory[:unlimited]
   end
 
   def latest_artwork_version?

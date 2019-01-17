@@ -58,13 +58,13 @@ class OrderEvent < Events::BaseEvent
 
     last_offer = @object.last_offer
     in_response_to = if last_offer.responds_to
-                       {
-                         id: last_offer.responds_to.id,
-                         amount_cents: last_offer.responds_to.amount_cents,
-                         created_at: last_offer.responds_to.created_at,
-                         from_participant: last_offer.responds_to.from_participant
-                       }
-                     end
+      {
+        id: last_offer.responds_to.id,
+        amount_cents: last_offer.responds_to.amount_cents,
+        created_at: last_offer.responds_to.created_at,
+        from_participant: last_offer.responds_to.from_participant
+      }
+    end
     {
       id: last_offer.id,
       amount_cents: last_offer.amount_cents,

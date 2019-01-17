@@ -37,28 +37,28 @@ class OrderCreator
 
   def valid_artwork?
     artwork_error = if artwork.nil?
-                      :unknown_artwork
-                    elsif !artwork[:published]
-                      :unpublished_artwork
-                    end
+      :unknown_artwork
+    elsif !artwork[:published]
+      :unpublished_artwork
+    end
     @errors << artwork_error if artwork_error
     artwork_error.nil?
   end
 
   def valid_edition_set?
     artwork_error = if edition_set_id.present? && !artwork[:edition_sets]&.any? { |e| e[:id] == edition_set_id }
-                      :unknown_edition_set
-                    elsif edition_set_id.nil? && artwork[:edition_sets].present? && artwork[:edition_sets].count > 1
-                      :missing_edition_set_id
-                    end
+      :unknown_edition_set
+    elsif edition_set_id.nil? && artwork[:edition_sets].present? && artwork[:edition_sets].count > 1
+      :missing_edition_set_id
+    end
     @errors << artwork_error if artwork_error
     artwork_error.nil?
   end
 
   def valid_action?
     action_error = if @mode == Order::BUY && !artwork[:acquireable] then :not_acquireable
-                   elsif @mode == Order::OFFER && !artwork[:offerable] then :not_offerable
-                   end
+    elsif @mode == Order::OFFER && !artwork[:offerable] then :not_offerable
+    end
     @errors << action_error if action_error.present?
     action_error.nil?
   end
