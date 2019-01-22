@@ -53,14 +53,9 @@ class Types::QueryType < Types::BaseObject
     query
   end
 
-  def competing_orders(args)
-    order = Order.find(args[:order_id])
-    err = Errors::ValidationError.new(:order_not_submitted, message: 'order id belongs to order not submitted')
-    raise err unless order.state == Order::SUBMITTED
-
-    authorized_seller = order.seller_type != Order::USER && context[:current_user][:partner_ids].include?(args[:seller_id])
-    raise ActiveRecord::RecordNotFound unless trusted? || authorized_seller
-
+  def competing_orders(params)
+    order = Order.find(params[:order_id])
+    validate_competing_orders_request!(params, order)
     order.competing_orders
   end
 
@@ -104,5 +99,13 @@ class Types::QueryType < Types::BaseObject
     else
       raise Errors::ValidationError, :missing_params
     end
+  end
+
+  def validate_competing_orders_request!(params, order)
+    not_submitted_error = Errors::ValidationError.new(:order_not_submitted, message: 'order id belongs to order not submitted')
+    raise not_submitted_error unless order.state == Order::SUBMITTED
+
+    authorized_seller = order.seller_type != Order::USER && context[:current_user][:partner_ids].include?(params[:seller_id])
+    raise ActiveRecord::RecordNotFound unless trusted? || authorized_seller
   end
 end
