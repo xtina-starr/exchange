@@ -117,6 +117,12 @@ class Order < ApplicationRecord
     end
   end
 
+  def competing_orders
+    artwork_ids = line_items.pluck(:artwork_id)
+    conditions = 'orders.id != ? AND orders.state = ? AND line_items.artwork_id IN (?)'
+    Order.joins(:line_items).where(conditions, id, SUBMITTED, artwork_ids)
+  end
+
   def offerable?
     [PENDING, SUBMITTED].include? state
   end
