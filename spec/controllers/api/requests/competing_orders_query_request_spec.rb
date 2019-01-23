@@ -64,11 +64,25 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      context 'with an order that has competition and good params' do
+      context 'with an order that has artwork competition and good params' do
         it 'returns those competing orders' do
           3.times do
             competing_order = Fabricate(:order, state: Order::SUBMITTED)
             Fabricate(:line_item, order: competing_order, artwork_id: line_item.artwork_id)
+          end
+
+          results = client.execute(query, orderId: order.id, sellerId: seller_id)
+          expect(results.data.competing_orders.total_count).to eq 3
+        end
+      end
+
+      context 'with an order that has edition set competition and good params' do
+        let(:line_item) { Fabricate(:line_item, order: order, edition_set_id: 'very-wet-painting') }
+
+        it 'returns those competing orders' do
+          3.times do
+            competing_order = Fabricate(:order, state: Order::SUBMITTED)
+            Fabricate(:line_item, order: competing_order, edition_set_id: line_item.edition_set_id)
           end
 
           results = client.execute(query, orderId: order.id, sellerId: seller_id)

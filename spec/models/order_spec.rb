@@ -319,6 +319,21 @@ RSpec.describe Order, type: :model do
             expect(order.competing_orders).to match_array [competing_order1, competing_order2]
           end
         end
+
+        context 'with edition set competition' do
+          it 'returns those competing orders' do
+            order = Fabricate(:order, state: Order::SUBMITTED)
+            line_item1 = Fabricate(:line_item, order: order, edition_set_id: 'very-wet-painting')
+            line_item2 = Fabricate(:line_item, order: order, edition_set_id: 'cracked-painting')
+
+            competing_order1 = Fabricate(:order, state: Order::SUBMITTED)
+            Fabricate(:line_item, order: competing_order1, edition_set_id: line_item1.edition_set_id)
+            competing_order2 = Fabricate(:order, state: Order::SUBMITTED)
+            Fabricate(:line_item, order: competing_order2, edition_set_id: line_item2.edition_set_id)
+
+            expect(order.competing_orders).to match_array [competing_order1, competing_order2]
+          end
+        end
       end
     end
   end
