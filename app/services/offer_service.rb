@@ -61,6 +61,29 @@ module OfferService
     PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, user_id)
   end
 
+  def self.accept_offer(offer, user_id)
+    order = offer.order
+    raise Errors::ValidationError, :not_last_offer unless offer.last_offer?
+
+    order_charge = OrderCharge.new(order, user_id)
+    raise Errors::ValidationError, order_charge.error unless order_charge.valid?
+
+    order.approve! do
+      ot = OfferOrderTotals.new(offer)
+      order.update!(
+        transaction_fee_cents: ot.transaction_fee_cents,
+        commission_rate: ot.commission_rate,
+        commission_fee_cents: ot.commission_fee_cents,
+        seller_total_cents: ot.seller_total_cents
+      )
+      order_charge.charge
+    end
+    PostOrderNotificationJob.perform_later(order.id, Order::APPROVED, user_id)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
+    Exchange.dogstatsd.increment 'order.approved'
+  end
+
   class << self
     private
 

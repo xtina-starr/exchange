@@ -29,6 +29,10 @@ module LineItemHelper
     @artwork_location ||= Address.new(artwork[:location])
   end
 
+  def current_commission_fee_cents(current_commission_rate)
+    total_list_price_cents * current_commission_rate
+  end
+
   private
 
   def validate_artwork!(artwork)

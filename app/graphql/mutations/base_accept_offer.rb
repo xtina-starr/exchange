@@ -11,13 +11,8 @@ class Mutations::BaseAcceptOffer < Mutations::BaseMutation
     authorize!(offer)
     raise Errors::ValidationError, :cannot_accept_offer unless waiting_for_accept?(offer)
 
-    service = Offers::AcceptOfferService.new(
-      offer,
-      user_id: current_user_id
-    )
-    service.process!
-
-    { order_or_error: { order: service.offer.order.reload } }
+    OfferService.accept_offer(offer, current_user_id)
+    { order_or_error: { order: offer.order.reload } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end

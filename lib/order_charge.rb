@@ -1,26 +1,53 @@
-class CommitOrderService
-  attr_accessor :order
+class OrderCharge
+  attr_accessor :order, :transaction, :error
 
   COMMITTABLE_ACTIONS = %i[approve submit].freeze
 
-  def initialize(order, action, user_id)
+  def initialize(order, user_id)
     @order = order
-    @action = action
     @user_id = user_id
+    @error = nil
     @transaction = nil
     @deducted_inventory = []
+    @validated = false
   end
 
-  def process!
-    pre_process!
-    commit_order!
-    post_process!
-    @order
+  def hold
+    raise Errors::ValidationError, @error unless valid?
+
+    deduct_inventory
+    @transaction = PaymentService.create_and_authorize_charge(construct_charge_params)
+    raise Errors::ProcessingError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
+
+    @order.update!(external_charge_id: @transaction.external_id)
   rescue Errors::ValidationError, Errors::ProcessingError => e
     undeduct_inventory
     raise e
   ensure
     handle_transaction
+  end
+
+  def charge
+    raise Errors::ValidationError, @error unless valid?
+
+    deduct_inventory
+    @transaction = PaymentService.create_and_capture_charge(construct_charge_params)
+    raise Errors::ProcessingError.new(:capture_failed, @transaction.failure_data) if @transaction.failed?
+
+    @order.update!(external_charge_id: @transaction.external_id)
+  rescue Errors::ValidationError, Errors::ProcessingError => e
+    undeduct_inventory
+    raise e
+  ensure
+    handle_transaction
+  end
+
+  def valid?
+    @validated ||= begin
+      @error = :missing_required_info unless @order.can_commit?
+      @error ||= @order.assert_credit_card
+    end
+    @error.nil?
   end
 
   private
@@ -30,13 +57,6 @@ class CommitOrderService
 
     @order.transactions << @transaction
     notify_failed_charge if @transaction.failed?
-  end
-
-  def commit_order!
-    @order.send("#{@action}!") do
-      deduct_inventory
-      process_payment
-    end
   end
 
   def undeduct_inventory
@@ -50,25 +70,6 @@ class CommitOrderService
       Gravity.deduct_inventory(li)
       @deducted_inventory << li
     end
-  end
-
-  def process_payment
-    raise NotImplementedError
-  end
-
-  def pre_process!
-    raise Errors::ValidationError, :uncommittable_action unless COMMITTABLE_ACTIONS.include? @action
-    raise Errors::ValidationError, :missing_required_info unless @order.can_commit?
-
-    OrderValidator.validate_credit_card!(@order.credit_card)
-    OrderValidator.validate_commission_rate!(@order.partner)
-
-    OrderTotalUpdaterService.new(order, order.partner[:effective_commission_rate]).update_totals!
-  end
-
-  def post_process!
-    @order.update!(external_charge_id: @transaction.external_id)
-    Exchange.dogstatsd.increment "order.#{@action}"
   end
 
   def notify_failed_charge

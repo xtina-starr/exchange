@@ -30,6 +30,35 @@ module OrderService
     order
   end
 
+  def self.submit!(order, user_id)
+    unless order.valid_artwork_version?
+      Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
+      raise Errors::ProcessingError, :artwork_version_mismatch
+    end
+    order_charge = OrderCharge.new(order, user_id)
+    raise Errors::ValidationError, order_charge.error unless order_charge.valid?
+
+    current_commission_rate = order.current_commission_rate
+    raise Errors::ValidationError, :missing_commission_rate if current_commission_rate.blank?
+
+    order.submit! do
+      order.line_items.each { |li| li.update!(commission_fee_cents: li.current_commission_fee_cents(current_commission_rate)) }
+      ot = BuyOrderTotals.new(order)
+      order.update!(
+        transaction_fee_cents: ot.transaction_fee_cents,
+        commission_rate: current_commission_rate,
+        commission_fee_cents: ot.commission_fee_cents,
+        seller_total_cents: ot.seller_total_cents
+      )
+      order_charge.hold
+    end
+    PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, user_id)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
+    Exchange.dogstatsd.increment 'order.submitted'
+    order
+  end
+
   def self.fulfill_at_once!(order, fulfillment, user_id)
     order.fulfill! do
       fulfillment = Fulfillment.create!(fulfillment.slice(:courier, :tracking_id, :estimated_delivery))

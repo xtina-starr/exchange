@@ -38,4 +38,8 @@ module OrderHelper
   def artsy_collects_sales_tax?
     @artsy_collects_sales_tax ||= partner[:artsy_collects_sales_tax]
   end
+
+  def current_commission_rate
+    partner[:effective_commission_rate]
+  end
 end
