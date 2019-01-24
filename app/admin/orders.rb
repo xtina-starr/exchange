@@ -82,7 +82,9 @@ ActiveAdmin.register Order do
         if artwork_info.present?
           if artwork_info[:images].kind_of?(Array)
             square_image = artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
-            img :src => square_image[:image_urls][:square], :width => "100%"
+            if square_image
+              img :src => square_image[:image_urls][:square], :width => "100%"
+            end
           end
           br
           if artwork_info.key?(:title)
