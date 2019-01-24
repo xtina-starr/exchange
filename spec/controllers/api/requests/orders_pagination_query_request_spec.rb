@@ -6,17 +6,10 @@ describe Api::GraphqlController, type: :request do
 
     let(:seller_id) { jwt_partner_ids.first }
 
-    context 'with no orders belonging to a seller' do
-      before do
-        # Fabricate.times(10, :order, seller_id: seller_id)
-        Fabricate.times(1, :order, seller_id: 'foo')
-        Fabricate.times(1, :order, seller_id: 'bar')
-      end
-
-      let(:query) do
-        <<-GRAPHQL
-          query($sellerId: String, $first: Int) {
-            orders(sellerId: $sellerId, first: $first) {
+    let(:query) do
+      <<-GRAPHQL
+          query($sellerId: String, $first: Int, $after: String, $last: Int, $before: String) {
+            orders(sellerId: $sellerId, first: $first, after: $after, last: $last, before: $before) {
               edges {
                 cursor
                 node {
@@ -40,98 +33,190 @@ describe Api::GraphqlController, type: :request do
                   page
                 }
               }
+              totalCount
+              totalPages
             }
           }
-        GRAPHQL
+      GRAPHQL
+    end
+
+    context 'with 0 orders' do
+      let(:results) { client.execute(query, sellerId: seller_id, first: 10) }
+
+      it 'has no pages' do
+        expect(results.data.orders.total_pages).to eq 0
       end
 
-      it 'returns an empty result without page cursors' do
-        result = client.execute(query, sellerId: seller_id, first: 12)
-        expect(result.data.orders.edges.count).to eq 0
-        expect(result.data.orders.page_cursors).to be_nil
+      it 'does not have any pagination cursors' do
+        expect(results.data.orders.page_cursors).to be_nil
       end
     end
 
     context 'with 1 order' do
-      it 'returns one page'
-      it 'has the same first, last, and around page'
+      before do
+        Fabricate(:order, seller_id: seller_id)
+      end
+
+      let(:results) { client.execute(query, sellerId: seller_id, first: 10) }
+
+      it 'has 1 total orders' do
+        expect(results.data.orders.total_count).to eq 1
+      end
+
+      it 'has 1 total pages' do
+        expect(results.data.orders.total_pages).to eq 1
+      end
+
+      it 'has a first page with a blank cursor' do
+        expect(results.data.orders.page_cursors.first.is_current).to be true
+        expect(results.data.orders.page_cursors.first.cursor).to be_empty
+        expect(results.data.orders.page_cursors.first.page).to eq 1
+      end
+
+      it 'has a last page that matches the first page' do
+        expect(results.data.orders.page_cursors.last.is_current).to eq results.data.orders.page_cursors.first.is_current
+        expect(results.data.orders.page_cursors.last.cursor).to eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.last.page).to eq results.data.orders.page_cursors.first.page
+      end
+
+      it 'has 1 around page that matches the first page' do
+        expect(results.data.orders.page_cursors.around.count).to eq 1
+        expect(results.data.orders.page_cursors.around[0].is_current).to eq results.data.orders.page_cursors.first.is_current
+        expect(results.data.orders.page_cursors.around[0].cursor).to eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[0].page).to eq results.data.orders.page_cursors.first.page
+      end
     end
 
-    context 'with 99 orders belonging to a seller' do
+    context 'with 20 orders and 10 orders per page' do
       before do
-        99.times.each { |i| Fabricate(:order, seller_id: seller_id, created_at: i.days.ago) }
+        20.times.each { |i| Fabricate(:order, seller_id: seller_id, created_at: i.days.ago) }
       end
 
-      let(:query) do
-        <<-GRAPHQL
-            query($sellerId: String, $first: Int, $after: String, $last: Int, $before: String) {
-              orders(sellerId: $sellerId, first: $first, after: $after, last: $last, before: $before) {
-                edges {
-                  cursor
-                  node {
-                    id
-                  }
-                }
-                pageCursors {
-                  first {
-                    cursor
-                    isCurrent
-                    page
-                  },
-                  last {
-                    cursor
-                    isCurrent
-                    page
-                  },
-                  around {
-                    cursor
-                    isCurrent
-                    page
-                  }
-                }
-              }
-            }
-        GRAPHQL
+      let(:results) { client.execute(query, sellerId: seller_id, first: 10) }
+
+      it 'has 20 total orders' do
+        expect(results.data.orders.total_count).to eq 20
       end
 
-      it 'returns a page of 12 orders' do
-        result = client.execute(query, sellerId: seller_id, first: 12)
-        expect(result.data.orders.edges.count).to eq 12
+      it 'has 2 total pages' do
+        expect(results.data.orders.total_pages).to eq 2
       end
 
-      it 'returns a curosr that can be used to find the next two orders placed with that seller' do
-        result = client.execute(query, sellerId: seller_id, first: 12)
-        first_page_after = result.data.orders.edges[-1].cursor
-        expect(first_page_after).to_not be_nil
-        expect(first_page_after).to be_a(String)
-
-        result = client.execute(query, sellerId: seller_id, first: 12, after: first_page_after)
-        expect(result.data.orders.edges.count).to eq 12
-        next_page_after = result.data.orders.edges[-1].cursor
-        expect(next_page_after).to_not be_nil
-        expect(next_page_after).to be_a(String)
-        expect(next_page_after).not_to eql(first_page_after)
-
-        next_page_before = result.data.orders.edges[0].cursor
-        result = client.execute(query, sellerId: seller_id, last: 12, before: next_page_before)
-        expect(result.data.orders.edges.count).to eq 12
-        prev_page_after = result.data.orders.edges[-1].cursor
-        expect(prev_page_after).to_not be_nil
-        expect(prev_page_after).to be_a(String)
-        expect(prev_page_after).to eq(first_page_after)
+      it 'has a first page with a blank cursor' do
+        expect(results.data.orders.page_cursors.first.is_current).to be true
+        expect(results.data.orders.page_cursors.first.cursor).to be_empty
+        expect(results.data.orders.page_cursors.first.page).to eq 1
       end
 
-      it 'jumps to the last page' do
-        result = client.execute(query, sellerId: seller_id, first: 10)
-        last_page_cursor = result.data.orders.page_cursors.last.cursor
-        expect(last_page_cursor).to_not be_nil
-        expect(last_page_cursor).to be_a(String)
-        expect(result.data.orders.page_cursors.first.is_current).to be true
+      it 'has a last page that represents the second page' do
+        expect(results.data.orders.page_cursors.last.is_current).to be false
+        expect(results.data.orders.page_cursors.last.cursor).to_not be_empty
+        expect(results.data.orders.page_cursors.last.page).to eq 2
+      end
 
-        result = client.execute(query, sellerId: seller_id, first: 10, after: last_page_cursor)
-        expect(result.data.orders.edges.size).to eq 9
-        expect(result.data.orders.page_cursors.last.is_current).to be true
-        expect(result.data.orders.page_cursors.first.is_current).to be false
+      it 'has 2 around pages that match first and last pages' do
+        expect(results.data.orders.page_cursors.around.count).to eq 2
+        expect(results.data.orders.page_cursors.around[0].is_current).to eq results.data.orders.page_cursors.first.is_current
+        expect(results.data.orders.page_cursors.around[0].cursor).to eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[0].page).to eq results.data.orders.page_cursors.first.page
+        expect(results.data.orders.page_cursors.around[1].is_current).to eq results.data.orders.page_cursors.last.is_current
+        expect(results.data.orders.page_cursors.around[1].cursor).to eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[1].page).to eq results.data.orders.page_cursors.last.page
+      end
+    end
+
+    context 'with 30 orders and 10 orders per page' do
+      before do
+        30.times.each { |i| Fabricate(:order, seller_id: seller_id, created_at: i.days.ago) }
+      end
+
+      let(:results) { client.execute(query, sellerId: seller_id, first: 10) }
+
+      it 'has 3 around pages that include the first and last page' do
+        expect(results.data.orders.page_cursors.around.count).to eq 3
+        expect(results.data.orders.page_cursors.around[0].is_current).to eq results.data.orders.page_cursors.first.is_current
+        expect(results.data.orders.page_cursors.around[0].cursor).to eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[0].page).to eq results.data.orders.page_cursors.first.page
+        expect(results.data.orders.page_cursors.around[1].is_current).to be false
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[1].page).to eq 2
+        expect(results.data.orders.page_cursors.around[2].is_current).to eq results.data.orders.page_cursors.last.is_current
+        expect(results.data.orders.page_cursors.around[2].cursor).to eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[2].page).to eq results.data.orders.page_cursors.last.page
+      end
+    end
+
+    context 'with 30 orders and 10 orders per page' do
+      before do
+        30.times.each { |i| Fabricate(:order, seller_id: seller_id, created_at: i.days.ago) }
+      end
+
+      let(:results) { client.execute(query, sellerId: seller_id, first: 10) }
+
+      it 'has 3 around pages that include the first and last page' do
+        expect(results.data.orders.page_cursors.around.count).to eq 3
+        expect(results.data.orders.page_cursors.around[0].is_current).to eq results.data.orders.page_cursors.first.is_current
+        expect(results.data.orders.page_cursors.around[0].cursor).to eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[0].page).to eq results.data.orders.page_cursors.first.page
+        expect(results.data.orders.page_cursors.around[1].is_current).to be false
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[1].page).to eq 2
+        expect(results.data.orders.page_cursors.around[2].is_current).to eq results.data.orders.page_cursors.last.is_current
+        expect(results.data.orders.page_cursors.around[2].cursor).to eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[2].page).to eq results.data.orders.page_cursors.last.page
+      end
+    end
+
+    context 'with 40 orders and 10 orders per page' do
+      before do
+        40.times.each { |i| Fabricate(:order, seller_id: seller_id, created_at: i.days.ago) }
+      end
+
+      let(:results) { client.execute(query, sellerId: seller_id, first: 10) }
+
+      it 'has 3 around pages that include the first page but not the last page' do
+        expect(results.data.orders.page_cursors.around.count).to eq 3
+        expect(results.data.orders.page_cursors.around[0].is_current).to eq results.data.orders.page_cursors.first.is_current
+        expect(results.data.orders.page_cursors.around[0].cursor).to eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[0].page).to eq results.data.orders.page_cursors.first.page
+        expect(results.data.orders.page_cursors.around[1].is_current).to be false
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.around[2].cursor
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[1].page).to eq 2
+        expect(results.data.orders.page_cursors.around[2].is_current).to be false
+        expect(results.data.orders.page_cursors.around[2].cursor).to_not eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[2].cursor).to_not eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[2].page).to eq 3
+      end
+    end
+
+    context 'with 50 orders and 10 orders per page' do
+      before do
+        50.times.each { |i| Fabricate(:order, seller_id: seller_id, created_at: i.days.ago) }
+      end
+
+      let(:results) { client.execute(query, sellerId: seller_id, first: 10) }
+      
+      it 'has 3 around pages that do not include the first or last pages' do
+        expect(results.data.orders.page_cursors.around.count).to eq 3
+        expect(results.data.orders.page_cursors.around[0].is_current).to be false
+        expect(results.data.orders.page_cursors.around[0].cursor).to_not eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[0].cursor).to_not eq results.data.orders.page_cursors.around[1].cursor
+        expect(results.data.orders.page_cursors.around[0].cursor).to_not eq results.data.orders.page_cursors.around[2].cursor
+        expect(results.data.orders.page_cursors.around[0].cursor).to_not eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[0].page).to eq 2
+        expect(results.data.orders.page_cursors.around[1].is_current).to be false
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.around[2].cursor
+        expect(results.data.orders.page_cursors.around[1].cursor).to_not eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[1].page).to eq 3
+        expect(results.data.orders.page_cursors.around[2].is_current).to be false
+        expect(results.data.orders.page_cursors.around[2].cursor).to_not eq results.data.orders.page_cursors.first.cursor
+        expect(results.data.orders.page_cursors.around[2].cursor).to_not eq results.data.orders.page_cursors.last.cursor
+        expect(results.data.orders.page_cursors.around[2].page).to eq 4
       end
     end
   end

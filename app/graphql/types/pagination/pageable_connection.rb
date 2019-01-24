@@ -57,14 +57,24 @@ class Types::Pagination::PageableConnection < GraphQL::Types::Relay::BaseConnect
 
   # TODO:  clarify this behavior
   def around_page_numbers
-    pages = if current_page == 1
-      [1, 2, 3]
+    if current_page == 1
+      if total_pages <= 4
+        [1, 2, 3]
+      else
+        [2, 3, 4]
+      end
     elsif current_page == total_pages
-      [total_pages - 2, total_pages - 1, total_pages]
     else
-      [current_page - 1, current_page, current_page + 1]
     end
-    pages.select { |p| p <= total_pages }.compact
+
+    # pages = if current_page == 1
+    #   [1, 2, 3]
+    # elsif current_page == total_pages
+    #   [total_pages - 2, total_pages - 1, total_pages]
+    # else
+    #   [current_page - 1, current_page, current_page + 1]
+    # end
+    # pages.select { |p| p <= total_pages }.compact
   end
 
   ## From GraphQL::Relay::RelationConnection (our `object`)
