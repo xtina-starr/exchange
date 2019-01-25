@@ -28,7 +28,6 @@ class Types::QueryType < Types::BaseObject
   field :competingOrders, Types::OrderConnectionWithTotalCountType, null: true, connection: true do
     description 'Find list of competing orders'
     argument :order_id, ID, required: true
-    argument :seller_id, String, required: true
   end
 
   def order(args)
@@ -55,7 +54,8 @@ class Types::QueryType < Types::BaseObject
 
   def competing_orders(params)
     order = Order.find(params[:order_id])
-    validate_competing_orders_request!(params, order)
+    validate_order_request!(order)
+    validate_competing_orders_request!(order)
     order.competing_orders
   end
 
@@ -101,11 +101,8 @@ class Types::QueryType < Types::BaseObject
     end
   end
 
-  def validate_competing_orders_request!(params, order)
+  def validate_competing_orders_request!(order)
     not_submitted_error = Errors::ValidationError.new(:order_not_submitted, message: 'order id belongs to order not submitted')
     raise not_submitted_error unless order.state == Order::SUBMITTED
-
-    authorized_seller = order.seller_type != Order::USER && context[:current_user][:partner_ids].include?(params[:seller_id])
-    raise ActiveRecord::RecordNotFound unless trusted? || authorized_seller
   end
 end

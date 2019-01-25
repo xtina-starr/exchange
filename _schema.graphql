@@ -697,7 +697,6 @@ type Query {
     # Returns the last _n_ elements from the list.
     last: Int
     orderId: ID!
-    sellerId: String!
   ): OrderConnectionWithTotalCount
   lineItems(
     # Returns the elements in the list that come after the specified cursor.
