@@ -34,13 +34,6 @@ module Types::OrderInterface
   field :transaction_fee_cents, Integer, null: true, seller_only: true
   field :updated_at, Types::DateTimeType, null: false
 
-  # Deprecated
-  field :last_offer, Types::OfferType, null: true, deprecation_reason: 'Switch to OfferOrder lastOffer'
-  field :offers, Types::OfferType.connection_type, deprecation_reason: 'Switch to OfferOrder offers', null: true do
-    argument :from_id, String, required: false
-    argument :from_type, String, required: false
-  end
-
   orphan_types Types::BuyOrderType, Types::OfferOrderType
 
   def offers(**args)
