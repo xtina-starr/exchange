@@ -1,12 +1,7 @@
 class Types::Pagination::PageableConnection < GraphQL::Types::Relay::BaseConnection
   field :page_cursors, Types::Pagination::PageCursorsType, null: true
-  field :total_pages, Int, null: false
-  field :total_count, Integer, null: false
-
-  # TODO: can we change the default page size to not be 20?
-
-  # TODO: we should be doing this earlier if we want to see hasPreviousPage
-  GraphQL::Relay::ConnectionType.bidirectional_pagination = true
+  field :total_pages, Int, null: true
+  field :total_count, Int, null: true
 
   MAX_CURSOR_COUNT = 5
 

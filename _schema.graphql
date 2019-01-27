@@ -552,8 +552,8 @@ type OrderConnectionWithTotalCount {
 
   # Information to aid in pagination.
   pageInfo: PageInfo!
-  totalCount: Int!
-  totalPages: Int!
+  totalCount: Int
+  totalPages: Int
 }
 
 # An edge in a connection.
