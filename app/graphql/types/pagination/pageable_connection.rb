@@ -2,30 +2,38 @@ class Types::Pagination::PageableConnection < GraphQL::Types::Relay::BaseConnect
   field :page_cursors, Types::Pagination::PageCursorsType, null: true
   field :total_pages, Int, null: false
   field :total_count, Integer, null: false
-  # we should be doing this earlier if we want to see hasPreviousPage
+
+  # TODO: can we change the default page size to not be 20?
+
+  # TODO: we should be doing this earlier if we want to see hasPreviousPage
   GraphQL::Relay::ConnectionType.bidirectional_pagination = true
 
-  def page_cursors
-    return if total_count.zero?
+  MAX_CURSOR_COUNT = 5
 
-    {
-      first: page_cursor(1),
-      last: page_cursor(total_pages),
-      around: around_page_numbers.map { |pn| page_cursor(pn) }
-    }
+  def page_cursors
+    return if total_pages <= 1
+
+    cursors = {}
+    cursors[:first] = page_cursor(1) if total_pages > MAX_CURSOR_COUNT && around_page_numbers.exclude?(1)
+    cursors[:around] = around_page_numbers.map { |pn| page_cursor(pn) }
+    cursors[:last] = page_cursor(total_pages) if total_pages > MAX_CURSOR_COUNT && around_page_numbers.exclude?(total_pages)
+    cursors[:previous] = page_cursor(current_page - 1) if current_page > 1
+
+    cursors
   end
 
   def total_pages
-    if object.nodes.size
-      nodes_per_page ? (object.nodes.size.to_f / nodes_per_page).ceil : 1
-    else
-      0
-    end
+    return 0 if object.nodes.size.zero?
+    return 1 if nodes_per_page.nil?
+
+    (object.nodes.size.to_f / nodes_per_page).ceil
   end
 
   def total_count
     object.nodes.size
   end
+
+  private
 
   def page_cursor(page_num)
     {
@@ -35,67 +43,28 @@ class Types::Pagination::PageableConnection < GraphQL::Types::Relay::BaseConnect
     }
   end
 
-  private
-
-  # A cursor for querying a given page number (after: cursor_for_page(8), first: nodes_per_page)
-  # TODO: Why can't we just re-implement GraphQL::Relay::RelationConnection#cursor_from_node (below)?
-  #  calling it via `object.cursor_from_node` for a node not in the edge_nodes throws an error,
-  #  but from here we can generate it using the same method, which uses offset: http://graphql-ruby.org/pro/cursors#whats-the-difference'
   def cursor_for_page(page_num)
-    if page_num > 1
-      after_cursor = (page_num - 1) * nodes_per_page
-      object.encode(after_cursor.to_s)
-    else
-      ## page 1 has no cursor
-      ''
-    end
+    return '' if page_num == 1
+
+    after_cursor = (page_num - 1) * nodes_per_page
+    object.encode(after_cursor.to_s)
   end
 
   def current_page
     nodes_before / nodes_per_page + 1
   end
 
-  # TODO:  clarify this behavior
   def around_page_numbers
-    if current_page == 1
-      if total_pages <= 4
-        [1, 2, 3]
-      else
-        [2, 3, 4]
-      end
-    elsif current_page == total_pages
+    if total_pages <= MAX_CURSOR_COUNT
+      (1..total_pages).to_a
+    elsif current_page <= 3
+      (1..4).to_a
+    elsif current_page >= total_pages - 2
+      ((total_pages - 3)..total_pages).to_a
     else
+      [current_page - 1, current_page, current_page + 1]
     end
-
-    # pages = if current_page == 1
-    #   [1, 2, 3]
-    # elsif current_page == total_pages
-    #   [total_pages - 2, total_pages - 1, total_pages]
-    # else
-    #   [current_page - 1, current_page, current_page + 1]
-    # end
-    # pages.select { |p| p <= total_pages }.compact
   end
-
-  ## From GraphQL::Relay::RelationConnection (our `object`)
-  # def cursor_from_node(item)
-  #   item_index = nodes.index(item)
-  #   if item_index.nil?
-  #     raise("Can't generate cursor, item not found in connection: #{item}")
-  #   else
-  #     offset = item_index + 1 + ((paged_nodes_offset || 0) - (relation_offset(sliced_nodes) || 0))
-
-  #     if after
-  #       offset += offset_from_cursor(after)
-  #     elsif before
-  #       offset += offset_from_cursor(before) - 1 - sliced_nodes_count
-  #     end
-
-  #     encode(offset.to_s)
-  #   end
-  # end
-
-  # private
 
   def nodes_before
     node_offset(object.edge_nodes.first) - 1
