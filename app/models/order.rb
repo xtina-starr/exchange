@@ -118,8 +118,9 @@ class Order < ApplicationRecord
   end
 
   def competing_orders
-    artwork_ids = line_items.pluck(:artwork_id)
-    edition_set_ids = line_items.pluck(:edition_set_id)
+    artwork_ids = line_items.select(:artwork_id)
+    edition_set_ids = line_items.select(:edition_set_id)
+
     conditions = <<~SQL
       orders.id != ?
       AND orders.state = ?
