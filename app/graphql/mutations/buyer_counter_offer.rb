@@ -7,7 +7,7 @@ class Mutations::BuyerCounterOffer < Mutations::BaseMutation
 
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
-  def resolve(offer_id:, amount_cents:, offer_note:)
+  def resolve(offer_id:, amount_cents:, offer_note: nil)
     offer = Offer.find(offer_id)
 
     validate_request!(offer)

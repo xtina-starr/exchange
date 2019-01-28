@@ -3,11 +3,11 @@ class Mutations::SellerCounterOffer < Mutations::BaseMutation
 
   argument :offer_id, ID, required: true
   argument :amount_cents, Integer, required: true
-  argument :offer_note, String, required: true
+  argument :offer_note, String, required: false
 
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
-  def resolve(offer_id:, amount_cents:, offer_note:)
+  def resolve(offer_id:, amount_cents:, offer_note: nil)
     offer = Offer.find(offer_id)
     validate_request!(offer)
     order = offer.order
