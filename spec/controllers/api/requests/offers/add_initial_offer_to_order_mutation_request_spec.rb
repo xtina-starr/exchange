@@ -68,6 +68,7 @@ describe Api::GraphqlController, type: :request do
                       buyerTotalCents
                       submittedAt
                       creatorId
+                      offerNote
                       from {
                         ... on User {
                           id
@@ -157,6 +158,22 @@ describe Api::GraphqlController, type: :request do
           expect(response_order.my_last_offer.submitted_at).to be_nil
           expect(response_order.my_last_offer.buyer_total_cents).to be_nil # tax and shipping not yet set
           expect(response_order.offers.edges.count).to eq 0 # offer is not submitted yet
+        end
+
+        context 'with offer note' do
+          let(:offer_note) {"I want to pay with a metrocard."}
+          let(:mutation_input) do
+            {
+              orderId: order_id,
+              amountCents: amount_cents,
+              offerNote: offer_note
+            }
+          end
+          it 'returns the order with note' do
+            response = client.execute(mutation, input: mutation_input)
+            response_order = response.data.add_initial_offer_to_order.order_or_error.order
+            expect(response_order.my_last_offer.offer_note).to eq(offer_note)
+          end
         end
       end
     end
