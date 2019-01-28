@@ -1,5 +1,5 @@
 module OfferService
-  def self.create_pending_offer(order, amount_cents:, from_id:, from_type:, creator_id:, responds_to: nil)
+  def self.create_pending_offer(order, amount_cents:, offer_note:, from_id:, from_type:, creator_id:, responds_to: nil)
     raise Errors::ValidationError, :cannot_offer unless order.mode == Order::OFFER
     raise Errors::ValidationError, :invalid_amount_cents unless amount_cents.positive?
 
@@ -12,15 +12,17 @@ module OfferService
       responds_to: responds_to,
       shipping_total_cents: offer_totals.shipping_total_cents,
       tax_total_cents: offer_totals.tax_total_cents,
-      should_remit_sales_tax: offer_totals.should_remit_sales_tax
+      should_remit_sales_tax: offer_totals.should_remit_sales_tax,
+      # TODO do we need to worry about nullness here?
+      offer_note: offer_note
     )
   end
 
-  def self.create_pending_counter_offer(responds_to, amount_cents:, from_id:, from_type:, creator_id:)
+  def self.create_pending_counter_offer(responds_to, amount_cents:, offer_note:, from_id:, from_type:, creator_id:)
     raise Errors::ValidationError, :invalid_state unless responds_to.order.state == Order::SUBMITTED
     raise Errors::ValidationError, :not_last_offer unless responds_to.last_offer?
 
-    create_pending_offer(responds_to.order, amount_cents: amount_cents, from_id: from_id, from_type: from_type, creator_id: creator_id, responds_to: responds_to)
+    create_pending_offer(responds_to.order, amount_cents: amount_cents, offer_note: offer_note, from_id: from_id, from_type: from_type, creator_id: creator_id, responds_to: responds_to)
   end
 
   def self.submit_pending_offer(offer)

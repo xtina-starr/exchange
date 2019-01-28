@@ -3,15 +3,16 @@ class Mutations::BuyerCounterOffer < Mutations::BaseMutation
 
   argument :offer_id, ID, required: true
   argument :amount_cents, Integer, required: true
+  argument :offer_note, String, required: false
 
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
-  def resolve(offer_id:, amount_cents:)
+  def resolve(offer_id:, amount_cents:, offer_note:)
     offer = Offer.find(offer_id)
 
     validate_request!(offer)
 
-    pending_offer = OfferService.create_pending_counter_offer(offer, amount_cents: amount_cents, from_id: offer.order.buyer_id, from_type: offer.order.buyer_type, creator_id: current_user_id)
+    pending_offer = OfferService.create_pending_counter_offer(offer, amount_cents: amount_cents, offer_note: offer_note, from_id: offer.order.buyer_id, from_type: offer.order.buyer_type, creator_id: current_user_id)
 
     { order_or_error: { order: pending_offer.order } }
   rescue Errors::ApplicationError => e
