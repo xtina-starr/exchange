@@ -125,7 +125,11 @@ class Order < ApplicationRecord
       AND orders.state = ?
       AND (line_items.artwork_id IN (?) OR line_items.edition_set_id IN (?))
     SQL
-    Order.joins(:line_items).where(conditions, id, SUBMITTED, artwork_ids, edition_set_ids)
+
+    Order
+      .joins(:line_items)
+      .where(conditions, id, SUBMITTED, artwork_ids, edition_set_ids)
+      .order(created_at: :asc)
   end
 
   def offerable?
