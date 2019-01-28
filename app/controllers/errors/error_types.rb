@@ -41,6 +41,7 @@ module Errors
       not_offerable
       offer_more_than_one_line_item
       offer_not_from_buyer
+      order_not_submitted
       uncommittable_action
       unknown_artwork
       unknown_edition_set

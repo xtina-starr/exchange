@@ -25,6 +25,11 @@ class Types::QueryType < Types::BaseObject
     argument :order_states, [Types::OrderStateEnum], required: false
   end
 
+  field :competingOrders, Types::OrderConnectionWithTotalCountType, null: true, connection: true do
+    description 'Find list of competing orders'
+    argument :order_id, ID, required: true
+  end
+
   def order(args)
     raise Error::ValidationError.new(:missing_required_param, message: 'id or code is required') unless args[:id].present? || args[:code].present?
 
@@ -45,6 +50,13 @@ class Types::QueryType < Types::BaseObject
     query = LineItem.where(args.slice(:artwork_id, :edition_set_id))
     query = query.joins(:order).where(orders: { state: args[:order_states] }) if args[:order_states].present?
     query
+  end
+
+  def competing_orders(params)
+    order = Order.find(params[:order_id])
+    validate_order_request!(order)
+    validate_competing_orders_request!(order)
+    order.competing_orders
   end
 
   private
@@ -87,5 +99,10 @@ class Types::QueryType < Types::BaseObject
     else
       raise Errors::ValidationError, :missing_params
     end
+  end
+
+  def validate_competing_orders_request!(order)
+    not_submitted_error = Errors::ValidationError.new(:order_not_submitted, message: 'order id belongs to order not submitted')
+    raise not_submitted_error unless order.state == Order::SUBMITTED
   end
 end

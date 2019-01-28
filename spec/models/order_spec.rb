@@ -265,4 +265,76 @@ RSpec.describe Order, type: :model do
       end
     end
   end
+
+  describe '#competing_orders' do
+    context 'with an order that is not submitted' do
+      it 'returns an empty array' do
+        order = Fabricate(:order, state: Order::PENDING)
+        expect(order.competing_orders).to eq []
+      end
+    end
+
+    context 'with an order that is submitted' do
+      context 'with an order that has no competition' do
+        it 'returns an empty array' do
+          order = Fabricate(:order, state: Order::SUBMITTED)
+          expect(order.competing_orders).to eq []
+        end
+      end
+
+      context 'with an order that has competition' do
+        context 'when the competition is not submitted' do
+          it 'returns an empty array' do
+            order = Fabricate(:order, state: Order::SUBMITTED)
+            line_item = Fabricate(:line_item, order: order, artwork_id: 'very-wet-painting')
+
+            competing_order = Fabricate(:order, state: Order::PENDING)
+            Fabricate(:line_item, order: competing_order, artwork_id: line_item.artwork_id)
+            expect(order.competing_orders).to eq []
+          end
+        end
+
+        context 'when the competition is submitted' do
+          it 'returns those completing orders' do
+            order = Fabricate(:order, state: Order::SUBMITTED)
+            line_item = Fabricate(:line_item, order: order, artwork_id: 'very-wet-painting')
+
+            competing_order = Fabricate(:order, state: Order::SUBMITTED)
+            Fabricate(:line_item, order: competing_order, artwork_id: line_item.artwork_id)
+            expect(order.competing_orders).to eq [competing_order]
+          end
+        end
+
+        context 'with an order that has multiple line items' do
+          it 'returns the competition for all line items' do
+            order = Fabricate(:order, state: Order::SUBMITTED)
+            line_item1 = Fabricate(:line_item, order: order, artwork_id: 'very-wet-painting')
+            line_item2 = Fabricate(:line_item, order: order, artwork_id: 'cracked-painting')
+
+            competing_order1 = Fabricate(:order, state: Order::SUBMITTED)
+            Fabricate(:line_item, order: competing_order1, artwork_id: line_item1.artwork_id)
+            competing_order2 = Fabricate(:order, state: Order::SUBMITTED)
+            Fabricate(:line_item, order: competing_order2, artwork_id: line_item2.artwork_id)
+
+            expect(order.competing_orders).to match_array [competing_order1, competing_order2]
+          end
+        end
+
+        context 'with edition set competition' do
+          it 'returns those competing orders' do
+            order = Fabricate(:order, state: Order::SUBMITTED)
+            line_item1 = Fabricate(:line_item, order: order, edition_set_id: 'very-wet-painting')
+            line_item2 = Fabricate(:line_item, order: order, edition_set_id: 'cracked-painting')
+
+            competing_order1 = Fabricate(:order, state: Order::SUBMITTED)
+            Fabricate(:line_item, order: competing_order1, edition_set_id: line_item1.edition_set_id)
+            competing_order2 = Fabricate(:order, state: Order::SUBMITTED)
+            Fabricate(:line_item, order: competing_order2, edition_set_id: line_item2.edition_set_id)
+
+            expect(order.competing_orders).to match_array [competing_order1, competing_order2]
+          end
+        end
+      end
+    end
+  end
 end
