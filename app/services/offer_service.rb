@@ -13,7 +13,6 @@ module OfferService
       shipping_total_cents: offer_totals.shipping_total_cents,
       tax_total_cents: offer_totals.tax_total_cents,
       should_remit_sales_tax: offer_totals.should_remit_sales_tax,
-      # TODO do we need to worry about nullness here?
       offer_note: offer_note
     )
   end

@@ -161,7 +161,7 @@ describe Api::GraphqlController, type: :request do
         end
 
         context 'with offer note' do
-          let(:offer_note) {"I want to pay with a metrocard."}
+          let(:offer_note) { 'I want to pay with a metrocard.' }
           let(:mutation_input) do
             {
               orderId: order_id,

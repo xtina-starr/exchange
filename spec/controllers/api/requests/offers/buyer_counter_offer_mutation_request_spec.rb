@@ -175,7 +175,7 @@ describe Api::GraphqlController, type: :request do
         end.to change { order.reload.offers.count }.from(1).to(2)
       end
       context 'with offer note' do
-        let(:offer_note) {"I'll double my offer."}
+        let(:offer_note) { "I'll double my offer." }
         let(:buyer_counter_offer_input) do
           {
             input: {

@@ -221,7 +221,7 @@ describe OfferService, type: :services do
     let(:order) { Fabricate(:order, state: Order::SUBMITTED, mode: order_mode) }
     let(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: 'artwork-1', quantity: 2) }
     let(:current_offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
-    let(:offer_note) {"I want this art for free."}
+    let(:offer_note) { 'I want this art for free.' }
 
     before do
       order.line_items << line_item
