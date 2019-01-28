@@ -2,7 +2,7 @@ require 'rails_helper'
 require 'support/gravity_helper'
 require 'support/use_stripe_mock'
 
-describe OrderCharge, type: :services do
+describe OrderProcessor, type: :services do
   include_context 'use stripe mock'
   let(:buyer_id) { 'buyer1' }
   let(:seller_id) { 'seller1' }
@@ -21,7 +21,7 @@ describe OrderCharge, type: :services do
   let(:stub_gravity_merchant_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/merchant_accounts?partner_id=seller1").to_return(body: gravity_merchant_accounts.to_json) }
   let(:gravity_credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
   let(:stub_gravity_card_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/credit_card/cc1").to_return(body: gravity_credit_card.to_json) }
-  let(:order_charge) { OrderCharge.new(order, buyer_id) }
+  let(:order_processor) { OrderProcessor.new(order, buyer_id) }
 
   describe '#hold' do
     context 'invalid order' do
@@ -30,7 +30,7 @@ describe OrderCharge, type: :services do
           order.update!(fulfillment_type: nil)
         end
         it 'raises validation error' do
-          expect { order_charge.hold }.to raise_error do |e|
+          expect { order_processor.hold }.to raise_error do |e|
             expect(e.code).to eq :missing_required_info
           end
         end
@@ -40,7 +40,7 @@ describe OrderCharge, type: :services do
           order.update!(credit_card_id: nil)
         end
         it 'raises validation error' do
-          expect { order_charge.hold }.to raise_error do |e|
+          expect { order_processor.hold }.to raise_error do |e|
             expect(e.code).to eq :missing_required_info
           end
         end
@@ -51,7 +51,7 @@ describe OrderCharge, type: :services do
           stub_gravity_card_request
         end
         it 'raises validation error' do
-          expect { order_charge.hold }.to raise_error do |e|
+          expect { order_processor.hold }.to raise_error do |e|
             expect(e.code).to eq :credit_card_missing_external_id
           end
           expect(stub_gravity_card_request).to have_been_requested
@@ -68,7 +68,7 @@ describe OrderCharge, type: :services do
         stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
         expect(PaymentService).not_to receive(:create_and_capture_charge)
-        expect { order_charge.hold }.to raise_error do |e|
+        expect { order_processor.hold }.to raise_error do |e|
           expect(e.code).to eq :insufficient_inventory
         end
         expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
@@ -80,7 +80,7 @@ describe OrderCharge, type: :services do
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct
         expect(PaymentService).not_to receive(:create_and_capture_charge)
-        expect { order_charge.hold }.to raise_error do |e|
+        expect { order_processor.hold }.to raise_error do |e|
           expect(e.code).to eq :insufficient_inventory
         end
         expect(stub_line_item_1_gravity_undeduct).to have_been_requested
@@ -99,18 +99,18 @@ describe OrderCharge, type: :services do
         StripeMock.prepare_card_error(:card_declined)
       end
       it 'deducts and undeducts inventory' do
-        expect { order_charge.hold }.to raise_error(Errors::ProcessingError)
+        expect { order_processor.hold }.to raise_error(Errors::ProcessingError)
         expect(stub_line_item_1_gravity_deduct).to have_been_requested
         expect(stub_line_item_2_gravity_deduct).to have_been_requested
         expect(stub_line_item_1_gravity_undeduct).to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).to have_been_requested
       end
       it 'captures the failed transaction' do
-        expect { order_charge.hold }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
+        expect { order_processor.hold }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
         expect(order.transactions.first.failure_code).to eq 'card_declined'
       end
       it 'posts failed transaction event' do
-        expect { order_charge.hold }.to raise_error(Errors::ProcessingError)
+        expect { order_processor.hold }.to raise_error(Errors::ProcessingError)
         expect(PostTransactionNotificationJob).to have_been_enqueued
       end
     end
@@ -124,7 +124,7 @@ describe OrderCharge, type: :services do
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         expect(Stripe::Charge).to receive(:create).and_return(uncaptured_charge)
-        expect { order_charge.hold }.to change(order.transactions, :count).by(1)
+        expect { order_processor.hold }.to change(order.transactions, :count).by(1)
       end
       it 'deducts inventory' do
         expect(stub_line_item_1_gravity_deduct).to have_been_requested
@@ -147,7 +147,7 @@ describe OrderCharge, type: :services do
           order.update!(fulfillment_type: nil)
         end
         it 'raises validation error' do
-          expect { order_charge.charge }.to raise_error do |e|
+          expect { order_processor.charge }.to raise_error do |e|
             expect(e.code).to eq :missing_required_info
           end
         end
@@ -157,7 +157,7 @@ describe OrderCharge, type: :services do
           order.update!(credit_card_id: nil)
         end
         it 'raises validation error' do
-          expect { order_charge.charge }.to raise_error do |e|
+          expect { order_processor.charge }.to raise_error do |e|
             expect(e.code).to eq :missing_required_info
           end
         end
@@ -168,7 +168,7 @@ describe OrderCharge, type: :services do
           stub_gravity_card_request
         end
         it 'raises validation error' do
-          expect { order_charge.charge }.to raise_error do |e|
+          expect { order_processor.charge }.to raise_error do |e|
             expect(e.code).to eq :credit_card_missing_external_id
           end
           expect(stub_gravity_card_request).to have_been_requested
@@ -185,7 +185,7 @@ describe OrderCharge, type: :services do
         stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
         expect(PaymentService).not_to receive(:create_and_capture_charge)
-        expect { order_charge.charge }.to raise_error do |e|
+        expect { order_processor.charge }.to raise_error do |e|
           expect(e.code).to eq :insufficient_inventory
         end
         expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
@@ -197,7 +197,7 @@ describe OrderCharge, type: :services do
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct
         expect(PaymentService).not_to receive(:create_and_capture_charge)
-        expect { order_charge.charge }.to raise_error do |e|
+        expect { order_processor.charge }.to raise_error do |e|
           expect(e.code).to eq :insufficient_inventory
         end
         expect(stub_line_item_1_gravity_undeduct).to have_been_requested
@@ -216,18 +216,18 @@ describe OrderCharge, type: :services do
         StripeMock.prepare_card_error(:card_declined)
       end
       it 'deducts and undeducts inventory' do
-        expect { order_charge.charge }.to raise_error(Errors::ProcessingError)
+        expect { order_processor.charge }.to raise_error(Errors::ProcessingError)
         expect(stub_line_item_1_gravity_deduct).to have_been_requested
         expect(stub_line_item_2_gravity_deduct).to have_been_requested
         expect(stub_line_item_1_gravity_undeduct).to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).to have_been_requested
       end
       it 'captures the failed transaction' do
-        expect { order_charge.charge }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
+        expect { order_processor.charge }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
         expect(order.transactions.first.failure_code).to eq 'card_declined'
       end
       it 'posts failed transaction event' do
-        expect { order_charge.charge }.to raise_error(Errors::ProcessingError)
+        expect { order_processor.charge }.to raise_error(Errors::ProcessingError)
         expect(PostTransactionNotificationJob).to have_been_enqueued
       end
     end
@@ -241,7 +241,7 @@ describe OrderCharge, type: :services do
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         expect(Stripe::Charge).to receive(:create).and_return(captured_charge)
-        expect { order_charge.charge }.to change(order.transactions, :count).by(1)
+        expect { order_processor.charge }.to change(order.transactions, :count).by(1)
       end
       it 'deducts inventory' do
         expect(stub_line_item_1_gravity_deduct).to have_been_requested

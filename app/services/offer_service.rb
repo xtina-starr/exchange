@@ -62,11 +62,11 @@ module OfferService
   end
 
   def self.accept_offer(offer, user_id)
-    order = offer.order
     raise Errors::ValidationError, :not_last_offer unless offer.last_offer?
 
-    order_charge = OrderCharge.new(order, user_id)
-    raise Errors::ValidationError, order_charge.error unless order_charge.valid?
+    order = offer.order
+    order_processor = OrderProcessor.new(order, user_id)
+    raise Errors::ValidationError, order_processor.error unless order_processor.valid?
 
     order.approve! do
       ot = OfferOrderTotals.new(offer)
@@ -76,7 +76,7 @@ module OfferService
         commission_fee_cents: ot.commission_fee_cents,
         seller_total_cents: ot.seller_total_cents
       )
-      order_charge.charge
+      order_processor.charge
     end
     PostOrderNotificationJob.perform_later(order.id, Order::APPROVED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)

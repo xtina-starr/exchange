@@ -40,6 +40,11 @@ module OrderHelper
   end
 
   def current_commission_rate
-    partner[:effective_commission_rate]
+    @current_commission_rate ||= begin
+      current_rate = partner[:effective_commission_rate]
+      raise Errors::ValidationError, :missing_commission_rate if current_rate.blank?
+
+      current_rate
+    end
   end
 end

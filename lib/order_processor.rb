@@ -1,4 +1,4 @@
-class OrderCharge
+class OrderProcessor
   attr_accessor :order, :transaction, :error
 
   COMMITTABLE_ACTIONS = %i[approve submit].freeze
