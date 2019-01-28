@@ -29,6 +29,7 @@ describe OfferService, type: :services do
         expect(offer.from_id).to eq user_id
         expect(offer.from_type).to eq Order::USER
         expect(offer.creator_id).to eq user_id
+        expect(offer.offer_note).to eq nil
       end
       it 'does not update order totals and state' do
         call_service
@@ -220,7 +221,7 @@ describe OfferService, type: :services do
     let(:order) { Fabricate(:order, state: Order::SUBMITTED, mode: order_mode) }
     let(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: 'artwork-1', quantity: 2) }
     let(:current_offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
-    let(:offer_note) {nil}
+    let(:offer_note) {"I want this art for free."}
 
     before do
       order.line_items << line_item
@@ -241,6 +242,7 @@ describe OfferService, type: :services do
         expect(new_offer.creator_id).to eq(offer_creator_id)
         expect(new_offer.from_type).to eq(offer_from_type)
         expect(new_offer.submitted_at).to be_nil
+        expect(new_offer.offer_note).to eq(offer_note)
       end
       it 'raises error for 0  offer amount' do
         expect { OfferService.create_pending_counter_offer(current_offer, amount_cents: 0, offer_note: offer_note, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
