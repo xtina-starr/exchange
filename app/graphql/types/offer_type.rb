@@ -14,6 +14,7 @@ class Types::OfferType < Types::BaseObject
   field :responds_to, Types::OfferType, null: true
   field :from_participant, Types::OrderParticipantEnum, null: true
   field :buyer_total_cents, Integer, null: true
+  field :offer_note, String, null: true
 
   def from
     OpenStruct.new(

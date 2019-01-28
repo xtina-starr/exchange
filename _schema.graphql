@@ -381,6 +381,7 @@ type Offer {
   from: OrderPartyUnion!
   fromParticipant: OrderParticipantEnum
   id: ID!
+  offerNote: String
   order: Order!
   respondsTo: Offer
   shippingTotalCents: Int

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_01_28_180430) do
+ActiveRecord::Schema.define(version: 2019_01_28_182354) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -121,6 +121,7 @@ ActiveRecord::Schema.define(version: 2019_01_28_180430) do
     t.bigint "tax_total_cents"
     t.bigint "shipping_total_cents"
     t.boolean "should_remit_sales_tax"
+    t.text "offer_note"
     t.index ["order_id"], name: "index_offers_on_order_id"
     t.index ["responds_to_id"], name: "index_offers_on_responds_to_id"
   end
