@@ -12,7 +12,7 @@ class Mutations::BaseAcceptOffer < Mutations::BaseMutation
     raise Errors::ValidationError, :cannot_accept_offer unless waiting_for_accept?(offer)
 
     OfferService.accept_offer(offer, current_user_id)
-    { order_or_error: { order: offer.order.reload } }
+    { order_or_error: { order: offer.order } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end

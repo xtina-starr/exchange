@@ -69,12 +69,12 @@ module OfferService
     raise Errors::ValidationError, order_processor.error unless order_processor.valid?
 
     order.approve! do
-      ot = OfferOrderTotals.new(offer)
+      totals = OfferOrderTotals.new(offer)
       order.update!(
-        transaction_fee_cents: ot.transaction_fee_cents,
-        commission_rate: ot.commission_rate,
-        commission_fee_cents: ot.commission_fee_cents,
-        seller_total_cents: ot.seller_total_cents
+        transaction_fee_cents: totals.transaction_fee_cents,
+        commission_rate: totals.commission_rate,
+        commission_fee_cents: totals.commission_fee_cents,
+        seller_total_cents: totals.seller_total_cents
       )
       order_processor.charge
     end

@@ -41,12 +41,12 @@ module OrderService
 
     order.submit! do
       order.line_items.each { |li| li.update!(commission_fee_cents: li.current_commission_fee_cents) }
-      ot = BuyOrderTotals.new(order)
+      totals = BuyOrderTotals.new(order)
       order.update!(
-        transaction_fee_cents: ot.transaction_fee_cents,
+        transaction_fee_cents: totals.transaction_fee_cents,
         commission_rate: order.current_commission_rate,
-        commission_fee_cents: ot.commission_fee_cents,
-        seller_total_cents: ot.seller_total_cents
+        commission_fee_cents: totals.commission_fee_cents,
+        seller_total_cents: totals.seller_total_cents
       )
       order_processor.hold
     end

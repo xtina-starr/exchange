@@ -10,7 +10,7 @@ class Mutations::AddInitialOfferToOrder < Mutations::BaseMutation
     raise Errors::ValidationError, :cannot_offer unless order.state == Order::PENDING
 
     OfferService.create_pending_offer(order, amount_cents: amount_cents, from_id: current_user_id, from_type: Order::USER, creator_id: current_user_id)
-    { order_or_error: { order: order.reload } }
+    { order_or_error: { order: order } }
   rescue Errors::ApplicationError => application_error
     { order_or_error: { error: Types::ApplicationErrorType.from_application(application_error) } }
   end

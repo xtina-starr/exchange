@@ -1,8 +1,6 @@
 class OrderProcessor
   attr_accessor :order, :transaction, :error
 
-  COMMITTABLE_ACTIONS = %i[approve submit].freeze
-
   def initialize(order, user_id)
     @order = order
     @user_id = user_id

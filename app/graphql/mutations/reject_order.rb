@@ -10,7 +10,7 @@ class Mutations::RejectOrder < Mutations::BaseMutation
     authorize_seller_request!(order)
     OrderCancellationService.new(order, context[:current_user][:id]).reject!
     {
-      order_or_error: { order: order.reload }
+      order_or_error: { order: order }
     }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }

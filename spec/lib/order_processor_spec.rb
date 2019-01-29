@@ -25,24 +25,16 @@ describe OrderProcessor, type: :services do
 
   describe '#hold' do
     context 'invalid order' do
-      context 'missing shipping info' do
-        before do
-          order.update!(fulfillment_type: nil)
-        end
-        it 'raises validation error' do
-          expect { order_processor.hold }.to raise_error do |e|
-            expect(e.code).to eq :missing_required_info
-          end
+      it 'raises validation error missing shipping info' do
+        order.update!(fulfillment_type: nil)
+        expect { order_processor.hold }.to raise_error do |e|
+          expect(e.code).to eq :missing_required_info
         end
       end
-      context 'missing payment info' do
-        before do
-          order.update!(credit_card_id: nil)
-        end
-        it 'raises validation error' do
-          expect { order_processor.hold }.to raise_error do |e|
-            expect(e.code).to eq :missing_required_info
-          end
+      it 'raises validation error when missing payment info' do
+        order.update!(credit_card_id: nil)
+        expect { order_processor.hold }.to raise_error do |e|
+          expect(e.code).to eq :missing_required_info
         end
       end
       context 'missing credit card info' do
@@ -142,24 +134,16 @@ describe OrderProcessor, type: :services do
   end
   describe '#charge' do
     context 'invalid order' do
-      context 'missing shipping info' do
-        before do
-          order.update!(fulfillment_type: nil)
-        end
-        it 'raises validation error' do
-          expect { order_processor.charge }.to raise_error do |e|
-            expect(e.code).to eq :missing_required_info
-          end
+      it 'raises validation error when missing shipping info' do
+        order.update!(fulfillment_type: nil)
+        expect { order_processor.charge }.to raise_error do |e|
+          expect(e.code).to eq :missing_required_info
         end
       end
-      context 'missing payment info' do
-        before do
-          order.update!(credit_card_id: nil)
-        end
-        it 'raises validation error' do
-          expect { order_processor.charge }.to raise_error do |e|
-            expect(e.code).to eq :missing_required_info
-          end
+      it 'raises validation error when missing payment info' do
+        order.update!(credit_card_id: nil)
+        expect { order_processor.charge }.to raise_error do |e|
+          expect(e.code).to eq :missing_required_info
         end
       end
       context 'missing credit card info' do

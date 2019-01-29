@@ -18,7 +18,7 @@ class Mutations::BaseRejectOffer < Mutations::BaseMutation
 
     OrderCancellationService.new(offer.order, current_user_id).reject!(sanitize_reject_reason(reject_reason))
 
-    { order_or_error: { order: order.reload } }
+    { order_or_error: { order: order } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end
