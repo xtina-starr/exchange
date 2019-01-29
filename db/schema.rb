@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_01_15_140317) do
+ActiveRecord::Schema.define(version: 2019_01_28_180430) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -84,16 +84,16 @@ ActiveRecord::Schema.define(version: 2019_01_15_140317) do
     t.uuid "order_id"
     t.string "artwork_id"
     t.string "edition_set_id"
-    t.integer "list_price_cents"
+    t.bigint "list_price_cents"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "quantity", default: 1, null: false
-    t.integer "sales_tax_cents"
+    t.bigint "sales_tax_cents"
     t.string "artwork_version_id"
     t.boolean "should_remit_sales_tax"
     t.string "sales_tax_transaction_id"
-    t.integer "commission_fee_cents"
-    t.integer "shipping_total_cents"
+    t.bigint "commission_fee_cents"
+    t.bigint "shipping_total_cents"
     t.index ["order_id"], name: "index_line_items_on_order_id"
   end
 
@@ -110,7 +110,7 @@ ActiveRecord::Schema.define(version: 2019_01_15_140317) do
 
   create_table "offers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id"
-    t.integer "amount_cents"
+    t.bigint "amount_cents"
     t.string "from_id"
     t.string "from_type"
     t.string "creator_id"
@@ -118,8 +118,8 @@ ActiveRecord::Schema.define(version: 2019_01_15_140317) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "submitted_at"
-    t.integer "tax_total_cents"
-    t.integer "shipping_total_cents"
+    t.bigint "tax_total_cents"
+    t.bigint "shipping_total_cents"
     t.boolean "should_remit_sales_tax"
     t.index ["order_id"], name: "index_offers_on_order_id"
     t.index ["responds_to_id"], name: "index_offers_on_responds_to_id"
@@ -138,10 +138,10 @@ ActiveRecord::Schema.define(version: 2019_01_15_140317) do
 
   create_table "orders", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "code"
-    t.integer "shipping_total_cents"
-    t.integer "tax_total_cents"
-    t.integer "transaction_fee_cents"
-    t.integer "commission_fee_cents"
+    t.bigint "shipping_total_cents"
+    t.bigint "tax_total_cents"
+    t.bigint "transaction_fee_cents"
+    t.bigint "commission_fee_cents"
     t.string "currency_code", limit: 3
     t.string "buyer_id"
     t.string "seller_id"
@@ -162,9 +162,9 @@ ActiveRecord::Schema.define(version: 2019_01_15_140317) do
     t.string "shipping_name"
     t.string "buyer_type"
     t.string "seller_type"
-    t.integer "items_total_cents"
-    t.integer "buyer_total_cents"
-    t.integer "seller_total_cents"
+    t.bigint "items_total_cents"
+    t.bigint "buyer_total_cents"
+    t.bigint "seller_total_cents"
     t.string "buyer_phone_number"
     t.string "state_reason"
     t.float "commission_rate"
@@ -204,7 +204,7 @@ ActiveRecord::Schema.define(version: 2019_01_15_140317) do
     t.string "external_id"
     t.string "source_id"
     t.string "destination_id"
-    t.integer "amount_cents"
+    t.bigint "amount_cents"
     t.string "failure_code"
     t.string "failure_message"
     t.string "status"
