@@ -8,7 +8,7 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
   def resolve(id:)
     order = Order.find(id)
     authorize_buyer_request!(order)
-    { order_or_error: { order: OrderSubmitService.call!(order, user_id: context[:current_user]['id']) } }
+    { order_or_error: { order: OrderService.submit!(order, current_user_id) } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end

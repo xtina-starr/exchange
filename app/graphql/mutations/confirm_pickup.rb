@@ -10,7 +10,7 @@ class Mutations::ConfirmPickup < Mutations::BaseMutation
     authorize_seller_request!(order)
     OrderService.confirm_pickup!(order, context[:current_user][:id])
     {
-      order_or_error: { order: order.reload }
+      order_or_error: { order: order }
     }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }

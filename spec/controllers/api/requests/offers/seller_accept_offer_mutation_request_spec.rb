@@ -35,7 +35,17 @@ describe Api::GraphqlController, type: :request do
     let!(:line_item) do
       Fabricate(:line_item, order: order, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1')
     end
-    let(:offer) { Fabricate(:offer, order: order, from_id: order_buyer_id, from_type: 'user', amount_cents: 800_00) }
+    let(:offer) do
+      Fabricate(
+        :offer,
+        order: order,
+        from_id: order_buyer_id,
+        from_type: 'user',
+        amount_cents: 800_00,
+        shipping_total_cents: 100_00,
+        tax_total_cents: 300_00
+      )
+    end
     let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
 
     let(:mutation) do
@@ -71,7 +81,7 @@ describe Api::GraphqlController, type: :request do
     end
 
     before do
-      order.update!(last_offer: offer)
+      order.update!(last_offer: offer, buyer_total_cents: offer.buyer_total_cents, shipping_total_cents: offer.shipping_total_cents)
     end
 
     context 'when not in the submitted state' do

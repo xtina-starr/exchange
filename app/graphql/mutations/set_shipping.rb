@@ -12,7 +12,7 @@ class Mutations::SetShipping < Mutations::BaseMutation
     authorize_buyer_request!(order)
     OrderService.set_shipping!(order, fulfillment_type: fulfillment_type, shipping: shipping)
     {
-      order_or_error: { order: order.reload }
+      order_or_error: { order: order }
     }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
