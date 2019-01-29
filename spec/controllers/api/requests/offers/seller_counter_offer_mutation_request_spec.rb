@@ -179,20 +179,20 @@ describe Api::GraphqlController, type: :request do
         end.to change { order.reload.offers.count }.from(1).to(2)
       end
       context 'with offer note' do
-        let(:offer_note) { "I'll let you have it for free." }
+        let(:note) { "I'll let you have it for free." }
         let(:seller_counter_offer_input) do
           {
             input: {
               offerId: offer.id.to_s,
               amountCents: 10000,
-              offerNote: offer_note
+              note: note
             }
           }
         end
         it 'counters the order with note' do
           client.execute(mutation, seller_counter_offer_input)
           last_offer = order.reload.last_offer
-          expect(last_offer.offer_note).to eq(offer_note)
+          expect(last_offer.note).to eq(note)
         end
       end
     end

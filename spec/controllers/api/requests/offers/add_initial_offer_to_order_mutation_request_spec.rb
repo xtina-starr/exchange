@@ -68,7 +68,7 @@ describe Api::GraphqlController, type: :request do
                       buyerTotalCents
                       submittedAt
                       creatorId
-                      offerNote
+                      note
                       from {
                         ... on User {
                           id
@@ -161,18 +161,18 @@ describe Api::GraphqlController, type: :request do
         end
 
         context 'with offer note' do
-          let(:offer_note) { 'I want to pay with a metrocard.' }
+          let(:note) { 'I want to pay with a metrocard.' }
           let(:mutation_input) do
             {
               orderId: order_id,
               amountCents: amount_cents,
-              offerNote: offer_note
+              note: note
             }
           end
           it 'returns the order with note' do
             response = client.execute(mutation, input: mutation_input)
             response_order = response.data.add_initial_offer_to_order.order_or_error.order
-            expect(response_order.my_last_offer.offer_note).to eq(offer_note)
+            expect(response_order.my_last_offer.note).to eq(note)
           end
         end
       end
