@@ -43,6 +43,11 @@ ActiveAdmin.register Order do
     redirect_to resource_path, notice: "Refunded!"
   end
 
+  member_action :buyer_reject, method: :post do
+    OrderCancellationService.new(resource, resource.buyer_id).reject!(Order::REASONS[Order::CANCELED][:buyer_rejected])
+    redirect_to resource_path, notice: "Rejected on behalf of buyer!"
+  end
+
   member_action :approve_order, method: :post do
     OrderApproveService.new(resource, current_user[:id]).process!
     redirect_to resource_path, notice: "Order approved!"
@@ -58,6 +63,12 @@ ActiveAdmin.register Order do
   action_item :refund, only: :show do
     if [Order::APPROVED, Order::FULFILLED].include? order.state
       link_to 'Refund', refund_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to refund this order?'}
+    end
+  end
+
+  action_item :refund, only: :show do
+    if order.state == Order::SUBMITTED
+      link_to 'Buyer Reject', buyer_reject_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to reject this order on behalf of buyer?'}
     end
   end
 
