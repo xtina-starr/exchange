@@ -249,6 +249,7 @@ ActiveAdmin.register Order do
           column 'Amount' do |offer|
             format_money_cents(offer.amount_cents)
           end
+          column 'Note', :note
         end
       end
     end
