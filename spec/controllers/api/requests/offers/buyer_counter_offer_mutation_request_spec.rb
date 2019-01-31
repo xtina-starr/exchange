@@ -174,6 +174,23 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.items_total_cents).to eq(421)
         end.to change { order.reload.offers.count }.from(1).to(2)
       end
+      context 'with offer note' do
+        let(:note) { "I'll double my offer." }
+        let(:buyer_counter_offer_input) do
+          {
+            input: {
+              offerId: seller_offer.id.to_s,
+              amountCents: 10000,
+              note: note
+            }
+          }
+        end
+        it 'counters the order with note' do
+          client.execute(mutation, buyer_counter_offer_input)
+          last_pending_offer = order.offers.where(from_id: jwt_user_id).order(created_at: :desc).first
+          expect(last_pending_offer.note).to eq(note)
+        end
+      end
     end
   end
 
