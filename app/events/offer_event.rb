@@ -27,6 +27,7 @@ class OfferEvent < Events::BaseEvent
       from_type: @object.from_type,
       creator_id: @object.creator_id,
       in_response_to: in_response_to,
+      note: @object.note,
       shipping_total_cents: @object.shipping_total_cents,
       tax_total_cents: @object.tax_total_cents,
       order: order
