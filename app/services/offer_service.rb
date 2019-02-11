@@ -58,6 +58,7 @@ module OfferService
       submit_pending_offer(offer)
     end
 
+    OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
     Exchange.dogstatsd.increment 'order.submit'
     PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, user_id)
   end
@@ -90,7 +91,7 @@ module OfferService
 
     def post_submit_offer(offer)
       OrderFollowUpJob.set(wait_until: offer.order.state_expires_at).perform_later(offer.order.id, offer.order.state)
-      PostOfferNotificationJob.perform_later(offer.id, OfferEvent::SUBMITTED, offer.creator_id)
+      OfferEvent.delay_post(offer, OfferEvent::SUBMITTED)
       OfferRespondReminderJob.set(wait_until: offer.order.state_expires_at - Order::DEFAULT_EXPIRATION_REMINDER)
                              .perform_later(offer.order.id, offer.id)
       Exchange.dogstatsd.increment 'offer.submit'

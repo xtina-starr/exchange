@@ -69,7 +69,7 @@ describe OfferService, type: :services do
     describe 'failed process' do
       before do
         order.update!(last_offer: offer)
-        expect(PostOrderNotificationJob).not_to receive(:perform_later)
+        expect(OfferEvent).not_to receive(:delay_post)
         expect(OrderFollowUpJob).not_to receive(:perform_later)
         expect(OfferRespondReminderJob).not_to receive(:perform_later)
       end
@@ -180,8 +180,8 @@ describe OfferService, type: :services do
         allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
         allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
         allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
-        expect(PostOfferNotificationJob).to receive(:perform_later).once.with(offer.id, OfferEvent::SUBMITTED, buyer_id)
-        expect(PostOrderNotificationJob).to receive(:perform_later).once.with(order.id, Order::SUBMITTED, buyer_id)
+        expect(OrderEvent).to receive(:delay_post).once.with(order, Order::SUBMITTED, buyer_id)
+        expect(OfferEvent).to receive(:delay_post).once.with(offer, OfferEvent::SUBMITTED)
       end
       it 'submits the offer' do
         expect do
@@ -283,12 +283,12 @@ describe OfferService, type: :services do
 
   describe '#submit_pending_offer' do
     let(:artwork) { gravity_v1_artwork }
-    let(:offer_from_id) { 'user-id' }
+    let(:buyer_id) { 'user-id' }
     let(:order_seller_id) { 'partner-1' }
-    let(:order) { Fabricate(:order, mode: Order::OFFER, state: Order::SUBMITTED, buyer_id: offer_from_id, seller_id: order_seller_id) }
+    let(:order) { Fabricate(:order, mode: Order::OFFER, state: Order::SUBMITTED, seller_id: order_seller_id, seller_type: 'gallery', buyer_id: buyer_id, buyer_type: Order::USER) }
     let(:line_item) { Fabricate(:line_item, order: order, artwork_id: artwork[:_id]) }
-    let(:current_offer) { Fabricate(:offer, order: order, amount_cents: 10000, submitted_at: 1.day.ago) }
-    let(:new_offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 50_00, responds_to: current_offer, from_id: offer_from_id) }
+    let(:current_offer) { Fabricate(:offer, order: order, from_id: order.seller_id, from_type: order.seller_type, amount_cents: 10000, submitted_at: 1.day.ago) }
+    let(:new_offer) { Fabricate(:offer, order: order, from_id: order.buyer_id, from_type: order.buyer_type, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 50_00, responds_to: current_offer) }
     let(:call_service) { OfferService.submit_pending_offer(new_offer) }
 
     before do
@@ -352,7 +352,7 @@ describe OfferService, type: :services do
 
       it 'queues job for posting notification' do
         call_service
-        expect(PostOfferNotificationJob).to have_been_enqueued
+        expect(PostEventJob).to have_been_enqueued
       end
       it 'queues job for order follow up' do
         call_service
@@ -367,7 +367,7 @@ describe OfferService, type: :services do
     end
 
     context 'attempting to submit already submitted offer' do
-      let(:new_offer) { Fabricate(:offer, order: order, amount_cents: 20000, responds_to: current_offer, submitted_at: 1.minute.ago, from_id: offer_from_id) }
+      let(:new_offer) { Fabricate(:offer, order: order, amount_cents: 20000, responds_to: current_offer, submitted_at: 1.minute.ago, from_id: buyer_id, from_type: Order::USER) }
       it 'raises a validation error' do
         expect {  call_service }.to raise_error(Errors::ValidationError)
       end
