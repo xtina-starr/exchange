@@ -51,7 +51,7 @@ module OrderService
       order_processor.hold
     end
 
-    PostOrderNotificationJob.perform_later(order.id, Order::SUBMITTED, user_id)
+    OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
     Exchange.dogstatsd.increment 'order.submitted'
