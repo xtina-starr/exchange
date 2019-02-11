@@ -78,11 +78,18 @@ module OfferService
         seller_total_cents: totals.seller_total_cents
       )
       order_processor.charge
+      order.transactions << order_processor.transaction
     end
     OrderEvent.delay_post(order, Order::APPROVED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
     Exchange.dogstatsd.increment 'order.approved'
+  rescue Errors::FailedTransactionError => e
+    transaction = e.transaction
+    return if transaction.blank?
+
+    order.transactions << transaction
+    PostTransactionNotificationJob.perform_later(transaction.id, TransactionEvent::CREATED, user_id)
   end
 
   class << self

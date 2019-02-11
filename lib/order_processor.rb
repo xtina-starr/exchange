@@ -30,14 +30,12 @@ class OrderProcessor
 
     deduct_inventory
     @transaction = PaymentService.create_and_capture_charge(construct_charge_params)
-    raise Errors::ProcessingError.new(:capture_failed, @transaction.failure_data) if @transaction.failed?
+    raise Errors::FailedTransactionError.new(:capture_failed, @transaction) if @transaction.failed?
 
     @order.update!(external_charge_id: @transaction.external_id)
   rescue Errors::ValidationError, Errors::ProcessingError => e
     undeduct_inventory
     raise e
-  ensure
-    handle_transaction
   end
 
   def valid?
@@ -49,13 +47,6 @@ class OrderProcessor
   end
 
   private
-
-  def handle_transaction
-    return if @transaction.blank?
-
-    @order.transactions << @transaction
-    notify_failed_charge if @transaction.failed?
-  end
 
   def undeduct_inventory
     @deducted_inventory.each { |li| Gravity.undeduct_inventory(li) }
