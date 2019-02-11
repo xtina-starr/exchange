@@ -23,7 +23,7 @@ describe OrderApproveService, type: :services do
         expect(order.reload.state).to eq Order::SUBMITTED
       end
       it 'does not queue any followup job' do
-        expect(PostOrderNotificationJob).not_to receive(:perform_later)
+        expect(OrderEvent).not_to receive(:delay_post)
         expect(OrderFollowUpJob).not_to receive(:set)
         expect(RecordSalesTaxJob).not_to receive(:perform_later)
       end
