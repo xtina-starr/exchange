@@ -39,7 +39,7 @@ class OrderEvent < Events::BaseEvent
 
   def self.delay_post(order, action, user_id = nil)
     event = new(user: user_id, action: action, model: order)
-    PostEventJob.perform_later(event.to_json, event.routing_key)
+    PostEventJob.perform_later(TOPIC, event.to_json, event.routing_key)
   end
 
   def subject
@@ -77,7 +77,8 @@ class OrderEvent < Events::BaseEvent
       tax_total_cents: last_offer.tax_total_cents,
       from_participant: last_offer.from_participant,
       creator_id: last_offer.creator_id,
-      in_response_to: in_response_to
+      in_response_to: in_response_to,
+      note: last_offer.note
     }
   end
 

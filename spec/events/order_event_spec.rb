@@ -114,7 +114,7 @@ describe OrderEvent, type: :events do
       end
     end
     context 'with last_offer' do
-      let(:offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 40_00, from_id: seller_id, from_type: 'gallery', creator_id: 'partner-admin') }
+      let(:offer) { Fabricate(:offer, order: order, amount_cents: 200_00, shipping_total_cents: 100_00, tax_total_cents: 40_00, from_id: seller_id, from_type: 'gallery', creator_id: 'partner-admin', note: 'some random note') }
       before do
         order.update!(last_offer: offer)
       end
@@ -126,6 +126,7 @@ describe OrderEvent, type: :events do
         expect(event.properties[:last_offer][:from_participant]).to eq 'seller'
         expect(event.properties[:last_offer][:creator_id]).to eq 'partner-admin'
         expect(event.properties[:last_offer][:responds_to]).to be_nil
+        expect(event.properties[:last_offer][:note]).to eq 'some random note'
       end
     end
     context 'with last_offer that responds to another offer' do

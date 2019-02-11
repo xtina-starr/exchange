@@ -52,7 +52,7 @@ describe OrderApproveService, type: :services do
         expect(order.transactions.last.status).to eq Transaction::SUCCESS
       end
       it 'queues PostEvent' do
-        expect(PostEventJob).to have_been_enqueued.with(kind_of(String), 'order.approved')
+        expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.approved')
       end
       it 'queues OrderFollowUpJob' do
         expect(OrderFollowUpJob).to have_been_enqueued.with(order.id, Order::APPROVED)
