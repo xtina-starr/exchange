@@ -94,7 +94,7 @@ describe Api::GraphqlController, type: :request do
 
       it 'queues a job for posting events' do
         client.execute(mutation, approve_order_input)
-        expect(PostEventJob).to have_been_enqueued.with(kind_of(String), 'order.approved')
+        expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.approved')
       end
 
       it 'queues a job for rejecting the order when the order should expire' do

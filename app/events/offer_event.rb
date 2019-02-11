@@ -12,7 +12,7 @@ class OfferEvent < Events::BaseEvent
 
   def self.delay_post(offer, action)
     event = new(user: offer.creator_id, action: action, model: offer)
-    PostEventJob.perform_later(event.to_json, event.routing_key)
+    PostEventJob.perform_later(TOPIC, event.to_json, event.routing_key)
   end
 
   def subject
