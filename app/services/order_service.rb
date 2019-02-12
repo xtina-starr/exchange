@@ -58,7 +58,7 @@ module OrderService
     Exchange.dogstatsd.increment 'order.submitted'
     order
   rescue Errors::FailedTransactionError => e
-    handle_failed_transaction(e, order)
+    handle_failed_transaction(e, order, user_id)
     raise e
   end
 
@@ -88,7 +88,7 @@ module OrderService
   class << self
     private
 
-    def handle_failed_transaction(failed_transaction_exception, order)
+    def handle_failed_transaction(failed_transaction_exception, order, user_id)
       transaction = failed_transaction_exception.transaction
       return if transaction.blank?
 
