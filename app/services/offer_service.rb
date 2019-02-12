@@ -77,7 +77,7 @@ module OfferService
         commission_fee_cents: totals.commission_fee_cents,
         seller_total_cents: totals.seller_total_cents
       )
-      order_processor.charge
+      order_processor.charge!
       order.transactions << order_processor.transaction
     end
     OrderEvent.delay_post(order, Order::APPROVED, user_id)
@@ -90,6 +90,7 @@ module OfferService
 
     order.transactions << transaction
     PostTransactionNotificationJob.perform_later(transaction.id, TransactionEvent::CREATED, user_id)
+    raise e
   end
 
   class << self

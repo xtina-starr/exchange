@@ -48,7 +48,8 @@ module OrderService
         commission_fee_cents: totals.commission_fee_cents,
         seller_total_cents: totals.seller_total_cents
       )
-      order_processor.hold
+      order_processor.hold!
+      order.transactions << order_processor.transaction
     end
 
     OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
@@ -56,6 +57,9 @@ module OrderService
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
     Exchange.dogstatsd.increment 'order.submitted'
     order
+  rescue Errors::FailedTransactionError => e
+    handle_failed_transaction(e, order)
+    raise e
   end
 
   def self.fulfill_at_once!(order, fulfillment, user_id)
@@ -79,5 +83,17 @@ module OrderService
 
   def self.abandon!(order)
     order.abandon!
+  end
+
+  class << self
+    private
+
+    def handle_failed_transaction(failed_transaction_exception, order)
+      transaction = failed_transaction_exception.transaction
+      return if transaction.blank?
+
+      order.transactions << transaction
+      PostTransactionNotificationJob.perform_later(transaction.id, TransactionEvent::CREATED, user_id)
+    end
   end
 end

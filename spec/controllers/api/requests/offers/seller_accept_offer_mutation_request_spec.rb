@@ -154,14 +154,46 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'with proper permission' do
+      let(:deduct_inventory_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json) }
+      let(:undeduct_inventory_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }).to_return(status: 200, body: {}.to_json) }
+      let(:credit_card_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/credit_card/#{credit_card_id}").to_return(status: 200, body: credit_card.to_json) }
+      let(:artwork_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1").to_return(status: 200, body: artwork.to_json) }
+      let(:merchant_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/merchant_accounts").with(query: { partner_id: order_seller_id }).to_return(status: 200, body: [merchant_account].to_json) }
+      let(:partner_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/partner/#{order_seller_id}/all").to_return(status: 200, body: gravity_v1_partner.to_json) }
+      before do
+        deduct_inventory_request
+        merchant_account_request
+        credit_card_request
+        artwork_request
+        partner_account_request
+      end
+
+      context 'with failed stripe charge' do
+        before do
+          undeduct_inventory_request
+          StripeMock.prepare_card_error(:card_declined)
+        end
+        it 'raises processing error' do
+          response = client.execute(mutation, seller_accept_offer_input)
+          expect(response.data.seller_accept_offer.order_or_error.error.code).to eq 'capture_failed'
+        end
+        it 'stores failed transaction' do
+          expect do
+            client.execute(mutation, seller_accept_offer_input)
+          end.to change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
+          expect(order.reload.external_charge_id).to be_nil
+          expect(order.transactions.last.failed?).to be true
+        end
+        it 'undeducts inventory' do
+          client.execute(mutation, seller_accept_offer_input)
+          expect(undeduct_inventory_request).to have_been_requested
+        end
+      end
+
       it 'approves the order' do
-        inventory_request = stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json)
-        expect(Gravity).to receive(:get_merchant_account).and_return(merchant_account)
-        expect(Gravity).to receive(:get_credit_card).and_return(credit_card)
-        expect(Adapters::GravityV1).to receive(:get).with("/partner/#{order_seller_id}/all").and_return(gravity_v1_partner)
         response = client.execute(mutation, seller_accept_offer_input)
 
-        expect(inventory_request).to have_been_requested
+        expect(deduct_inventory_request).to have_been_requested
 
         expect(response.data.seller_accept_offer.order_or_error).to respond_to(:order)
         expect(response.data.seller_accept_offer.order_or_error.order).not_to be_nil

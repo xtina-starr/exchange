@@ -10,22 +10,20 @@ class OrderProcessor
     @validated = false
   end
 
-  def hold
+  def hold!
     raise Errors::ValidationError, @error unless valid?
 
     deduct_inventory
     @transaction = PaymentService.create_and_authorize_charge(construct_charge_params)
-    raise Errors::ProcessingError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
+    raise Errors::FailedTransactionError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
 
     @order.update!(external_charge_id: @transaction.external_id)
   rescue Errors::ValidationError, Errors::ProcessingError => e
     undeduct_inventory
     raise e
-  ensure
-    handle_transaction
   end
 
-  def charge
+  def charge!
     raise Errors::ValidationError, @error unless valid?
 
     deduct_inventory
@@ -59,10 +57,6 @@ class OrderProcessor
       Gravity.deduct_inventory(li)
       @deducted_inventory << li
     end
-  end
-
-  def notify_failed_charge
-    PostTransactionNotificationJob.perform_later(@transaction.id, TransactionEvent::CREATED, @user_id)
   end
 
   def construct_charge_params

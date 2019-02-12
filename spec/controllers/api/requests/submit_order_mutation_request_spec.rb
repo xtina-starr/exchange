@@ -82,7 +82,7 @@ describe Api::GraphqlController, type: :request do
       order.line_items << line_item
     end
 
-    context 'with user without permission to this order' do
+    context 'user without permission to this order' do
       let(:user_id) { 'random-user-id-on-another-order' }
       it 'returns permission error' do
         response = client.execute(mutation, submit_order_input)
@@ -95,6 +95,12 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'with proper permission' do
+      let(:deduct_inventory_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json) }
+      let(:undeduct_inventory_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }).to_return(status: 200, body: {}.to_json) }
+      let(:credit_card_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/credit_card/#{credit_card_id}").to_return(status: 200, body: credit_card.to_json) }
+      let(:artwork_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1").to_return(status: 200, body: artwork.to_json) }
+      let(:merchant_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/merchant_accounts").with(query: { partner_id: seller_id }).to_return(status: 200, body: [merchant_account].to_json) }
+      let(:partner_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/partner/#{seller_id}/all").to_return(status: 200, body: gravity_v1_partner.to_json) }
       context 'with order without shipping info' do
         before do
           order.update_attributes! shipping_country: nil
@@ -154,14 +160,41 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
+      context 'with failed stripe charge' do
+        before do
+          deduct_inventory_request
+          merchant_account_request
+          credit_card_request
+          artwork_request
+          partner_account_request
+          undeduct_inventory_request
+          StripeMock.prepare_card_error(:card_declined)
+        end
+        it 'raises processing error' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.order_or_error.error.code).to eq 'charge_authorization_failed'
+        end
+        it 'stores failed transaction' do
+          expect do
+            client.execute(mutation, submit_order_input)
+          end.to change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
+          expect(order.reload.external_charge_id).to be_nil
+          expect(order.transactions.last.failed?).to be true
+        end
+        it 'undeducts inventory' do
+          client.execute(mutation, submit_order_input)
+          expect(undeduct_inventory_request).to have_been_requested
+        end
+      end
+
       it 'submits the order' do
-        inventory_request = stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json)
-        expect(Gravity).to receive(:get_merchant_account).and_return(merchant_account)
-        expect(Gravity).to receive(:get_credit_card).and_return(credit_card)
-        allow(Gravity).to receive(:get_artwork).and_return(artwork)
-        expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
+        deduct_inventory_request
+        merchant_account_request
+        credit_card_request
+        artwork_request
+        partner_account_request
         response = client.execute(mutation, submit_order_input)
-        expect(inventory_request).to have_been_requested
+        expect(deduct_inventory_request).to have_been_requested
 
         expect(response.data.submit_order.order_or_error).to respond_to(:order)
         expect(response.data.submit_order.order_or_error.order).not_to be_nil
