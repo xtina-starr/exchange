@@ -3,7 +3,7 @@ Exchange aspires to be responsible for the various types of e-commerce interacti
 
 ## Meta
 
-* State: development
+* State: production
 * Production: https://exchange.artsy.net, [Admin Dashboard](https://exchange.artsy.net/admin) | [Sidekiq Dashboard](https://exchange.artsy.net/admin/sidekiq)
 * Staging: https://exchange-staging.artsy.net, [Admin Dashboard](https://exchange-staging.artsy.net/admin) | [Sidekiq Dashboard](https://exchange-staging.artsy.net/admin/sidekiq)
 * GitHub: https://github.com/artsy/exchange/
