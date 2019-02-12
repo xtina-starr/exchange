@@ -163,10 +163,12 @@ describe Api::GraphqlController, type: :request do
           undeduct_inventory_request
           StripeMock.prepare_card_error(:card_declined)
         end
+
         it 'raises processing error' do
           response = client.execute(mutation, buyer_accept_offer_input)
           expect(response.data.buyer_accept_offer.order_or_error.error.code).to eq 'capture_failed'
         end
+
         it 'stores failed transaction' do
           expect do
             client.execute(mutation, buyer_accept_offer_input)
@@ -174,6 +176,7 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.external_charge_id).to be_nil
           expect(order.transactions.last.failed?).to be true
         end
+
         it 'undeducts inventory' do
           client.execute(mutation, buyer_accept_offer_input)
           expect(undeduct_inventory_request).to have_been_requested

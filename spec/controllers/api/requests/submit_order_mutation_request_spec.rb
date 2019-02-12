@@ -101,6 +101,7 @@ describe Api::GraphqlController, type: :request do
       let(:artwork_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1").to_return(status: 200, body: artwork.to_json) }
       let(:merchant_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/merchant_accounts").with(query: { partner_id: seller_id }).to_return(status: 200, body: [merchant_account].to_json) }
       let(:partner_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/partner/#{seller_id}/all").to_return(status: 200, body: gravity_v1_partner.to_json) }
+
       context 'with order without shipping info' do
         before do
           order.update_attributes! shipping_country: nil
@@ -114,6 +115,7 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.state).to eq Order::PENDING
         end
       end
+
       context 'with order without credit card id' do
         let(:credit_card_id) { nil }
         it 'returns error' do
@@ -125,6 +127,7 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.state).to eq Order::PENDING
         end
       end
+
       context 'with order in non-pending state' do
         before do
           order.update_attributes! state: Order::APPROVED
@@ -170,10 +173,12 @@ describe Api::GraphqlController, type: :request do
           undeduct_inventory_request
           StripeMock.prepare_card_error(:card_declined)
         end
+
         it 'raises processing error' do
           response = client.execute(mutation, submit_order_input)
           expect(response.data.submit_order.order_or_error.error.code).to eq 'charge_authorization_failed'
         end
+
         it 'stores failed transaction' do
           expect do
             client.execute(mutation, submit_order_input)
@@ -181,6 +186,7 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.external_charge_id).to be_nil
           expect(order.transactions.last.failed?).to be true
         end
+
         it 'undeducts inventory' do
           client.execute(mutation, submit_order_input)
           expect(undeduct_inventory_request).to have_been_requested
