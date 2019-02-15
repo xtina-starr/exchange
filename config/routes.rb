@@ -12,4 +12,6 @@ Rails.application.routes.draw do
     post '/webhooks/stripe', to: 'webhooks#stripe'
   end
   resources :admin_notes
+
+  root to: redirect('/admin')
 end
