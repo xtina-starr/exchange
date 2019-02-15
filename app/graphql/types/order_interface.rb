@@ -20,7 +20,7 @@ module Types::OrderInterface
   field :items_total_cents, Integer, null: true, description: 'Item total in cents, for Offer Orders this field reflects current offer'
   field :last_approved_at, Types::DateTimeType, null: true
   field :last_submitted_at, Types::DateTimeType, null: true
-  field :last_transaction_failed, Boolean, null: true
+  field :last_transaction_failed, Boolean, null: true, method: :last_transaction_failed?
   field :line_items, Types::LineItemType.connection_type, null: true
   field :requested_fulfillment, Types::RequestedFulfillmentUnionType, null: true
   field :seller_total_cents, Integer, null: true, seller_only: true
@@ -74,10 +74,6 @@ module Types::OrderInterface
       precision: 2,
       strip_insignificant_zeros: true
     )
-  end
-
-  def last_transaction_failed
-    object.last_transaction_failed?
   end
 
   # Optional, see below

@@ -79,7 +79,6 @@ module OfferService
       )
       order_processor.charge!
       order.transactions << order_processor.transaction
-      order.update!(last_transaction_failed: false)
     end
     OrderEvent.delay_post(order, Order::APPROVED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
@@ -89,10 +88,7 @@ module OfferService
     transaction = e.transaction
     return if transaction.blank?
 
-    order.reload
-
     order.transactions << transaction
-    order.update!(last_transaction_failed: true)
     PostTransactionNotificationJob.perform_later(transaction.id, TransactionEvent::CREATED, user_id)
     raise e
   end

@@ -194,7 +194,7 @@ class Order < ApplicationRecord
   end
 
   def last_transaction_failed?
-    !!last_transaction_failed
+    transactions.present? && transactions.order(created_at: :desc).first.failed?
   end
 
   private

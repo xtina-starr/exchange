@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_02_15_001605) do
+ActiveRecord::Schema.define(version: 2019_01_28_182354) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -173,7 +173,6 @@ ActiveRecord::Schema.define(version: 2019_02_15_001605) do
     t.uuid "last_offer_id"
     t.string "original_user_agent"
     t.string "original_user_ip"
-    t.boolean "last_transaction_failed"
     t.index ["buyer_id"], name: "index_orders_on_buyer_id"
     t.index ["code"], name: "index_orders_on_code"
     t.index ["last_offer_id"], name: "index_orders_on_last_offer_id"

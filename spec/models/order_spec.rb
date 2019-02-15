@@ -266,6 +266,33 @@ RSpec.describe Order, type: :model do
     end
   end
 
+  describe '#last_transaction_failed?' do
+    context 'with an offer order' do
+      let(:order) { Fabricate(:order, mode: Order::OFFER, offers: [Fabricate(:offer)]) }
+
+      it 'returns false if there are no transactions' do
+        expect(order.last_transaction_failed?).to be false
+      end
+
+      it 'returns false if there are no failed transactions' do
+        Fabricate(:transaction, order: order, status: Transaction::SUCCESS)
+        expect(order.last_transaction_failed?).to be false
+      end
+
+      it 'returns false if the last transaction is a success' do
+        Fabricate(:transaction, order: order, status: Transaction::FAILURE)
+        Fabricate(:transaction, order: order, status: Transaction::SUCCESS)
+        expect(order.last_transaction_failed?).to be false
+      end
+
+      it 'returns true if the last transaction is a failure' do
+        Fabricate(:transaction, order: order, status: Transaction::SUCCESS)
+        Fabricate(:transaction, order: order, status: Transaction::FAILURE)
+        expect(order.last_transaction_failed?).to be true
+      end
+    end
+  end
+
   describe '#competing_orders' do
     context 'with an order that is not submitted' do
       it 'returns an empty array' do
