@@ -212,6 +212,8 @@ ActiveAdmin.register Order do
           end
         end
 
+        row :last_transaction_failed
+
         if order.state == Order::FULFILLED && order.fulfillment_type == Order::SHIP
           row 'Shipment' do |order|
             fulfillments = order.line_items.map(&:fulfillments).flatten

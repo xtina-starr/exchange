@@ -193,6 +193,10 @@ class Order < ApplicationRecord
     state_expires_at - time_to_expiration
   end
 
+  def last_transaction_failed?
+    !!last_transaction_failed
+  end
+
   private
 
   def state_reason_inclusion

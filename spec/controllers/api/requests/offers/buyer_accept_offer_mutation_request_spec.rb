@@ -175,6 +175,7 @@ describe Api::GraphqlController, type: :request do
           end.to change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
           expect(order.reload.external_charge_id).to be_nil
           expect(order.transactions.last.failed?).to be true
+          expect(order.last_transaction_failed?).to be true
         end
 
         it 'undeducts inventory' do

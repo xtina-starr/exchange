@@ -56,6 +56,7 @@ describe Api::GraphqlController, type: :request do
             sellerTotalCents
             buyerTotalCents
             createdAt
+            lastTransactionFailed
             displayCommissionRate
             ... on OfferOrder {
               awaitingResponseFrom
@@ -133,6 +134,7 @@ describe Api::GraphqlController, type: :request do
             shippingTotalCents
             sellerTotalCents
             buyerTotalCents
+            lastTransactionFailed
             createdAt
             ... on OfferOrder {
               lastOffer {
@@ -199,6 +201,7 @@ describe Api::GraphqlController, type: :request do
         expect(result.data.order.seller_total_cents).to eq 50_00
         expect(result.data.order.buyer_total_cents).to eq 100_00
         expect(result.data.order.created_at).to eq created_at.iso8601
+        expect(result.data.order.last_transaction_failed).to eq false
       end
 
       it 'returns order when accessing correct order by code' do
@@ -221,6 +224,7 @@ describe Api::GraphqlController, type: :request do
       context 'with line items' do
         let!(:order1_line_item1) { Fabricate(:line_item, order: user1_order1, artwork_id: 'artwork1', edition_set_id: 'edi-1') }
         let!(:order1_line_item2) { Fabricate(:line_item, order: user1_order1, artwork_id: 'artwork2', edition_set_id: 'edi-2') }
+
         it 'includes line items' do
           result = client.execute(query, id: user1_order1.id)
           expect(result.data.order.line_items.edges.count).to eq 2
@@ -236,35 +240,47 @@ describe Api::GraphqlController, type: :request do
         let!(:buyer_offer) { Fabricate(:offer, order: user1_order1, amount_cents: 200, from_id: user_id, from_type: Order::USER, submitted_at: Date.new(2018, 1, 1)) }
         let!(:seller_offer) { Fabricate(:offer, order: user1_order1, amount_cents: 300, from_id: seller_id, from_type: 'gallery', responds_to_id: buyer_offer.id, submitted_at: Date.new(2018, 1, 2)) }
         let!(:pending_buyer_offer) { Fabricate(:offer, order: user1_order1, amount_cents: 200, from_id: user_id, from_type: Order::USER) }
+
         before do
           user1_order1.update! last_offer: seller_offer
         end
-        it 'excludes pending offers' do
-          result = client.execute(query, id: user1_order1.id)
-          expect(result.data.order.offers.edges.count).to eq 2
-          expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [buyer_offer.id, seller_offer.id]
-          expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200, 300]
-          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id, seller_id]
-          expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User Partner]
-          expect(result.data.order.offers.edges.first.node.submitted_at).to eq '2018-01-02T00:00:00Z'
+
+        describe 'the query result' do
+          let(:result) { client.execute(query, id: user1_order1.id) }
+
+          it 'excludes pending offers' do
+            expect(result.data.order.offers.edges.count).to eq 2
+            expect(result.data.order.offers.edges.map(&:node).map(&:id)).to match_array [buyer_offer.id, seller_offer.id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:amount_cents)).to match_array [200, 300]
+            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to match_array [user_id, seller_id]
+            expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to match_array %w[User Partner]
+            expect(result.data.order.offers.edges.first.node.submitted_at).to eq '2018-01-02T00:00:00Z'
+          end
+
+          it 'includes last_offer' do
+            expect(result.data.order.last_offer.id).to eq seller_offer.id
+            expect(result.data.order.last_offer.from.id).to eq seller_id
+            expect(result.data.order.last_offer.from.__typename).to eq 'Partner'
+            expect(result.data.order.last_offer.responds_to.id).to eq buyer_offer.id
+          end
+
+          it 'includes last_transaction_failed' do
+            expect(result.data.order.last_transaction_failed).to eq false
+          end
         end
-        it 'includes last_offer' do
-          result = client.execute(query, id: user1_order1.id)
-          expect(result.data.order.last_offer.id).to eq seller_offer.id
-          expect(result.data.order.last_offer.from.id).to eq seller_id
-          expect(result.data.order.last_offer.from.__typename).to eq 'Partner'
-          expect(result.data.order.last_offer.responds_to.id).to eq buyer_offer.id
-        end
+
         describe 'awaiting_response_from' do
           [Order::APPROVED, Order::PENDING, Order::FULFILLED, Order::REFUNDED, Order::ABANDONED].each do |state|
             context "Order in #{state} state" do
               let(:state) { state }
+
               it 'returns nil' do
                 result = client.execute(query, id: user1_order1.id)
                 expect(result.data.order.awaiting_response_from).to be_nil
               end
             end
           end
+
           context 'without lastOffer' do
             it 'returns nil' do
               user1_order1.update!(last_offer: nil)
@@ -272,16 +288,19 @@ describe Api::GraphqlController, type: :request do
               expect(result.data.order.awaiting_response_from).to be_nil
             end
           end
+
           context 'last offer from seller' do
             it 'returns BUYER for awaitingResponseFrom' do
               result = client.execute(query, id: user1_order1.id)
               expect(result.data.order.awaiting_response_from).to eq 'BUYER'
             end
           end
+
           context 'last offer from buyer' do
             before do
               user1_order1.update! last_offer: buyer_offer
             end
+
             it 'returns BUYER for awaitingResponseFrom' do
               result = client.execute(query, id: user1_order1.id)
               expect(result.data.order.awaiting_response_from).to eq 'SELLER'
@@ -298,6 +317,7 @@ describe Api::GraphqlController, type: :request do
             expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:id)).to eq [user_id]
             expect(result.data.order.offers.edges.map(&:node).map(&:from).map(&:__typename)).to eq %w[User]
           end
+
           it 'filters by from type' do
             result = client.execute(query, id: user1_order1.id, offerFromType: 'gallery')
             expect(result.data.order.offers.edges.count).to eq 1

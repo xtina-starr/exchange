@@ -12,6 +12,7 @@ describe OfferService, type: :services do
     let(:order) { Fabricate(:order, seller_id: user_id, seller_type: Order::USER, state: state, state_reason: state_reason, mode: order_mode) }
     let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 500) }
     let(:call_service) { OfferService.create_pending_offer(order, amount_cents: amount_cents, note: note, from_id: user_id, from_type: Order::USER, creator_id: user_id) }
+
     context 'Buy Order' do
       let(:order_mode) { Order::BUY }
       it 'raises error' do
@@ -21,6 +22,7 @@ describe OfferService, type: :services do
         end
       end
     end
+
     context 'Offer Order' do
       it 'creates offer' do
         expect { call_service }.to change(order.offers, :count).by(1)
@@ -31,6 +33,7 @@ describe OfferService, type: :services do
         expect(offer.creator_id).to eq user_id
         expect(offer.note).to eq nil
       end
+
       it 'does not update order totals and state' do
         call_service
         expect(order.reload.state).to eq state
@@ -58,6 +61,7 @@ describe OfferService, type: :services do
         fulfillment_type: Order::SHIP
       }
     end
+
     let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1') }
     let(:line_item_artwork_version) { artwork[:current_version_id] }
     let(:credit_card_id) { 'grav_c_id1' }
@@ -66,6 +70,7 @@ describe OfferService, type: :services do
     let!(:offer) { Fabricate(:offer, order: order, submitted_at: offer_submitted_at, amount_cents: 1000_00, tax_total_cents: 20_00, shipping_total_cents: 30_00, creator_id: buyer_id, from_id: buyer_id) }
     let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: artwork[:_id], artwork_version_id: line_item_artwork_version, quantity: 2) }
     let(:call_service) { OfferService.submit_order_with_offer(offer, buyer_id) }
+
     describe 'failed process' do
       before do
         order.update!(last_offer: offer)
@@ -183,6 +188,7 @@ describe OfferService, type: :services do
         expect(OrderEvent).to receive(:delay_post).once.with(order, Order::SUBMITTED, buyer_id)
         expect(OfferEvent).to receive(:delay_post).once.with(offer, OfferEvent::SUBMITTED)
       end
+
       it 'submits the offer' do
         expect do
           call_service
@@ -244,13 +250,15 @@ describe OfferService, type: :services do
         expect(new_offer.submitted_at).to be_nil
         expect(new_offer.note).to eq(note)
       end
-      it 'raises error for 0  offer amount' do
+
+      it 'raises error for 0 offer amount' do
         expect { OfferService.create_pending_counter_offer(current_offer, amount_cents: 0, note: note, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
           .to raise_error do |e|
             expect(e.type).to eq :validation
             expect(e.code).to eq :invalid_amount_cents
           end
       end
+
       it 'raises error for negative offer amount' do
         expect { OfferService.create_pending_counter_offer(current_offer, amount_cents: -10, note: note, from_id: offer_from_id, creator_id: offer_creator_id, from_type: offer_from_type) }
           .to raise_error do |e|
