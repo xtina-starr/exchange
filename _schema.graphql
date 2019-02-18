@@ -62,6 +62,7 @@ type BuyOrder implements Order {
   itemsTotalCents: Int
   lastApprovedAt: DateTime
   lastSubmittedAt: DateTime
+  lastTransactionFailed: Boolean
   lineItems(
     # Returns the elements in the list that come after the specified cursor.
     after: String
@@ -433,6 +434,7 @@ type OfferOrder implements Order {
   # Last submitted offer
   lastOffer: Offer
   lastSubmittedAt: DateTime
+  lastTransactionFailed: Boolean
   lineItems(
     # Returns the elements in the list that come after the specified cursor.
     after: String
@@ -495,6 +497,7 @@ interface Order {
   itemsTotalCents: Int
   lastApprovedAt: DateTime
   lastSubmittedAt: DateTime
+  lastTransactionFailed: Boolean
   lineItems(
     # Returns the elements in the list that come after the specified cursor.
     after: String
