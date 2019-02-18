@@ -23,6 +23,10 @@ module OrderService
   def self.set_payment!(order, credit_card_id)
     raise Errors::ValidationError.new(:invalid_state, state: order.state) unless order.state == Order::PENDING
 
+    overwrite_payment!(order, credit_card_id)
+  end
+
+  def self.overwrite_payment!(order, credit_card_id)
     credit_card = Gravity.get_credit_card(credit_card_id)
     raise Errors::ValidationError.new(:invalid_credit_card, credit_card_id: credit_card_id) unless credit_card.dig(:user, :_id) == order.buyer_id
 
