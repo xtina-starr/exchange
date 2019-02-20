@@ -1,22 +1,24 @@
-class Mutations::RetryOrderWithNewPayment < Mutations::BaseMutation
+class Mutations::RetryAcceptOfferWithNewPayment < Mutations::BaseMutation
   null true
 
-  argument :id, ID, required: true
+  argument :offer_id, ID, required: true
   argument :credit_card_id, String, required: true
 
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
-  def resolve(id:, credit_card_id:)
-    order = Order.find(id)
+  def resolve(offer_id:, credit_card_id:)
+    offer = Offer.find(offer_id)
+    order = offer.order
     authorize_buyer_request!(order)
 
     # Are there any more sanity checks we can do here?
-    raise Errors::ValidationError.new(:invalid_state, state: order.state) unless order.state == Order::SUBMITTED && order.last_transaction_failed?
+    raise Errors::ValidationError.new(:invalid_state, state: order.state) unless
+      order.state == Order::SUBMITTED &&
+      order.last_transaction_failed? &&
+      offer.id == order.last_offer.id
 
     order = OrderService.set_payment!(order, credit_card_id)
 
-    # Will it always be the last offer?
-    offer = order.last_offer
     OfferService.accept_offer(offer, current_user_id)
 
     { order_or_error: { order: order.reload } }
