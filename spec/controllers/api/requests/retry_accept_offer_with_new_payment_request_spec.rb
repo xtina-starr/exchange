@@ -39,9 +39,9 @@ describe Api::GraphqlController, type: :request do
       )
     end
     let(:transaction_status) { Transaction::FAILURE }
-    let(:transaction) {
+    let(:transaction) do
       Fabricate(:transaction, order: order, status: transaction_status)
-    }
+    end
     let!(:line_item) do
       Fabricate(:line_item, order: order, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1')
     end
@@ -130,9 +130,7 @@ describe Api::GraphqlController, type: :request do
       end
 
       context 'with last_transaction_failed? == false' do
-        let(:transaction_status) {
-          Transaction::SUCCESS
-        }
+        let(:transaction_status) { Transaction::SUCCESS }
         it 'returns error' do
           response = client.execute(mutation, mutation_input)
           expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.type).to eq 'validation'
