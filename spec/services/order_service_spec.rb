@@ -127,17 +127,6 @@ describe OrderService, type: :services do
         end
       end
     end
-    Order::STATES.reject { |s| s == Order::PENDING }.each do |state|
-      context "order in #{state}" do
-        let(:state) { state }
-        it 'raises error' do
-          expect { OrderService.set_payment!(order, credit_card_id) }.to raise_error do |error|
-            expect(error).to be_a Errors::ValidationError
-            expect(error.code).to eq :invalid_state
-          end
-        end
-      end
-    end
   end
 
   describe 'fulfill_at_once!' do
