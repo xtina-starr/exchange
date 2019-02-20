@@ -1,6 +1,7 @@
 require 'rails_helper'
 
 describe Api::GraphqlController, type: :request do
+  describe 'confirm_pickup mutation' do
     include_context 'GraphQL Client'
     let(:seller_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
