@@ -6,14 +6,14 @@ class Mutations::RetryOrderWithNewPayment < Mutations::BaseMutation
 
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
 
-  def resolve(id:)
+  def resolve(id:, credit_card_id:)
     order = Order.find(id)
     authorize_buyer_request!(order)
 
     # Are there any more sanity checks we can do here?
     raise Errors::ValidationError.new(:invalid_state, state: order.state) unless order.state == Order::SUBMITTED && order.last_transaction_failed?
 
-    order = OrderService.overwrite_payment!(order, credit_card_id)
+    order = OrderService.set_payment!(order, credit_card_id)
 
     # Will it always be the last offer?
     offer = order.last_offer

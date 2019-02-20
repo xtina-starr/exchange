@@ -20,4 +20,5 @@ class Types::MutationType < Types::BaseObject
   field :reject_order, mutation: Mutations::RejectOrder
   field :fulfill_at_once, mutation: Mutations::FulfillAtOnce
   field :confirm_pickup, mutation: Mutations::ConfirmPickup
+  field :retry_order_with_new_payment, mutation: Mutations::RetryOrderWithNewPayment
 end
