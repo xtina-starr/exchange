@@ -4,7 +4,7 @@ require 'support/use_stripe_mock'
 describe Api::GraphqlController, type: :request do
   include_context 'use stripe mock'
   include_context 'GraphQL Client'
-  describe 'retry_accept_offer_with_new_payment mutation' do
+  describe 'fix_failed_payment mutation' do
     let(:seller_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'gravity-cc-1' }
@@ -50,8 +50,8 @@ describe Api::GraphqlController, type: :request do
 
     let(:mutation) do
       <<-GRAPHQL
-        mutation($input: RetryAcceptOfferWithNewPaymentInput!) {
-          retryAcceptOfferWithNewPayment(input: $input) {
+        mutation($input: FixFailedPaymentInput!) {
+          fixFailedPayment(input: $input) {
             orderOrError {
               ... on OrderWithMutationSuccess {
                 order {
@@ -99,8 +99,8 @@ describe Api::GraphqlController, type: :request do
       let(:user_id) { 'random-user-id-on-another-order' }
       it 'returns permission error' do
         response = client.execute(mutation, mutation_input)
-        expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.type).to eq 'validation'
-        expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.code).to eq 'not_found'
+        expect(response.data.fix_failed_payment.order_or_error.error.type).to eq 'validation'
+        expect(response.data.fix_failed_payment.order_or_error.error.code).to eq 'not_found'
         expect(order.reload.state).to eq Order::SUBMITTED
         expect(order.reload.credit_card_id).to eq 'bad-cc'
       end
@@ -111,8 +111,8 @@ describe Api::GraphqlController, type: :request do
         let(:state) { Order::APPROVED }
         it 'returns error' do
           response = client.execute(mutation, mutation_input)
-          expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.type).to eq 'validation'
-          expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.code).to eq 'invalid_state'
+          expect(response.data.fix_failed_payment.order_or_error.error.type).to eq 'validation'
+          expect(response.data.fix_failed_payment.order_or_error.error.code).to eq 'invalid_state'
           expect(order.reload.state).to eq Order::APPROVED
           expect(order.reload.credit_card_id).to eq 'bad-cc'
         end
@@ -122,8 +122,8 @@ describe Api::GraphqlController, type: :request do
         let(:state) { Order::PENDING }
         it 'returns error' do
           response = client.execute(mutation, mutation_input)
-          expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.type).to eq 'validation'
-          expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.code).to eq 'invalid_state'
+          expect(response.data.fix_failed_payment.order_or_error.error.type).to eq 'validation'
+          expect(response.data.fix_failed_payment.order_or_error.error.code).to eq 'invalid_state'
           expect(order.reload.state).to eq Order::PENDING
           expect(order.reload.credit_card_id).to eq 'bad-cc'
         end
@@ -133,8 +133,8 @@ describe Api::GraphqlController, type: :request do
         let(:transaction_status) { Transaction::SUCCESS }
         it 'returns error' do
           response = client.execute(mutation, mutation_input)
-          expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.type).to eq 'validation'
-          expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.code).to eq 'invalid_state'
+          expect(response.data.fix_failed_payment.order_or_error.error.type).to eq 'validation'
+          expect(response.data.fix_failed_payment.order_or_error.error.code).to eq 'invalid_state'
           expect(order.reload.state).to eq Order::SUBMITTED
           expect(order.reload.credit_card_id).to eq 'bad-cc'
         end
@@ -146,8 +146,8 @@ describe Api::GraphqlController, type: :request do
           it 'raises an error' do
             expect(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(invalid_credit_card)
             response = client.execute(mutation, mutation_input)
-            expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.type).to eq 'validation'
-            expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.code).to eq 'invalid_credit_card'
+            expect(response.data.fix_failed_payment.order_or_error.error.type).to eq 'validation'
+            expect(response.data.fix_failed_payment.order_or_error.error.code).to eq 'invalid_credit_card'
             expect(order.reload.credit_card_id).to eq 'bad-cc'
           end
         end
@@ -176,7 +176,7 @@ describe Api::GraphqlController, type: :request do
 
               it 'raises processing error' do
                 response = client.execute(mutation, mutation_input)
-                expect(response.data.retry_accept_offer_with_new_payment.order_or_error.error.code).to eq 'capture_failed'
+                expect(response.data.fix_failed_payment.order_or_error.error.code).to eq 'capture_failed'
               end
 
               it 'stores failed transaction' do
@@ -197,17 +197,17 @@ describe Api::GraphqlController, type: :request do
             it 'approves the order' do
               response = client.execute(mutation, mutation_input)
 
-              expect(response.data.retry_accept_offer_with_new_payment.order_or_error).to respond_to(:order)
+              expect(response.data.fix_failed_payment.order_or_error).to respond_to(:order)
 
               expect(deduct_inventory_request).to have_been_requested
 
-              expect(response.data.retry_accept_offer_with_new_payment.order_or_error.order).not_to be_nil
+              expect(response.data.fix_failed_payment.order_or_error.order).not_to be_nil
 
-              response_order = response.data.retry_accept_offer_with_new_payment.order_or_error.order
+              response_order = response.data.fix_failed_payment.order_or_error.order
               expect(response_order.id).to eq order.id.to_s
               expect(response_order.state).to eq Order::APPROVED.upcase
 
-              expect(response.data.retry_accept_offer_with_new_payment.order_or_error).not_to respond_to(:error)
+              expect(response.data.fix_failed_payment.order_or_error).not_to respond_to(:error)
               expect(order.reload.state).to eq Order::APPROVED
               expect(order.state_updated_at).not_to be_nil
               expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
@@ -230,17 +230,17 @@ describe Api::GraphqlController, type: :request do
               it 'approves the order' do
                 response = client.execute(mutation, mutation_input)
 
-                expect(response.data.retry_accept_offer_with_new_payment.order_or_error).to respond_to(:order)
+                expect(response.data.fix_failed_payment.order_or_error).to respond_to(:order)
 
                 expect(deduct_inventory_request).to have_been_requested
 
-                expect(response.data.retry_accept_offer_with_new_payment.order_or_error.order).not_to be_nil
+                expect(response.data.fix_failed_payment.order_or_error.order).not_to be_nil
 
-                response_order = response.data.retry_accept_offer_with_new_payment.order_or_error.order
+                response_order = response.data.fix_failed_payment.order_or_error.order
                 expect(response_order.id).to eq order.id.to_s
                 expect(response_order.state).to eq Order::APPROVED.upcase
 
-                expect(response.data.retry_accept_offer_with_new_payment.order_or_error).not_to respond_to(:error)
+                expect(response.data.fix_failed_payment.order_or_error).not_to respond_to(:error)
                 expect(order.reload.state).to eq Order::APPROVED
                 expect(order.state_updated_at).not_to be_nil
                 expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
@@ -251,10 +251,10 @@ describe Api::GraphqlController, type: :request do
 
             it 'sets payments on the order' do
               response = client.execute(mutation, mutation_input)
-              expect(response.data.retry_accept_offer_with_new_payment.order_or_error.order.id).to eq order.id.to_s
-              expect(response.data.retry_accept_offer_with_new_payment.order_or_error.order.state).to eq 'APPROVED'
-              expect(response.data.retry_accept_offer_with_new_payment.order_or_error.order.credit_card_id).to eq 'gravity-cc-1'
-              expect(response.data.retry_accept_offer_with_new_payment.order_or_error).not_to respond_to(:error)
+              expect(response.data.fix_failed_payment.order_or_error.order.id).to eq order.id.to_s
+              expect(response.data.fix_failed_payment.order_or_error.order.state).to eq 'APPROVED'
+              expect(response.data.fix_failed_payment.order_or_error.order.credit_card_id).to eq 'gravity-cc-1'
+              expect(response.data.fix_failed_payment.order_or_error).not_to respond_to(:error)
               expect(order.reload.credit_card_id).to eq credit_card_id
               expect(order.state).to eq Order::APPROVED
             end

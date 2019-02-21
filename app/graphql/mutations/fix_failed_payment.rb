@@ -1,4 +1,4 @@
-class Mutations::RetryAcceptOfferWithNewPayment < Mutations::BaseMutation
+class Mutations::FixFailedPayment < Mutations::BaseMutation
   null true
 
   argument :offer_id, ID, required: true
