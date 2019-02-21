@@ -9,6 +9,9 @@ class Mutations::SetPayment < Mutations::BaseMutation
   def resolve(id:, credit_card_id:)
     order = Order.find(id)
     authorize_buyer_request!(order)
+
+    raise Errors::ValidationError.new(:invalid_state, state: order.state) unless order.state == Order::PENDING
+
     {
       order_or_error: { order: OrderService.set_payment!(order, credit_card_id) }
     }
