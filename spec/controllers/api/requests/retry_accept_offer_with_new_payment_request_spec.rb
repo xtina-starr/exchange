@@ -215,6 +215,40 @@ describe Api::GraphqlController, type: :request do
               expect(order.reload.transactions.order(updated_at: 'asc').last.transaction_type).to eq Transaction::CAPTURE
             end
 
+            context 'with offer from buyer' do
+              let(:offer) do
+                Fabricate(
+                  :offer,
+                  order: order,
+                  from_id: user_id,
+                  from_type: 'user',
+                  amount_cents: 800_00,
+                  shipping_total_cents: 100_00,
+                  tax_total_cents: 300_00
+                )
+              end
+              it 'approves the order' do
+                response = client.execute(mutation, mutation_input)
+
+                expect(response.data.retry_accept_offer_with_new_payment.order_or_error).to respond_to(:order)
+
+                expect(deduct_inventory_request).to have_been_requested
+
+                expect(response.data.retry_accept_offer_with_new_payment.order_or_error.order).not_to be_nil
+
+                response_order = response.data.retry_accept_offer_with_new_payment.order_or_error.order
+                expect(response_order.id).to eq order.id.to_s
+                expect(response_order.state).to eq Order::APPROVED.upcase
+
+                expect(response.data.retry_accept_offer_with_new_payment.order_or_error).not_to respond_to(:error)
+                expect(order.reload.state).to eq Order::APPROVED
+                expect(order.state_updated_at).not_to be_nil
+                expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
+                expect(order.reload.transactions.last.external_id).not_to be_nil
+                expect(order.reload.transactions.order(updated_at: 'asc').last.transaction_type).to eq Transaction::CAPTURE
+              end
+            end
+
             it 'sets payments on the order' do
               response = client.execute(mutation, mutation_input)
               expect(response.data.retry_accept_offer_with_new_payment.order_or_error.order.id).to eq order.id.to_s
