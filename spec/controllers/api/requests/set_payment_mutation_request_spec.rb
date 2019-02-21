@@ -64,14 +64,14 @@ describe Api::GraphqlController, type: :request do
 
     context 'with proper permission' do
       context 'with order in non-pending state' do
-        before do
-          order.update! state: Order::APPROVED
-        end
-        it 'returns error' do
-          response = client.execute(mutation, set_payment_input)
-          expect(response.data.set_payment.order_or_error.error.type).to eq 'validation'
-          expect(response.data.set_payment.order_or_error.error.code).to eq 'invalid_state'
-          expect(order.reload.state).to eq Order::APPROVED
+        Order::STATES.reject { |s| s == Order::PENDING }.each do |state|
+          it 'returns error' do
+            order.update! state: state, state_reason: state == Order::CANCELED ? 'seller_lapsed' : nil
+            response = client.execute(mutation, set_payment_input)
+            expect(response.data.set_payment.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_payment.order_or_error.error.code).to eq 'invalid_state'
+            expect(order.reload.state).to eq state
+          end
         end
       end
 
