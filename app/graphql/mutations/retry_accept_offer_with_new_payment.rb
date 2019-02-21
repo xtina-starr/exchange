@@ -11,7 +11,6 @@ class Mutations::RetryAcceptOfferWithNewPayment < Mutations::BaseMutation
     order = offer.order
     authorize_buyer_request!(order)
 
-    # Are there any more sanity checks we can do here?
     raise Errors::ValidationError.new(:invalid_state, state: order.state) unless
       order.state == Order::SUBMITTED &&
       order.last_transaction_failed? &&
@@ -19,6 +18,9 @@ class Mutations::RetryAcceptOfferWithNewPayment < Mutations::BaseMutation
 
     order = OrderService.set_payment!(order, credit_card_id)
 
+    # Note that the buyer might be 'accepting' their own offer here.
+    # If they are, we know the seller attepted to accept it before
+    # because order.last_transaction_failed? is true.
     OfferService.accept_offer(offer, current_user_id)
 
     { order_or_error: { order: order.reload } }
