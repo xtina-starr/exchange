@@ -32,16 +32,6 @@ describe OrderApproveService, type: :services do
       end
     end
 
-    context 'with failed transaction appending' do
-      xit 'goes to failed approve state' do
-      end
-    end
-
-    context 'with failed approve!' do
-      xit 'goes to pending approve state' do
-      end
-    end
-
     context 'with failed post_process' do
       it 'is in approved state' do
         allow(OrderEvent).to receive(:delay_post).and_raise('Perform what later?!')
@@ -74,7 +64,12 @@ describe OrderApproveService, type: :services do
     end
 
     context 'with an order that was paid for by wire transfer' do
-
+      it 'raises an error' do
+        order.update!(payment_method: Order::WIRE_TRANSFER)
+        expect { service.process! }.to raise_error do |e|
+          expect(e.code).to eq :can_only_process_credit_cards
+        end
+      end
     end
   end
 end

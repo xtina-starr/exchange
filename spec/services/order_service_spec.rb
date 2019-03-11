@@ -15,8 +15,10 @@ describe OrderService, type: :services do
     let(:artwork_id) { 'artwork_id' }
     let(:edition_set_id) { 'edition-set-id' }
     let(:order_mode) { Order::OFFER }
+
     context 'find_active_or_create=true' do
       let(:call_service) { OrderService.create_with_artwork!(buyer_id: buyer_id, buyer_type: Order::USER, mode: order_mode, quantity: 2, artwork_id: artwork_id, edition_set_id: edition_set_id, user_agent: 'ua', user_ip: '0.1', find_active_or_create: true) }
+
       context 'with existing order with same artwork/editionset/mode/quantity' do
         before do
           @existing_order = Fabricate(:order, buyer_id: buyer_id, buyer_type: Order::USER, seller_id: seller_id, seller_type: 'Gallery', mode: order_mode)
@@ -221,6 +223,7 @@ describe OrderService, type: :services do
         expect { OrderService.abandon!(order) }.to change(order.state_histories, :count).by(1)
       end
     end
+
     Order::STATES.reject { |s| s == Order::PENDING }.each do |state|
       context "order in #{state}" do
         let(:state) { state }

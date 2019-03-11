@@ -8,27 +8,33 @@ describe OrderCancellationService, type: :services do
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
   let(:service) { OrderCancellationService.new(order, user_id) }
+
   describe '#reject!' do
     context 'with a successful refund' do
       before do
         service.reject!
       end
+
       it 'queues undeduct inventory job' do
         expect(UndeductLineItemInventoryJob).to have_been_enqueued.with(line_items.first.id)
       end
+
       it 'records the transaction' do
         expect(order.transactions.last.external_id).to_not eq nil
         expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
         expect(order.transactions.last.status).to eq Transaction::SUCCESS
       end
+
       it 'updates the order state' do
         expect(order.state).to eq Order::CANCELED
         expect(order.state_reason).to eq Order::REASONS[Order::CANCELED][:seller_rejected_other]
       end
+
       it 'queues notification job' do
         expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.canceled')
       end
     end
+
     context 'with an unsuccessful refund' do
       before do
         allow(Stripe::Refund).to receive(:create)
@@ -36,13 +42,24 @@ describe OrderCancellationService, type: :services do
           .and_raise(Stripe::StripeError.new('too late to refund buddy...', json_body: { error: { code: 'something', message: 'refund failed' } }))
         expect { service.reject! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
       end
+
       it 'raises a ProcessingError and records the transaction' do
         expect(order.transactions.last.external_id).to eq captured_charge.id
         expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
         expect(order.transactions.last.status).to eq Transaction::FAILURE
       end
+
       it 'does not queue undeduct inventory job' do
         expect(UndeductLineItemInventoryJob).not_to have_been_enqueued.with(line_items.first.id)
+      end
+    end
+
+    context 'when the order is paid for by wire transfer' do
+      it 'raises a ValidationError' do
+        order.update!(payment_method: Order::WIRE_TRANSFER)
+        expect { service.reject! }.to raise_error do |e|
+          expect(e.code).to eq :can_only_process_credit_cards
+        end
       end
     end
 
@@ -99,22 +116,27 @@ describe OrderCancellationService, type: :services do
         before do
           service.seller_lapse!
         end
+
         it 'queues undeduct inventory job' do
           expect(UndeductLineItemInventoryJob).to have_been_enqueued.with(line_items.first.id)
         end
+
         it 'records the transaction' do
           expect(order.transactions.last.external_id).to_not eq nil
           expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
           expect(order.transactions.last.status).to eq Transaction::SUCCESS
         end
+
         it 'updates the order state' do
           expect(order.state).to eq Order::CANCELED
           expect(order.state_reason).to eq Order::REASONS[Order::CANCELED][:seller_lapsed]
         end
+
         it 'queues notification job' do
           expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.canceled')
         end
       end
+
       context 'with an unsuccessful refund' do
         before do
           allow(Stripe::Refund).to receive(:create)
@@ -122,26 +144,32 @@ describe OrderCancellationService, type: :services do
             .and_raise(Stripe::StripeError.new('too late to refund buddy...', json_body: { error: { code: 'something', message: 'refund failed' } }))
           expect { service.reject! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
         end
+
         it 'raises a ProcessingError and records the transaction' do
           expect(order.transactions.last.external_id).to eq captured_charge.id
           expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
           expect(order.transactions.last.status).to eq Transaction::FAILURE
         end
+
         it 'does not queue undeduct inventory job' do
           expect(UndeductLineItemInventoryJob).not_to have_been_enqueued.with(line_items.first.id)
         end
       end
     end
+
     context 'Offer Order' do
       let(:order_mode) { Order::OFFER }
       let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00)] }
+
       before do
         service.seller_lapse!
       end
+
       it 'updates the order state' do
         expect(order.state).to eq Order::CANCELED
         expect(order.state_reason).to eq Order::REASONS[Order::CANCELED][:seller_lapsed]
       end
+
       it 'queues notification job' do
         expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.canceled')
       end
@@ -152,13 +180,16 @@ describe OrderCancellationService, type: :services do
     context 'Offer Order' do
       let(:order_mode) { Order::OFFER }
       let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00)] }
+
       before do
         service.buyer_lapse!
       end
+
       it 'updates the order state' do
         expect(order.state).to eq Order::CANCELED
         expect(order.state_reason).to eq Order::REASONS[Order::CANCELED][:buyer_lapsed]
       end
+
       it 'queues notification job' do
         expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.canceled')
       end
@@ -169,25 +200,31 @@ describe OrderCancellationService, type: :services do
     [Order::APPROVED, Order::FULFILLED].each do |state|
       context "#{state} order" do
         let(:order_state) { state }
+
         context 'with a successful refund' do
           before do
             service.refund!
           end
+
           it 'queues undeduct inventory job' do
             expect(UndeductLineItemInventoryJob).to have_been_enqueued.with(line_items.first.id)
           end
+
           it 'records the transaction' do
             expect(order.transactions.last.external_id).to_not eq nil
             expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
             expect(order.transactions.last.status).to eq Transaction::SUCCESS
           end
+
           it 'updates the order state' do
             expect(order.state).to eq Order::REFUNDED
           end
+
           it 'queues notification job' do
             expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.refunded')
           end
         end
+
         context 'with an unsuccessful refund' do
           before do
             allow(Stripe::Refund).to receive(:create)
@@ -195,13 +232,24 @@ describe OrderCancellationService, type: :services do
               .and_raise(Stripe::StripeError.new('too late to refund buddy...', json_body: { error: { code: 'something', message: 'refund failed' } }))
             expect { service.refund! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
           end
+
           it 'raises a ProcessingError and records the transaction' do
             expect(order.transactions.last.external_id).to eq captured_charge.id
             expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
             expect(order.transactions.last.status).to eq Transaction::FAILURE
           end
+
           it 'does not queue undeduct inventory job' do
             expect(UndeductLineItemInventoryJob).not_to have_been_enqueued.with(line_items.first.id)
+          end
+        end
+
+        context 'when the order is paid for by wire transfer' do
+          it 'raises a ValidationError' do
+            order.update!(payment_method: Order::WIRE_TRANSFER)
+            expect { service.refund! }.to raise_error do |e|
+              expect(e.code).to eq :can_only_process_credit_cards
+            end
           end
         end
       end

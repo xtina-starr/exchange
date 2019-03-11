@@ -1,6 +1,7 @@
 module Errors
   ERROR_TYPES = {
     validation: %i[
+      can_only_process_credit_cards
       cannot_offer
       cant_submit
       cannot_accept_offer
