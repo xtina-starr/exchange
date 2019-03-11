@@ -16,6 +16,11 @@ class Order < ApplicationRecord
     SELLER = 'seller'.freeze
   ].freeze
 
+  PAYMENT_METHODS = [
+    CREDIT_CARD = 'credit card'.freeze,
+    WIRE_TRANSFER = 'wire transfer'.freeze
+  ].freeze
+
   # For more docs about states go to:
   # https://www.notion.so/artsy/37c311363ef046c3aa546047e60cc58a?v=de68d5bbc30748f88b0d92a059bc0ba8
   STATES = [
@@ -92,6 +97,7 @@ class Order < ApplicationRecord
   validates :state, presence: true, inclusion: STATES
   validate :state_reason_inclusion
   validates :currency_code, inclusion: SUPPORTED_CURRENCIES
+  validates :payment_method, presence: true, inclusion: PAYMENT_METHODS
 
   after_create :update_code
   after_create :create_state_history
