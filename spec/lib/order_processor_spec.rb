@@ -42,7 +42,7 @@ describe OrderProcessor, type: :services do
       it 'raises validation error if you try to process an order that was paid for by wire transfer' do
         order.update!(payment_method: Order::WIRE_TRANSFER)
         expect { order_processor.hold! }.to raise_error do |e|
-          expect(e.code).to eq :can_only_process_credit_cards
+          expect(e.code).to eq :unsupported_payment_method
         end
       end
 
@@ -162,7 +162,7 @@ describe OrderProcessor, type: :services do
       it 'raises validation error if you try to process an order that was paid for by wire transfer' do
         order.update!(payment_method: Order::WIRE_TRANSFER)
         expect { order_processor.charge! }.to raise_error do |e|
-          expect(e.code).to eq :can_only_process_credit_cards
+          expect(e.code).to eq :unsupported_payment_method
         end
       end
 

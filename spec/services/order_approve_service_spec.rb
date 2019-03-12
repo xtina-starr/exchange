@@ -67,7 +67,7 @@ describe OrderApproveService, type: :services do
       it 'raises an error' do
         order.update!(payment_method: Order::WIRE_TRANSFER)
         expect { service.process! }.to raise_error do |e|
-          expect(e.code).to eq :can_only_process_credit_cards
+          expect(e.code).to eq :unsupported_payment_method
         end
       end
     end

@@ -38,7 +38,7 @@ class OrderProcessor
 
   def valid?
     @validated ||= begin
-      @error = :can_only_process_credit_cards unless @order.payment_method == Order::CREDIT_CARD
+      @error = :unsupported_payment_method unless @order.payment_method == Order::CREDIT_CARD
       @error ||= :missing_required_info unless @order.can_commit?
       @error ||= @order.assert_credit_card
     end

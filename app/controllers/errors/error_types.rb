@@ -1,7 +1,6 @@
 module Errors
   ERROR_TYPES = {
     validation: %i[
-      can_only_process_credit_cards
       cannot_offer
       cant_submit
       cannot_accept_offer
@@ -49,6 +48,7 @@ module Errors
       unknown_participant_type
       unknown_partner
       unpublished_artwork
+      unsupported_payment_method
       unsupported_shipping_location
       wrong_fulfillment_type
     ],

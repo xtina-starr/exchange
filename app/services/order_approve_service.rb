@@ -8,7 +8,7 @@ class OrderApproveService
   end
 
   def process!
-    raise Errors::ValidationError.new(:can_only_process_credit_cards, @order.payment_method) unless @order.payment_method == Order::CREDIT_CARD
+    raise Errors::ValidationError.new(:unsupported_payment_method, @order.payment_method) unless @order.payment_method == Order::CREDIT_CARD
 
     @order.approve! do
       @transaction = PaymentService.capture_authorized_charge(@order.external_charge_id)
