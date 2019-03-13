@@ -7,4 +7,5 @@ Fabricator(:order) do
   seller_type { 'gallery' }
   state { Order::PENDING }
   currency_code { 'USD' }
+  payment_method { Order::CREDIT_CARD }
 end
