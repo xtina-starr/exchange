@@ -18,6 +18,7 @@ describe OrderApproveService, type: :services do
         expect(order.transactions.first.status).to eq Transaction::FAILURE
         expect(order.transactions.first.failure_code).to eq 'card_declined'
         expect(order.transactions.first.failure_message).to eq 'The card was declined'
+        expect(order.transactions.first.decline_code).to eq 'do_not_honor'
       end
 
       it 'keeps order in submitted state' do

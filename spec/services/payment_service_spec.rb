@@ -31,6 +31,7 @@ describe PaymentService, type: :services do
       expect(transaction.transaction_type).to eq Transaction::HOLD
       expect(transaction.failure_code).to be_nil
       expect(transaction.failure_message).to be_nil
+      expect(transaction.decline_code).to be_nil
     end
     it 'catches Stripe errors and returns a failed transaction' do
       StripeMock.prepare_card_error(:card_declined, :new_charge)
@@ -40,6 +41,7 @@ describe PaymentService, type: :services do
       expect(transaction.destination_id).to eq 'ma-1'
       expect(transaction.failure_code).to eq 'card_declined'
       expect(transaction.failure_message).to eq 'The card was declined'
+      expect(transaction.decline_code).to eq 'do_not_honor'
       expect(transaction.transaction_type).to eq Transaction::HOLD
       expect(transaction.status).to eq Transaction::FAILURE
     end
@@ -58,6 +60,7 @@ describe PaymentService, type: :services do
       expect(transaction.external_id).to eq uncaptured_charge.id
       expect(transaction.failure_code).to eq 'card_declined'
       expect(transaction.failure_message).to eq 'The card was declined'
+      expect(transaction.decline_code).to eq 'do_not_honor'
       expect(transaction.transaction_type).to eq Transaction::CAPTURE
       expect(transaction.status).to eq Transaction::FAILURE
     end
