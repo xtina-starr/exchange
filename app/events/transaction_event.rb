@@ -39,6 +39,7 @@ class TransactionEvent < Events::BaseEvent
       },
       failure_code: @object.failure_code,
       failure_message: @object.failure_message,
+      decline_code: @object.decline_code,
       transaction_type: @object.transaction_type,
       status: @object.status
     }

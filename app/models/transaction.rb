@@ -26,7 +26,8 @@ class Transaction < ApplicationRecord
     {
       id: id,
       failure_code: failure_code,
-      failure_message: failure_message
+      failure_message: failure_message,
+      decline_code: decline_code
     }
   end
 end
