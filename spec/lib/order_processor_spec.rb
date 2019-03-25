@@ -236,6 +236,7 @@ describe OrderProcessor, type: :services do
         expect { order_processor.charge! }.to raise_error do |e|
           expect(e).to be_kind_of(Errors::FailedTransactionError)
           expect(e.transaction.failure_code).to eq 'card_declined'
+          expect(e.transaction.decline_code).to eq 'do_not_honor'
         end
       end
     end

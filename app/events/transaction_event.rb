@@ -16,31 +16,48 @@ class TransactionEvent < Events::BaseEvent
   end
 
   def properties
-    order = @object.order
     {
-      order: {
-        id: order.id,
-        mode: order.mode,
-        buyer_id: order.buyer_id,
-        buyer_total_cents: order.buyer_total_cents,
-        buyer_type: order.buyer_type,
-        code: order.code,
-        created_at: order.created_at,
-        currency_code: order.currency_code,
-        fulfillment_type: order.fulfillment_type,
-        items_total_cents: order.items_total_cents,
-        line_items: order.line_items.map { |li| line_item_detail(li) },
-        seller_id: order.seller_id,
-        seller_type: order.seller_type,
-        state: order.state,
-        state_reason: order.state_reason,
-        state_expires_at: order.state_expires_at,
-        updated_at: order.updated_at
-      },
+      order: order_details,
       failure_code: @object.failure_code,
       failure_message: @object.failure_message,
+      decline_code: @object.decline_code,
       transaction_type: @object.transaction_type,
       status: @object.status
+    }
+  end
+
+  def order_details
+    order = @object.order
+    {
+      id: order.id,
+      mode: order.mode,
+      buyer_id: order.buyer_id,
+      buyer_total_cents: order.buyer_total_cents,
+      total_list_price_cents: order.total_list_price_cents,
+      buyer_type: order.buyer_type,
+      code: order.code,
+      created_at: order.created_at,
+      currency_code: order.currency_code,
+      fulfillment_type: order.fulfillment_type,
+      items_total_cents: order.items_total_cents,
+      line_items: order.line_items.map { |li| line_item_detail(li) },
+      seller_id: order.seller_id,
+      seller_type: order.seller_type,
+      state: order.state,
+      state_reason: order.state_reason,
+      state_expires_at: order.state_expires_at,
+      updated_at: order.updated_at,
+      last_offer: last_offer_details(order)
+    }
+  end
+
+  def last_offer_details(order)
+    return unless order.last_offer
+
+    {
+      id: last_offer.id,
+      amount_cents: last_offer.amount_cents,
+      from_participant: last_offer.from_participant
     }
   end
 

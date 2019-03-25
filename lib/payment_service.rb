@@ -51,6 +51,7 @@ module PaymentService
       amount_cents: buyer_amount,
       failure_code: body[:code],
       failure_message: body[:message],
+      decline_code: body[:decline_code],
       transaction_type: type,
       status: Transaction::FAILURE
     )
