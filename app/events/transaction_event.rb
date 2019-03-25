@@ -57,7 +57,7 @@ class TransactionEvent < Events::BaseEvent
     {
       id: last_offer.id,
       amount_cents: last_offer.amount_cents,
-      from_participant: last_offer.from_participant,
+      from_participant: last_offer.from_participant
     }
   end
 
