@@ -17,8 +17,7 @@ describe TransactionEvent, type: :events do
   end
 
   let(:last_offer) do
-    Fabricate(:offer,
-              amount_cents: 380)
+    Fabricate(:offer, order: order, amount_cents: 1000_00, tax_total_cents: 20_00, shipping_total_cents: 30_00, creator_id: user_id, from_id: user_id)
   end
 
   let(:order) do
@@ -33,9 +32,9 @@ describe TransactionEvent, type: :events do
               tax_total_cents: 30,
               items_total_cents: 300,
               buyer_total_cents: 380,
-              last_offer: last_offer,
               **shipping_info)
   end
+  
   let(:transaction) { Fabricate(:transaction, order: order, failure_code: 'stolen_card', failure_message: 'who stole it?', status: Transaction::FAILURE) }
   let(:line_item1) { Fabricate(:line_item, list_price_cents: 200, order: order, commission_fee_cents: 40) }
   let(:line_item2) { Fabricate(:line_item, list_price_cents: 100, quantity: 2, order: order, commission_fee_cents: 20) }
@@ -60,6 +59,7 @@ describe TransactionEvent, type: :events do
       }
     ]
   end
+
   let(:event) { TransactionEvent.new(user: user_id, action: TransactionEvent::CREATED, model: transaction) }
 
   describe 'post' do
@@ -82,6 +82,10 @@ describe TransactionEvent, type: :events do
   end
 
   describe '#properties' do
+    before do
+      order.update!(last_offer: last_offer)
+    end
+
     it 'returns correct properties for a submitted order' do
       order.submit!
       expect(event.properties[:order][:id]).to eq order.id
@@ -101,7 +105,7 @@ describe TransactionEvent, type: :events do
       expect(event.properties[:order][:line_items].count).to eq 2
       expect(event.properties[:order][:line_items]).to match_array(line_item_properties)
       expect(event.properties[:order][:last_offer][:from_participant]).to eq 'buyer'
-      expect(event.properties[:order][:last_offer][:amount_cents]).to eq 380
+      expect(event.properties[:order][:last_offer][:amount_cents]).to eq 100000
       expect(event.properties[:failure_code]).to eq 'stolen_card'
       expect(event.properties[:failure_message]).to eq 'who stole it?'
       expect(event.properties[:status]).to eq Transaction::FAILURE
