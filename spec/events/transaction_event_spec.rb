@@ -100,7 +100,7 @@ describe TransactionEvent, type: :events do
       expect(event.properties[:order][:created_at]).not_to be_nil
       expect(event.properties[:order][:line_items].count).to eq 2
       expect(event.properties[:order][:line_items]).to match_array(line_item_properties)
-      # expect(event.properties[:order][:last_offer][:from_participant]).to eq 'buyer'
+      expect(event.properties[:order][:last_offer][:from_participant]).to eq 'buyer'
       expect(event.properties[:order][:last_offer][:amount_cents]).to eq 380
       expect(event.properties[:failure_code]).to eq 'stolen_card'
       expect(event.properties[:failure_message]).to eq 'who stole it?'
