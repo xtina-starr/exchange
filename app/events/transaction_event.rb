@@ -55,9 +55,9 @@ class TransactionEvent < Events::BaseEvent
     return unless order.last_offer
 
     {
-      id: last_offer.id,
-      amount_cents: last_offer.amount_cents,
-      from_participant: last_offer.from_participant
+      id: order.last_offer.id,
+      amount_cents: order.last_offer.amount_cents,
+      from_participant: order.last_offer.from_participant
     }
   end
 
