@@ -1,20 +1,30 @@
 class ApplicationErrorEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
+  ACTIONS = [
+    RAISED = 'raised'.freeze
+  ].freeze
 
   def initialize(application_error)
-    @application_error = application_error
+    super(user: nil, action: RAISED, model: application_error)
   end
 
-  def to_json
+  def object
     {
-      type: @application_error.type,
-      code: @application_error.code,
+      id: @object.class,
+      display: @object.to_s
+    }
+  end
+
+  def properties
+    {
+      type: @object.type,
+      code: @object.code,
       created_at: Time.now.utc,
-      data: @application_error.data
-    }.to_json
+      data: @object.data
+    }
   end
 
   def routing_key
-    "error.#{@application_error.type}.#{@application_error.code}"
+    "error.#{@object.type}.#{@object.code}"
   end
 end

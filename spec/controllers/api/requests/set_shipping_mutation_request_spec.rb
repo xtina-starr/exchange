@@ -213,6 +213,7 @@ describe Api::GraphqlController, type: :request do
               expect(response.data.set_shipping.order_or_error).to respond_to(:error)
               expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
               expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_region'
+              expect(response.data.set_shipping.order_or_error.error.data).to include order.id
             end
           end
           context 'without a postal code' do
