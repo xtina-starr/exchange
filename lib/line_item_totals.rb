@@ -41,7 +41,7 @@ class LineItemTotals
       OpenStruct.new(tax_total_cents: sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
     end
   rescue Errors::ValidationError => e
-    raise Errors::ValidationError.new(e.code, { order_id: @order.id, seller_id: @order.seller_id, line_item_id: @line_item_id, artwork_id: @line_item.artwork_id }, true) unless e.code == :no_taxable_addresses
+    raise Errors::ValidationError.new(e.code, { order_id: @order.id, seller_id: @order.seller_id, line_item_id: @line_item.id, artwork_id: @line_item.artwork_id }, true) unless e.code == :no_taxable_addresses
 
     # If there are no taxable addresses then we set the sales tax to 0.
     OpenStruct.new(tax_total_cents: 0, should_remit_sales_tax: false)
