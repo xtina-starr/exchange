@@ -263,4 +263,8 @@ class Order < ApplicationRecord
   def complete_shipping_details?
     [shipping_name, shipping_address_line1, shipping_city, shipping_country, buyer_phone_number].all?(&:present?)
   end
+
+  ransacker :has_offer_note do
+    Arel.sql('(select exists (select 1 from offers where offers.order_id = orders.id and offers.note <> \'\' and offers.submitted_at is not null))')
+  end
 end

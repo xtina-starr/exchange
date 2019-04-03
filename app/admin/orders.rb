@@ -21,6 +21,7 @@ ActiveAdmin.register Order do
   filter :fulfillment_type, as: :check_boxes, collection: proc { Order::FULFILLMENT_TYPES }
   filter :state, as: :check_boxes, collection: proc { Order::STATES }
   filter :state_reason, as: :check_boxes, collection: proc { Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize) }
+  filter :has_offer_note , as: :check_boxes, label: 'Has Offer Note'
 
   index do
     column :code do |order|
