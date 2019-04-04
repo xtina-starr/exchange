@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 Datadog.configure do |c|
-  enabled = ENV['DATADOG_ENABLED'] == 'true'
+  enabled = ENV['DATADOG_ENABLED'] == 'true' && !defined?(Rails::Console)
   hostname = ENV.fetch('DATADOG_TRACE_AGENT_HOSTNAME', 'localhost')
   debug = ENV['DATADOG_DEBUG'] == 'true'
 
