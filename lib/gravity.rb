@@ -33,8 +33,10 @@ module Gravity
     nil
   end
 
-  def self.fetch_partner_locations(partner_id)
-    locations = Adapters::GravityV1.get("/partner/#{partner_id}/locations?private=true")
+  def self.fetch_partner_locations(partner_id, tax_valid = true)
+    query = "/partner/#{partner_id}/locations?private=true"
+    query += '&address_type[]=Business&address_type[]=Sales tax nexus' if tax_valid
+    locations = Adapters::GravityV1.get(query)
     raise Errors::ValidationError.new(:missing_partner_location, partner_id: partner_id) if locations.blank?
 
     locations.map { |loc| Address.new(loc) }

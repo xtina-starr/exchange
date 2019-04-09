@@ -29,14 +29,24 @@ describe Gravity, type: :services do
   describe '#fetch_partner_locations' do
     let(:valid_locations) { [{ country: 'US', state: 'NY', postal_code: '12345' }, { country: 'US', state: 'FL', postal_code: '67890' }] }
     let(:invalid_location) { [{ country: 'US', state: 'Floridada' }] }
-    it 'calls the correct location Gravity endpoint' do
-      expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true").and_return(valid_locations)
-      Gravity.fetch_partner_locations(seller_id)
+    context 'calls the correct location Gravity endpoint' do
+      context 'without tax_valid flag' do
+        it 'does not filter by address type' do
+          expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true").and_return(valid_locations)
+          Gravity.fetch_partner_locations(seller_id, false)
+        end
+      end
+      context 'with tax_valid flag' do
+        it 'filters by address type' do
+          expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true&address_type[]=Business&address_type[]=Sales tax nexus").and_return(valid_locations)
+          Gravity.fetch_partner_locations(seller_id, true)
+        end
+      end
     end
     context 'with at least one partner location' do
       context 'with valid partner locations' do
         it 'returns new addresses for each location' do
-          allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true").and_return(valid_locations)
+          allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true&address_type[]=Business&address_type[]=Sales tax nexus").and_return(valid_locations)
           partner_addresses = Gravity.fetch_partner_locations(seller_id)
           partner_addresses.each { |ad| expect(ad).to be_a Address }
         end
@@ -44,7 +54,7 @@ describe Gravity, type: :services do
     end
     context 'with no partner locations' do
       it 'raises error' do
-        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true").and_return([])
+        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true&address_type[]=Business&address_type[]=Sales tax nexus").and_return([])
         expect { Gravity.fetch_partner_locations(seller_id) }.to raise_error do |error|
           expect(error).to be_a Errors::ValidationError
           expect(error.code).to eq :missing_partner_location
