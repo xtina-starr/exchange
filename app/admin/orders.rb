@@ -156,7 +156,7 @@ ActiveAdmin.register Order do
       if partner_info.present?
         valid_partner_location = true
         begin
-          partner_locations = Gravity.fetch_partner_locations(order.seller_id, false)
+          partner_locations = Gravity.fetch_partner_locations(order.seller_id)
         rescue Errors::ValidationError
           valid_partner_location = false
         end
