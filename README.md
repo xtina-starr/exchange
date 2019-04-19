@@ -57,6 +57,21 @@ services:
 foreman start -f Procfile.dev
 ```
 
+## Running Prettier Ruby
+
+Exchange uses [Prettier Ruby](https://github.com/prettier/plugin-ruby) to standarize coding styles. In order to run
+Prettier, a Node.js runtime needs to be available locally. You could so do by running the `prettier:isntall` task:
+
+```sh
+bundle exec rake prettier:install
+```
+
+Once this is done, you should be able to run the `prettier` task:
+
+```sh
+bundle exec rake prettier
+```
+
 ## Did You Change Models?
 
 ### Papertrail Audit Logging

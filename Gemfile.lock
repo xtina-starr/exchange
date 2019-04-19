@@ -1,3 +1,9 @@
+GIT
+  remote: https://github.com/prettier/plugin-ruby.git
+  revision: be6683d467791f4fd629da7086703a6c905ff737
+  specs:
+    prettier (0.12.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -420,6 +426,7 @@ DEPENDENCIES
   omniauth-artsy (~> 0.2.3)
   paper_trail
   pg
+  prettier!
   puma
   rails (= 5.2.1)
   rspec-rails
@@ -437,4 +444,4 @@ RUBY VERSION
    ruby 2.5.3p105
 
 BUNDLED WITH
-   1.17.1
+   1.17.3
