@@ -32,7 +32,6 @@ group :development, :test do
   gem 'graphlient'
   gem 'prettier', git: 'https://github.com/prettier/plugin-ruby.git'
   gem 'rspec-rails'
-  gem 'rubocop'
 end
 
 group :development do
