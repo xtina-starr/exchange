@@ -11,7 +11,7 @@ describe OrderShipping, type: :services do
   before do
     line_item
     allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
-    allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true").and_return([{ country: 'US', state: 'NY' }])
+    allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'] }).and_return([{ country: 'US', state: 'NY' }])
     allow(Adapters::GravityV1).to receive(:get).with("/artwork/#{artwork_id}").and_return(gravity_v1_artwork(_id: artwork_id))
   end
   describe '#pickup!' do

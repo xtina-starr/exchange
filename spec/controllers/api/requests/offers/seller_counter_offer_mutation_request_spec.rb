@@ -76,7 +76,7 @@ describe Api::GraphqlController, type: :request do
     before do
       order.update!(last_offer: offer)
 
-      allow(Gravity).to receive(:fetch_partner_locations).with(order_seller_id).and_return([partner_address])
+      allow(Gravity).to receive(:fetch_partner_locations).with(order_seller_id, tax_only: true).and_return([partner_address])
       allow(Gravity).to receive_messages(
         get_artwork: artwork,
         fetch_partner: partner

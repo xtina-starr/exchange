@@ -84,7 +84,7 @@ describe Api::GraphqlController, type: :request do
     before do
       order.update!(last_offer: seller_offer)
 
-      allow(Gravity).to receive(:fetch_partner_locations).with(order_seller_id).and_return([partner_address])
+      allow(Gravity).to receive(:fetch_partner_locations).with(order_seller_id, tax_only: true).and_return([partner_address])
       allow(Gravity).to receive(:get_artwork).and_return(artwork)
       allow(Taxjar::Client).to receive(:new).with(api_key: Rails.application.config_for(:taxjar)['taxjar_api_key'], api_url: nil).and_return(taxjar_client)
       allow(taxjar_client).to receive(:tax_for_order).with(any_args).and_return(tax_response)

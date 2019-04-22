@@ -28,7 +28,7 @@ module OrderHelper
   end
 
   def seller_locations
-    @seller_locations ||= Gravity.fetch_partner_locations(seller_id)
+    @seller_locations ||= Gravity.fetch_partner_locations(seller_id, tax_only: true)
   end
 
   def inventory?
