@@ -159,7 +159,7 @@ describe Api::GraphqlController, type: :request do
           before do
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
-            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true&address_type[]=Business&address_type[]=Sales tax nexus").and_return([])
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'] }).and_return([])
           end
           it 'raises an error' do
             response = client.execute(mutation, set_shipping_input)
@@ -172,7 +172,7 @@ describe Api::GraphqlController, type: :request do
           before do
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
-            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true&address_type[]=Business&address_type[]=Sales tax nexus").and_return([{ country: 'FR' }])
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'] }).and_return([{ country: 'FR' }])
           end
           it 'sets sales tax to 0 and should_remit_sales_tax to false on each line item' do
             client.execute(mutation, set_shipping_input)
@@ -189,7 +189,7 @@ describe Api::GraphqlController, type: :request do
           before do
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
-            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true&address_type[]=Business&address_type[]=Sales tax nexus").and_return([{ country: 'FR' }])
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'] }).and_return([{ country: 'FR' }])
           end
           it 'returns proper error' do
             response = client.execute(mutation, set_shipping_input)
@@ -203,7 +203,7 @@ describe Api::GraphqlController, type: :request do
           before do
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(artwork2)
-            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true&address_type[]=Business&address_type[]=Sales tax nexus").and_return([{ country: 'US', state: 'NY' }])
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'] }).and_return([{ country: 'US', state: 'NY' }])
           end
           let(:shipping_country) { 'US' }
           context 'without a state' do
@@ -231,7 +231,7 @@ describe Api::GraphqlController, type: :request do
 
         context 'with artwork with missing location' do
           it 'returns an error' do
-            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true&address_type[]=Business&address_type[]=Sales tax nexus").and_return([{ country: 'US', state: 'NY' }])
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'] }).and_return([{ country: 'US', state: 'NY' }])
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(id: 'missing-location')
             response = client.execute(mutation, set_shipping_input)
             expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
@@ -241,7 +241,7 @@ describe Api::GraphqlController, type: :request do
 
         context 'with failed artwork fetch call' do
           it 'returns an error' do
-            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations?private=true&address_type[]=Business&address_type[]=Sales tax nexus").and_return([{ country: 'US', state: 'NY' }])
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'] }).and_return([{ country: 'US', state: 'NY' }])
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_raise(Adapters::GravityError.new('unknown artwork'))
             response = client.execute(mutation, set_shipping_input)
             expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
