@@ -54,6 +54,12 @@ ActiveAdmin.register Order do
     redirect_to resource_path, notice: "Order approved!"
   end
 
+  member_action :accept_offer, method: :post do
+    return unless resource.mode == Order::OFFER && resource.state == Order::SUBMITTED
+    OfferService.accept_offer(resource.last_offer, current_user[:id])
+    redirect_to resource_path, notice: "Order approved!"
+  end
+
   member_action :confirm_pickup, method: :post do
     if resource.fulfillment_type == Order::PICKUP
       OrderService.confirm_pickup!(resource, current_user[:id])
@@ -75,8 +81,14 @@ ActiveAdmin.register Order do
 
 
   action_item :approve_order, only: :show do
-    if order.state == Order::SUBMITTED
+    if order.state == Order::SUBMITTED && resource.mode == Order::BUY
       link_to 'Approve Order', approve_order_admin_order_path(order), method: :post, data: {confirm: 'Approve this order?'}
+    end
+  end
+
+  action_item :accept_offer, only: :show do
+    if order.state == Order::SUBMITTED && resource.mode == Order::OFFER
+      link_to 'Accept Last Offer', accept_offer_admin_order_path(order), method: :post, data: {confirm: 'Accept last offer on this order?'}
     end
   end
 
