@@ -57,7 +57,7 @@ ActiveAdmin.register Order do
   member_action :accept_offer, method: :post do
     return unless resource.mode == Order::OFFER && resource.state == Order::SUBMITTED
     OfferService.accept_offer(resource.last_offer, current_user[:id])
-    redirect_to resource_path, notice: "Order approved!"
+    redirect_to resource_path, notice: "Offer accepted!"
   end
 
   member_action :confirm_pickup, method: :post do
