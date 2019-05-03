@@ -89,6 +89,14 @@ module OrderService
     order
   end
 
+  def self.confirm_fulfillment!(order, user_id)
+    raise Errors::ValidationError, :wrong_fulfillment_type unless order.fulfillment_type == Order::SHIP
+
+    order.fulfill!
+    OrderEvent.delay_post(order, Order::FULFILLED, user_id)
+    order
+  end
+
   def self.abandon!(order)
     order.abandon!
   end

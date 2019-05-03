@@ -67,6 +67,13 @@ ActiveAdmin.register Order do
     redirect_to resource_path, notice: "Fulfillment confirmed!"
   end
 
+  member_action :confirm_fulfillment, method: :post do
+    if resource.fulfillment_type == Order::SHIP
+      OrderService.confirm_fulfillment!(resource, current_user[:id])
+    end
+    redirect_to resource_path, notice: "Fulfillment confirmed!"
+  end
+
   action_item :refund, only: :show do
     if [Order::APPROVED, Order::FULFILLED].include? order.state
       link_to 'Refund', refund_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to refund this order?'}
@@ -95,6 +102,12 @@ ActiveAdmin.register Order do
   action_item :confirm_pickup, only: :show do
     if order.state == Order::APPROVED && order.fulfillment_type == Order::PICKUP
       link_to 'Confirm Pickup', confirm_pickup_admin_order_path(order), method: :post, data: {confirm: 'Confirm order pickup?'}
+    end
+  end
+
+  action_item :confirm_fulfillment, only: :show do
+    if order.state == Order::APPROVED && order.fulfillment_type == Order::SHIP
+      link_to 'Confirm Fulfillment', confirm_fulfillment_admin_order_path(order), method: :post, data: {confirm: 'Confirm order fulfillment?'}
     end
   end
 
