@@ -33,6 +33,10 @@ class Offer < ApplicationRecord
     end
   end
 
+  def to_participant
+    from_participant == Order::SELLER ? Order::BUYER : Order::SELLER
+  end
+
   def awaiting_response_from
     return unless submitted?
 
