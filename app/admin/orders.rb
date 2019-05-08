@@ -270,15 +270,40 @@ ActiveAdmin.register Order do
 
     if order.mode == Order::OFFER
       panel "Negotiation (#{order.offers.submitted.count})" do
-        table_for(order.offers.submitted.order(created_at: :desc)) do
-          column 'Date', :created_at
-          column 'Source', :from_participant
-          column 'Action' do |offer|
-            offer.responds_to ? 'Sent Counter' : 'Offer Submitted'
+        events = []
+
+        order.offers.submitted.order(created_at: :desc).each do |offer|
+          date = offer.created_at
+          amount = format_money_cents(offer.amount_cents)
+
+          if order.state == Order::APPROVED && order.last_offer == offer
+            events << {
+              description: "#{offer.to_participant.capitalize} approved #{offer.from_participant}'s offer",
+              amount: amount,
+              date: date
+            }
           end
-          column 'Amount' do |offer|
-            format_money_cents(offer.amount_cents)
+
+          if offer.responds_to
+            events << {
+              description: "#{offer.from_participant.capitalize} made a counteroffer",
+              amount: amount,
+              date: date,
+              note: offer.note
+            }
+          else
+            events << {
+              description: "Buyer made an initial offer",
+              amount: amount,
+              date: date,
+              note: offer.note
+            }
           end
+        end
+        table_for(events) do
+          column 'Date', :date
+          column 'Action', :description
+          column 'Amount', :amount
           column 'Note', :note
         end
       end

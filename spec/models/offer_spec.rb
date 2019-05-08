@@ -52,4 +52,23 @@ RSpec.describe Offer, type: :model do
       end
     end
   end
+
+  describe '#to_participant' do
+    let(:order) { Fabricate(:order, buyer_id: 'buyer1', buyer_type: 'user', seller_id: 'seller1', seller_type: 'gallery') }
+    let(:seller_offer) { Fabricate(:offer, order: order, from_id: 'seller1', from_type: 'gallery') }
+    let(:buyer_offer) { Fabricate(:offer, order: order, from_id: 'buyer1', from_type: 'user') }
+    let(:ufo_offer) { Fabricate(:offer, order: order, from_id: 'marse', from_type: 'ufo') }
+    it 'returns seller for buyer_offer' do
+      expect(buyer_offer.to_participant).to eq Order::SELLER
+    end
+    it 'returns buyer for seller_offer' do
+      expect(seller_offer.to_participant).to eq Order::BUYER
+    end
+    it 'raises error for offer that is not from a buyer or seller' do
+      expect { ufo_offer.from_participant }.to raise_error do |error|
+        expect(error.type).to eq :validation
+        expect(error.code).to eq :unknown_participant_type
+      end
+    end
+  end
 end
