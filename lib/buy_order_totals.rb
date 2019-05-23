@@ -6,11 +6,11 @@ class BuyOrderTotals
   end
 
   def tax_total_cents
-    @tax_total_cents ||= @order.tax_total_cents || @order.line_items.map(&:sales_tax_cents).sum
+    @tax_total_cents ||= @order.line_items.map(&:sales_tax_cents).sum
   end
 
   def items_total_cents
-    @items_total_cents ||= @order.items_total_cents || @order.line_items.map(&:total_list_price_cents).sum
+    @items_total_cents ||= @order.line_items.map(&:total_list_price_cents).sum
   end
 
   def commission_fee_cents
@@ -22,7 +22,7 @@ class BuyOrderTotals
   end
 
   def buyer_total_cents
-    @buyer_total_cents ||= @order.buyer_total_cents || items_total_cents + shipping_total_cents.to_i + tax_total_cents.to_i
+    @buyer_total_cents ||= items_total_cents + shipping_total_cents.to_i + tax_total_cents.to_i
   end
 
   def transaction_fee_cents
@@ -30,7 +30,6 @@ class BuyOrderTotals
   end
 
   def seller_total_cents
-    return @order.seller_total_cents if @order.seller_total_cents.present?
     return unless buyer_total_cents && commission_fee_cents && transaction_fee_cents
 
     @seller_total_cents ||= buyer_total_cents - commission_fee_cents - transaction_fee_cents - calculate_remittable_sales_tax

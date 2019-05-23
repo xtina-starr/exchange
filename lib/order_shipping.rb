@@ -5,7 +5,17 @@ class OrderShipping
 
   def pickup!
     @order.with_lock do
-      @order.update!(fulfillment_type: Order::PICKUP)
+      @order.update!(
+        fulfillment_type: Order::PICKUP,
+        buyer_phone_number: nil,
+        shipping_name: nil,
+        shipping_address_line1: nil,
+        shipping_address_line2: nil,
+        shipping_city: nil,
+        shipping_region: nil,
+        shipping_country: nil,
+        shipping_postal_code: nil
+      )
       update_totals!
     end
   end
