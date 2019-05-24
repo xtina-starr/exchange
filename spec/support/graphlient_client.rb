@@ -19,3 +19,16 @@ RSpec.shared_context 'GraphQL Client', shared_context: :metadata do
     end
   end
 end
+
+RSpec.shared_context 'GraphQL Client Helpers', shared_context: :metadata do
+  def graphql_client(user_id:, partner_ids:, roles:, user_agent: 'user-agent', user_ip: 'user-ip')
+    auth_headers = jwt_headers(user_id: user_id, partner_ids: partner_ids, roles: roles).merge('User-Agent' => user_agent, 'x-forwarded-for' => user_ip)
+    Graphlient::Client.new('http://localhost:4000/api/graphql', headers: auth_headers) do |client|
+      client.http do |h|
+        h.connection do |c|
+          c.use Faraday::Adapter::Rack, app
+        end
+      end
+    end
+  end
+end

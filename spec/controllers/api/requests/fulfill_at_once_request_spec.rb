@@ -11,62 +11,12 @@ describe Api::GraphqlController, type: :request do
       Array.new(2) { Fabricate(:line_item, order: order, list_price_cents: 200) }
     end
 
-    let(:mutation) do
-      <<-GRAPHQL
-        mutation($input: FulfillAtOnceInput!) {
-          fulfillAtOnce(input: $input) {
-            orderOrError {
-              ... on OrderWithMutationSuccess {
-                order {
-                  id
-                  buyer {
-                    ... on Partner {
-                      id
-                    }
-                  }
-                  seller {
-                    ... on User {
-                      id
-                    }
-                  }
-                  state
-                  lineItems{
-                    edges{
-                      node{
-                        fulfillments{
-                          edges{
-                            node{
-                              courier
-                              trackingId
-                              estimatedDelivery
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-              ... on OrderWithMutationFailure {
-                error {
-                  code
-                  data
-                  type
-                }
-              }
-            }
-          }
-        }
-      GRAPHQL
-    end
-
-    let(:courier) { 'FedEx' }
     let(:fulfill_at_once_input) do
       {
         input: {
           id: order.id.to_s,
           fulfillment: {
-            courier: courier,
+            courier: 'FedEx',
             trackingId: 'fedx-123',
             estimatedDelivery: '2018-12-15'
           }
@@ -76,7 +26,7 @@ describe Api::GraphqlController, type: :request do
     context 'with user without permission to this partner' do
       let(:seller_id) { 'another-partner-id' }
       it 'returns permission error' do
-        response = client.execute(mutation, fulfill_at_once_input)
+        response = client.execute(QueryHelper::FULFILL_ORDER, fulfill_at_once_input)
         expect(response.data.fulfill_at_once.order_or_error.error.type).to eq 'validation'
         expect(response.data.fulfill_at_once.order_or_error.error.code).to eq 'not_found'
         expect(order.reload.state).to eq Order::PENDING
@@ -88,7 +38,7 @@ describe Api::GraphqlController, type: :request do
         order.update! state: Order::SUBMITTED
       end
       it 'returns error' do
-        response = client.execute(mutation, fulfill_at_once_input)
+        response = client.execute(QueryHelper::FULFILL_ORDER, fulfill_at_once_input)
         expect(response.data.fulfill_at_once.order_or_error.error.type).to eq 'validation'
         expect(response.data.fulfill_at_once.order_or_error.error.code).to eq 'invalid_state'
         expect(order.reload.state).to eq Order::SUBMITTED
@@ -101,7 +51,7 @@ describe Api::GraphqlController, type: :request do
       end
       it 'fulfills the order' do
         expect do
-          response = client.execute(mutation, fulfill_at_once_input)
+          response = client.execute(QueryHelper::FULFILL_ORDER, fulfill_at_once_input)
           expect(response.data.fulfill_at_once.order_or_error.order.id).to eq order.id.to_s
           expect(response.data.fulfill_at_once.order_or_error.order.state).to eq 'FULFILLED'
           response.data.fulfill_at_once.order_or_error.order.line_items.edges.each do |li|
@@ -115,9 +65,7 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.state).to eq Order::FULFILLED
           order.line_items.each do |li|
             expect(li.fulfillments.count).to eq 1
-            expect(li.fulfillments.first.courier).to eq 'FedEx'
-            expect(li.fulfillments.first.tracking_id).to eq 'fedx-123'
-            expect(li.fulfillments.first.estimated_delivery).to eq Date.strptime('2018-12-15', '%Y-%m-%d')
+            expect(li.fulfillments.first).to have_attributes(courier: 'FedEx', tracking_id: 'fedx-123', estimated_delivery: Date.strptime('2018-12-15', '%Y-%m-%d'))
           end
         end.to change(Fulfillment, :count).by(1).and change(LineItemFulfillment, :count).by(2)
       end
