@@ -27,6 +27,15 @@ module QueryHelper
           ... on OrderWithMutationSuccess {
             order {
               id
+              requestedFulfillment {
+                __typename
+                ... on Ship {
+                  addressLine1
+                }
+                ... on Pickup {
+                  fulfillmentType
+                }
+              }
             }
           }
           ... on OrderWithMutationFailure {

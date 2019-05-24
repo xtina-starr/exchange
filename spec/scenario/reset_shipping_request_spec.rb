@@ -13,49 +13,6 @@ describe Api::GraphqlController, type: :request do
     let(:partner) { { id: seller_id, artsy_collects_sales_tax: true, billing_location_id: '123abc' } }
     let(:seller_addresses) { [Address.new(state: 'NY', country: 'US', postal_code: '10001'), Address.new(state: 'MA', country: 'US', postal_code: '02139')] }
 
-    let(:mutation) do
-      <<-GRAPHQL
-        mutation($input: SetShippingInput!) {
-          setShipping(input: $input) {
-            orderOrError {
-              ... on OrderWithMutationSuccess {
-                order {
-                  id
-                  state
-                  shippingTotalCents
-                  requestedFulfillment {
-                    __typename
-                    ... on Ship {
-                      addressLine1
-                    }
-                    ... on Pickup {
-                      fulfillmentType
-                    }
-                  }
-                  buyer {
-                    ... on Partner {
-                      id
-                    }
-                  }
-                  seller {
-                    ... on User {
-                      id
-                    }
-                  }
-                }
-              }
-              ... on OrderWithMutationFailure {
-                error {
-                  code
-                  data
-                  type
-                }
-              }
-            }
-          }
-        }
-      GRAPHQL
-    end
     let(:us_shipping_address) do
       {
         name: 'Fname Lname',
@@ -92,75 +49,81 @@ describe Api::GraphqlController, type: :request do
 
     before do
       stub_tax_for_order
-      allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork)
       allow(Gravity).to receive_messages(
         fetch_partner_locations: seller_addresses,
-        fetch_partner: partner
+        fetch_partner: partner,
+        get_artwork: artwork
       )
     end
 
     describe 'switch from domestic to international shipping' do
       before do
         # set shipping to domestic
-        client.execute(mutation, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: us_shipping_address })
-        expect(order.reload.shipping_country).to eq 'US'
-        expect(order.shipping_city).to eq 'New York'
-        expect(order.shipping_region).to eq 'NY'
-        expect(order.shipping_postal_code).to eq '10012'
-        expect(order.buyer_phone_number).to eq '617-718-7818'
-        expect(order.shipping_name).to eq 'Fname Lname'
-        expect(order.shipping_address_line1).to eq '401 Broadway'
-        expect(order.shipping_address_line2).to eq 'Suite 80'
-        expect(order.shipping_total_cents).to eq 200_00
-        expect(order.buyer_total_cents).to eq 1201_16
-        @response = client.execute(mutation, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: international_shipping_address })
+        client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: us_shipping_address })
+        expect(order.reload).to have_attributes(
+          shipping_country: 'US',
+          shipping_city: 'New York',
+          shipping_region: 'NY',
+          shipping_postal_code: '10012',
+          buyer_phone_number: '617-718-7818',
+          shipping_name: 'Fname Lname',
+          shipping_address_line1: '401 Broadway',
+          shipping_address_line2: 'Suite 80',
+          shipping_total_cents: 200_00,
+          buyer_total_cents: 1201_16
+        )
+        @response = client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: international_shipping_address })
       end
       it 'changes shipping info' do
-        expect(order.reload.shipping_country).to eq 'IR'
-        expect(order.shipping_city).to eq 'Tehran'
-        expect(order.shipping_region).to eq 'TH'
-        expect(order.shipping_postal_code).to eq '09821'
-        expect(order.buyer_phone_number).to eq '0989121324'
-        expect(order.shipping_name).to eq 'NameF NameL'
-        expect(order.shipping_address_line1).to eq 'Vanak'
-        expect(order.shipping_address_line2).to eq 'Suite 81'
+        expect(order.reload).to have_attributes(
+          shipping_country: 'IR',
+          shipping_city: 'Tehran',
+          shipping_region: 'TH',
+          shipping_postal_code: '09821',
+          buyer_phone_number: '0989121324',
+          shipping_name: 'NameF NameL',
+          shipping_address_line1: 'Vanak',
+          shipping_address_line2: 'Suite 81'
+        )
       end
       it 'updates order totals' do
-        expect(order.reload.shipping_total_cents).to eq 300_00
-        expect(order.buyer_total_cents).to eq 1301_16
+        expect(order.reload).to have_attributes(shipping_total_cents: 300_00, buyer_total_cents: 1301_16)
       end
     end
 
     describe 'switch from ship to pickup' do
       before do
         # set shipping to domestic
-        client.execute(mutation, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: us_shipping_address })
-        expect(order.reload.shipping_country).to eq 'US'
-        expect(order.shipping_city).to eq 'New York'
-        expect(order.shipping_region).to eq 'NY'
-        expect(order.shipping_postal_code).to eq '10012'
-        expect(order.buyer_phone_number).to eq '617-718-7818'
-        expect(order.shipping_name).to eq 'Fname Lname'
-        expect(order.shipping_address_line1).to eq '401 Broadway'
-        expect(order.shipping_address_line2).to eq 'Suite 80'
-        expect(order.shipping_total_cents).to eq 200_00
-        expect(order.buyer_total_cents).to eq 1201_16
-        @response = client.execute(mutation, input: { id: order.id.to_s, fulfillmentType: 'PICKUP' })
+        client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: us_shipping_address })
+        expect(order.reload).to have_attributes(
+          shipping_country: 'US',
+          shipping_city: 'New York',
+          shipping_region: 'NY',
+          shipping_postal_code: '10012',
+          buyer_phone_number: '617-718-7818',
+          shipping_name: 'Fname Lname',
+          shipping_address_line1: '401 Broadway',
+          shipping_address_line2: 'Suite 80',
+          shipping_total_cents: 200_00,
+          buyer_total_cents: 1201_16
+        )
+        @response = client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'PICKUP' })
       end
       it 'changes shipping info' do
-        expect(order.reload.fulfillment_type).to eq Order::PICKUP
-        expect(order.shipping_country).to eq nil
-        expect(order.shipping_city).to eq nil
-        expect(order.shipping_region).to eq nil
-        expect(order.shipping_postal_code).to eq nil
-        expect(order.buyer_phone_number).to eq nil
-        expect(order.shipping_name).to eq nil
-        expect(order.shipping_address_line1).to eq nil
-        expect(order.shipping_address_line2).to eq nil
+        expect(order.reload).to have_attributes(
+          fulfillment_type: Order::PICKUP,
+          shipping_country: nil,
+          shipping_city: nil,
+          shipping_region: nil,
+          shipping_postal_code: nil,
+          buyer_phone_number: nil,
+          shipping_name: nil,
+          shipping_address_line1: nil,
+          shipping_address_line2: nil
+        )
       end
       it 'updates order totals' do
-        expect(order.reload.shipping_total_cents).to eq 0
-        expect(order.buyer_total_cents).to eq 1001_16
+        expect(order.reload).to have_attributes(shipping_total_cents: 0, buyer_total_cents: 1001_16)
       end
     end
   end
