@@ -30,7 +30,6 @@ describe Api::GraphqlController, type: :request do
 
     before do
       stub_tax_for_order(tax_amount: 100)
-      allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(gravity_artwork)
       allow(Gravity).to receive_messages(
         get_artwork: gravity_artwork,
         fetch_partner_locations: seller_addresses,
@@ -41,7 +40,7 @@ describe Api::GraphqlController, type: :request do
       )
     end
 
-    it 'succeeds with all expected values' do
+    it 'succeeds the process of buyer create -> set shipping -> set payment -> submit -> seller accept' do
       # Buyer creates the order
       expect do
         buyer_client.execute(QueryHelper::CREATE_ORDER, input: { artworkId: gravity_artwork[:_id], quantity: 1 })
