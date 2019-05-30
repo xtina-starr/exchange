@@ -22,6 +22,7 @@ ActiveAdmin.register Order do
   filter :state, as: :check_boxes, collection: proc { Order::STATES }
   filter :state_reason, as: :check_boxes, collection: proc { Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize) }
   filter :has_offer_note , as: :check_boxes, label: 'Has Offer Note'
+  filter :clc_assisted
 
   index do
     column :code do |order|
@@ -74,6 +75,11 @@ ActiveAdmin.register Order do
     redirect_to resource_path, notice: "Fulfillment confirmed!"
   end
 
+  member_action :toggle_clc_assisted, method: :post do
+    resource.toggle!(:clc_assited)
+    redirect_to resource_path, notice: "toggled CLC assisted flag!"
+  end
+
   action_item :refund, only: :show do
     if [Order::APPROVED, Order::FULFILLED].include? order.state
       link_to 'Refund', refund_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to refund this order?'}
@@ -108,6 +114,12 @@ ActiveAdmin.register Order do
   action_item :confirm_fulfillment, only: :show do
     if order.state == Order::APPROVED && order.fulfillment_type == Order::SHIP
       link_to 'Confirm Fulfillment', confirm_fulfillment_admin_order_path(order), method: :post, data: {confirm: 'Confirm order fulfillment?'}
+    end
+  end
+
+  action_item :toggle_clc_flag, only: :show do
+    if order.state != Order::PENDING
+      link_to 'Toggle CLC', toggle_clc_assisted_admin_order_path(order), method: :post
     end
   end
 
