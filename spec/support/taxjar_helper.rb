@@ -2,8 +2,8 @@ require 'json'
 require 'taxjar'
 require 'webmock/rspec'
 
-def stub_tax_for_order
-  stub_request(:post, Taxjar::API::Request::DEFAULT_API_URL + '/v2/taxes').to_return(body: sales_tax_fixture.to_json, headers: { content_type: 'application/json; charset=utf-8' })
+def stub_tax_for_order(tax_amount: nil)
+  stub_request(:post, Taxjar::API::Request::DEFAULT_API_URL + '/v2/taxes').to_return(body: sales_tax_fixture(tax_amount: tax_amount).to_json, headers: { content_type: 'application/json; charset=utf-8' })
   stub_request(:post, Taxjar::API::Request::DEFAULT_API_URL + '/v2/transactions/orders').to_return(body: order_fixture.to_json, headers: { content_type: 'application/json; charset=utf-8' })
 end
 
@@ -42,20 +42,20 @@ def order_fixture
   }
 end
 
-def sales_tax_fixture
+def sales_tax_fixture(tax_amount: nil)
   {
     "tax": {
       "order_total_amount": 16.5,
       "shipping": 1.5,
       "taxable_amount": 16.5,
-      "amount_to_collect": 1.16,
+      "amount_to_collect": tax_amount || 1.16,
       "rate": 0.07,
       "has_nexus": true,
       "freight_taxable": true,
       "tax_source": 'destination',
       "breakdown": {
         "taxable_amount": 16.5,
-        "tax_collectable": 1.16,
+        "tax_collectable": tax_amount || 1.16,
         "combined_tax_rate": 0.07,
         "state_taxable_amount": 16.5,
         "state_tax_rate": 0.07,
