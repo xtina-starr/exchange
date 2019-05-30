@@ -54,8 +54,8 @@ def sales_tax_fixture(tax_amount: nil)
       "freight_taxable": true,
       "tax_source": 'destination',
       "breakdown": {
-        "taxable_amount": tax_amount || 16.5,
-        "tax_collectable": 1.16,
+        "taxable_amount": 16.5,
+        "tax_collectable": tax_amount || 1.16,
         "combined_tax_rate": 0.07,
         "state_taxable_amount": 16.5,
         "state_tax_rate": 0.07,

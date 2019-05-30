@@ -103,12 +103,14 @@ describe Api::GraphqlController, type: :request do
         state: Order::APPROVED,
         items_total_cents: 1000_00,
         shipping_total_cents: 200_00,
-        tax_total_cents: 100_00,
         buyer_total_cents: 1300_00,
+        tax_total_cents: 100_00,
+        commission_fee_cents: 100_00,
+        transaction_fee_cents: 38_00,
+        seller_total_cents: 1162_00,
         fulfillment_type: Order::SHIP,
         shipping_country: 'US',
-        credit_card_id: 'cc-1',
-        commission_fee_cents: 100_00
+        credit_card_id: 'cc-1'
       )
       expect(order.transactions.order(created_at: :desc).first).to have_attributes(
         transaction_type: Transaction::CAPTURE,
