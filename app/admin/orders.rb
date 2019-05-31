@@ -22,7 +22,7 @@ ActiveAdmin.register Order do
   filter :state, as: :check_boxes, collection: proc { Order::STATES }
   filter :state_reason, as: :check_boxes, collection: proc { Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize) }
   filter :has_offer_note , as: :check_boxes, label: 'Has Offer Note'
-  filter :clc_assisted
+  filter :assisted
 
   index do
     column :code do |order|
@@ -75,8 +75,8 @@ ActiveAdmin.register Order do
     redirect_to resource_path, notice: "Fulfillment confirmed!"
   end
 
-  member_action :toggle_clc_assisted, method: :post do
-    resource.toggle!(:clc_assited)
+  member_action :toggle_assisted, method: :post do
+    resource.toggle!(:assisted)
     redirect_to resource_path, notice: "toggled CLC assisted flag!"
   end
 
@@ -117,9 +117,9 @@ ActiveAdmin.register Order do
     end
   end
 
-  action_item :toggle_clc_flag, only: :show do
+  action_item :toggle_assisted_flag, only: :show do
     if order.state != Order::PENDING
-      link_to 'Toggle CLC', toggle_clc_assisted_admin_order_path(order), method: :post
+      link_to 'Toggle CLC', toggle_assisted_admin_order_path(order), method: :post
     end
   end
 
@@ -244,6 +244,7 @@ ActiveAdmin.register Order do
             last_admin_note.note_type.humanize
           end
         end
+        row :assisted
         row 'Last note' do |order|
           if last_admin_note.present?
             last_admin_note.description
