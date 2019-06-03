@@ -77,7 +77,7 @@ ActiveAdmin.register Order do
 
   member_action :toggle_assisted, method: :post do
     resource.toggle!(:assisted)
-    redirect_to resource_path, notice: "toggled CLC assisted flag!"
+    redirect_to resource_path, notice: "toggled assisted flag!"
   end
 
   action_item :refund, only: :show do
@@ -119,7 +119,7 @@ ActiveAdmin.register Order do
 
   action_item :toggle_assisted_flag, only: :show do
     if order.state != Order::PENDING
-      link_to 'Toggle CLC', toggle_assisted_admin_order_path(order), method: :post
+      link_to 'Toggle Assisted', toggle_assisted_admin_order_path(order), method: :post
     end
   end
 
