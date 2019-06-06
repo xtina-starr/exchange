@@ -43,14 +43,14 @@ describe Api::GraphqlController, type: :request do
     it 'succeeds the process of buyer create -> set shipping -> set payment -> submit -> seller accept' do
       # Buyer creates the offer order
       expect do
-        buyer_client.execute(QueryHelper::CREATE_OFFER_ORDER, input: { artworkId: gravity_artwork[:_id], quantity: 1 })
+        buyer_client.execute(OfferQueryHelper::CREATE_OFFER_ORDER, input: { artworkId: gravity_artwork[:_id], quantity: 1 })
       end.to change(Order, :count).by(1)
       order = Order.last
       expect(order).to have_attributes(state: Order::PENDING, mode: Order::OFFER, shipping_total_cents: nil, buyer_total_cents: nil, tax_total_cents: nil)
 
       # adds initial offer to order
       expect do
-        buyer_client.execute(QueryHelper::ADD_OFFER_TO_ORDER, input: { orderId: order.id, amountCents: 500_00})
+        buyer_client.execute(OfferQueryHelper::ADD_OFFER_TO_ORDER, input: { orderId: order.id, amountCents: 500_00 })
       end.to change(Offer, :count).by(1)
       offer = Offer.last
       expect(order.reload).to have_attributes(state: Order::PENDING, mode: Order::OFFER, shipping_total_cents: nil, buyer_total_cents: nil, tax_total_cents: nil)
@@ -58,7 +58,6 @@ describe Api::GraphqlController, type: :request do
       expect(order.offers.last.amount_cents).to eq 500_00
       expect(offer.amount_cents).to eq 500_00
       expect(offer.order_id).to eq order.id
-
 
       # Buyer sets shipping info
       buyer_client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: buyer_shipping_address })
@@ -69,8 +68,13 @@ describe Api::GraphqlController, type: :request do
         tax_total_cents: nil,
         buyer_total_cents: nil,
         fulfillment_type: Order::SHIP,
-        shipping_country: 'US'
+        shipping_country: 'US',
+        shipping_city: 'New York',
+        shipping_address_line1: '401 Broadway',
+        shipping_address_line2: 'Suite 80',
+        shipping_postal_code: '10012'
       )
+
       expect(offer.reload).to have_attributes(
         amount_cents: 500_00,
         shipping_total_cents: 200_00,
@@ -88,7 +92,7 @@ describe Api::GraphqlController, type: :request do
       )
 
       # Buyer submits offer order
-      buyer_client.execute(QueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
+      buyer_client.execute(OfferQueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
       expect(order.reload).to have_attributes(
         state: Order::SUBMITTED,
         items_total_cents: 500_00,
@@ -103,7 +107,7 @@ describe Api::GraphqlController, type: :request do
 
       # seller accepts offer
       expect do
-        seller_client.execute(QueryHelper::SELLER_ACCEPT_OFFER, input: { offerId: offer.id.to_s })
+        seller_client.execute(OfferQueryHelper::SELLER_ACCEPT_OFFER, input: { offerId: offer.id.to_s })
       end.to change(order.transactions, :count).by(1)
       expect(order.reload).to have_attributes(
         state: Order::APPROVED,
