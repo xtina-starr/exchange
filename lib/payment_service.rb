@@ -30,7 +30,7 @@ module PaymentService
   def self.capture_authorized_charge(charge_id)
     charge = Stripe::Charge.retrieve(charge_id)
     charge.capture
-    Transaction.new(external_id: charge.id, source_id: charge.source, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::CAPTURE, status: Transaction::SUCCESS)
+    Transaction.new(external_id: charge.id, source_id: charge.source.id, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::CAPTURE, status: Transaction::SUCCESS)
   rescue Stripe::StripeError => e
     generate_transaction_from_exception(e, Transaction::CAPTURE, charge_id: charge_id)
   end
