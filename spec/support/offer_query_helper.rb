@@ -6,19 +6,6 @@ module OfferQueryHelper
           ... on OrderWithMutationSuccess {
             order {
               id
-              mode
-              itemsTotalCents
-              totalListPriceCents
-              buyer {
-                ... on Partner {
-                  id
-                }
-              }
-              seller {
-                ... on User {
-                  id
-                }
-              }
             }
           }
           ... on OrderWithMutationFailure {
@@ -40,28 +27,6 @@ module OfferQueryHelper
           ... on OrderWithMutationSuccess {
             order {
               id
-              mode
-              totalListPriceCents
-              buyer {
-                ... on Partner {
-                  id
-                }
-              }
-              seller {
-                ... on User {
-                  id
-                }
-              }
-              ... on OfferOrder {
-                offers {
-                  edges {
-                    node {
-                      id
-                      amountCents
-                    }
-                  }
-                }
-              }
             }
           }
           ... on OrderWithMutationFailure {
