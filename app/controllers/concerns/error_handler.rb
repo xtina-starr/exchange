@@ -1,3 +1,4 @@
+# typed: false
 module ErrorHandler
   def self.included(clazz)
     clazz.class_eval do

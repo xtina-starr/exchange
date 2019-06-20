@@ -1,3 +1,4 @@
+# typed: true
 class CreateLineItemFulfillments < ActiveRecord::Migration[5.2]
   def change
     create_table :line_item_fulfillments, id: :uuid do |t|

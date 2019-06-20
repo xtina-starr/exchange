@@ -1,3 +1,4 @@
+# typed: true
 module TransactionFeeCalculator
   def self.calculate(total_charge_amount)
     0 unless total_charge_amount&.positive?

@@ -1,3 +1,4 @@
+# typed: false
 class Inputs::ShippingAttributes < Types::BaseInputObject
   description 'Shipping information'
 

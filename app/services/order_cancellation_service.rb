@@ -1,3 +1,4 @@
+# typed: false
 class OrderCancellationService
   def initialize(order, user_id = nil)
     @order = order

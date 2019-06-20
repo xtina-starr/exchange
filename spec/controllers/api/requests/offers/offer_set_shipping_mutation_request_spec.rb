@@ -1,3 +1,4 @@
+# typed: false
 require 'rails_helper'
 require 'support/gravity_helper'
 require 'support/taxjar_helper'

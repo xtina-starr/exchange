@@ -1,3 +1,4 @@
+# typed: false
 class CreateOfferVersions < ActiveRecord::Migration[5.2]
   def change
     create_table :offer_versions do |t|

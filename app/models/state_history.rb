@@ -1,3 +1,4 @@
+# typed: false
 class StateHistory < ApplicationRecord
   belongs_to :order
 

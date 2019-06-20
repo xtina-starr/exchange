@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::FulfillAtOnce < Mutations::BaseMutation
   null true
   description 'Fulfill an order with one Fulfillment, it sets this fulfillment to each line item in order'

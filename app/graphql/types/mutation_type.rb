@@ -1,3 +1,4 @@
+# typed: false
 class Types::MutationType < Types::BaseObject
   # Buyer
   field :create_order_with_artwork, mutation: Mutations::CreateOrderWithArtwork

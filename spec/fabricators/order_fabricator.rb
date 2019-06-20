@@ -1,3 +1,4 @@
+# typed: false
 Fabricator(:order) do
   mode { Order::BUY }
   code { SecureRandom.hex(10) }

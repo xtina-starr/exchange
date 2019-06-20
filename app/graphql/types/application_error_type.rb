@@ -1,3 +1,4 @@
+# typed: false
 class Types::ApplicationErrorType < Types::BaseObject
   description 'An generic error type for mutations'
   graphql_name 'ApplicationError'

@@ -1,3 +1,4 @@
+# typed: false
 class OfferTotals
   # Given an Order and amount of offer, it calculates tax, shipping based on offer amount
   delegate :tax_total_cents, to: :tax_data

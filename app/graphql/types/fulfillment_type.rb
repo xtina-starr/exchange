@@ -1,3 +1,4 @@
+# typed: false
 class Types::FulfillmentType < Types::BaseObject
   description 'A Fulfillment for an order'
   graphql_name 'Fulfillment'

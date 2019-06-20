@@ -1,3 +1,4 @@
+# typed: false
 class AddFulfillmentVersions < ActiveRecord::Migration[5.2]
   def change
     create_table :fulfillment_versions do |t|

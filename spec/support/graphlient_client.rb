@@ -1,3 +1,4 @@
+# typed: false
 require 'graphlient'
 
 RSpec.shared_context 'GraphQL Client', shared_context: :metadata do

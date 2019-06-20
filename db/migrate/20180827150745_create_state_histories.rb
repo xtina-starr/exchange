@@ -1,3 +1,4 @@
+# typed: true
 class CreateStateHistories < ActiveRecord::Migration[5.2]
   def change
     create_table :state_histories, id: :uuid do |t|

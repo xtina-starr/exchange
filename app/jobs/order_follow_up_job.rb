@@ -1,3 +1,4 @@
+# typed: false
 class OrderFollowUpJob < ApplicationJob
   queue_as :default
 

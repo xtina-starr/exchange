@@ -1,3 +1,4 @@
+# typed: false
 class OfferEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
   ACTIONS = [

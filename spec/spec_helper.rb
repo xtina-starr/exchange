@@ -1,3 +1,4 @@
+# typed: false
 if ENV.fetch('CI', false)
   require 'coveralls'
   Coveralls.wear!('rails')

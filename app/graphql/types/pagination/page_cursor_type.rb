@@ -1,3 +1,4 @@
+# typed: false
 class Types::Pagination::PageCursorType < Types::BaseObject
   field :cursor, String, 'first cursor on the page', null: false
   field :isCurrent, Boolean, 'is this the current page?', null: false

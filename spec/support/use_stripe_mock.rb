@@ -1,3 +1,4 @@
+# typed: false
 require 'stripe_mock'
 
 RSpec.shared_context 'use stripe mock' do

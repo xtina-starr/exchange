@@ -1,3 +1,4 @@
+# typed: false
 class Types::DateType < Types::BaseScalar
   description 'Date in YYYY-MM-DD format'
   DATE_FORMAT = '%Y-%m-%d'.freeze

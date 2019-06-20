@@ -1,3 +1,4 @@
+# typed: false
 module AuthHandler
   def self.included(clazz)
     clazz.class_eval do

@@ -1,3 +1,4 @@
+# typed: true
 class Types::BaseField < GraphQL::Schema::Field
   def initialize(buyer_only: false, seller_only: false, **kwargs, &block)
     @buyer_only = buyer_only

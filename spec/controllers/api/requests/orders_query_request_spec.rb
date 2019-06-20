@@ -1,3 +1,4 @@
+# typed: false
 require 'rails_helper'
 
 def ids_from_result_data(result)

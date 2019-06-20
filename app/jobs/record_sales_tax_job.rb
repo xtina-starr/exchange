@@ -1,3 +1,4 @@
+# typed: false
 class RecordSalesTaxJob < ApplicationJob
   queue_as :default
 

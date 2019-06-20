@@ -1,3 +1,4 @@
+# typed: false
 ActiveAdmin.register Order do
   actions :all, except: %i[create update destroy new edit]
   # TODO: change sort order

@@ -1,3 +1,4 @@
+# typed: false
 class SwitchToBiggerInt < ActiveRecord::Migration[5.2]
   def up
     change_table :orders, bulk: true do |t|

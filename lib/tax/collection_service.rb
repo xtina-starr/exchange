@@ -1,3 +1,4 @@
+# typed: false
 class Tax::CollectionService
   attr_reader :transaction
   def initialize(

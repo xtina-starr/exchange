@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::SubmitOrderWithOffer < Mutations::BaseMutation
   null true
 

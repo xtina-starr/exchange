@@ -1,3 +1,4 @@
+# typed: false
 RSpec.shared_examples 'a papertrail versioned model', versioning: true do |model_symbol|
   let(:model_instance) { Fabricate(model_symbol) }
 

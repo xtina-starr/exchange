@@ -1,3 +1,4 @@
+# typed: false
 module Types::OrderInterface
   include Types::BaseInterface
   field_class Types::BaseField

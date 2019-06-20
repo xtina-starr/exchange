@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::OrderWithMutationSuccess < Types::BaseObject
   description 'A successfully returned order type'
   field :order, Types::OrderInterface, null: false

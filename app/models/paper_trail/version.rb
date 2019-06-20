@@ -1,3 +1,4 @@
+# typed: false
 module PaperTrail
   # rubocop:disable Rails/ApplicationRecord
   class Version < ActiveRecord::Base

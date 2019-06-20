@@ -1,3 +1,4 @@
+# typed: true
 module OfferQueryHelper
   CREATE_OFFER_ORDER = %(
     mutation($input: CreateOfferOrderWithArtworkInput!) {

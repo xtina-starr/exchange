@@ -1,3 +1,4 @@
+# typed: false
 module LineItemHelper
   def artwork
     @artwork ||= begin

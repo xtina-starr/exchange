@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::FixFailedPayment < Mutations::BaseMutation
   null true
 

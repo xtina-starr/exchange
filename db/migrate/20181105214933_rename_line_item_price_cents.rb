@@ -1,3 +1,4 @@
+# typed: false
 class RenameLineItemPriceCents < ActiveRecord::Migration[5.2]
   def change
     rename_column :line_items, :price_cents, :list_price_cents

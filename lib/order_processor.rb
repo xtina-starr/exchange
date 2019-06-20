@@ -1,3 +1,4 @@
+# typed: true
 class OrderProcessor
   attr_accessor :order, :transaction, :error
 

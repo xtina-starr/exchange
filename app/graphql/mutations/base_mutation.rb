@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::BaseMutation < GraphQL::Schema::RelayClassicMutation
   include RequestValidator
 

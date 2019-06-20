@@ -1,3 +1,4 @@
+# typed: true
 def jwt_headers(user_id: nil, partner_ids: [], roles: '')
   payload_data = { sub: user_id, partner_ids: partner_ids, roles: roles }
   token = JWT.encode(

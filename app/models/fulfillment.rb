@@ -1,3 +1,4 @@
+# typed: false
 class Fulfillment < ApplicationRecord
   has_paper_trail class_name: 'PaperTrail::FulfillmentVersion'
 

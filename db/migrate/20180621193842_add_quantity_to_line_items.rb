@@ -1,3 +1,4 @@
+# typed: false
 class AddQuantityToLineItems < ActiveRecord::Migration[5.2]
   def change
     add_column :line_items, :quantity, :integer, null: false, default: 1

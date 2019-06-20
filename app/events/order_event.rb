@@ -1,3 +1,4 @@
+# typed: false
 class OrderEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
   PROPERTIES_ATTRS = %i[

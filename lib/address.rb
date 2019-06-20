@@ -1,3 +1,4 @@
+# typed: true
 class Address
   attr_reader :country, :region, :city, :street_line1, :street_line2, :postal_code
   UNITED_STATES = Carmen::Country.coded('US')

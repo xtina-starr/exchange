@@ -1,3 +1,4 @@
+# typed: true
 module Api
   class HealthController < Api::BaseApiController
     skip_before_action :authenticate_request!

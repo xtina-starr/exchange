@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::SetShipping < Mutations::BaseMutation
   null true
 

@@ -1,3 +1,4 @@
+# typed: false
 module PaperTrail
   class OrderVersion < PaperTrail::Version
     self.table_name = :order_versions

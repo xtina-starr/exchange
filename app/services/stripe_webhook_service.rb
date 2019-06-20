@@ -1,3 +1,4 @@
+# typed: true
 class StripeWebhookService
   PROCESSED_EVENT_TYPES = %w[charge.refunded charge.failed].freeze
 

@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::ConfirmPickup < Mutations::BaseMutation
   null true
 

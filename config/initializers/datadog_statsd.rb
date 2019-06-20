@@ -1,3 +1,4 @@
+# typed: false
 module Datadog
   module StatsdDisabled
     attr_accessor :disabled

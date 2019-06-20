@@ -1,3 +1,4 @@
+# typed: false
 class UndeductLineItemInventoryJob < ApplicationJob
   queue_as :default
   discard_on(Errors::ValidationError) do |job, _error|

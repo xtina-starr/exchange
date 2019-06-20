@@ -1,3 +1,4 @@
+# typed: false
 class AddShippingTotalCentsToLineItems < ActiveRecord::Migration[5.2]
   def up
     add_column :line_items, :shipping_total_cents, :int

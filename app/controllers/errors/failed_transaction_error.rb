@@ -1,3 +1,4 @@
+# typed: true
 module Errors
   class FailedTransactionError < ProcessingError
     attr_reader :transaction

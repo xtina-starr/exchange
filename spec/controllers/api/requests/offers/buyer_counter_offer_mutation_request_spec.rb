@@ -1,3 +1,4 @@
+# typed: false
 require 'rails_helper'
 require 'support/use_stripe_mock'
 require 'support/gravity_helper'

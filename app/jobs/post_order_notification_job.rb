@@ -1,3 +1,4 @@
+# typed: false
 class PostOrderNotificationJob < ApplicationJob
   queue_as :default
 

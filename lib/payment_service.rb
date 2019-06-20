@@ -1,3 +1,4 @@
+# typed: false
 module PaymentService
   def self.create_charge(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:)
     transaction_type = capture ? Transaction::CAPTURE : Transaction::HOLD

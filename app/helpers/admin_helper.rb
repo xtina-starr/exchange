@@ -1,3 +1,4 @@
+# typed: false
 module AdminHelper
   def format_money_cents(amount_cents, negate: false)
     return 'N/A' if amount_cents.blank?

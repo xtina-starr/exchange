@@ -1,3 +1,4 @@
+# typed: false
 module OfferService
   def self.create_pending_offer(order, amount_cents:, note:, from_id:, from_type:, creator_id:, responds_to: nil)
     raise Errors::ValidationError, :cannot_offer unless order.mode == Order::OFFER

@@ -1,3 +1,4 @@
+# typed: true
 module UnitConverter
   def self.convert_cents_to_dollars(cents)
     cents.to_f / 100

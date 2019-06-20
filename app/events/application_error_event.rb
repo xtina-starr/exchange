@@ -1,3 +1,4 @@
+# typed: true
 class ApplicationErrorEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
   ACTIONS = [

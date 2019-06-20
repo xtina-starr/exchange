@@ -1,3 +1,4 @@
+# typed: true
 module Errors
   ERROR_TYPES = {
     validation: %i[

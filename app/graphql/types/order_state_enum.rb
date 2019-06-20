@@ -1,3 +1,4 @@
+# typed: strict
 class Types::OrderStateEnum < Types::BaseEnum
   value 'ABANDONED', 'order is abandoned by buyer and never submitted', value: Order::ABANDONED
   value 'PENDING', 'order is still pending submission by buyer', value: Order::PENDING

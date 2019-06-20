@@ -1,3 +1,4 @@
+# typed: false
 class Types::Ship < Types::BaseObject
   field :phone_number, String, null: true
   def phone_number

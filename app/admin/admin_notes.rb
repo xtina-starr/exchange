@@ -1,3 +1,4 @@
+# typed: false
 ActiveAdmin.register AdminNote do
   belongs_to :order
   permit_params :order_id, :admin_id, :note_type, :description

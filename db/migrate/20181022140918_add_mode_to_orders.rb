@@ -1,3 +1,4 @@
+# typed: false
 class AddModeToOrders < ActiveRecord::Migration[5.2]
   def up
     add_column :orders, :mode, :string, null: true

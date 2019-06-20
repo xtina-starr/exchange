@@ -1,3 +1,4 @@
+# typed: false
 module OrderService
   def self.create_with_artwork!(buyer_id:, buyer_type:, mode:, quantity:, artwork_id:, edition_set_id: nil, user_agent:, user_ip:, find_active_or_create: false)
     order_creator = OrderCreator.new(

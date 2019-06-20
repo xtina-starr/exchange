@@ -1,3 +1,4 @@
+# typed: false
 class LineItem < ApplicationRecord
   include LineItemHelper
 

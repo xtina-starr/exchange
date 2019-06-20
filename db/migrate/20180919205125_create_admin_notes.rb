@@ -1,3 +1,4 @@
+# typed: true
 class CreateAdminNotes < ActiveRecord::Migration[5.2]
   def change
     create_table :admin_notes, id: :uuid do |t|

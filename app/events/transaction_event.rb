@@ -1,3 +1,4 @@
+# typed: true
 class TransactionEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
   ACTIONS = [

@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::SubmitOrder < Mutations::BaseMutation
   null true
 

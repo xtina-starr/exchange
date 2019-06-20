@@ -1,3 +1,4 @@
+# typed: false
 module Errors
   class ApplicationError < StandardError
     attr_reader :type, :code, :data

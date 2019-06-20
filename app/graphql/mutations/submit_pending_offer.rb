@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::SubmitPendingOffer < Mutations::BaseMutation
   null true
 

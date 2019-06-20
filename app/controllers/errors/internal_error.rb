@@ -1,3 +1,4 @@
+# typed: true
 module Errors
   class InternalError < ApplicationError
     def initialize(code, data = nil)

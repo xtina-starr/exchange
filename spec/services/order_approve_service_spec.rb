@@ -1,3 +1,4 @@
+# typed: false
 require 'rails_helper'
 
 describe OrderApproveService, type: :services do

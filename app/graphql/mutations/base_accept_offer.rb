@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::BaseAcceptOffer < Mutations::BaseMutation
   null true
 

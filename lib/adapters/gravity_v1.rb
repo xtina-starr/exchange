@@ -1,3 +1,4 @@
+# typed: false
 module Adapters
   class GravityError < StandardError; end
   class GravityNotFoundError < GravityError; end

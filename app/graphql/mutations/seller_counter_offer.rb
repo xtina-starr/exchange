@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::SellerCounterOffer < Mutations::BaseMutation
   null true
 

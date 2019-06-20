@@ -1,3 +1,4 @@
+# typed: false
 module Api
   class WebhooksController < Api::BaseApiController
     skip_before_action :authenticate_request!

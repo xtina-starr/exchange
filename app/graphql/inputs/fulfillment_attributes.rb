@@ -1,3 +1,4 @@
+# typed: false
 class Inputs::FulfillmentAttributes < Types::BaseInputObject
   description 'Attributes of a Fulfillment'
 

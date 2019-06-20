@@ -1,3 +1,4 @@
+# typed: false
 class OrderCreator
   attr_reader :errors
   def initialize(buyer_id:, buyer_type:, mode:, quantity: 1, artwork_id:, edition_set_id: nil, user_agent:, user_ip:)

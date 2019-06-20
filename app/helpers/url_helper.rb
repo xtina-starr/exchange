@@ -1,3 +1,4 @@
+# typed: true
 module UrlHelper
   def artsy_view_artwork_url(artwork_id)
     artwork_url = Rails.application.config_for(:force)['artwork_url']

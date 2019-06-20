@@ -1,3 +1,4 @@
+# typed: false
 class Types::Partner < Types::BaseObject
   field :id, String, null: false
   field :type, String, null: false

@@ -1,3 +1,4 @@
+# typed: true
 def gravity_v1_artwork(options={})
   {
     artist: {

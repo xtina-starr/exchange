@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::ConfirmFulfillment < Mutations::BaseMutation
   null true
 

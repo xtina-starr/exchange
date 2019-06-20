@@ -1,3 +1,4 @@
+# typed: false
 class AddTotalCentsToOffers < ActiveRecord::Migration[5.2]
   def change
     change_table :offers do |t|

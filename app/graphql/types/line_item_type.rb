@@ -1,3 +1,4 @@
+# typed: false
 class Types::LineItemType < Types::BaseObject
   description 'A Line Item'
   graphql_name 'LineItem'

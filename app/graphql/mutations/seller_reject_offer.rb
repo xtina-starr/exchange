@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::SellerRejectOffer < Mutations::BaseRejectOffer
   alias authorize! authorize_seller_request!
   def waiting_for_response?(offer)

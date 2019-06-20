@@ -1,3 +1,4 @@
+# typed: false
 class ShippingHelper
   def self.calculate(artwork, fulfillment_type, shipping_address = nil)
     return 0 if fulfillment_type == Order::PICKUP

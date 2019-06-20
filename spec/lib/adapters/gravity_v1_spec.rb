@@ -1,3 +1,4 @@
+# typed: false
 require 'rails_helper'
 
 describe Adapters::GravityV1 do

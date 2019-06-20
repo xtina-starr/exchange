@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::ApproveOrder < Mutations::BaseMutation
   null true
 

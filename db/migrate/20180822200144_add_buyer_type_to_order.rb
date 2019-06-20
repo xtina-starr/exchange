@@ -1,3 +1,4 @@
+# typed: false
 class AddBuyerTypeToOrder < ActiveRecord::Migration[5.2]
   def change
     change_table :orders, bulk: true do |t|

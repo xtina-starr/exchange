@@ -1,3 +1,4 @@
+# typed: false
 class AddPaymentMethodToOrders < ActiveRecord::Migration[5.2]
   def up
     add_column :orders, :payment_method, :string, null: true

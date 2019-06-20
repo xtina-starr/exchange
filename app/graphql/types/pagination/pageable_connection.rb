@@ -1,3 +1,4 @@
+# typed: false
 class Types::Pagination::PageableConnection < GraphQL::Types::Relay::BaseConnection
   field :page_cursors, Types::Pagination::PageCursorsType, null: true
   field :total_pages, Int, null: true

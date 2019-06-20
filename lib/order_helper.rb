@@ -1,3 +1,4 @@
+# typed: false
 module OrderHelper
   def valid_artwork_version?
     line_items.all?(&:latest_artwork_version?)

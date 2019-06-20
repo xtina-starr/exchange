@@ -1,3 +1,4 @@
+# typed: false
 class Offer < ApplicationRecord
   has_paper_trail class_name: 'PaperTrail::OfferVersion'
 

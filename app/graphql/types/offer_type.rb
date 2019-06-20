@@ -1,3 +1,4 @@
+# typed: false
 class Types::OfferType < Types::BaseObject
   description 'An Offer'
   graphql_name 'Offer'

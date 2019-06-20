@@ -1,3 +1,4 @@
+# typed: false
 module RequestValidator
   def authorize_seller_request!(order)
     raise Errors::ValidationError, :not_found unless authorized_seller?(order)

@@ -1,3 +1,4 @@
+# typed: true
 module QueryHelper
   CREATE_ORDER = %(
     mutation($input: CreateOrderWithArtworkInput!) {

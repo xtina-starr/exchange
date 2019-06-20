@@ -1,3 +1,4 @@
+# typed: false
 # Note that these messages are not what triggers
 # reminder emails. The current use case for these is
 # giving admins reminders

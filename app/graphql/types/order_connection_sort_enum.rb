@@ -1,3 +1,4 @@
+# typed: false
 class Types::OrderConnectionSortEnum < Types::BaseEnum
   description 'Fields to sort by'
   graphql_name 'OrderConnectionSortEnum'

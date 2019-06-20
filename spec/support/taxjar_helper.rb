@@ -1,3 +1,4 @@
+# typed: false
 require 'json'
 require 'taxjar'
 require 'webmock/rspec'

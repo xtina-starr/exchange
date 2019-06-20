@@ -1,3 +1,4 @@
+# typed: false
 class OrderApproveService
   attr_reader :order
 

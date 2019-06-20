@@ -1,3 +1,4 @@
+# typed: false
 class Order < ApplicationRecord
   include OrderHelper
   has_paper_trail class_name: 'PaperTrail::OrderVersion'

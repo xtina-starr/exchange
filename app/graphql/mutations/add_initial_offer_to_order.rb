@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::AddInitialOfferToOrder < Mutations::BaseMutation
   argument :order_id, ID, required: true
   argument :amount_cents, Integer, required: true

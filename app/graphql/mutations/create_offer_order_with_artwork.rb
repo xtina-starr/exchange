@@ -1,3 +1,4 @@
+# typed: false
 class Mutations::CreateOfferOrderWithArtwork < Mutations::BaseMutation
   null true
 

@@ -1,3 +1,4 @@
+# typed: false
 class PostEventJob < ApplicationJob
   queue_as :default
 

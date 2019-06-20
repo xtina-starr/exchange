@@ -1,3 +1,4 @@
+# typed: false
 class Types::OfferOrderType < Types::BaseObject
   implements Types::OrderInterface
 

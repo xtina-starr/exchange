@@ -1,3 +1,4 @@
+# typed: false
 class OrderShipping
   def initialize(order)
     @order = order

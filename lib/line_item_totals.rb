@@ -1,3 +1,4 @@
+# typed: true
 class LineItemTotals
   # Given a line_item, it calculates tax, shipping based on offer amount
   delegate :tax_total_cents, to: :tax_data

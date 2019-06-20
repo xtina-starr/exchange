@@ -1,3 +1,4 @@
+# typed: false
 class OfferRespondReminderJob < ApplicationJob
   queue_as :default
 

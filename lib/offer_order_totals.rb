@@ -1,3 +1,4 @@
+# typed: false
 class OfferOrderTotals
   # Given an offer, it calculate totals on the order
   attr_reader :offer

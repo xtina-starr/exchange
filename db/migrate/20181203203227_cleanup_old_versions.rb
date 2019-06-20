@@ -1,3 +1,4 @@
+# typed: true
 class CleanupOldVersions < ActiveRecord::Migration[5.2]
   def up
     ActiveRecord::Base.connection.execute("DELETE FROM versions WHERE NOT item_id ~ E'^[[:xdigit:]]{8}-([[:xdigit:]]{4}-){3}[[:xdigit:]]{12}$'")

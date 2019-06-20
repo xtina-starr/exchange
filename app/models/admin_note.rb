@@ -1,3 +1,4 @@
+# typed: true
 class AdminNote < ApplicationRecord
   belongs_to :order
   TYPES = {

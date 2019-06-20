@@ -1,3 +1,4 @@
+# typed: true
 class BuyOrderTotals
   def initialize(order)
     raise NotImplementedError unless order.mode == Order::BUY
