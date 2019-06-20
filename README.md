@@ -8,18 +8,7 @@ Exchange aspires to be responsible for the various types of e-commerce interacti
 * Staging: https://exchange-staging.artsy.net, [Admin Dashboard](https://exchange-staging.artsy.net/admin) | [Sidekiq Dashboard](https://exchange-staging.artsy.net/admin/sidekiq)
 * GitHub: https://github.com/artsy/exchange/
 * Point People: [@ashkan18][ashkan18], [@williardx][williardx]
-
-
-## Deployment
-### Staging
-PRs merged to `master` are automatically deployed to staging by CI.
-
-### Production
-Mention in #dev slack channel that you are going to deploy and then run:
-```
-hokusai pipeline promote --git-remote upstream
-```
-Assuming `upstream` points to Artsy's repository.
+* CI/Deploys: [CircleCi](https://circleci.com/gh/artsy/exchange); merged PRs to `artsy/exchange#master` are automatically deployed to staging; PRs from `staging` to `release` are automatically deployed to production. [Start a deploy...](https://github.com/artsy/exchange/compare/release...staging?expand=1)
 
 ## Setup
 
