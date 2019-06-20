@@ -11,3 +11,17 @@ class ActionDispatch::Routing::RouteSet
   sig {params(blk: T.proc.bind(ActionDispatch::Routing::Mapper).void).void}
   def draw(&blk); end
 end
+
+# class ActionDispatch::Http::Headers
+# end
+
+class ActionDispatch::Request
+  # sig {returns(ActionDispatch::Http::Headers)}
+  sig {returns(Hash)}
+  def headers; end
+end
+
+class ActionController::Base
+  sig {returns(ActionDispatch::Request)}
+  def request; end
+end

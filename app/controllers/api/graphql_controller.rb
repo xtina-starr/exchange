@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 module Api
   class GraphqlController < Api::BaseApiController
     def execute
