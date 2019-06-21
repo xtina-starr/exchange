@@ -51,6 +51,7 @@ end
 
 gem 'sorbet', :group => :development
 gem 'sorbet-runtime'
+gem 'sorbet-rails'
 
 # These are needed when running `srb init`
 # gem 'cancan'
