@@ -1,5 +1,8 @@
 {
-  "ruby.intellisense": "rubyLocate",
+  "ruby.intellisense": false,
+  "sorbet.intellisenseProvider": "sorbet",
+  "sorbet.sorbetPath": "tc",
+  "sorbet.runWith": ["/Users/eloy/.gem/ruby/2.5.3/bin/srb"],
   "files.associations": {
     "*.rbi": "ruby"
   }
