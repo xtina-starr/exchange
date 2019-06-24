@@ -22,6 +22,8 @@ spec:
       containers:
         - name: exchange-web
           env:
+          - name: PORT
+            value: '8080'
           - name: RAILS_SERVE_STATIC_FILES
             value: 'true'
           - name: RAILS_LOG_TO_STDOUT
@@ -38,7 +40,8 @@ spec:
           image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/exchange:production
           imagePullPolicy: Always
           ports:
-          - containerPort: 8080
+            - name: exchange-http
+              containerPort: 8080
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -110,11 +113,11 @@ spec:
   - port: 443
     protocol: TCP
     name: https
-    targetPort: 8080
+    targetPort: exchange-http
   - port: 80
     protocol: TCP
     name: http
-    targetPort: 8080
+    targetPort: exchange-http
   selector:
     app: exchange
     component: web
