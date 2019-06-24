@@ -21,27 +21,27 @@ spec:
     spec:
       containers:
         - name: exchange-web
-          env:
-          - name: PORT
-            value: '8080'
-          - name: RAILS_SERVE_STATIC_FILES
-            value: 'true'
-          - name: RAILS_LOG_TO_STDOUT
-            value: 'true'
-          - name: RAILS_ENV
-            value: production
-          - name: DATADOG_TRACE_AGENT_HOSTNAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
-          envFrom:
-          - configMapRef:
-              name: exchange-environment
-          image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/exchange:production
-          imagePullPolicy: Always
           ports:
             - name: exchange-http
               containerPort: 8080
+          env:
+            - name: PORT
+              value: '8080'
+            - name: RAILS_SERVE_STATIC_FILES
+              value: 'true'
+            - name: RAILS_LOG_TO_STDOUT
+              value: 'true'
+            - name: RAILS_ENV
+              value: production
+            - name: DATADOG_TRACE_AGENT_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          envFrom:
+            - configMapRef:
+                name: exchange-environment
+          image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/exchange:production
+          imagePullPolicy: Always
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
