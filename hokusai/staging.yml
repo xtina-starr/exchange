@@ -20,25 +20,29 @@ spec:
       name: exchange-web
     spec:
       containers:
-      - name: exchange-web
-        env:
-        - name: RAILS_SERVE_STATIC_FILES
-          value: 'true'
-        - name: RAILS_LOG_TO_STDOUT
-          value: 'true'
-        - name: RAILS_ENV
-          value: production
-        - name: DATADOG_TRACE_AGENT_HOSTNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        envFrom:
-        - configMapRef:
-            name: exchange-environment
-        image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/exchange:staging
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8080
+        - name: exchange-web
+          ports:
+            - name: exchange-http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: '8080'
+            - name: RAILS_SERVE_STATIC_FILES
+              value: 'true'
+            - name: RAILS_LOG_TO_STDOUT
+              value: 'true'
+            - name: RAILS_ENV
+              value: production
+            - name: DATADOG_TRACE_AGENT_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          envFrom:
+            - configMapRef:
+                name: exchange-environment
+          image: 585031190124.dkr.ecr.us-east-1.amazonaws.com/exchange:staging
+          imagePullPolicy: Always
+
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -100,11 +104,11 @@ spec:
   - port: 443
     protocol: TCP
     name: https
-    targetPort: 8080
+    targetPort: exchange-http
   - port: 80
     protocol: TCP
     name: http
-    targetPort: 8080
+    targetPort: exchange-http
   selector:
     app: exchange
     component: web
