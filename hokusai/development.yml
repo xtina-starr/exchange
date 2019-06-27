@@ -2,7 +2,7 @@
 version: '2'
 services:
   exchange:
-    command: ["bundle", "exec", "rails", "db:setup", "&&", "bundle", "exec", "puma", "-C", "config/puma.config"]
+    command: sh -c 'bundle exec rails db:setup && bundle exec puma -C config/puma.config'
     environment:
       - DATABASE_HOST=exchange-db
       - DATABASE_USER=postgres
