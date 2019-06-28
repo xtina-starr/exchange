@@ -1,4 +1,4 @@
-module OfferQueryHelper
+module OfferQueryHelper # rubocop:disable Metrics/ModuleLength
   CREATE_OFFER_ORDER = %(
     mutation($input: CreateOfferOrderWithArtworkInput!) {
       createOfferOrderWithArtwork(input: $input) {
@@ -72,6 +72,50 @@ module OfferQueryHelper
   SELLER_ACCEPT_OFFER = %(
     mutation($input: SellerAcceptOfferInput!) {
       sellerAcceptOffer(input: $input) {
+        orderOrError {
+          ... on OrderWithMutationSuccess {
+            order {
+              id
+              state
+            }
+          }
+          ... on OrderWithMutationFailure {
+            error {
+              code
+              data
+              type
+            }
+          }
+        }
+      }
+    }
+  ).freeze
+
+  BUYER_ACCEPT_OFFER = %(
+    mutation($input: BuyerAcceptOfferInput!) {
+      buyerAcceptOffer(input: $input) {
+        orderOrError {
+          ... on OrderWithMutationSuccess {
+            order {
+              id
+              state
+            }
+          }
+          ... on OrderWithMutationFailure {
+            error {
+              code
+              data
+              type
+            }
+          }
+        }
+      }
+    }
+  ).freeze
+
+  SELLER_COUNTER_OFFER = %(
+    mutation($input: SellerCounterOfferInput!) {
+      sellerCounterOffer(input: $input) {
         orderOrError {
           ... on OrderWithMutationSuccess {
             order {
