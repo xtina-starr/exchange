@@ -5,7 +5,7 @@ ruby File.read('.ruby-version')
 gem 'rails', '5.2.1'
 
 gem 'pg'
-gem 'puma'
+gem 'puma', '~> 3.12.0'
 
 gem 'activeadmin'
 gem 'artsy-auth'
