@@ -31,12 +31,6 @@ Metrics/MethodLength:
 Metrics/ModuleLength:
   Max: 151
 
-Rails/ReversibleMigration:
-  Enabled: false
-
-Rails/TimeZone:
-  Enabled: false
-
 Style/Documentation:
   Enabled: false
 
@@ -44,9 +38,6 @@ Style/MultilineBlockChain:
   Enabled: false
 
 Style/FrozenStringLiteralComment:
-  Enabled: false
-
-Rails/NotNullColumn:
   Enabled: false
 
 Style/AsciiComments:
