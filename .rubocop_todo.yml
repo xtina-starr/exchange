@@ -27,14 +27,6 @@ Metrics/MethodLength:
 Metrics/PerceivedComplexity:
   Max: 8
 
-# Offense count: 7
-# Cop supports --auto-correct.
-Rails/ActiveRecordAliases:
-  Exclude:
-    - 'spec/controllers/api/requests/approve_order_mutation_request_spec.rb'
-    - 'spec/controllers/api/requests/reject_order_mutation_request_spec.rb'
-    - 'spec/controllers/api/requests/submit_order_mutation_request_spec.rb'
-
 # Offense count: 60
 # Cop supports --auto-correct.
 # Configuration parameters: AutoCorrect, EnforcedStyle.
