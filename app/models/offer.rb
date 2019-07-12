@@ -1,7 +1,7 @@
 class Offer < ApplicationRecord
   has_paper_trail versions: { class_name: 'PaperTrail::OfferVersion' }
 
-  EXPIRATION = 2.days.freeze
+  EXPIRATION = 3.days.freeze
 
   belongs_to :order
   belongs_to :responds_to, class_name: 'Offer', optional: true

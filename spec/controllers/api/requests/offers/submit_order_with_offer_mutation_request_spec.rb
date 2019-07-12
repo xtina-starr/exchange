@@ -163,6 +163,7 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.submit_order_with_offer.order_or_error.order.last_offer.id).to eq offer.id
         expect(response.data.submit_order_with_offer.order_or_error.order.last_offer.submitted_at).to_not be_nil
         expect(order.reload.state).to eq Order::SUBMITTED
+        expect(order.state_expires_at > 2.days.from_now).to be true
       end
     end
   end
