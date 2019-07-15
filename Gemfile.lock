@@ -1,3 +1,13 @@
+GIT
+  remote: https://github.com/ashkan18/stripe-ruby-mock
+  revision: 1903b55ba6cf25b2f7fabfc0bb3074ab96c949e0
+  branch: add-support-for-payment-intents
+  specs:
+    stripe-ruby-mock (2.5.8)
+      dante (>= 0.2.0)
+      multi_json (~> 1.0)
+      stripe (>= 2.0.3)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -369,10 +379,6 @@ GEM
     stripe (4.21.2)
       faraday (~> 0.13)
       net-http-persistent (~> 3.0)
-    stripe-ruby-mock (2.5.8)
-      dante (>= 0.2.0)
-      multi_json (~> 1.0)
-      stripe (>= 2.0.3)
     taxjar-ruby (2.5.0)
       addressable (~> 2.3)
       http (>= 1.0, < 5.0)
@@ -437,7 +443,7 @@ DEPENDENCIES
   sentry-raven
   sidekiq
   stripe
-  stripe-ruby-mock (~> 2.5.8)
+  stripe-ruby-mock!
   taxjar-ruby
   timecop
   webmock

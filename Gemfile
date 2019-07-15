@@ -44,7 +44,7 @@ group :test do
   gem 'danger'
   gem 'fabrication'
   gem 'selenium-webdriver'
-  gem 'stripe-ruby-mock', '~> 2.5.8', require: 'stripe_mock'
+  gem 'stripe-ruby-mock', git: 'https://github.com/ashkan18/stripe-ruby-mock', branch: 'add-support-for-payment-intents' , require: 'stripe_mock'
   gem 'timecop'
   gem 'webmock'
 end

@@ -6,12 +6,14 @@ class Transaction < ApplicationRecord
   TYPES = [
     HOLD = 'hold'.freeze,
     CAPTURE = 'capture'.freeze,
-    REFUND = 'refund'.freeze
+    REFUND = 'refund'.freeze,
+    PAYMENT_INTENT = 'payment_intent'.freeze
   ].freeze
 
   STATUSES = [
     SUCCESS = 'success'.freeze,
-    FAILURE = 'failure'.freeze
+    FAILURE = 'failure'.freeze,
+    NEEDS_ACTION = 'needs_action'.freeze
   ].freeze
 
   def to_s
