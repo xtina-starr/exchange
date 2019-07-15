@@ -1,6 +1,6 @@
 class Order < ApplicationRecord
   include OrderHelper
-  has_paper_trail class_name: 'PaperTrail::OrderVersion'
+  has_paper_trail versions: { class_name: 'PaperTrail::OrderVersion' }
 
   SUPPORTED_CURRENCIES = %w[USD].freeze
 
@@ -57,7 +57,7 @@ class Order < ApplicationRecord
 
   STATE_EXPIRATIONS = {
     'pending' => 2.days,
-    'submitted' => 2.days,
+    'submitted' => 3.days,
     'approved' => 7.days
   }.freeze
 

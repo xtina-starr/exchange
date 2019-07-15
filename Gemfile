@@ -5,7 +5,7 @@ ruby File.read('.ruby-version')
 gem 'rails', '5.2.1'
 
 gem 'pg'
-gem 'puma'
+gem 'puma', '~> 3.12.0'
 
 gem 'activeadmin'
 gem 'artsy-auth'
@@ -44,7 +44,7 @@ group :test do
   gem 'danger'
   gem 'fabrication'
   gem 'selenium-webdriver'
-  gem 'stripe-ruby-mock', '~> 2.5.4', require: 'stripe_mock'
+  gem 'stripe-ruby-mock', '~> 2.5.8', require: 'stripe_mock'
   gem 'timecop'
   gem 'webmock'
 end
