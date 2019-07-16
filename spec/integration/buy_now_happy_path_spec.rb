@@ -89,7 +89,7 @@ describe Api::GraphqlController, type: :request do
         commission_fee_cents: 100_00
       )
       expect(order.transactions.last).to have_attributes(
-        transaction_type: Transaction::HOLD,
+        transaction_type: Transaction::PAYMENT_INTENT,
         amount_cents: 1300_00,
         status: Transaction::SUCCESS,
         source_id: a_string_starting_with('test_')

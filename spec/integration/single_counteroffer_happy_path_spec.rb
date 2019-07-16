@@ -111,7 +111,7 @@ describe Api::GraphqlController, type: :request do
         credit_card_id: 'cc-1'
       )
       expect(order.transactions.order(created_at: :desc).first).to have_attributes(
-        transaction_type: Transaction::CAPTURE,
+        transaction_type: Transaction::PAYMENT_INTENT,
         amount_cents: 1000_00,
         status: Transaction::SUCCESS,
         source_id: a_string_starting_with('test_')

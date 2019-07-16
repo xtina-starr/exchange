@@ -6,7 +6,7 @@ describe OrderProcessor, type: :services do
   include_context 'use stripe mock'
   let(:buyer_id) { 'buyer1' }
   let(:seller_id) { 'seller1' }
-  let(:order) { Fabricate(:order, buyer_id: buyer_id, fulfillment_type: Order::PICKUP, credit_card_id: 'cc1', seller_id: seller_id) }
+  let(:order) { Fabricate(:order, buyer_id: buyer_id, fulfillment_type: Order::PICKUP, credit_card_id: 'cc1', seller_id: seller_id, buyer_total_cents: 200, seller_total_cents: 180) }
   let!(:line_item1) { Fabricate(:line_item, order: order, artwork_id: 'a1', quantity: 1) }
   let(:stub_line_item_1_gravity_deduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a1/inventory").with(body: { deduct: 1 }) }
   let(:stub_line_item_1_gravity_undeduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a1/inventory").with(body: { undeduct: 1 }) }
@@ -102,7 +102,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        StripeMock.prepare_card_error(:card_declined)
+        order.update!(buyer_total_cents: 3178)
       end
 
       it 'deducts and undeducts inventory' do
@@ -117,6 +117,8 @@ describe OrderProcessor, type: :services do
         expect { order_processor.charge! }.to raise_error do |e|
           expect(e).to be_kind_of(Errors::FailedTransactionError)
           expect(e.transaction.failure_code).to eq 'card_declined'
+          expect(e.transaction.decline_code).to eq 'insufficient_funds'
+          expect(e.transaction.failure_message).to eq 'Not enough funds.'
         end
       end
     end
@@ -130,7 +132,6 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        expect(Stripe::Charge).to receive(:create).and_return(uncaptured_charge)
       end
 
       it 'deducts inventory' do
@@ -212,7 +213,7 @@ describe OrderProcessor, type: :services do
       end
     end
 
-    context 'failed charge' do
+    context 'requires action' do
       before do
         stub_gravity_card_request
         stub_gravity_merchant_account_request
@@ -221,7 +222,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        StripeMock.prepare_card_error(:card_declined)
+        order.update!(buyer_total_cents: 3184) # 3184 makes it a require_action payment_intent
       end
 
       it 'deducts and undeducts inventory' do
@@ -235,8 +236,8 @@ describe OrderProcessor, type: :services do
       it 'raises failed transaction error' do
         expect { order_processor.charge! }.to raise_error do |e|
           expect(e).to be_kind_of(Errors::FailedTransactionError)
-          expect(e.transaction.failure_code).to eq 'card_declined'
-          expect(e.transaction.decline_code).to eq 'do_not_honor'
+          # expect(e.transaction.failure_code).to eq 'card_declined'
+          # expect(e.transaction.decline_code).to eq 'do_not_honor'
         end
       end
     end
@@ -250,7 +251,6 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        expect(Stripe::Charge).to receive(:create).and_return(captured_charge)
         order_processor.charge!
       end
 

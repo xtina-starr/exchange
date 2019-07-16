@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/ashkan18/stripe-ruby-mock
-  revision: 1903b55ba6cf25b2f7fabfc0bb3074ab96c949e0
+  revision: d288b4687b7034e2ce1c2ce5af9ef057545d3363
   branch: add-support-for-payment-intents
   specs:
     stripe-ruby-mock (2.5.8)
@@ -376,7 +376,7 @@ GEM
       actionpack (>= 4.0)
       activesupport (>= 4.0)
       sprockets (>= 3.0.0)
-    stripe (4.21.2)
+    stripe (4.21.3)
       faraday (~> 0.13)
       net-http-persistent (~> 3.0)
     taxjar-ruby (2.5.0)

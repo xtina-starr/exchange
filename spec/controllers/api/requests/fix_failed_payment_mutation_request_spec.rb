@@ -171,7 +171,7 @@ describe Api::GraphqlController, type: :request do
             context 'with failed stripe charge' do
               before do
                 undeduct_inventory_request
-                StripeMock.prepare_card_error(:card_declined)
+                order.update!(buyer_total_cents: 3178)
               end
 
               it 'raises processing error' do
@@ -212,7 +212,9 @@ describe Api::GraphqlController, type: :request do
               expect(order.state_updated_at).not_to be_nil
               expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
               expect(order.reload.transactions.last.external_id).not_to be_nil
-              expect(order.reload.transactions.order(updated_at: 'asc').last.transaction_type).to eq Transaction::CAPTURE
+              transaction = order.reload.transactions.order(updated_at: 'asc').last
+              expect(transaction.transaction_type).to eq Transaction::PAYMENT_INTENT
+              expect(transaction.status).to eq Transaction::SUCCESS
             end
 
             context 'with offer from buyer' do
@@ -245,7 +247,9 @@ describe Api::GraphqlController, type: :request do
                 expect(order.state_updated_at).not_to be_nil
                 expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
                 expect(order.reload.transactions.last.external_id).not_to be_nil
-                expect(order.reload.transactions.order(updated_at: 'asc').last.transaction_type).to eq Transaction::CAPTURE
+                transaction = order.reload.transactions.order(updated_at: 'asc').last
+                expect(transaction.transaction_type).to eq Transaction::PAYMENT_INTENT
+                expect(transaction.status).to eq Transaction::SUCCESS
               end
             end
 

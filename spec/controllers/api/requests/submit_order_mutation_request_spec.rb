@@ -171,7 +171,7 @@ describe Api::GraphqlController, type: :request do
           artwork_request
           partner_account_request
           undeduct_inventory_request
-          StripeMock.prepare_card_error(:card_declined)
+          order.update!(buyer_total_cents: 3178)
         end
 
         it 'raises processing error' do
@@ -216,7 +216,7 @@ describe Api::GraphqlController, type: :request do
         expect(order.state_updated_at).not_to be_nil
         expect(order.state_expires_at).to eq(order.state_updated_at + 3.days)
         expect(order.reload.transactions.last.external_id).not_to be_nil
-        expect(order.reload.transactions.last.transaction_type).to eq Transaction::HOLD
+        expect(order.reload.transactions.last.transaction_type).to eq Transaction::PAYMENT_INTENT
       end
     end
   end

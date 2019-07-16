@@ -13,7 +13,8 @@ class Transaction < ApplicationRecord
   STATUSES = [
     SUCCESS = 'success'.freeze,
     FAILURE = 'failure'.freeze,
-    NEEDS_ACTION = 'needs_action'.freeze
+    REQUIRES_ACTION = 'requires_action'.freeze,
+    REQUIRES_CAPTURE = 'requires_capture'.freeze
   ].freeze
 
   def to_s
@@ -21,7 +22,7 @@ class Transaction < ApplicationRecord
   end
 
   def failed?
-    status == FAILURE
+    [FAILURE, REQUIRES_ACTION].include?(status)
   end
 
   def failure_data
