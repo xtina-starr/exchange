@@ -7,6 +7,8 @@ RSpec.describe Order, type: :model do
 
   describe 'validate currency' do
     it 'raises invalid record for unsupported currencies' do
+      expect { order.update!(currency_code: 'USD') }.to_not raise_error(ActiveRecord::RecordInvalid)
+      expect { order.update!(currency_code: 'GBP') }.to_not raise_error(ActiveRecord::RecordInvalid)
       expect { order.update!(currency_code: 'CAD') }.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: Currency code is not included in the list')
     end
   end
