@@ -5,7 +5,7 @@ describe OrderFollowUpJob, type: :job do
   include_context 'use stripe mock'
 
   let(:state) { Order::PENDING }
-  let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd') }
+  let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', payment_method: stripe_customer.default_source, capture_method: "manual", confirmation_method: "manual", confirm: false ) }
   let(:order) { Fabricate(:order, state: state, external_charge_id: payment_intent.id) }
   let!(:transaction) { Fabricate(:transaction, order: order,external_id: payment_intent.id, transaction_type: Transaction::PAYMENT_INTENT) }
   describe '#perform' do
@@ -34,7 +34,7 @@ describe OrderFollowUpJob, type: :job do
         let(:order) { Fabricate(:order, mode: mode, state: state, buyer_id: buyer_id, seller_id: seller_id, seller_type: seller_type, buyer_type: buyer_type, external_charge_id: payment_intent.id) }
         let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
         let(:charge) { Stripe::Charge.create(amount: 20_00, currency: 'usd', source: credit_card) }
-        let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', charges:[charge], payment_method: stripe_customer.default_source) }
+        let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', charges:[charge], payment_method: stripe_customer.default_source, capture_method: "manual", confirmation_method: "manual", confirm: false) }
         let!(:transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, transaction_type: Transaction::PAYMENT_INTENT) }
         context 'Buy order' do
           it 'transitions a submitted order to seller_lapsed' do
@@ -54,7 +54,7 @@ describe OrderFollowUpJob, type: :job do
         context 'Offer order' do
           let(:mode) { Order::OFFER }
           let(:offer) { Fabricate(:offer, from_id: seller_id, order: order, from_type: seller_type, submitted_at: Time.now.utc) }
-          let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', payment_method: stripe_customer.default_source) }
+          let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', payment_method: stripe_customer.default_source, capture_method: "manual", confirmation_method: "manual", confirm: false) }
           let(:transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, transaction_type: Transaction::PAYMENT_INTENT) }
           before do
             order.update!(last_offer: offer)
