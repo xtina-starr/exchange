@@ -35,8 +35,6 @@ describe OrderFollowUpJob, type: :job do
         let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
         let(:charge) { Stripe::Charge.create(amount: 20_00, currency: 'usd', source: credit_card) }
         let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', charges:[charge], payment_method: stripe_customer.default_source) }
-        # let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', payment_method: stripe_customer.default_source) }
-        # let(:charge) { Stripe::Charge.create(amount: 20_00, currency: 'usd', source: credit_card, payment_intent: payment_intent.id) }
         let!(:transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, transaction_type: Transaction::PAYMENT_INTENT) }
         context 'Buy order' do
           it 'transitions a submitted order to seller_lapsed' do
