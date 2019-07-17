@@ -32,7 +32,7 @@ module PaymentService
     transaction = Transaction.find_by(external_id: external_id)
     case transaction.external_type
     when Transaction::CHARGE
-      # its a charge
+      # it's a charge
       refund = Stripe::Refund.create(charge: external_id, reverse_transfer: true)
       Transaction.new(external_id: refund.id, transaction_type: Transaction::REFUND, status: Transaction::SUCCESS)
     when Transaction::PAYMENT_INTENT
@@ -95,6 +95,11 @@ module PaymentService
       # unknown status raise error
       raise 'Unknown transaction status'
     end
+  end
+
+  def self.cancel_payment_intent(external_id)
+    payment_intent = Stripe::PaymentIntent.retrieve(external_id)
+    payment_intent.cancel
   end
 
   def self.generate_transaction_from_exception(exc, type, credit_card: nil, merchant_account: nil, buyer_amount: nil, external_id: nil)
