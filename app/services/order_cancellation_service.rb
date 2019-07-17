@@ -6,6 +6,7 @@ class OrderCancellationService
   end
 
   def seller_lapse!
+    PaymentService.cancel_payment_intent(@order.transactions.payment_intent.last.external_id, 'abandoned')
     @order.seller_lapse! do
       process_stripe_refund if @order.mode == Order::BUY
     end
@@ -16,6 +17,7 @@ class OrderCancellationService
   end
 
   def buyer_lapse!
+    PaymentService.cancel_payment_intent(@order.transactions.payment_intent.last.external_id, 'abandoned')
     @order.buyer_lapse!
     OrderEvent.delay_post(@order, Order::CANCELED)
   end

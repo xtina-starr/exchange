@@ -7,10 +7,8 @@ class OrderFollowUpJob < ApplicationJob
 
     case order.state
     when Order::PENDING
-      PaymentService.cancel_payment_intent(order.transactions.last.external_id)
       OrderService.abandon!(order)
     when Order::SUBMITTED
-      PaymentService.cancel_payment_intent(order.transactions.last.external_id)
       cancel_submitted_order(order)
     when Order::APPROVED
       # Order was approved but has not yet fulfilled,

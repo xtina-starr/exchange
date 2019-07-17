@@ -97,6 +97,7 @@ module OrderService
   end
 
   def self.abandon!(order)
+    PaymentService.cancel_payment_intent(order.transactions.payment_intent.last.external_id, 'abandoned')
     order.abandon!
   end
 
