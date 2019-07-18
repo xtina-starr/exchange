@@ -5,7 +5,7 @@ describe OrderFollowUpJob, type: :job do
   include_context 'use stripe mock'
 
   let(:state) { Order::PENDING }
-  let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', payment_method: stripe_customer.default_source, capture_method: 'manual', confirmation_method: 'manual') }
+  let(:payment_intent) { Stripe::PaymentIntent.create(amount: 3169, currency: 'usd', payment_method: stripe_customer.default_source, capture_method: 'manual', confirmation_method: 'manual') }
   let(:order) { Fabricate(:order, state: state, external_charge_id: payment_intent.id) }
   let!(:transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, transaction_type: Transaction::PAYMENT_INTENT) }
   describe '#perform' do
@@ -33,7 +33,7 @@ describe OrderFollowUpJob, type: :job do
         let(:mode) { Order::BUY }
         let(:order) { Fabricate(:order, mode: mode, state: state, buyer_id: buyer_id, seller_id: seller_id, seller_type: seller_type, buyer_type: buyer_type, external_charge_id: payment_intent.id) }
         let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
-        let(:charge) { Stripe::Charge.create(amount: 20_00, currency: 'usd', source: credit_card) }
+        let(:charge) { Stripe::Charge.create(amount: 3169, currency: 'usd', source: credit_card) }
         let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', charges: [charge], payment_method: stripe_customer.default_source, capture_method: 'manual', confirmation_method: 'manual') }
         context 'Buy order' do
           it 'transitions a submitted order to seller_lapsed' do

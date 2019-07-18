@@ -99,7 +99,7 @@ module PaymentService
 
   def self.cancel_payment_intent(external_id, cancelation_reason)
     payment_intent = Stripe::PaymentIntent.retrieve(external_id)
-    payment_intent.cancel
+    payment_intent.cancel(cancelation_reason: cancelation_reason)
     Transaction.new(
       external_id: payment_intent.id,
       source_id: payment_intent.payment_method,
@@ -107,6 +107,8 @@ module PaymentService
       transaction_type: Transaction::CANCEL_PAYMENT_INTENT,
       status: Transaction::SUCCESS,
     )
+  rescue Stripe::StripeError => e
+    generate_transaction_from_exception(e, Transaction::CANCEL_PAYMENT_INTENT, external_id: external_id)
   end
 
   def self.generate_transaction_from_exception(exc, type, credit_card: nil, merchant_account: nil, buyer_amount: nil, external_id: nil)
