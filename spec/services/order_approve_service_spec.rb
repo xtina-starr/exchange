@@ -23,7 +23,7 @@ describe OrderApproveService, type: :services do
       it 'adds failed transaction' do
         expect { service.process! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
         transaction = order.transactions.order(created_at: :desc).first
-        expect(transaction).to have_attributes(status: Transaction::FAILURE, failure_code: 'card_declined', failure_message: 'Not enough funds.' , decline_code: 'insufficient_funds')
+        expect(transaction).to have_attributes(status: Transaction::FAILURE, failure_code: 'card_declined', failure_message: 'Not enough funds.', decline_code: 'insufficient_funds')
       end
 
       it 'keeps order in submitted state' do

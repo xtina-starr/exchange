@@ -16,7 +16,7 @@ class OrderProcessor
     deduct_inventory
     @transaction = PaymentService.hold_charge(construct_charge_params)
     raise Errors::FailedTransactionError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
-    raise Errors::PaymentRequiresActionError.new(@transaction) if @transaction.requires_action?
+    raise Errors::PaymentRequiresActionError, @transaction if @transaction.requires_action?
 
     @order.update!(external_charge_id: @transaction.external_id)
   rescue Errors::ValidationError, Errors::ProcessingError => e
@@ -30,8 +30,7 @@ class OrderProcessor
     deduct_inventory
     @transaction = PaymentService.immediate_capture(construct_charge_params)
     raise Errors::FailedTransactionError.new(:capture_failed, @transaction) if @transaction.failed?
-    raise Errors::PaymentRequiresActionError.new(@transaction) if @transaction.requires_action?
-
+    raise Errors::PaymentRequiresActionError, @transaction if @transaction.requires_action?
 
     @order.update!(external_charge_id: @transaction.external_id)
   rescue Errors::ValidationError, Errors::ProcessingError => e

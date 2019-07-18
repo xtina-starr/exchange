@@ -10,7 +10,7 @@ describe PaymentService, type: :services do
   let(:seller_amount) { 10_00 }
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
   let(:merchant_account) { { external_id: 'ma-1' } }
-  let(:payment_intent) { Stripe::PaymentIntent.create(amount: 200, currency: 'usd')}
+  let(:payment_intent) { Stripe::PaymentIntent.create(amount: 200, currency: 'usd') }
   let(:failed_payment_intent) { Stripe::PaymentIntent.create(amount: 3178, currency: 'usd') }
   let(:params) do
     {

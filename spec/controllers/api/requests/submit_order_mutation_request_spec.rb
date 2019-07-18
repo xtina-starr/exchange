@@ -208,7 +208,7 @@ describe Api::GraphqlController, type: :request do
         end
         it 'returns OrderRequiresAction including client_secret' do
           response = client.execute(mutation, submit_order_input)
-          expect(response.data.submit_order.order_or_error.action_data["client_secret"]).to eq 'pi_1EwXFB2eZvKYlo2CggNnFBo8_secret_vOMkpqZu8ca7hxhfiO80tpT3v'
+          expect(response.data.submit_order.order_or_error.action_data['client_secret']).to eq 'pi_1EwXFB2eZvKYlo2CggNnFBo8_secret_vOMkpqZu8ca7hxhfiO80tpT3v'
         end
 
         it 'stores transaction' do

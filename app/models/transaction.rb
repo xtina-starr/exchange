@@ -11,7 +11,7 @@ class Transaction < ApplicationRecord
   TYPES = [
     HOLD = 'hold'.freeze,
     CAPTURE = 'capture'.freeze,
-    REFUND = 'refund'.freeze,
+    REFUND = 'refund'.freeze
   ].freeze
 
   STATUSES = [
