@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/ashkan18/stripe-ruby-mock
-  revision: e2e7e6e2546774958a3dcbe15d8566f840ff2d84
+  revision: ad2b89b07f045df848e9b96771f1b735dcea4407
   branch: more-payment-intents
   specs:
     stripe-ruby-mock (2.5.8)

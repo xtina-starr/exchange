@@ -47,7 +47,7 @@ module PaymentService
       # we need to refund using payment_intent
       payment_intent = Stripe::PaymentIntent.retrieve(external_id)
       refund = Stripe::Refund.create(charge: payment_intent.charges.first.id, reverse_transfer: true)
-      Transaction.new(external_id: refund.id, transaction_type: Transaction::REFUND, status: Transaction::SUCCESS)
+      Transaction.new(external_id: refund.id, transaction_type: Transaction::REFUND, status: Transaction::SUCCESS, external_type: Transaction::REFUND)
     end
   rescue Stripe::StripeError => e
     generate_transaction_from_exception(e, Transaction::REFUND, external_id: external_id)

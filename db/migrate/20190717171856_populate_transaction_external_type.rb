@@ -1,6 +1,7 @@
 class PopulateTransactionExternalType < ActiveRecord::Migration[5.2]
   def up
-    Transaction.update_all(external_type: Transaction::CHARGE)
+    Transaction.where('external_id LIKE :prefix', prefix: 'ch_').update_all(external_type: Transaction::CHARGE)
+    Transaction.where('external_id LIKE :prefix', prefix: 're_').update_all(external_type: Transaction::REFUND)
   end
 
   def down

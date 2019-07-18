@@ -23,7 +23,6 @@ describe PaymentService, type: :services do
       seller_amount: seller_amount
     }
   end
-  let(:payment_intent_success) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', payment_method: stripe_customer.default_source) }
 
   describe '#hold_charge' do
     it "creates a payment_intent using user's credit card and amount and stores it" do
