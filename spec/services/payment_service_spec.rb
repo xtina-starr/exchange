@@ -10,6 +10,8 @@ describe PaymentService, type: :services do
   let(:seller_amount) { 10_00 }
   let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
   let(:merchant_account) { { external_id: 'ma-1' } }
+  let(:payment_intent) { Stripe::PaymentIntent.create(amount: 200, currency: 'usd') }
+  let(:failed_payment_intent) { Stripe::PaymentIntent.create(amount: 3178, currency: 'usd') }
   let(:params) do
     {
       buyer_amount: buyer_amount,
@@ -21,66 +23,72 @@ describe PaymentService, type: :services do
       seller_amount: seller_amount
     }
   end
-  let(:payment_intent_success) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', payment_method: stripe_customer.default_source) }
 
-  describe '#create_and_authorize_charge' do
+  describe '#hold_charge' do
     it "creates a payment_intent using user's credit card and amount and stores it" do
-      expect(Stripe::PaymentIntent).to receive(:create).and_return(payment_intent_success)
-      transaction = PaymentService.create_and_authorize_charge(params)
-      expect(transaction.amount_cents).to eq(20_00)
-      expect(transaction.source_id).to eq(stripe_customer.default_source)
-      expect(transaction.status).to eq(Transaction::SUCCESS)
-      expect(transaction.transaction_type).to eq Transaction::PAYMENT_INTENT
-      expect(transaction.external_id).to eq(payment_intent_success.id)
-      expect(transaction.destination_id).to eq 'ma-1'
-      expect(transaction.failure_code).to be_nil
-      expect(transaction.failure_message).to be_nil
-      expect(transaction.decline_code).to be_nil
+      transaction = PaymentService.hold_charge(params)
+      expect(transaction).to have_attributes(
+        amount_cents: 20_00,
+        source_id: stripe_customer.default_source,
+        destination_id: 'ma-1',
+        failure_code: nil,
+        failure_message: nil,
+        decline_code: nil,
+        transaction_type: Transaction::HOLD,
+        status: Transaction::SUCCESS,
+        external_type: Transaction::PAYMENT_INTENT
+      )
     end
     it 'creates transaction in REQUIRES_ACTION state when payment intent couldnt be confirmed' do
-      transaction = PaymentService.create_and_authorize_charge(params.merge(buyer_amount: 3184))
-      expect(transaction.amount_cents).to eq 3184
-      expect(transaction.source_id).to eq stripe_customer.default_source
-      expect(transaction.destination_id).to eq 'ma-1'
-      expect(transaction.failure_code).to be_nil
-      expect(transaction.failure_message).to be_nil
-      expect(transaction.decline_code).to be_nil
-      expect(transaction.transaction_type).to eq Transaction::PAYMENT_INTENT
-      expect(transaction.status).to eq Transaction::REQUIRES_ACTION
+      transaction = PaymentService.hold_charge(params.merge(buyer_amount: 3184))
+      expect(transaction).to have_attributes(
+        amount_cents: 3184,
+        source_id: stripe_customer.default_source,
+        destination_id: 'ma-1',
+        failure_code: nil,
+        failure_message: nil,
+        decline_code: nil,
+        transaction_type: Transaction::HOLD,
+        status: Transaction::REQUIRES_ACTION,
+        external_type: Transaction::PAYMENT_INTENT
+      )
     end
   end
 
   describe '#capture_authorized_charge' do
     it 'captures a charge' do
-      transaction = PaymentService.capture_authorized_charge(uncaptured_charge.id)
-      expect(transaction.amount_cents).to eq(uncaptured_charge.amount)
-      expect(transaction.transaction_type).to eq Transaction::CAPTURE
-      expect(transaction.source_id).to eq 'test_cc_2'
-      expect(transaction.status).to eq Transaction::SUCCESS
+      @hold_transaction = Fabricate(:transaction, external_id: payment_intent.id, external_type: Transaction::PAYMENT_INTENT)
+      transaction = PaymentService.capture_authorized_charge(payment_intent.id)
+      expect(transaction).to have_attributes(amount_cents: payment_intent.amount, transaction_type: Transaction::CAPTURE, source_id: payment_intent.payment_method, status: Transaction::SUCCESS)
     end
     it 'catches Stripe errors and returns a failed transaction' do
-      StripeMock.prepare_card_error(:card_declined, :capture_charge)
-      transaction = PaymentService.capture_authorized_charge(uncaptured_charge.id)
-      expect(transaction.external_id).to eq uncaptured_charge.id
-      expect(transaction.failure_code).to eq 'card_declined'
-      expect(transaction.failure_message).to eq 'The card was declined'
-      expect(transaction.decline_code).to eq 'do_not_honor'
-      expect(transaction.transaction_type).to eq Transaction::CAPTURE
-      expect(transaction.status).to eq Transaction::FAILURE
+      Fabricate(:transaction, external_id: failed_payment_intent.id, external_type: Transaction::PAYMENT_INTENT)
+      allow_any_instance_of(Stripe::PaymentIntent).to receive(:capture)
+      transaction = PaymentService.capture_authorized_charge(failed_payment_intent.id)
+      expect(transaction).to have_attributes(
+        external_id: failed_payment_intent.id,
+        failure_code: 'card_declined',
+        failure_message: 'Not enough funds.',
+        decline_code: 'insufficient_funds',
+        transaction_type: Transaction::CAPTURE,
+        status: Transaction::FAILURE
+      )
     end
   end
 
   describe '#refund_charge' do
     it 'refunds a charge for the full amount' do
-      transaction = PaymentService.refund_charge(captured_charge.id)
+      Fabricate(:transaction, external_id: payment_intent.id, external_type: Transaction::PAYMENT_INTENT)
+      transaction = PaymentService.refund_charge(payment_intent.id)
       expect(transaction.external_id).to match(/test_re/i)
       expect(transaction.transaction_type).to eq Transaction::REFUND
       expect(transaction.status).to eq Transaction::SUCCESS
     end
     it 'catches Stripe errors and returns a failed transaction' do
+      Fabricate(:transaction, external_id: payment_intent.id, external_type: Transaction::PAYMENT_INTENT)
       StripeMock.prepare_card_error(:processing_error, :new_refund)
-      transaction = PaymentService.refund_charge(captured_charge.id)
-      expect(transaction.external_id).to eq captured_charge.id
+      transaction = PaymentService.refund_charge(payment_intent.id)
+      expect(transaction.external_id).to eq payment_intent.id
       expect(transaction.failure_code).to eq 'processing_error'
       expect(transaction.failure_message).to eq 'An error occurred while processing the card'
       expect(transaction.transaction_type).to eq Transaction::REFUND

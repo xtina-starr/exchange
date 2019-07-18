@@ -9,7 +9,8 @@ describe Api::GraphqlController, type: :request do
     let(:seller_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
-    let(:order) { Fabricate(:order, seller_id: seller_id, buyer_id: user_id) }
+    let(:payment_intent) { Stripe::PaymentIntent.create(amount: 200, currency: 'usd') }
+    let(:order) { Fabricate(:order, seller_id: seller_id, buyer_id: user_id, external_charge_id: payment_intent.id) }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -77,8 +78,8 @@ describe Api::GraphqlController, type: :request do
 
     context 'with proper permission' do
       before do
+        Fabricate(:transaction, order: order, external_id: payment_intent.id, external_type: Transaction::PAYMENT_INTENT)
         order.update_attributes! state: Order::SUBMITTED
-        order.update_attributes! external_charge_id: uncaptured_charge.id
       end
       it 'approves the order' do
         expect do
@@ -87,8 +88,8 @@ describe Api::GraphqlController, type: :request do
           expect(response.data.approve_order.order_or_error.order.state).to eq 'APPROVED'
           expect(response.data.approve_order.order_or_error).not_to respond_to(:error)
           expect(order.reload.state).to eq Order::APPROVED
-          expect(order.reload.transactions.last.external_id).to eq uncaptured_charge.id
-          expect(order.reload.transactions.last.transaction_type).to eq Transaction::CAPTURE
+          transaction = order.transactions.order(created_at: :desc).first
+          expect(transaction).to have_attributes(external_id: payment_intent.id, transaction_type: Transaction::CAPTURE)
         end.to change(order, :state_expires_at)
       end
 

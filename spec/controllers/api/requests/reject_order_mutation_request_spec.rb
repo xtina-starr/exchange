@@ -74,8 +74,10 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'with proper permission' do
+      let(:payment_intent) { Stripe::PaymentIntent.create(amount: 200, currency: 'usd') }
+      let!(:payment_intent_transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, external_type: Transaction::PAYMENT_INTENT) }
       before do
-        order.update_attributes! state: Order::SUBMITTED
+        order.update_attributes! state: Order::SUBMITTED, external_charge_id: payment_intent.id
       end
       it 'rejects the order' do
         response = client.execute(mutation, reject_order_input)
@@ -83,8 +85,8 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.reject_order.order_or_error.order.state).to eq 'CANCELED'
         expect(response.data.reject_order.order_or_error).not_to respond_to(:error)
         expect(order.reload.state).to eq Order::CANCELED
-        expect(order.transactions.last.external_id).to_not eq nil
-        expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
+        transaction = order.transactions.order(created_at: :desc).first
+        expect(transaction.transaction_type).to eq Transaction::REFUND
       end
     end
   end

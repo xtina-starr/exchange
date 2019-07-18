@@ -59,13 +59,12 @@ module OrderService
       order_processor.hold!
       order.transactions << order_processor.transaction
     end
-
     OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
     Exchange.dogstatsd.increment 'order.submitted'
     order
-  rescue Errors::FailedTransactionError => e
+  rescue Errors::FailedTransactionError, Errors::PaymentRequiresActionError => e
     handle_failed_transaction(e, order, user_id)
     raise e
   end

@@ -71,7 +71,7 @@ describe OrderProcessor, type: :services do
       it 'does not call stripe' do
         stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        expect(PaymentService).not_to receive(:create_and_capture_charge)
+        expect(PaymentService).not_to receive(:immediate_capture)
         expect { order_processor.hold! }.to raise_error do |e|
           expect(e.code).to eq :insufficient_inventory
         end
@@ -84,7 +84,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct
-        expect(PaymentService).not_to receive(:create_and_capture_charge)
+        expect(PaymentService).not_to receive(:immediate_capture)
         expect { order_processor.hold! }.to raise_error do |e|
           expect(e.code).to eq :insufficient_inventory
         end
@@ -191,7 +191,7 @@ describe OrderProcessor, type: :services do
       it 'does not call stripe' do
         stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        expect(PaymentService).not_to receive(:create_and_capture_charge)
+        expect(PaymentService).not_to receive(:immediate_capture)
         expect { order_processor.charge! }.to raise_error do |e|
           expect(e.code).to eq :insufficient_inventory
         end
@@ -204,7 +204,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct
-        expect(PaymentService).not_to receive(:create_and_capture_charge)
+        expect(PaymentService).not_to receive(:immediate_capture)
         expect { order_processor.charge! }.to raise_error do |e|
           expect(e.code).to eq :insufficient_inventory
         end
@@ -226,7 +226,7 @@ describe OrderProcessor, type: :services do
       end
 
       it 'deducts and undeducts inventory' do
-        expect { order_processor.charge! }.to raise_error(Errors::FailedTransactionError)
+        expect { order_processor.charge! }.to raise_error(Errors::PaymentRequiresActionError)
         expect(stub_line_item_1_gravity_deduct).to have_been_requested
         expect(stub_line_item_2_gravity_deduct).to have_been_requested
         expect(stub_line_item_1_gravity_undeduct).to have_been_requested
@@ -235,9 +235,8 @@ describe OrderProcessor, type: :services do
 
       it 'raises failed transaction error' do
         expect { order_processor.charge! }.to raise_error do |e|
-          expect(e).to be_kind_of(Errors::FailedTransactionError)
-          # expect(e.transaction.failure_code).to eq 'card_declined'
-          # expect(e.transaction.decline_code).to eq 'do_not_honor'
+          expect(e).to be_kind_of(Errors::PaymentRequiresActionError)
+          expect(e.transaction.status).to eq Transaction::REQUIRES_ACTION
         end
       end
     end

@@ -21,7 +21,7 @@ Metrics/CyclomaticComplexity:
 # Offense count: 26
 # Configuration parameters: CountComments, ExcludedMethods.
 Metrics/MethodLength:
-  Max: 26
+  Max: 30
 
 # Offense count: 1
 Metrics/PerceivedComplexity:
