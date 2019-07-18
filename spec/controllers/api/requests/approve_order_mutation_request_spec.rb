@@ -88,8 +88,8 @@ describe Api::GraphqlController, type: :request do
           expect(response.data.approve_order.order_or_error.order.state).to eq 'APPROVED'
           expect(response.data.approve_order.order_or_error).not_to respond_to(:error)
           expect(order.reload.state).to eq Order::APPROVED
-          expect(order.reload.transactions.last.external_id).to eq payment_intent.id
-          expect(order.reload.transactions.last.transaction_type).to eq Transaction::CAPTURE
+          transaction = order.transactions.order(created_at: :desc).first
+          expect(transaction).to have_attributes(external_id: payment_intent.id, transaction_type: Transaction::CAPTURE)
         end.to change(order, :state_expires_at)
       end
 
