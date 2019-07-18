@@ -57,6 +57,9 @@ describe Api::GraphqlController, type: :request do
                   }
                 }
               }
+              ... on OrderRequiresAction {
+                actionData
+              }
               ... on OrderWithMutationFailure {
                 error {
                   code
@@ -185,6 +188,35 @@ describe Api::GraphqlController, type: :request do
           end.to change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
           expect(order.reload.external_charge_id).to be_nil
           expect(order.transactions.last.failed?).to be true
+        end
+
+        it 'undeducts inventory' do
+          client.execute(mutation, submit_order_input)
+          expect(undeduct_inventory_request).to have_been_requested
+        end
+      end
+
+      context 'with requires_action paymentIntent' do
+        before do
+          deduct_inventory_request
+          merchant_account_request
+          credit_card_request
+          artwork_request
+          partner_account_request
+          undeduct_inventory_request
+          order.update!(buyer_total_cents: 3184)
+        end
+        it 'returns OrderRequiresAction including client_secret' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.order_or_error.action_data["client_secret"]).to eq 'pi_1EwXFB2eZvKYlo2CggNnFBo8_secret_vOMkpqZu8ca7hxhfiO80tpT3v'
+        end
+
+        it 'stores transaction' do
+          expect do
+            client.execute(mutation, submit_order_input)
+          end.to change(order.transactions.where(status: Transaction::REQUIRES_ACTION), :count).by(1)
+          expect(order.reload.external_charge_id).to be_nil
+          expect(order.transactions.last.requires_action?).to be true
         end
 
         it 'undeducts inventory' do

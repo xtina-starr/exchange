@@ -72,7 +72,7 @@ module PaymentService
       setup_future_usage: 'off-session',
       confirmation_method: 'manual'
     )
-    transaction = Transaction.new(
+    new_transaction = Transaction.new(
       external_id: payment_intent.id,
       source_id: payment_intent.payment_method,
       destination_id: merchant_account[:external_id],
@@ -83,22 +83,22 @@ module PaymentService
     )
     case payment_intent.status # https://stripe.com/docs/payments/intents#intent-statuses
     when 'requires_action'
-      transaction.status = Transaction::REQUIRES_ACTION
+      new_transaction.status = Transaction::REQUIRES_ACTION
     when 'requires_capture'
-      transaction.status = Transaction::REQUIRES_CAPTURE
+      new_transaction.status = Transaction::REQUIRES_CAPTURE
     when 'succeeded'
-      transaction.status = Transaction::SUCCESS
+      new_transaction.status = Transaction::SUCCESS
     when 'requires_payment_method'
       # attempting confirm failed
-      transaction.status = Transaction::FAILURE
-      transaction.failure_code = payment_intent.last_payment_error.code
-      transaction.failure_message = payment_intent.last_payment_error.message
-      transaction.decline_code = payment_intent.last_payment_error.decline_code
+      new_transaction.status = Transaction::FAILURE
+      new_transaction.failure_code = payment_intent.last_payment_error.code
+      new_transaction.failure_message = payment_intent.last_payment_error.message
+      new_transaction.decline_code = payment_intent.last_payment_error.decline_code
     else
       # unknown status raise error
       raise "Unknown status"
     end
-    transaction
+    new_transaction
   end
 
   def self.generate_transaction_from_exception(exc, type, credit_card: nil, merchant_account: nil, buyer_amount: nil, external_id: nil)
