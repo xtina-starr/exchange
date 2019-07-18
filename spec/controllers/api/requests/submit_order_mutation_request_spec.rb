@@ -215,8 +215,8 @@ describe Api::GraphqlController, type: :request do
         expect(order.commission_fee_cents).to eq 800_00
         expect(order.state_updated_at).not_to be_nil
         expect(order.state_expires_at).to eq(order.state_updated_at + 3.days)
-        expect(order.reload.transactions.last.external_id).not_to be_nil
-        expect(order.reload.transactions.last.transaction_type).to eq Transaction::PAYMENT_INTENT
+        transaction = order.reload.transactions.last
+        expect(transaction).to have_attributes(external_type: Transaction::PAYMENT_INTENT, transaction_type: Transaction::HOLD, status: Transaction::SUCCESS)
       end
     end
   end

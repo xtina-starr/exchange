@@ -57,13 +57,14 @@ module Errors
       capture_failed
       charge_authorization_failed
       insufficient_inventory
+      payment_requires_action
       received_partial_refund
       refund_failed
       tax_calculator_failure
       tax_recording_failure
       tax_refund_failure
-      unknown_event_charge
       undeduct_inventory_failure
+      unknown_event_charge
     ],
     internal: %i[
       generic

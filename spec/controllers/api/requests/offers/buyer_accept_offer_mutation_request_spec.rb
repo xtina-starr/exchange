@@ -201,8 +201,7 @@ describe Api::GraphqlController, type: :request do
         expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
         transaction = order.reload.transactions.last
         expect(transaction.external_id).not_to be_nil
-        expect(transaction.transaction_type).to eq Transaction::PAYMENT_INTENT
-        expect(transaction.status).to eq Transaction::SUCCESS
+        expect(transaction).to have_attributes(transaction_type: Transaction::CAPTURE, external_type: Transaction::PAYMENT_INTENT, status: Transaction::SUCCESS)
       end
     end
   end

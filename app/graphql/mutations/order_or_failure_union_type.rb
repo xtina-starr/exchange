@@ -8,7 +8,7 @@ class Mutations::OrderWithMutationFailure < Types::BaseObject
   field :error, Types::ApplicationErrorType, null: false
 end
 
-class Mutations::OrderNeedsAction < Types::BaseObject
+class Mutations::OrderRequiresAction < Types::BaseObject
   description 'A response indicating order needs action to be able to be submitted'
   field :action_data, JSON, null: false, description: 'Data related to action needed'
 end

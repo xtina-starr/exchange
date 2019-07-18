@@ -2,23 +2,28 @@ require 'rails_helper'
 
 describe OrderApproveService, type: :services do
   include_context 'use stripe mock'
-  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: Order::SUBMITTED) }
+  let(:payment_intent) { Stripe::PaymentIntent.create(amount: 200, currency: 'usd', capture_method: 'manual') }
+  let(:failed_payment_intent) { Stripe::PaymentIntent.create(amount: 3178, currency: 'usd', capture_method: 'manual') }
+  let(:order) { Fabricate(:order, external_charge_id: payment_intent.id, state: Order::SUBMITTED) }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
   let(:service) { OrderApproveService.new(order, user_id) }
 
   describe '#process!' do
+    before do
+      Fabricate(:transaction, order: order, external_id: payment_intent.id, external_type: Transaction::PAYMENT_INTENT)
+    end
     context 'with failed stripe capture' do
       before do
-        StripeMock.prepare_card_error(:card_declined, :capture_charge)
+        Fabricate(:transaction, order: order, external_id: failed_payment_intent.id, external_type: Transaction::PAYMENT_INTENT)
+        order.update!(external_charge_id: failed_payment_intent.id)
+        allow_any_instance_of(Stripe::PaymentIntent).to receive(:capture)
       end
 
       it 'adds failed transaction' do
         expect { service.process! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
-        expect(order.transactions.first.status).to eq Transaction::FAILURE
-        expect(order.transactions.first.failure_code).to eq 'card_declined'
-        expect(order.transactions.first.failure_message).to eq 'The card was declined'
-        expect(order.transactions.first.decline_code).to eq 'do_not_honor'
+        transaction = order.transactions.order(created_at: :desc).first
+        expect(transaction).to have_attributes(status: Transaction::FAILURE, failure_code: 'card_declined', failure_message: 'Not enough funds.' , decline_code: 'insufficient_funds')
       end
 
       it 'keeps order in submitted state' do
@@ -48,7 +53,7 @@ describe OrderApproveService, type: :services do
       end
 
       it 'adds successful transaction' do
-        expect(order.transactions.last.status).to eq Transaction::SUCCESS
+        expect(order.transactions.order(created_at: :desc).first.status).to eq Transaction::SUCCESS
       end
 
       it 'queues PostEvent' do

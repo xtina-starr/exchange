@@ -9,6 +9,8 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
     order = Order.find(id)
     authorize_buyer_request!(order)
     { order_or_error: { order: OrderService.submit!(order, current_user_id) } }
+  rescue Errors::PaymentRequiresActionError => e
+    { order_or_error: { client_secret: e.payment_intent.client_secret }}
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end

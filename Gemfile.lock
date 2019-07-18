@@ -1,7 +1,7 @@
 GIT
   remote: https://github.com/ashkan18/stripe-ruby-mock
-  revision: d288b4687b7034e2ce1c2ce5af9ef057545d3363
-  branch: add-support-for-payment-intents
+  revision: e2e7e6e2546774958a3dcbe15d8566f840ff2d84
+  branch: more-payment-intents
   specs:
     stripe-ruby-mock (2.5.8)
       dante (>= 0.2.0)

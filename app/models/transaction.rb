@@ -3,11 +3,15 @@ class Transaction < ApplicationRecord
 
   belongs_to :order
 
+  EXTERNAL_TYPES = [
+    PAYMENT_INTENT = 'payment_intent'.freeze,
+    CHARGE = 'charge'.freeze
+  ].freeze
+
   TYPES = [
     HOLD = 'hold'.freeze,
     CAPTURE = 'capture'.freeze,
     REFUND = 'refund'.freeze,
-    PAYMENT_INTENT = 'payment_intent'.freeze
   ].freeze
 
   STATUSES = [
@@ -22,7 +26,11 @@ class Transaction < ApplicationRecord
   end
 
   def failed?
-    [FAILURE, REQUIRES_ACTION].include?(status)
+    status == FAILURE
+  end
+
+  def requires_action?
+    status == REQUIRES_ACTION
   end
 
   def failure_data
