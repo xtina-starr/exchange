@@ -17,7 +17,7 @@ describe OrderFollowUpJob, type: :job do
             OrderFollowUpJob.perform_now(order.id, Order::PENDING)
           end
         end
-        it 'cancels payment intent' do
+        it 'calls cancel_payment_intent' do
           Timecop.freeze(order.state_expires_at + 1.second) do
             expect(PaymentService).to receive(:cancel_payment_intent).with(transaction.external_id, 'abandoned')
             OrderFollowUpJob.perform_now(order.id, Order::PENDING)
@@ -35,7 +35,6 @@ describe OrderFollowUpJob, type: :job do
         let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
         let(:charge) { Stripe::Charge.create(amount: 20_00, currency: 'usd', source: credit_card) }
         let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', charges: [charge], payment_method: stripe_customer.default_source, capture_method: 'manual', confirmation_method: 'manual') }
-        let!(:transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, transaction_type: Transaction::PAYMENT_INTENT) }
         context 'Buy order' do
           it 'transitions a submitted order to seller_lapsed' do
             Timecop.freeze(order.state_expires_at + 1.second) do
@@ -44,7 +43,7 @@ describe OrderFollowUpJob, type: :job do
             end
           end
 
-          it 'cancels payment intent' do
+          it 'calls cancel_payment_intent' do
             Timecop.freeze(order.state_expires_at + 1.second) do
               expect(PaymentService).to receive(:cancel_payment_intent).with(transaction.external_id, 'abandoned')
               OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
@@ -54,8 +53,6 @@ describe OrderFollowUpJob, type: :job do
         context 'Offer order' do
           let(:mode) { Order::OFFER }
           let(:offer) { Fabricate(:offer, from_id: seller_id, order: order, from_type: seller_type, submitted_at: Time.now.utc) }
-          let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', payment_method: stripe_customer.default_source, capture_method: 'manual', confirmation_method: 'manual') }
-          let(:transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, transaction_type: Transaction::PAYMENT_INTENT) }
           before do
             order.update!(last_offer: offer)
           end
@@ -66,7 +63,7 @@ describe OrderFollowUpJob, type: :job do
                 OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
               end
             end
-            it 'cancels payment intent' do
+            it 'calls cancel_payment_intent' do
               Timecop.freeze(order.state_expires_at + 1.second) do
                 expect(PaymentService).to receive(:cancel_payment_intent).with(transaction.external_id, 'abandoned')
                 OrderFollowUpJob.perform_now(order.id, Order::SUBMITTED)
