@@ -1,6 +1,6 @@
 class Transaction < ApplicationRecord
   has_paper_trail versions: { class_name: 'PaperTrail::TransactionVersion' }
-  scope :payment_intent, -> { where(transaction_type: 'payment_intent') }
+  scope :payment_intent, -> { where(external_type: 'payment_intent') }
 
   belongs_to :order
 

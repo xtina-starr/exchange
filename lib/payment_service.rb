@@ -105,7 +105,9 @@ module PaymentService
       source_id: payment_intent.payment_method,
       amount_cents: payment_intent.amount,
       transaction_type: Transaction::CANCEL_PAYMENT_INTENT,
+      external_type: Transaction::PAYMENT_INTENT,
       status: Transaction::SUCCESS,
+      payload: payment_intent.to_h
     )
   rescue Stripe::StripeError => e
     generate_transaction_from_exception(e, Transaction::CANCEL_PAYMENT_INTENT, external_id: external_id)

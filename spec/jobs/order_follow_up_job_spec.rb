@@ -7,7 +7,7 @@ describe OrderFollowUpJob, type: :job do
   let(:state) { Order::PENDING }
   let(:payment_intent) { Stripe::PaymentIntent.create(amount: 3169, currency: 'usd', payment_method: stripe_customer.default_source, capture_method: 'manual', confirmation_method: 'manual') }
   let(:order) { Fabricate(:order, state: state, external_charge_id: payment_intent.id) }
-  let!(:transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, transaction_type: Transaction::PAYMENT_INTENT) }
+  let!(:transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, transaction_type: Transaction::HOLD, external_type: Transaction::PAYMENT_INTENT) }
   describe '#perform' do
     context 'with an order in the same state after its expiration time' do
       context 'expired PENDING' do
