@@ -1,11 +1,14 @@
 require 'rails_helper'
 require 'support/gravity_helper'
+require 'support/use_stripe_mock'
 
 describe OrderService, type: :services do
   include_context 'use stripe mock'
   let(:state) { Order::PENDING }
   let(:state_reason) { state == Order::CANCELED ? 'seller_lapsed' : nil }
+  let(:payment_intent) { Stripe::PaymentIntent.create(amount: 20_00, currency: 'usd', payment_method: stripe_customer.default_source, capture_method: 'manual', confirmation_method: 'manual') }
   let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state, state_reason: state_reason, buyer_id: 'b123') }
+  let!(:transaction) { Fabricate(:transaction, order: order, external_id: payment_intent.id, transaction_type: Transaction::PAYMENT_INTENT) }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
 
