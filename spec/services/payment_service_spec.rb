@@ -97,32 +97,21 @@ describe PaymentService, type: :services do
     end
   end
 
-  # describe '#cancel_payment_intent' do
-  #   it 'cancels a payment intent' do
-  #     transaction = PaymentService.cancel_payment_intent(captured_charge.id)
-  #     expect(transaction.external_id).to match(/test_re/i)
-  #     expect(transaction.transaction_type).to eq Transaction::REFUND
-  #     expect(transaction.status).to eq Transaction::SUCCESS
-  #   end
-  #   it 'creates a transaction for the cancelled payment' do
-  #     StripeMock.prepare_card_error(:processing_error, :new_refund)
-  #     expect(transaction.amount_cents).to eq 3169
-  #     expect(transaction.source_id).to eq stripe_customer.default_source
-  #     expect(transaction.destination_id).to eq 'ma-1'
-  #     expect(transaction.failure_code).to be_nil
-  #     expect(transaction.failure_message).to be_nil
-  #     expect(transaction.decline_code).to be_nil
-  #     expect(transaction.transaction_type).to eq Transaction::PAYMENT_INTENT
-  #     expect(transaction.status).to eq Transaction::REQUIRES_ACTION
-  #   end
-  #   it 'catches Stripe errors and returns a failed transaction' do
-  #     StripeMock.prepare_card_error(:processing_error, :new_refund)
-  #     transaction = PaymentService.cancel_payment_intent(captured_charge.id)
-  #     expect(transaction.external_id).to eq captured_charge.id
-  #     expect(transaction.failure_code).to eq 'processing_error'
-  #     expect(transaction.failure_message).to eq 'An error occurred while processing the card'
-  #     expect(transaction.transaction_type).to eq Transaction::REFUND
-  #     expect(transaction.status).to eq Transaction::FAILURE
-  #   end
-  # end
+  describe '#cancel_payment_intent' do
+    let(:generate_transaction_from_exception) { double }
+    it 'creates a transaction for the canceled payment intent' do
+      transaction = PaymentService.cancel_payment_intent(needs_capture_payment_intent.id, 'abandoned')
+      expect(transaction.external_id).to match(/test_pi/i)
+      expect(transaction.transaction_type).to eq Transaction::CANCEL_PAYMENT_INTENT
+      expect(transaction.status).to eq Transaction::SUCCESS
+    end
+    it 'cancels a payment intent' do
+      transaction = PaymentService.cancel_payment_intent(needs_capture_payment_intent.id, 'abandoned')
+      expect(transaction.payload['status']).to eq 'canceled'
+    end
+    it 'catches Stripe errors' do
+      PaymentService.cancel_payment_intent(needs_capture_payment_intent.id, 'abandoned')
+      expect(PaymentService).to receive(:generate_transaction_from_exception)
+    end
+  end
 end

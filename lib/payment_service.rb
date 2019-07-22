@@ -97,9 +97,9 @@ module PaymentService
     end
   end
 
-  def self.cancel_payment_intent(external_id, cancelation_reason)
+  def self.cancel_payment_intent(external_id, cancellation_reason)
     payment_intent = Stripe::PaymentIntent.retrieve(external_id)
-    payment_intent.cancel(cancelation_reason: cancelation_reason)
+    payment_intent.cancel(cancellation_reason: cancellation_reason)
     Transaction.new(
       external_id: payment_intent.id,
       source_id: payment_intent.payment_method,
