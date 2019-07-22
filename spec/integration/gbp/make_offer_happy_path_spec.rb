@@ -3,27 +3,31 @@ require 'support/gravity_helper'
 require 'support/taxjar_helper'
 
 describe Api::GraphqlController, type: :request do
-  include_context 'use stripe mock'
+  include_context 'use stripe mock gbp'
   include_context 'GraphQL Client Helpers'
-  describe 'make offer happy path' do
+  describe 'make offer happy path gbp' do
     let(:seller_id) { 'gravity-partner-id' }
     let(:buyer_id) { 'user-id1' }
     let(:buyer_shipping_address) do
       {
         name: 'Fname Lname',
-        country: 'US',
-        city: 'New York',
-        region: 'NY',
-        postalCode: '10012',
-        phoneNumber: '617-718-7818',
-        addressLine1: '401 Broadway',
-        addressLine2: 'Suite 80'
+        country: 'GB',
+        city: 'Manchester',
+        region: '',
+        postalCode: 'EF3 4GH',
+        phoneNumber: '+44 12 3456 7890',
+        addressLine1: '1 Test Rd.'
       }
     end
     let(:buyer_credit_card) { { id: 'cc-1', user: { _id: buyer_id }, external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
-    let(:gravity_artwork) { gravity_v1_artwork(_id: 'a-1', price_currency: 'GBP', price_listed: 1000.00, edition_sets: [], domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
+    let(:gravity_artwork) do
+      gravity_v1_artwork(_id: 'a-1', price_currency: 'GBP', price_listed: 1000.00, edition_sets: [], domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00, location: { country: 'GB',
+                                                                                                                                                                                                city: 'London',
+                                                                                                                                                                                                address: '1 Fake St.',
+                                                                                                                                                                                                postal_code: 'AB1 2CD' })
+    end
     let(:gravity_partner) { { id: seller_id, artsy_collects_sales_tax: true, billing_location_id: '123abc', effective_commission_rate: 0.1 } }
-    let(:seller_addresses) { [Address.new(state: 'NY', country: 'US', postal_code: '10001'), Address.new(state: 'MA', country: 'US', postal_code: '02139')] }
+    let(:seller_addresses) { [Address.new(city: 'London', country: 'GB', postal_code: 'SW3 4RY')] }
     let(:seller_merchant_account) { { external_id: 'ma-1' } }
     let(:buyer_client) { graphql_client(user_id: buyer_id, partner_ids: [], roles: 'user') }
     let(:seller_client) { graphql_client(user_id: 'partner_admin_id', partner_ids: [seller_id], roles: 'user') }
@@ -66,19 +70,19 @@ describe Api::GraphqlController, type: :request do
         tax_total_cents: nil,
         buyer_total_cents: nil,
         fulfillment_type: Order::SHIP,
-        shipping_country: 'US',
-        shipping_city: 'New York',
-        shipping_address_line1: '401 Broadway',
-        shipping_address_line2: 'Suite 80',
-        shipping_postal_code: '10012',
+        shipping_country: 'GB',
+        shipping_city: 'Manchester',
+        shipping_address_line1: '1 Test Rd.',
+        shipping_address_line2: nil,
+        shipping_postal_code: 'EF3 4GH',
         currency_code: 'GBP'
       )
 
       expect(offer.reload).to have_attributes(
         amount_cents: 500_00,
         shipping_total_cents: 200_00,
-        tax_total_cents: 100_00,
-        buyer_total_cents: 800_00
+        tax_total_cents: 0,
+        buyer_total_cents: 700_00
       )
 
       # Buyer sets credit card
@@ -86,7 +90,7 @@ describe Api::GraphqlController, type: :request do
       expect(order.reload).to have_attributes(
         state: Order::PENDING,
         fulfillment_type: Order::SHIP,
-        shipping_country: 'US',
+        shipping_country: 'GB',
         currency_code: 'GBP',
         credit_card_id: 'cc-1'
       )
@@ -99,11 +103,11 @@ describe Api::GraphqlController, type: :request do
         state: Order::SUBMITTED,
         items_total_cents: 500_00,
         shipping_total_cents: 200_00,
-        tax_total_cents: 100_00,
-        buyer_total_cents: 800_00,
-        seller_total_cents: 726_50,
+        tax_total_cents: 0,
+        buyer_total_cents: 700_00,
+        seller_total_cents: 629_40,
         fulfillment_type: Order::SHIP,
-        shipping_country: 'US',
+        shipping_country: 'GB',
         currency_code: 'GBP',
         credit_card_id: 'cc-1',
         commission_fee_cents: 50_00
@@ -117,19 +121,19 @@ describe Api::GraphqlController, type: :request do
         state: Order::APPROVED,
         items_total_cents: 500_00,
         shipping_total_cents: 200_00,
-        buyer_total_cents: 800_00,
-        tax_total_cents: 100_00,
+        buyer_total_cents: 700_00,
+        tax_total_cents: 0,
         commission_fee_cents: 50_00,
-        transaction_fee_cents: 23_50,
-        seller_total_cents: 726_50,
+        transaction_fee_cents: 20_60,
+        seller_total_cents: 629_40,
         fulfillment_type: Order::SHIP,
-        shipping_country: 'US',
+        shipping_country: 'GB',
         currency_code: 'GBP',
         credit_card_id: 'cc-1'
       )
       expect(order.transactions.order(created_at: :desc).first).to have_attributes(
         transaction_type: Transaction::CAPTURE,
-        amount_cents: 800_00,
+        amount_cents: 700_00,
         status: Transaction::SUCCESS
       )
 
