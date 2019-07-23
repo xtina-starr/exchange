@@ -85,7 +85,7 @@ module OfferService
     end
     order.transactions << order_processor.transaction
     PostTransactionNotificationJob.perform_later(order_processor.transaction.id, user_id)
-    raise Errors::FailedTransactionError.new(:capture_failed, order_processor.transaction) if order_processor.transaction.failed?
+    raise Errors::FailedTransactionError.new(:capture_failed, order_processor.transaction) if order_processor.failed_payment?
 
     OrderEvent.delay_post(order, Order::APPROVED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
