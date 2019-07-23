@@ -2,7 +2,7 @@ class Order < ApplicationRecord
   include OrderHelper
   has_paper_trail versions: { class_name: 'PaperTrail::OrderVersion' }
 
-  SUPPORTED_CURRENCIES = %w[USD].freeze
+  SUPPORTED_CURRENCIES = %w[USD GBP].freeze
 
   DEFAULT_EXPIRATION_REMINDER = 5.hours
 
