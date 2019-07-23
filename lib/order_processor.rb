@@ -1,48 +1,62 @@
 class OrderProcessor
-  attr_accessor :order, :transaction, :error
+  ##
+  # Responsible for processing an order which means deduct the inventory of work and process the charge
+  #
+  # provides methods for `hold!` and `charge!`. Both of these try to first deduct the inventory and then try to process payment.
+  # Caller should check `failed_inventory?` and `failed_payment?` errors to verify the success of hold/charge.
+  # In case of `failed_payment?`, the actual payment error can be accessed via the `transaction` attribute of the processor.
+  #
+  # the caller needs to verify the results by checking `failed_inventory?` and `failed_payment?` methods.
+
+  attr_accessor :order, :transaction, :validation_error
 
   def initialize(order, user_id)
     @order = order
     @user_id = user_id
-    @error = nil
+    @validation_error = nil
     @transaction = nil
     @deducted_inventory = []
     @validated = false
+    @insufficient_inventory = false
   end
 
   def hold!
-    raise Errors::ValidationError, @error unless valid?
+    raise Errors::ValidationError, @validation_error unless valid?
 
     deduct_inventory
     @transaction = PaymentService.create_and_authorize_charge(construct_charge_params)
-    raise Errors::FailedTransactionError.new(:charge_authorization_failed, @transaction) if @transaction.failed?
-
-    @order.update!(external_charge_id: @transaction.external_id)
-  rescue Errors::ValidationError, Errors::ProcessingError => e
+    undeduct_inventory if @transaction.failed?
+  rescue Errors::InsufficientInventoryError
     undeduct_inventory
-    raise e
+    @insufficient_inventory = true
   end
 
   def charge!
-    raise Errors::ValidationError, @error unless valid?
+    raise Errors::ValidationError, @validation_error unless valid?
 
     deduct_inventory
     @transaction = PaymentService.create_and_capture_charge(construct_charge_params)
-    raise Errors::FailedTransactionError.new(:capture_failed, @transaction) if @transaction.failed?
-
-    @order.update!(external_charge_id: @transaction.external_id)
-  rescue Errors::ValidationError, Errors::ProcessingError => e
+    undeduct_inventory if @transaction.failed?
+  rescue Errors::InsufficientInventoryError
     undeduct_inventory
-    raise e
+    @insufficient_inventory = true
+  end
+
+  def failed_payment?
+    @transaction.present? && @transaction.failed?
+  end
+
+  def failed_inventory?
+    @insufficient_inventory
   end
 
   def valid?
     @validated ||= begin
-      @error = :unsupported_payment_method unless @order.payment_method == Order::CREDIT_CARD
-      @error ||= :missing_required_info unless @order.can_commit?
-      @error ||= @order.assert_credit_card
+      @validation_error = :unsupported_payment_method unless @order.payment_method == Order::CREDIT_CARD
+      @validation_error ||= :missing_required_info unless @order.can_commit?
+      @validation_error ||= @order.assert_credit_card
     end
-    @error.nil?
+    @validation_error.nil?
   end
 
   private

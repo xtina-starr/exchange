@@ -1,11 +1,8 @@
 class TransactionEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
-  ACTIONS = [
-    CREATED = 'created'.freeze
-  ].freeze
 
-  def self.post(transaction, action, user_id)
-    event = new(user: user_id, action: action, model: transaction)
+  def self.post(transaction, user_id)
+    event = new(user: user_id, action: transaction.status, model: transaction)
     Artsy::EventService.post_event(topic: TOPIC, event: event)
   end
 

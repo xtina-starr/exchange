@@ -56,7 +56,7 @@ module Gravity
   rescue Adapters::GravityNotFoundError
     raise Errors::ValidationError.new(:unknown_artwork, line_item_id: line_item.id)
   rescue Adapters::GravityError
-    raise Errors::ProcessingError.new(:insufficient_inventory, line_item_id: line_item.id)
+    raise Errors::InsufficientInventoryError, line_item.id
   end
 
   def self.undeduct_inventory(line_item)

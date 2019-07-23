@@ -45,7 +45,7 @@ module OrderService
     end
 
     order_processor = OrderProcessor.new(order, user_id)
-    raise Errors::ValidationError, order_processor.error unless order_processor.valid?
+    raise Errors::ValidationError, order_processor.validation_error unless order_processor.valid?
 
     order.submit! do
       order.line_items.each { |li| li.update!(commission_fee_cents: li.current_commission_fee_cents) }
@@ -57,17 +57,23 @@ module OrderService
         seller_total_cents: totals.seller_total_cents
       )
       order_processor.hold!
-      order.transactions << order_processor.transaction
+      raise Errors::InsufficientInventoryError if order_processor.failed_inventory?
+      # in case of failed transaction, we need to rollback this block,
+      # but still need to add transaction, so we raise an ActiveRecord::Rollback
+      raise ActiveRecord::Rollback if order_processor.failed_payment?
+
+      order.update!(external_charge_id: order_processor.transaction.external_id)
     end
+
+    order.transactions << order_processor.transaction
+    PostTransactionNotificationJob.perform_later(order_processor.transaction.id, user_id)
+    raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction) if order_processor.failed_payment?
 
     OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
     Exchange.dogstatsd.increment 'order.submitted'
     order
-  rescue Errors::FailedTransactionError => e
-    handle_failed_transaction(e, order, user_id)
-    raise e
   end
 
   def self.fulfill_at_once!(order, fulfillment, user_id)
@@ -99,17 +105,5 @@ module OrderService
 
   def self.abandon!(order)
     order.abandon!
-  end
-
-  class << self
-    private
-
-    def handle_failed_transaction(failed_transaction_exception, order, user_id)
-      transaction = failed_transaction_exception.transaction
-      return if transaction.blank?
-
-      order.transactions << transaction
-      PostTransactionNotificationJob.perform_later(transaction.id, TransactionEvent::CREATED, user_id)
-    end
   end
 end

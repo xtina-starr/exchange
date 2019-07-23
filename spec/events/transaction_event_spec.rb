@@ -60,12 +60,12 @@ describe TransactionEvent, type: :events do
     ]
   end
 
-  let(:event) { TransactionEvent.new(user: user_id, action: TransactionEvent::CREATED, model: transaction) }
+  let(:event) { TransactionEvent.new(user: user_id, action: transaction.status, model: transaction) }
 
   describe 'post' do
     it 'calls ArtsyEventService to post event' do
       expect(Artsy::EventService).to receive(:post_event).with(topic: 'commerce', event: instance_of(TransactionEvent))
-      TransactionEvent.post(order, TransactionEvent::CREATED, user_id)
+      TransactionEvent.post(transaction, user_id)
     end
   end
 
