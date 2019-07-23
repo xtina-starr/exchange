@@ -22,9 +22,9 @@ describe PaymentService, type: :services do
     }
   end
 
-  describe '#create_and_authorize_charge' do
+  describe '#hold_payment' do
     it "authorizes a charge on the user's credit card" do
-      transaction = PaymentService.create_and_authorize_charge(params)
+      transaction = PaymentService.hold_payment(params)
       expect(transaction.amount_cents).to eq(20_00)
       expect(transaction.source_id).to eq(stripe_customer.default_source)
       expect(transaction.status).to eq(Transaction::SUCCESS)
@@ -35,7 +35,7 @@ describe PaymentService, type: :services do
     end
     it 'catches Stripe errors and returns a failed transaction' do
       StripeMock.prepare_card_error(:card_declined, :new_charge)
-      transaction = PaymentService.create_and_authorize_charge(params)
+      transaction = PaymentService.hold_payment(params)
       expect(transaction.amount_cents).to eq buyer_amount
       expect(transaction.source_id).to eq stripe_customer.default_source
       expect(transaction.destination_id).to eq 'ma-1'
@@ -47,9 +47,9 @@ describe PaymentService, type: :services do
     end
   end
 
-  describe '#capture_authorized_charge' do
+  describe '#capture_authorized_payment' do
     it 'captures a charge' do
-      transaction = PaymentService.capture_authorized_charge(uncaptured_charge.id)
+      transaction = PaymentService.capture_authorized_payment(uncaptured_charge.id)
       expect(transaction.amount_cents).to eq(uncaptured_charge.amount)
       expect(transaction.transaction_type).to eq Transaction::CAPTURE
       expect(transaction.source_id).to eq 'test_cc_2'
@@ -57,7 +57,7 @@ describe PaymentService, type: :services do
     end
     it 'catches Stripe errors and returns a failed transaction' do
       StripeMock.prepare_card_error(:card_declined, :capture_charge)
-      transaction = PaymentService.capture_authorized_charge(uncaptured_charge.id)
+      transaction = PaymentService.capture_authorized_payment(uncaptured_charge.id)
       expect(transaction.external_id).to eq uncaptured_charge.id
       expect(transaction.failure_code).to eq 'card_declined'
       expect(transaction.failure_message).to eq 'The card was declined'
@@ -67,16 +67,16 @@ describe PaymentService, type: :services do
     end
   end
 
-  describe '#refund_charge' do
+  describe '#refund_payment' do
     it 'refunds a charge for the full amount' do
-      transaction = PaymentService.refund_charge(captured_charge.id)
+      transaction = PaymentService.refund_payment(captured_charge.id)
       expect(transaction.external_id).to match(/test_re/i)
       expect(transaction.transaction_type).to eq Transaction::REFUND
       expect(transaction.status).to eq Transaction::SUCCESS
     end
     it 'catches Stripe errors and returns a failed transaction' do
       StripeMock.prepare_card_error(:processing_error, :new_refund)
-      transaction = PaymentService.refund_charge(captured_charge.id)
+      transaction = PaymentService.refund_payment(captured_charge.id)
       expect(transaction.external_id).to eq captured_charge.id
       expect(transaction.failure_code).to eq 'processing_error'
       expect(transaction.failure_message).to eq 'An error occurred while processing the card'

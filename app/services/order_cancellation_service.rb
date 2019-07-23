@@ -51,7 +51,7 @@ class OrderCancellationService
   def process_stripe_refund
     raise Errors::ValidationError.new(:unsupported_payment_method, @order.payment_method) unless @order.payment_method == Order::CREDIT_CARD
 
-    @transaction = PaymentService.refund_charge(@order.external_charge_id)
+    @transaction = PaymentService.refund_payment(@order.external_charge_id)
     raise Errors::ProcessingError.new(:refund_failed, @transaction.failure_data) if @transaction.failed?
   end
 
