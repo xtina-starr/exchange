@@ -78,14 +78,15 @@ module OfferService
         seller_total_cents: totals.seller_total_cents
       )
       order_processor.charge!
-      raise ActiveRecord::Rollback if order_processor.failed_payment?
       raise Errors::InsufficientInventoryError if order_processor.failed_inventory?
+      # in case of failed transaction, we need to rollback this block,
+      # but still need to add transaction, so we raise an ActiveRecord::Rollback
+      raise ActiveRecord::Rollback if order_processor.failed_payment?
     end
     order.transactions << order_processor.transaction
-    if order_processor.transaction.failed?
-      PostTransactionNotificationJob.perform_later(order_processor.transaction.id, TransactionEvent::CREATED, user_id)
-      raise Errors::FailedTransactionError.new(:capture_failed, order_processor.transaction)
-    end
+    PostTransactionNotificationJob.perform_later(order_processor.transaction.id, user_id)
+    raise Errors::FailedTransactionError.new(:capture_failed, order_processor.transaction) if order_processor.transaction.failed?
+
     OrderEvent.delay_post(order, Order::APPROVED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)

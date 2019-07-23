@@ -66,10 +66,9 @@ module OrderService
     end
 
     order.transactions << order_processor.transaction
-    if order_processor.transaction.failed?
-      PostTransactionNotificationJob.perform_later(order_processor.transaction.id, TransactionEvent::CREATED, user_id)
-      raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction)
-    end
+    PostTransactionNotificationJob.perform_later(order_processor.transaction.id, user_id)
+    raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction) if order_processor.transaction.failed?
+
     OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
