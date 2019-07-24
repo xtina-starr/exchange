@@ -170,7 +170,7 @@ describe Api::GraphqlController, type: :request do
       context 'with failed stripe charge' do
         before do
           undeduct_inventory_request
-          prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: {code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined'})
+          prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
         end
 
         it 'raises processing error' do

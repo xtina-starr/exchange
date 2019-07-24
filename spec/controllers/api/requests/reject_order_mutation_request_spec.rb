@@ -79,7 +79,7 @@ describe Api::GraphqlController, type: :request do
         order.update_attributes! state: Order::SUBMITTED
       end
       it 'rejects the order' do
-        prepare_payment_intent_refund_success()
+        prepare_payment_intent_refund_success
         response = client.execute(mutation, reject_order_input)
         expect(response.data.reject_order.order_or_error.order.id).to eq order.id.to_s
         expect(response.data.reject_order.order_or_error.order.state).to eq 'CANCELED'

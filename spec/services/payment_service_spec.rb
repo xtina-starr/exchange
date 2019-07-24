@@ -38,7 +38,7 @@ describe PaymentService, type: :services do
       )
     end
     it 'stores failed attempt data on transaction' do
-      prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: {code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined'})
+      prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
       transaction = PaymentService.hold_payment(params)
       expect(transaction).to have_attributes(
         amount_cents: buyer_amount,
@@ -80,7 +80,7 @@ describe PaymentService, type: :services do
 
   describe '#refund_payment' do
     it 'refunds a charge for the full amount' do
-      prepare_payment_intent_refund_success()
+      prepare_payment_intent_refund_success
       transaction = PaymentService.refund_payment('pi_1')
       expect(transaction.external_id).to eq 're_1'
       expect(transaction.transaction_type).to eq Transaction::REFUND

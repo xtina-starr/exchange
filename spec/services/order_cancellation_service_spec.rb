@@ -15,7 +15,7 @@ describe OrderCancellationService, type: :services do
     end
     context 'with a successful refund' do
       before do
-        prepare_payment_intent_refund_success()
+        prepare_payment_intent_refund_success
         service.reject!
       end
 
@@ -114,7 +114,7 @@ describe OrderCancellationService, type: :services do
     context 'Buy Order' do
       context 'with a successful refund' do
         before do
-          prepare_payment_intent_refund_success()
+          prepare_payment_intent_refund_success
           service.seller_lapse!
         end
 
@@ -159,7 +159,7 @@ describe OrderCancellationService, type: :services do
       let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00)] }
 
       before do
-        prepare_payment_intent_refund_success()
+        prepare_payment_intent_refund_success
         service.seller_lapse!
       end
 
@@ -180,7 +180,7 @@ describe OrderCancellationService, type: :services do
       let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00)] }
 
       before do
-        prepare_payment_intent_refund_success()
+        prepare_payment_intent_refund_success
         service.buyer_lapse!
       end
 
@@ -202,7 +202,7 @@ describe OrderCancellationService, type: :services do
 
         context 'with a successful refund' do
           before do
-            prepare_payment_intent_refund_success()
+            prepare_payment_intent_refund_success
             service.refund!
           end
 

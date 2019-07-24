@@ -98,7 +98,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: {code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined'})
+        prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
         order_processor.hold!
       end
 
@@ -211,7 +211,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: {code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined'})
+        prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
         order_processor.charge!
       end
 
