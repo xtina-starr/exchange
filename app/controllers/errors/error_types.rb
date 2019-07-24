@@ -54,6 +54,7 @@ module Errors
     ],
     processing: %i[
       artwork_version_mismatch
+      cannot_capture
       capture_failed
       charge_authorization_failed
       insufficient_inventory
@@ -62,8 +63,8 @@ module Errors
       tax_calculator_failure
       tax_recording_failure
       tax_refund_failure
-      unknown_event_charge
       undeduct_inventory_failure
+      unknown_event_charge
     ],
     internal: %i[
       generic

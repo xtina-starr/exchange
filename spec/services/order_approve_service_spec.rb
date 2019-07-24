@@ -1,8 +1,8 @@
 require 'rails_helper'
 
 describe OrderApproveService, type: :services do
-  include_context 'use stripe mock'
-  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: Order::SUBMITTED) }
+  include_context 'include stripe helper'
+  let(:order) { Fabricate(:order, state: Order::SUBMITTED) }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
   let(:service) { OrderApproveService.new(order, user_id) }
@@ -10,20 +10,23 @@ describe OrderApproveService, type: :services do
   describe '#process!' do
     context 'capture a charge - LEGACY' do
       before do
-        Fabricate(:transaction, external_id: 'ch_1', external_type: Transaction::CHARGE)
+        Fabricate(:transaction, external_id: 'ch_1', external_type: Transaction::CHARGE, order: order)
         order.update!(external_charge_id: 'ch_1')
       end
       context 'with failed stripe capture' do
         before do
-          StripeMock.prepare_card_error(:card_declined, :capture_charge)
+          prepare_charge_capture_failure('ch_1', 'card_declined', 'do_not_honor')
         end
 
         it 'adds failed transaction' do
           expect { service.process! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
-          expect(order.transactions.first.status).to eq Transaction::FAILURE
-          expect(order.transactions.first.failure_code).to eq 'card_declined'
-          expect(order.transactions.first.failure_message).to eq 'The card was declined'
-          expect(order.transactions.first.decline_code).to eq 'do_not_honor'
+          transaction = order.transactions.order(created_at: :desc).first
+          expect(transaction).to have_attributes(
+            status: Transaction::FAILURE,
+            failure_code: 'card_declined',
+            failure_message: 'The card was declined',
+            decline_code: 'do_not_honor'
+          )
         end
 
         it 'keeps order in submitted state' do
@@ -40,6 +43,7 @@ describe OrderApproveService, type: :services do
 
       context 'with failed post_process' do
         it 'is in approved state' do
+          prepare_charge_capture_success('ch_1')
           allow(OrderEvent).to receive(:delay_post).and_raise('Perform what later?!')
           expect { service.process! }.to raise_error(RuntimeError).and change(order.transactions, :count).by(1)
           expect(order.reload.state).to eq Order::APPROVED
@@ -48,12 +52,13 @@ describe OrderApproveService, type: :services do
 
       context 'with a successful order approval' do
         before do
+          prepare_charge_capture_success('ch_1')
           ActiveJob::Base.queue_adapter = :test
           expect { service.process! }.to change(order.transactions, :count).by(1)
         end
 
         it 'adds successful transaction' do
-          expect(order.transactions.last.status).to eq Transaction::SUCCESS
+          expect(order.transactions.order(created_at: :desc).first.status).to eq Transaction::SUCCESS
         end
 
         it 'queues PostEvent' do
