@@ -44,6 +44,7 @@ RSpec.shared_context 'include stripe helper' do
     payment_intent = double(id: 'pi_1', payment_method: payment_method, amount: amount, transfer_data: double(destination: 'ma_1'), charges: [double(id: 'ch_1')])
     allow(payment_intent).to receive(:status).and_return('requires_capture', 'succeeded')
     refund = double(id: 're_1')
+    allow(refund).to receive(:to_h).and_return(id: 're_1')
     allow(Stripe::Refund).to receive(:create).with(charge: 'ch_1', reverse_transfer: true).and_return(refund)
     mock_payment_intent_call(:retrieve, payment_intent)
   end
