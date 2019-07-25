@@ -9,10 +9,11 @@ describe OrderCancellationService, type: :services do
   let(:user_id) { 'user-id' }
   let(:service) { OrderCancellationService.new(order, user_id) }
 
+  before do
+    Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
+  end
+
   describe '#reject!' do
-    before do
-      Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
-    end
     context 'with a successful refund' do
       before do
         prepare_payment_intent_refund_success

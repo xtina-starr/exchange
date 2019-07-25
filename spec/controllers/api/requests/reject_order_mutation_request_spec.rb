@@ -75,7 +75,7 @@ describe Api::GraphqlController, type: :request do
 
     context 'with proper permission' do
       before do
-        Fabricate(:transaction, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
+        Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
         order.update_attributes! state: Order::SUBMITTED
       end
       it 'rejects the order' do
@@ -85,8 +85,8 @@ describe Api::GraphqlController, type: :request do
         expect(response.data.reject_order.order_or_error.order.state).to eq 'CANCELED'
         expect(response.data.reject_order.order_or_error).not_to respond_to(:error)
         expect(order.reload.state).to eq Order::CANCELED
-        expect(order.transactions.last.external_id).to_not eq nil
-        expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
+        transaction = order.transactions.order(created_at: :desc).first
+        expect(transaction).to have_attributes(external_id: 're_1', external_type: Transaction::REFUND, transaction_type: Transaction::REFUND)
       end
     end
   end
