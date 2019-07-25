@@ -3,7 +3,7 @@ require 'support/gravity_helper'
 require 'support/taxjar_helper'
 
 describe Api::GraphqlController, type: :request do
-  include_context 'use stripe mock gbp'
+  include_context 'include stripe helper'
   include_context 'GraphQL Client Helpers'
   describe 'buy now happy path gbp' do
     let(:seller_id) { 'gravity-partner-id' }
@@ -19,7 +19,7 @@ describe Api::GraphqlController, type: :request do
         addressLine1: '1 Test Rd.'
       }
     end
-    let(:buyer_credit_card) { { id: 'cc-1', user: { _id: buyer_id }, external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
+    let(:buyer_credit_card) { { id: 'cc-1', user: { _id: buyer_id }, external_id: 'cc_1', customer_account: { external_id: 'ca_1' } } }
     let(:gravity_artwork) do
       gravity_v1_artwork(_id: 'a-1', price_currency: 'GBP', price_listed: 1000.00, edition_sets: [], domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00, location: { country: 'GB',
                                                                                                                                                                                                 city: 'London',
@@ -42,6 +42,8 @@ describe Api::GraphqlController, type: :request do
         deduct_inventory: nil,
         get_merchant_account: seller_merchant_account
       )
+      prepare_payment_intent_create_success(amount: 1200_00)
+      prepare_payment_intent_capture_success(amount: 1200_00)
     end
 
     it 'succeeds the process of buyer create -> set shipping -> set payment -> submit -> seller accept' do
@@ -99,7 +101,7 @@ describe Api::GraphqlController, type: :request do
         transaction_type: Transaction::HOLD,
         amount_cents: 1200_00,
         status: Transaction::SUCCESS,
-        source_id: a_string_starting_with('test_')
+        source_id: 'cc_1'
       )
 
       # seller accepts order
