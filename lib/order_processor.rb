@@ -35,7 +35,7 @@ class OrderProcessor
     raise Errors::ValidationError, @validation_error unless valid?
 
     deduct_inventory
-    @transaction = PaymentService.immediate_capture_payment(construct_charge_params)
+    @transaction = PaymentService.capture_without_hold(construct_charge_params)
     undeduct_inventory if @transaction.failed?
   rescue Errors::InsufficientInventoryError
     undeduct_inventory

@@ -70,7 +70,7 @@ describe OrderProcessor, type: :services do
       it 'does not call stripe' do
         stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        expect(PaymentService).not_to receive(:immediate_capture_payment)
+        expect(PaymentService).not_to receive(:capture_without_hold)
         order_processor.hold!
         expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
@@ -81,7 +81,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct
-        expect(PaymentService).not_to receive(:immediate_capture_payment)
+        expect(PaymentService).not_to receive(:capture_without_hold)
         order_processor.hold!
         expect(stub_line_item_1_gravity_undeduct).to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
@@ -182,7 +182,7 @@ describe OrderProcessor, type: :services do
 
       it 'does not call stripe' do
         stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        expect(PaymentService).not_to receive(:immediate_capture_payment)
+        expect(PaymentService).not_to receive(:capture_without_hold)
         order_processor.charge!
         expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
@@ -194,7 +194,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct
-        expect(PaymentService).not_to receive(:immediate_capture_payment)
+        expect(PaymentService).not_to receive(:capture_without_hold)
         order_processor.charge!
         expect(stub_line_item_1_gravity_undeduct).to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested

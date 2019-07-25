@@ -13,7 +13,7 @@ class OrderApproveService
     @charge_transaction = order.transactions.where(external_id: @order.external_charge_id).first
     @order.approve! do
       @transaction = if @charge_transaction.external_type == Transaction::PAYMENT_INTENT
-        PaymentService.capture_authorized_payment(@order.external_charge_id)
+        PaymentService.capture_authorized_hold(@order.external_charge_id)
       else
         PaymentService.capture_authorized_charge(@order.external_charge_id)
       end

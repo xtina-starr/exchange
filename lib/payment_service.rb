@@ -3,7 +3,7 @@ module PaymentService
     create_payment_intent(payment_params.merge(capture: false))
   end
 
-  def self.immediate_capture_payment(payment_params)
+  def self.capture_without_hold(payment_params)
     create_payment_intent(payment_params.merge(capture: true))
   end
 
@@ -16,7 +16,7 @@ module PaymentService
     generate_transaction_from_exception(e, Transaction::CAPTURE, external_id: charge_id, external_type: Transaction::CHARGE)
   end
 
-  def self.capture_authorized_payment(payment_intent_id)
+  def self.capture_authorized_hold(payment_intent_id)
     payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
     raise Errors::ProcessingError, :cannot_capture unless payment_intent.status == 'requires_capture'
 

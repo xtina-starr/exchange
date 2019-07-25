@@ -56,10 +56,10 @@ describe PaymentService, type: :services do
     end
   end
 
-  describe '#capture_authorized_payment' do
+  describe '#capture_authorized_hold' do
     it 'captures a payment_intent' do
       prepare_payment_intent_capture_success(amount: 20_00)
-      transaction = PaymentService.capture_authorized_payment('pi_1')
+      transaction = PaymentService.capture_authorized_hold('pi_1')
       expect(transaction).to have_attributes(
         external_type: Transaction::PAYMENT_INTENT,
         amount_cents: 20_00,
@@ -71,7 +71,7 @@ describe PaymentService, type: :services do
     end
     it 'stores failures on transaction' do
       prepare_payment_intent_capture_failure(charge_error: { code: 'capture_charge', decline_code: 'do_not_honor', message: 'The card was declined' })
-      transaction = PaymentService.capture_authorized_payment('pi_1')
+      transaction = PaymentService.capture_authorized_hold('pi_1')
       expect(transaction).to have_attributes(
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
