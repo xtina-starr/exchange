@@ -51,7 +51,45 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
-
+        - name: exchange-nginx
+          image: artsy/docker-nginx:1.14.2
+          ports:
+            - name: nginx-http
+              containerPort: 80
+          readinessProbe:
+            tcpSocket:
+              port: nginx-http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/usr/sbin/nginx", "-s", "quit"]
+          env:
+            - name: "NGINX_DEFAULT_CONF"
+              valueFrom:
+                configMapKeyRef:
+                  name: nginx-config
+                  key: default
+          volumeMounts:
+            - name: nginx-secrets
+              mountPath: /etc/nginx/ssl
+      volumes:
+        - name: nginx-secrets
+          secret:
+            secretName: nginx-secrets
+            defaultMode: 420
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: tier
+                operator: In
+                values:
+                - foreground
 
 ---
 apiVersion: extensions/v1beta1
@@ -114,11 +152,11 @@ spec:
   - port: 443
     protocol: TCP
     name: https
-    targetPort: exchange-http
+    targetPort: nginx-http
   - port: 80
     protocol: TCP
     name: http
-    targetPort: exchange-http
+    targetPort: nginx-http
   selector:
     app: exchange
     component: web
