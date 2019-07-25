@@ -51,7 +51,16 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
-
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: tier
+                operator: In
+                values:
+                - foreground
 
 ---
 apiVersion: extensions/v1beta1
