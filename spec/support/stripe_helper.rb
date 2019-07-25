@@ -26,8 +26,8 @@ RSpec.shared_context 'include stripe helper' do
     mock_payment_intent_call(:create, payment_intent)
   end
 
-  def prepare_payment_intent_capture_failure(status:, charge_error: nil, capture: false, payment_method: 'cc_1', amount: 20_00)
-    payment_intent = double(id: 'pi_1', payment_method: payment_method, amount: amount, capture_method: capture ? 'automatic' : 'manual', status: status, transfer_data: double(destination: 'ma_1'), last_payment_error: double(charge_error))
+  def prepare_payment_intent_capture_failure(charge_error: nil, capture: false, payment_method: 'cc_1', amount: 20_00)
+    payment_intent = double(id: 'pi_1', payment_method: payment_method, amount: amount, capture_method: capture ? 'automatic' : 'manual', transfer_data: double(destination: 'ma_1'), last_payment_error: double(charge_error))
     allow(payment_intent).to receive(:status).and_return('requires_capture', 'requires_payment_method')
     allow(payment_intent).to receive(:capture)
     mock_payment_intent_call(:retrieve, payment_intent)

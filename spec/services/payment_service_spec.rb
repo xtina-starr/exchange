@@ -70,7 +70,7 @@ describe PaymentService, type: :services do
       )
     end
     it 'stores failures on transaction' do
-      prepare_payment_intent_capture_failure(status: 'requires_payment_method', charge_error: { code: 'capture_charge', decline_code: 'do_not_honor', message: 'The card was declined' })
+      prepare_payment_intent_capture_failure(charge_error: { code: 'capture_charge', decline_code: 'do_not_honor', message: 'The card was declined' })
       transaction = PaymentService.capture_authorized_payment('pi_1')
       expect(transaction).to have_attributes(
         external_id: 'pi_1',

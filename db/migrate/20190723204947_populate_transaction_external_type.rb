@@ -5,6 +5,6 @@ class PopulateTransactionExternalType < ActiveRecord::Migration[5.2]
   end
 
   def down
-    raise ActiveRecord::IrreversibleMigration, "This was a data migration, can't be easily rollback"
+    raise ActiveRecord::IrreversibleMigration, "This was a data migration, can't be easily rolled back"
   end
 end
