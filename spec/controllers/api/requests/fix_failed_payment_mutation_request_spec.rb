@@ -1,8 +1,7 @@
 require 'rails_helper'
-require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
-  include_context 'use stripe mock'
+  include_context 'include stripe helper'
   include_context 'GraphQL Client'
   describe 'fix_failed_payment mutation' do
     let(:seller_id) { jwt_partner_ids.first }
@@ -12,8 +11,8 @@ describe Api::GraphqlController, type: :request do
       {
         id: credit_card_id,
         user: { _id: user_id },
-        external_id: stripe_customer.default_source,
-        customer_account: { external_id: stripe_customer.id }
+        external_id: 'cc_1',
+        customer_account: { external_id: 'ca_1' }
       }
     end
     let(:state) { Order::SUBMITTED }
@@ -171,7 +170,7 @@ describe Api::GraphqlController, type: :request do
             context 'with failed stripe charge' do
               before do
                 undeduct_inventory_request
-                StripeMock.prepare_card_error(:card_declined)
+                prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'capture_charge', decline_code: 'do_not_honor', message: 'The card was declined' })
               end
 
               it 'raises processing error' do
@@ -195,6 +194,7 @@ describe Api::GraphqlController, type: :request do
             end
 
             it 'approves the order' do
+              prepare_payment_intent_create_success(amount: 20_00)
               response = client.execute(mutation, mutation_input)
 
               expect(response.data.fix_failed_payment.order_or_error).to respond_to(:order)
@@ -228,6 +228,7 @@ describe Api::GraphqlController, type: :request do
                 )
               end
               it 'approves the order' do
+                prepare_payment_intent_create_success(amount: 20_00)
                 response = client.execute(mutation, mutation_input)
 
                 expect(response.data.fix_failed_payment.order_or_error).to respond_to(:order)
@@ -250,6 +251,7 @@ describe Api::GraphqlController, type: :request do
             end
 
             it 'sets payments on the order' do
+              prepare_payment_intent_create_success(amount: 20_00)
               response = client.execute(mutation, mutation_input)
               expect(response.data.fix_failed_payment.order_or_error.order.id).to eq order.id.to_s
               expect(response.data.fix_failed_payment.order_or_error.order.state).to eq 'APPROVED'

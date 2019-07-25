@@ -1,5 +1,4 @@
 require 'rails_helper'
-require 'support/use_stripe_mock'
 
 RSpec.shared_examples 'rejecting an offer' do
   before do

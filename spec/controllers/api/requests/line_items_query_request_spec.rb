@@ -71,8 +71,7 @@ describe Api::GraphqlController, type: :request do
       it 'returns line items' do
         result = client.execute(query, artworkId: artwork_id, orderStates: %w[SUBMITTED FULFILLED])
         expect(result.data.line_items.edges.count).to eq 2
-        expect(result.data.line_items.edges.first.node.artwork_id).to eq artwork_id
-        expect(result.data.line_items.edges.first.node.order.id).to eq order2.id
+        expect(result.data.line_items.edges.map { |e| e.node.id }).to match_array([line_item2.id, line_item3.id])
       end
     end
 
