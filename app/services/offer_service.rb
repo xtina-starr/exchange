@@ -27,7 +27,7 @@ module OfferService
   def self.submit_pending_offer(offer)
     order = offer.order
     raise Errors::ValidationError, :invalid_offer if offer.submitted?
-    raise Errors::ProcessingError, :insufficient_inventory unless order.inventory?
+    raise Errors::InsufficientInventoryError unless order.inventory?
 
     order = offer.order
     offer_order_totals = OfferOrderTotals.new(offer)
@@ -67,7 +67,7 @@ module OfferService
 
     order = offer.order
     order_processor = OrderProcessor.new(order, user_id)
-    raise Errors::ValidationError, order_processor.error unless order_processor.valid?
+    raise Errors::ValidationError, order_processor.validation_error unless order_processor.valid?
 
     order.approve! do
       totals = OfferOrderTotals.new(offer)
@@ -78,19 +78,19 @@ module OfferService
         seller_total_cents: totals.seller_total_cents
       )
       order_processor.charge!
-      order.transactions << order_processor.transaction
+      raise Errors::InsufficientInventoryError if order_processor.failed_inventory?
+      # in case of failed transaction, we need to rollback this block,
+      # but still need to add transaction, so we raise an ActiveRecord::Rollback
+      raise ActiveRecord::Rollback if order_processor.failed_payment?
     end
+    order.transactions << order_processor.transaction
+    PostTransactionNotificationJob.perform_later(order_processor.transaction.id, user_id)
+    raise Errors::FailedTransactionError.new(:capture_failed, order_processor.transaction) if order_processor.failed_payment?
+
     OrderEvent.delay_post(order, Order::APPROVED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
     Exchange.dogstatsd.increment 'order.approved'
-  rescue Errors::FailedTransactionError => e
-    transaction = e.transaction
-    return if transaction.blank?
-
-    order.transactions << transaction
-    PostTransactionNotificationJob.perform_later(transaction.id, TransactionEvent::CREATED, user_id)
-    raise e
   end
 
   class << self
