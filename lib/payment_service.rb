@@ -32,6 +32,8 @@ module PaymentService
     )
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
+  rescue Stripe::CardError => e
+    transaction_from_payment_intent_failure(e, capture: true)
   end
 
   def self.refund(external_id, external_type)
@@ -66,6 +68,7 @@ module PaymentService
         destination: merchant_account[:external_id],
         amount: seller_amount
       },
+      off_session: false,
       metadata: metadata,
       capture_method: capture ? 'automatic' : 'manual',
       confirm: true, # it creates payment intent and tries to confirm at the same time
@@ -83,6 +86,8 @@ module PaymentService
     )
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
+  rescue Stripe::CardError => e
+    transaction_from_payment_intent_failure(e, capture: capture)
   end
 
   def self.update_transaction_with_payment_intent(transaction, payment_intent)
@@ -91,12 +96,6 @@ module PaymentService
       transaction.status = Transaction::REQUIRES_CAPTURE
     when 'succeeded'
       transaction.status = Transaction::SUCCESS
-    when 'requires_payment_method'
-      # attempting confirm failed
-      transaction.status = Transaction::FAILURE
-      transaction.failure_code = payment_intent.last_payment_error.code
-      transaction.failure_message = payment_intent.last_payment_error.message
-      transaction.decline_code = payment_intent.last_payment_error.decline_code
     else
       # unknown status raise error
       raise "Unsupported payment_intent status: #{payment_intent.status}"
@@ -113,6 +112,25 @@ module PaymentService
       decline_code: body[:decline_code],
       transaction_type: type,
       status: Transaction::FAILURE,
+      payload: exc.json_body
+    )
+  end
+
+  def self.transaction_from_payment_intent_failure(exc, capture:)
+    body = exc.json_body
+    pi = body[:error][:payment_intent]
+    # attempting confirm failed
+    Transaction.new(
+      status: Transaction::FAILURE,
+      external_id: pi[:id],
+      external_type: Transaction::PAYMENT_INTENT,
+      source_id: pi[:last_payment_error][:payment_method][:id],
+      destination_id: pi[:transfer_data][:destination],
+      amount_cents: pi[:amount],
+      transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD,
+      failure_code: pi[:last_payment_error][:code],
+      failure_message: pi[:last_payment_error][:message],
+      decline_code: pi[:last_payment_error][:decline_code],
       payload: exc.json_body
     )
   end

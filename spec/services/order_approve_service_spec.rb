@@ -99,7 +99,7 @@ describe OrderApproveService, type: :services do
           expect(transaction).to have_attributes(
             status: Transaction::FAILURE,
             failure_code: 'card_declined',
-            failure_message: 'The card was declined',
+            failure_message: 'Your card was declined.',
             decline_code: 'do_not_honor',
             external_id: 'pi_1',
             external_type: Transaction::PAYMENT_INTENT
