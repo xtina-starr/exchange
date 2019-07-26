@@ -39,20 +39,20 @@ describe PaymentService, type: :services do
       )
     end
     it 'stores failed attempt data on transaction' do
-      prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
+      prepare_payment_intent_create_failure(status: 'requires_payment_method', capture: false, charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
       transaction = PaymentService.hold_payment(params)
       expect(transaction).to have_attributes(
         external_type: Transaction::PAYMENT_INTENT,
         amount_cents: buyer_amount,
         source_id: 'cc_1',
-        destination_id: 'ma-1',
+        destination_id: 'ma_1',
         failure_code: 'card_declined',
-        failure_message: 'The card was declined',
+        failure_message: 'Your card was declined.',
         decline_code: 'do_not_honor',
         transaction_type: Transaction::HOLD,
-        status: Transaction::FAILURE,
-        payload: { 'id' => 'pi_1' }
+        status: Transaction::FAILURE
       )
+      expect(transaction.payload).not_to be_nil
     end
   end
 
@@ -69,6 +69,7 @@ describe PaymentService, type: :services do
         payload: { 'id' => 'pi_1' }
       )
     end
+
     it 'stores failures on transaction' do
       prepare_payment_intent_capture_failure(charge_error: { code: 'capture_charge', decline_code: 'do_not_honor', message: 'The card was declined' })
       transaction = PaymentService.capture_authorized_hold('pi_1')
@@ -76,12 +77,12 @@ describe PaymentService, type: :services do
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
         failure_code: 'capture_charge',
-        failure_message: 'The card was declined',
+        failure_message: 'Your card was declined.',
         decline_code: 'do_not_honor',
         transaction_type: Transaction::CAPTURE,
-        status: Transaction::FAILURE,
-        payload: { 'id' => 'pi_1' }
+        status: Transaction::FAILURE
       )
+      expect(transaction.payload).not_to be_nil
     end
   end
 
