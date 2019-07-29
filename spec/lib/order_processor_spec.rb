@@ -1,9 +1,8 @@
 require 'rails_helper'
 require 'support/gravity_helper'
-require 'support/use_stripe_mock'
 
 describe OrderProcessor, type: :services do
-  include_context 'use stripe mock'
+  include_context 'include stripe helper'
   let(:buyer_id) { 'buyer1' }
   let(:seller_id) { 'seller1' }
   let(:order) { Fabricate(:order, buyer_id: buyer_id, fulfillment_type: Order::PICKUP, credit_card_id: 'cc1', seller_id: seller_id) }
@@ -19,7 +18,7 @@ describe OrderProcessor, type: :services do
   let(:stub_gravity_partner) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/partner/seller1/all").to_return(body: gravity_partner.to_json) }
   let(:gravity_merchant_accounts) { [{ external_id: 'ma-1' }] }
   let(:stub_gravity_merchant_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/merchant_accounts?partner_id=seller1").to_return(body: gravity_merchant_accounts.to_json) }
-  let(:gravity_credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
+  let(:gravity_credit_card) { { external_id: 'cc_1', customer_account: { external_id: 'ca_1' } } }
   let(:stub_gravity_card_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/credit_card/cc1").to_return(body: gravity_credit_card.to_json) }
   let(:order_processor) { OrderProcessor.new(order, buyer_id) }
 
@@ -71,7 +70,7 @@ describe OrderProcessor, type: :services do
       it 'does not call stripe' do
         stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        expect(PaymentService).not_to receive(:create_and_capture_charge)
+        expect(PaymentService).not_to receive(:capture_without_hold)
         order_processor.hold!
         expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
@@ -82,7 +81,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct
-        expect(PaymentService).not_to receive(:create_and_capture_charge)
+        expect(PaymentService).not_to receive(:capture_without_hold)
         order_processor.hold!
         expect(stub_line_item_1_gravity_undeduct).to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
@@ -99,7 +98,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        StripeMock.prepare_card_error(:card_declined)
+        prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
         order_processor.hold!
       end
 
@@ -124,7 +123,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        expect(Stripe::Charge).to receive(:create).and_return(uncaptured_charge)
+        prepare_payment_intent_create_success(amount: 20_00)
       end
 
       it 'deducts inventory' do
@@ -183,7 +182,7 @@ describe OrderProcessor, type: :services do
 
       it 'does not call stripe' do
         stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        expect(PaymentService).not_to receive(:create_and_capture_charge)
+        expect(PaymentService).not_to receive(:capture_without_hold)
         order_processor.charge!
         expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
@@ -195,7 +194,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct
-        expect(PaymentService).not_to receive(:create_and_capture_charge)
+        expect(PaymentService).not_to receive(:capture_without_hold)
         order_processor.charge!
         expect(stub_line_item_1_gravity_undeduct).to have_been_requested
         expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
@@ -212,7 +211,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        StripeMock.prepare_card_error(:card_declined)
+        prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
         order_processor.charge!
       end
 
@@ -237,7 +236,7 @@ describe OrderProcessor, type: :services do
         stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        expect(Stripe::Charge).to receive(:create).and_return(captured_charge)
+        prepare_payment_intent_create_success(amount: 20_00)
         order_processor.charge!
       end
 

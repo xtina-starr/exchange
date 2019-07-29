@@ -1,5 +1,4 @@
 require 'rails_helper'
-require 'support/use_stripe_mock'
 require 'support/gravity_helper'
 
 describe Api::GraphqlController, type: :request do

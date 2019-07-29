@@ -3,6 +3,11 @@ class Transaction < ApplicationRecord
 
   belongs_to :order
 
+  EXTERNAL_TYPES = [
+    PAYMENT_INTENT = 'payment_intent'.freeze,
+    CHARGE = 'charge'.freeze
+  ].freeze
+
   TYPES = [
     HOLD = 'hold'.freeze,
     CAPTURE = 'capture'.freeze,
@@ -11,7 +16,9 @@ class Transaction < ApplicationRecord
 
   STATUSES = [
     SUCCESS = 'success'.freeze,
-    FAILURE = 'failure'.freeze
+    FAILURE = 'failure'.freeze,
+    REQUIRES_ACTION = 'requires_action'.freeze,
+    REQUIRES_CAPTURE = 'requires_capture'.freeze
   ].freeze
 
   def to_s

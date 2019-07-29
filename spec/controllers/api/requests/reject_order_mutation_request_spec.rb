@@ -1,14 +1,14 @@
 require 'rails_helper'
 
 describe Api::GraphqlController, type: :request do
-  include_context 'use stripe mock'
+  include_context 'include stripe helper'
 
   describe 'reject_order mutation' do
     include_context 'GraphQL Client'
     let(:seller_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
-    let(:order) { Fabricate(:order, seller_id: seller_id, buyer_id: user_id, external_charge_id: captured_charge.id) }
+    let(:order) { Fabricate(:order, seller_id: seller_id, buyer_id: user_id, external_charge_id: 'pi_1') }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -75,16 +75,18 @@ describe Api::GraphqlController, type: :request do
 
     context 'with proper permission' do
       before do
+        Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
         order.update_attributes! state: Order::SUBMITTED
       end
       it 'rejects the order' do
+        prepare_payment_intent_refund_success
         response = client.execute(mutation, reject_order_input)
         expect(response.data.reject_order.order_or_error.order.id).to eq order.id.to_s
         expect(response.data.reject_order.order_or_error.order.state).to eq 'CANCELED'
         expect(response.data.reject_order.order_or_error).not_to respond_to(:error)
         expect(order.reload.state).to eq Order::CANCELED
-        expect(order.transactions.last.external_id).to_not eq nil
-        expect(order.transactions.last.transaction_type).to eq Transaction::REFUND
+        transaction = order.transactions.order(created_at: :desc).first
+        expect(transaction).to have_attributes(external_id: 're_1', external_type: Transaction::REFUND, transaction_type: Transaction::REFUND)
       end
     end
   end

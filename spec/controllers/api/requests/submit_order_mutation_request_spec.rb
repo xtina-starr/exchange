@@ -1,9 +1,8 @@
 require 'rails_helper'
 require 'support/gravity_helper'
-require 'support/use_stripe_mock'
 
 describe Api::GraphqlController, type: :request do
-  include_context 'use stripe mock'
+  include_context 'include stripe helper'
   describe 'submit_order mutation' do
     include_context 'GraphQL Client'
     let(:seller_id) { jwt_partner_ids.first }
@@ -11,7 +10,7 @@ describe Api::GraphqlController, type: :request do
     let(:user_id) { jwt_user_id }
     let(:credit_card_id) { 'cc-1' }
     let(:merchant_account) { { external_id: 'ma-1' } }
-    let(:credit_card) { { external_id: stripe_customer.default_source, customer_account: { external_id: stripe_customer.id } } }
+    let(:credit_card) { { external_id: 'cc_1', customer_account: { external_id: 'ca_1' } } }
     let(:order) do
       Fabricate(
         :order,
@@ -171,7 +170,7 @@ describe Api::GraphqlController, type: :request do
           artwork_request
           partner_account_request
           undeduct_inventory_request
-          StripeMock.prepare_card_error(:card_declined)
+          prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
         end
 
         it 'raises processing error' do
@@ -199,6 +198,7 @@ describe Api::GraphqlController, type: :request do
         credit_card_request
         artwork_request
         partner_account_request
+        prepare_payment_intent_create_success(amount: 20_00)
         response = client.execute(mutation, submit_order_input)
         expect(deduct_inventory_request).to have_been_requested
 
