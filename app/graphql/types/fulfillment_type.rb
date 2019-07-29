@@ -3,6 +3,7 @@ class Types::FulfillmentType < Types::BaseObject
   graphql_name 'Fulfillment'
 
   field :id, ID, null: false
+  field :internalID, ID, null: false, method: :id, camelize: false
   field :courier, String, null: false
   field :tracking_id, String, null: true
   field :estimated_delivery, Types::DateType, null: true

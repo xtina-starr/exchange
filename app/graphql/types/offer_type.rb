@@ -3,6 +3,7 @@ class Types::OfferType < Types::BaseObject
   graphql_name 'Offer'
 
   field :id, ID, null: false
+  field :internalID, ID, null: false, method: :id, camelize: false
   field :from, Types::OrderPartyUnionType, null: false
   field :amount_cents, Integer, null: false
   field :tax_total_cents, Integer, null: true

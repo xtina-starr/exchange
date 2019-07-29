@@ -37,6 +37,7 @@ describe Api::GraphqlController, type: :request do
         query($id: ID, $offerFromId: String, $offerFromType: String) {
           order(id: $id) {
             id
+            internalID
             mode
             buyer {
               ... on User {
@@ -363,6 +364,7 @@ describe Api::GraphqlController, type: :request do
 
         it 'returns expected payload' do
           result = client.execute(query, id: user2_order1.id)
+          expect(result.data.order.internal_id).to eq user2_order1.id
           expect(result.data.order.buyer.id).to eq user2_order1.buyer_id
           expect(result.data.order.seller.id).to eq user2_order1.seller_id
           expect(result.data.order.currency_code).to eq 'USD'
