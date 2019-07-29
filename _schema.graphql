@@ -85,6 +85,7 @@ type BuyOrder implements Order {
   currencyCode: String!
   displayCommissionRate: String
   id: ID!
+  internalID: ID!
 
   """
   Item total in cents, for Offer Orders this field reflects current offer
@@ -465,6 +466,7 @@ type Fulfillment {
   createdAt: DateTime!
   estimatedDelivery: Date
   id: ID!
+  internalID: ID!
   notes: String
   trackingId: String
   updatedAt: DateTime!
@@ -546,6 +548,7 @@ type LineItem {
     last: Int
   ): FulfillmentConnection
   id: ID!
+  internalID: ID!
   listPriceCents: Int!
   order: Order!
   priceCents: Int! @deprecated(reason: "switch to use listPriceCents")
@@ -627,6 +630,7 @@ type Offer {
   from: OrderPartyUnion!
   fromParticipant: OrderParticipantEnum
   id: ID!
+  internalID: ID!
   note: String
   order: Order!
   respondsTo: Offer
@@ -683,6 +687,7 @@ type OfferOrder implements Order {
   currencyCode: String!
   displayCommissionRate: String
   id: ID!
+  internalID: ID!
 
   """
   Item total in cents, for Offer Orders this field reflects current offer
@@ -771,6 +776,7 @@ interface Order {
   currencyCode: String!
   displayCommissionRate: String
   id: ID!
+  internalID: ID!
 
   """
   Item total in cents, for Offer Orders this field reflects current offer
