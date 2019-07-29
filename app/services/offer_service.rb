@@ -82,6 +82,8 @@ module OfferService
       # in case of failed transaction, we need to rollback this block,
       # but still need to add transaction, so we raise an ActiveRecord::Rollback
       raise ActiveRecord::Rollback if order_processor.failed_payment?
+
+      order.update!(external_charge_id: order_processor.transaction.external_id)
     end
     order.transactions << order_processor.transaction
     PostTransactionNotificationJob.perform_later(order_processor.transaction.id, user_id)

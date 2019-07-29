@@ -122,7 +122,8 @@ describe Api::GraphqlController, type: :request do
         seller_total_cents: 726_50,
         fulfillment_type: Order::SHIP,
         shipping_country: 'US',
-        credit_card_id: 'cc-1'
+        credit_card_id: 'cc-1',
+        external_charge_id: 'pi_1'
       )
       expect(order.transactions.order(created_at: :desc).first).to have_attributes(
         transaction_type: Transaction::CAPTURE,

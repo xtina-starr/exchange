@@ -196,11 +196,8 @@ describe Api::GraphqlController, type: :request do
         expect(response_order.state).to eq Order::APPROVED.upcase
 
         expect(response.data.buyer_accept_offer.order_or_error).not_to respond_to(:error)
-        expect(order.reload.state).to eq Order::APPROVED
-        expect(order.state_updated_at).not_to be_nil
-        expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
-        expect(order.reload.transactions.last.external_id).not_to be_nil
-        expect(order.reload.transactions.last.transaction_type).to eq Transaction::CAPTURE
+        expect(order.reload).to have_attributes(state: Order::APPROVED, state_expires_at: order.state_updated_at + 7.days, external_charge_id: 'pi_1')
+        expect(order.reload.transactions.last).to have_attributes(external_id: 'pi_1', transaction_type: Transaction::CAPTURE)
       end
     end
   end
