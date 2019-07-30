@@ -10,7 +10,7 @@ end
 
 class Mutations::OrderRequiresAction < Types::BaseObject
   description 'Data reflecting actions required'
-  field :action_data, GraphQL::Types::JSON, null: false, description: 'Data related to action needed'
+  field :action_data, Types::OrderActionDataType, null: false, description: 'Data related to action needed'
 end
 
 class Mutations::OrderOrFailureUnionType < Types::BaseUnion

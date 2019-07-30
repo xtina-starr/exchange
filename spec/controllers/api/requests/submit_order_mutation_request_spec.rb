@@ -64,7 +64,9 @@ describe Api::GraphqlController, type: :request do
                 }
               }
               ... on OrderRequiresAction {
-                actionData
+                actionData {
+                  clientSecret
+                }
               }
             }
           }
@@ -208,7 +210,7 @@ describe Api::GraphqlController, type: :request do
 
         it 'returns action data' do
           response = client.execute(mutation, submit_order_input)
-          expect(response.data.submit_order.order_or_error.action_data['client_secret']).to eq 'pi_test1'
+          expect(response.data.submit_order.order_or_error.action_data.client_secret).to eq 'pi_test1'
         end
 
         it 'stores failed transaction' do

@@ -518,11 +518,6 @@ type FulfillmentEdge {
 }
 
 """
-Represents untyped JSON
-"""
-scalar JSON
-
-"""
 A Line Item
 """
 type LineItem {
@@ -827,6 +822,13 @@ interface Order {
 }
 
 """
+Order Action data
+"""
+type OrderActionData {
+  clientSecret: String!
+}
+
+"""
 Fields to sort by
 """
 enum OrderConnectionSortEnum {
@@ -952,7 +954,7 @@ type OrderRequiresAction {
   """
   Data related to action needed
   """
-  actionData: JSON!
+  actionData: OrderActionData!
 }
 
 enum OrderStateEnum {
