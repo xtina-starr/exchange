@@ -29,6 +29,10 @@ class Transaction < ApplicationRecord
     status == FAILURE
   end
 
+  def requires_action?
+    status == REQUIRES_ACTION
+  end
+
   def failure_data
     {
       id: id,

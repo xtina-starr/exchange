@@ -114,6 +114,39 @@ describe OrderProcessor, type: :services do
       end
     end
 
+    context 'hold requires action' do
+      before do
+        stub_gravity_card_request
+        stub_gravity_merchant_account_request
+        stub_gravity_partner
+        stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
+        stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
+        stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
+        stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
+        prepare_payment_intent_create_failure(status: 'requires_action')
+        order_processor.hold!
+      end
+
+      it 'deducts and undeducts inventory' do
+        expect(stub_line_item_1_gravity_deduct).to have_been_requested
+        expect(stub_line_item_2_gravity_deduct).to have_been_requested
+        expect(stub_line_item_1_gravity_undeduct).to have_been_requested
+        expect(stub_line_item_2_gravity_undeduct).to have_been_requested
+      end
+
+      it 'sets processor transaction' do
+        expect(order_processor.transaction.requires_action?).to be true
+      end
+
+      it 'returns true for requires_action?' do
+        expect(order_processor.requires_action?).to be true
+      end
+
+      it 'returns action_data' do
+        expect(order_processor.action_data).to match(client_secret: 'pi_test1')
+      end
+    end
+
     context 'successful hold' do
       before do
         stub_gravity_card_request

@@ -58,6 +58,7 @@ module Errors
       capture_failed
       charge_authorization_failed
       insufficient_inventory
+      payment_requires_action
       received_partial_refund
       refund_failed
       tax_calculator_failure

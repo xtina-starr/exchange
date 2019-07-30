@@ -35,10 +35,27 @@ describe PaymentService, type: :services do
         failure_code: nil,
         failure_message: nil,
         decline_code: nil,
-        payload: { 'id' => 'pi_1' }
+        payload: { 'client_secret' => 'pi_test1', 'id' => 'pi_1' }
       )
     end
-    it 'stores failed attempt data on transaction' do
+    it 'returns transaction for requires_action' do
+      prepare_payment_intent_create_failure(status: 'requires_action')
+      transaction = PaymentService.hold_payment(params)
+      expect(transaction).to have_attributes(
+        external_type: Transaction::PAYMENT_INTENT,
+        amount_cents: buyer_amount,
+        source_id: 'cc_1',
+        destination_id: 'ma-1',
+        failure_code: nil,
+        failure_message: nil,
+        decline_code: nil,
+        transaction_type: Transaction::HOLD,
+        status: Transaction::REQUIRES_ACTION
+      )
+      expect(transaction.payload).to match('client_secret' => 'pi_test1', 'id' => 'pi_1')
+    end
+
+    it 'returns failed attempt transaction' do
       prepare_payment_intent_create_failure(status: 'requires_payment_method', capture: false, charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
       transaction = PaymentService.hold_payment(params)
       expect(transaction).to have_attributes(
@@ -66,7 +83,7 @@ describe PaymentService, type: :services do
         transaction_type: Transaction::CAPTURE,
         source_id: 'cc_1',
         status: Transaction::SUCCESS,
-        payload: { 'id' => 'pi_1' }
+        payload: { 'client_secret' => 'pi_test1', 'id' => 'pi_1' }
       )
     end
 
