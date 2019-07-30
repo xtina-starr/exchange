@@ -627,6 +627,7 @@ type Offer {
   buyerTotalCents: Int
   createdAt: DateTime!
   creatorId: String!
+  currencyCode: String!
   from: OrderPartyUnion!
   fromParticipant: OrderParticipantEnum
   id: ID!

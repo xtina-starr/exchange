@@ -16,11 +16,16 @@ class Types::OfferType < Types::BaseObject
   field :from_participant, Types::OrderParticipantEnum, null: true
   field :buyer_total_cents, Integer, null: true
   field :note, String, null: true
+  field :currency_code, String, null: false
 
   def from
     OpenStruct.new(
       id: object.from_id,
       type: object.from_type
     )
+  end
+
+  def currency_code
+    object.order.currency_code
   end
 end
