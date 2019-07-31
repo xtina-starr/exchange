@@ -6,6 +6,7 @@ module Types::OrderInterface
   graphql_name 'Order'
 
   field :id, ID, null: false
+  field :internalID, ID, null: false, method: :id, camelize: false
   field :mode, Types::OrderModeEnum, null: true
   field :code, String, null: false
   field :buyer_phone_number, String, null: true

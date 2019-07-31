@@ -98,8 +98,10 @@ describe Api::GraphqlController, type: :request do
 
       # Buyer submits offer order
       expect do
-        buyer_client.execute(OfferQueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
+        response = buyer_client.execute(OfferQueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
+        expect(response.data.submit_order_with_offer.order_or_error.order.last_offer.currency_code).to eq('GBP')
       end.to change(order.transactions, :count).by(0)
+
       expect(order.reload).to have_attributes(
         state: Order::SUBMITTED,
         items_total_cents: 500_00,
@@ -118,6 +120,7 @@ describe Api::GraphqlController, type: :request do
       expect do
         seller_client.execute(OfferQueryHelper::SELLER_ACCEPT_OFFER, input: { offerId: offer.id.to_s })
       end.to change(order.transactions, :count).by(1)
+
       expect(order.reload).to have_attributes(
         state: Order::APPROVED,
         items_total_cents: 500_00,

@@ -147,6 +147,7 @@ module OfferQueryHelper # rubocop:disable Metrics/ModuleLength
                 lastOffer {
                   id
                   submittedAt
+                  currencyCode
                 }
               }
             }
