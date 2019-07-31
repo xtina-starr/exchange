@@ -225,6 +225,11 @@ describe Api::GraphqlController, type: :request do
           client.execute(mutation, submit_order_input)
           expect(undeduct_inventory_request).to have_been_requested
         end
+
+        it 'does not change order state' do
+          client.execute(mutation, submit_order_input)
+          expect(order.reload.state).to eq Order::PENDING
+        end
       end
 
       it 'submits the order' do
