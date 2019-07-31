@@ -94,6 +94,8 @@ module PaymentService
     case payment_intent.status # https://stripe.com/docs/payments/intents#intent-statuses
     when 'requires_capture'
       transaction.status = Transaction::REQUIRES_CAPTURE
+    when 'requires_action'
+      transaction.status = Transaction::REQUIRES_ACTION
     when 'succeeded'
       transaction.status = Transaction::SUCCESS
     else

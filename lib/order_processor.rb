@@ -25,7 +25,7 @@ class OrderProcessor
 
     deduct_inventory
     @transaction = PaymentService.hold_payment(construct_charge_params)
-    undeduct_inventory if @transaction.failed?
+    undeduct_inventory if @transaction.failed? || @transaction.requires_action?
   rescue Errors::InsufficientInventoryError
     undeduct_inventory
     @insufficient_inventory = true
@@ -36,14 +36,22 @@ class OrderProcessor
 
     deduct_inventory
     @transaction = PaymentService.capture_without_hold(construct_charge_params)
-    undeduct_inventory if @transaction.failed?
+    undeduct_inventory if @transaction.failed? || @transaction.requires_action?
   rescue Errors::InsufficientInventoryError
     undeduct_inventory
     @insufficient_inventory = true
   end
 
   def failed_payment?
-    @transaction.present? && @transaction.failed?
+    @transaction&.failed?
+  end
+
+  def requires_action?
+    @transaction&.requires_action?
+  end
+
+  def action_data
+    requires_action? && { client_secret: @transaction.payload['client_secret'] }
   end
 
   def failed_inventory?
