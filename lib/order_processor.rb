@@ -43,11 +43,11 @@ class OrderProcessor
   end
 
   def failed_payment?
-    @transaction.present? && @transaction.failed?
+    @transaction&.failed?
   end
 
   def requires_action?
-    @transaction.present? && @transaction.requires_action?
+    @transaction&.requires_action?
   end
 
   def action_data
