@@ -18,7 +18,7 @@ class Tax::CalculatorService
     @seller_nexus_addresses = process_nexus_addresses!(nexus_addresses)
     @fulfillment_type = fulfillment_type
     @tax_client = tax_client
-    @artwork_location = artwork_location
+    @artwork_location = process_artwork_location!(artwork_location)
     @shipping_address = shipping_address
     @shipping_total_cents = shipping_total_cents
     @transaction = nil
@@ -107,5 +107,11 @@ class Tax::CalculatorService
 
   def validate_nexus_address!(nexus_address)
     raise Errors::ValidationError, :invalid_seller_address if nexus_address.region.nil?
+  end
+
+  def process_artwork_location!(artwork_location)
+    raise Errors::ValidationError, :no_taxable_addresses unless address_taxable?(artwork_location)
+
+    artwork_location
   end
 end
