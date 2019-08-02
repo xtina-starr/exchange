@@ -33,7 +33,7 @@ module PaymentService
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
   rescue Stripe::CardError => e
-    transaction_from_payment_intent_failure(e, capture: true)
+    transaction_from_payment_intent_failure(e, transaction_type: Transaction::CAPTURE)
   end
 
   def self.refund(external_id, external_type)
@@ -116,7 +116,7 @@ module PaymentService
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
   rescue Stripe::CardError => e
-    transaction_from_payment_intent_failure(e, capture: capture)
+    transaction_from_payment_intent_failure(e, transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD)
   end
 
   def self.update_transaction_with_payment_intent(transaction, payment_intent)
@@ -147,12 +147,9 @@ module PaymentService
     )
   end
 
-  def self.transaction_from_payment_intent_failure(exc, capture: nil)
+  def self.transaction_from_payment_intent_failure(exc, transaction_type: nil)
     body = exc.json_body
     pi = body[:error][:payment_intent]
-    transaction_type = unless capture.nil?
-      capture ? Transaction::CAPTURE : Transaction::HOLD
-    end
     # attempting confirm failed
     Transaction.new(
       status: Transaction::FAILURE,
