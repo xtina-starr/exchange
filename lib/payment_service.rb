@@ -55,7 +55,7 @@ module PaymentService
     generate_transaction_from_exception(e, Transaction::REFUND, external_id: external_id, external_type: Transaction::PAYMENT_INTENT)
   end
 
-  def self.create_payment_intent(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:)
+  def self.create_payment_intent(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:, shipping_address: nil, shipping_name: nil)
     payment_intent = Stripe::PaymentIntent.create(
       amount: buyer_amount,
       currency: currency_code,
@@ -73,7 +73,18 @@ module PaymentService
       capture_method: capture ? 'automatic' : 'manual',
       confirm: true, # it creates payment intent and tries to confirm at the same time
       setup_future_usage: 'off_session',
-      confirmation_method: 'manual' # if requires action, we will confirm manually after
+      confirmation_method: 'manual', # if requires action, we will confirm manually after
+      shipping: shipping_address.present? && {
+        address: {
+          line1: shipping_address.street_line1,
+          line2: shipping_address.street_line2,
+          city: shipping_address.city,
+          state: shipping_address.region,
+          postal_code: shipping_address.postal_code,
+          country: shipping_address.country
+        },
+        name: shipping_name
+      }
     )
     new_transaction = Transaction.new(
       external_id: payment_intent.id,

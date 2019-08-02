@@ -21,7 +21,48 @@ describe PaymentService, type: :services do
     }
   end
 
+  let(:params_with_shipping) do
+    params.merge(
+      shipping_address: Address.new(address_line1: '123 nowhere st', address_line2: 'apt 321', postal_code: '312', city: 'ny', country: 'US', region: 'NY'),
+      shipping_name: 'Homer'
+    )
+  end
+
   describe '#hold_payment' do
+    it 'calls stripe with expected values' do
+      expect(Stripe::PaymentIntent).to receive(:create).with(
+        amount: buyer_amount,
+        currency: currency_code,
+        description: 'Gallery via Artsy',
+        payment_method_types: ['card'],
+        payment_method: 'cc_1',
+        customer: 'ca_1',
+        on_behalf_of: 'ma-1',
+        transfer_data: {
+          destination: 'ma-1',
+          amount: seller_amount
+        },
+        off_session: false,
+        metadata: { this: 'is', a: 'test' },
+        capture_method: 'manual',
+        confirm: true,
+        setup_future_usage: 'off_session',
+        confirmation_method: 'manual',
+        shipping: {
+          address: {
+            line1: '123 nowhere st',
+            line2: 'apt 321',
+            city: 'ny',
+            state: 'NY',
+            postal_code: '312',
+            country: 'US'
+          },
+          name: 'Homer'
+        }
+      ).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
+      PaymentService.hold_payment(params_with_shipping)
+    end
+
     it "authorizes a charge on the user's credit card" do
       prepare_payment_intent_create_success(amount: 20_00)
       transaction = PaymentService.hold_payment(params)

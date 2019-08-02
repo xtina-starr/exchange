@@ -90,7 +90,9 @@ class OrderProcessor
       seller_amount: @order.seller_total_cents,
       currency_code: @order.currency_code,
       metadata: charge_metadata,
-      description: charge_description
+      description: charge_description,
+      shipping_address: @order.shipping_address,
+      shipping_name: @order.shipping_name
     }
   end
 
