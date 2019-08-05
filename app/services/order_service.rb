@@ -34,7 +34,8 @@ module OrderService
     credit_card = Gravity.get_credit_card(credit_card_id)
     raise Errors::ValidationError.new(:invalid_credit_card, credit_card_id: credit_card_id) unless credit_card.dig(:user, :_id) == order.buyer_id
 
-    order.update!(credit_card_id: credit_card_id)
+    # nilify external_charge_id in case we had in progress payment intent so we create a new one
+    order.update!(credit_card_id: credit_card_id, external_charge_id: nil)
     order
   end
 

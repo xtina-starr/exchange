@@ -11,6 +11,7 @@ class Types::MutationType < Types::BaseObject
   field :submit_order_with_offer, mutation: Mutations::SubmitOrderWithOffer
   field :buyer_counter_offer, mutation: Mutations::BuyerCounterOffer
   field :submit_pending_offer, mutation: Mutations::SubmitPendingOffer
+  field :fix_failed_payment, mutation: Mutations::FixFailedPayment
 
   # Seller
   field :approve_order, mutation: Mutations::ApproveOrder
@@ -21,5 +22,4 @@ class Types::MutationType < Types::BaseObject
   field :fulfill_at_once, mutation: Mutations::FulfillAtOnce
   field :confirm_pickup, mutation: Mutations::ConfirmPickup
   field :confirm_fulfillment, mutation: Mutations::ConfirmFulfillment
-  field :fix_failed_payment, mutation: Mutations::FixFailedPayment
 end
