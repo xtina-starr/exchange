@@ -1,4 +1,4 @@
-module OfferQueryHelper # rubocop:disable Metrics/ModuleLength
+module OfferQueryHelper
   CREATE_OFFER_ORDER = %(
     mutation($input: CreateOfferOrderWithArtworkInput!) {
       createOfferOrderWithArtwork(input: $input) {

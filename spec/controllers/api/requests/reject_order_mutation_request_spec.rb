@@ -79,14 +79,14 @@ describe Api::GraphqlController, type: :request do
         order.update_attributes! state: Order::SUBMITTED
       end
       it 'rejects the order' do
-        prepare_payment_intent_refund_success
+        prepare_payment_intent_cancel_success
         response = client.execute(mutation, reject_order_input)
         expect(response.data.reject_order.order_or_error.order.id).to eq order.id.to_s
         expect(response.data.reject_order.order_or_error.order.state).to eq 'CANCELED'
         expect(response.data.reject_order.order_or_error).not_to respond_to(:error)
         expect(order.reload.state).to eq Order::CANCELED
         transaction = order.transactions.order(created_at: :desc).first
-        expect(transaction).to have_attributes(external_id: 're_1', external_type: Transaction::REFUND, transaction_type: Transaction::REFUND)
+        expect(transaction).to have_attributes(external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT, transaction_type: Transaction::CANCEL)
       end
     end
   end

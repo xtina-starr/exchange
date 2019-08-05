@@ -12,7 +12,8 @@ class Transaction < ApplicationRecord
     HOLD = 'hold'.freeze,
     CAPTURE = 'capture'.freeze,
     REFUND = 'refund'.freeze,
-    CONFIRM = 'confirm'.freeze
+    CONFIRM = 'confirm'.freeze,
+    CANCEL = 'cancel'.freeze
   ].freeze
 
   STATUSES = [
