@@ -40,6 +40,14 @@ module PaymentService
     external_type == Transaction::PAYMENT_INTENT ? refund_payment(external_id) : refund_charge(external_id)
   end
 
+  def self.cancel_payment_intent(payment_intent_id)
+    payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
+    payment_intent.cancel
+    Transaction.new(external_id: payment_intent_id, external_type: Transaction::PAYMENT_INTENT, transaction_type: Transaction::CANCEL, status: Transaction::SUCCESS, payload: payment_intent.to_h)
+  rescue Stripe::StripeError => e
+    generate_transaction_from_exception(e, Transaction::CANCEL, external_id: payment_intent_id, external_type: Transaction::PAYMENT_INTENT)
+  end
+
   def self.refund_charge(charge_id)
     refund = Stripe::Refund.create(charge: charge_id, reverse_transfer: true)
     Transaction.new(external_id: refund.id, external_type: Transaction::REFUND, transaction_type: Transaction::REFUND, status: Transaction::SUCCESS, payload: refund.charge)

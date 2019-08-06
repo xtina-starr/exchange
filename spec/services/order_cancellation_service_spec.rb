@@ -14,9 +14,9 @@ describe OrderCancellationService, type: :services do
   end
 
   describe '#reject!' do
-    context 'with a successful refund' do
+    context 'with a successful payment intent cancel' do
       before do
-        prepare_payment_intent_refund_success
+        prepare_payment_intent_cancel_success
         service.reject!
       end
 
@@ -26,7 +26,7 @@ describe OrderCancellationService, type: :services do
 
       it 'records the transaction' do
         transaction = order.transactions.order(created_at: :desc).first
-        expect(transaction).to have_attributes(external_id: 're_1', transaction_type: Transaction::REFUND, status: Transaction::SUCCESS)
+        expect(transaction).to have_attributes(external_id: 'pi_1', transaction_type: Transaction::CANCEL, status: Transaction::SUCCESS)
       end
 
       it 'updates the order state' do
@@ -39,15 +39,15 @@ describe OrderCancellationService, type: :services do
       end
     end
 
-    context 'with an unsuccessful refund' do
+    context 'with an unsuccessful payment intent cancelation' do
       before do
-        prepare_payment_intent_refund_failure(code: 'something', message: 'refund failed', decline_code: 'failed_refund')
+        prepare_payment_intent_cancel_failure(charge_error: { code: 'something', message: 'refund failed', decline_code: 'failed_refund' })
         expect { service.reject! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
       end
 
       it 'raises a ProcessingError and records the transaction' do
         transaction = order.transactions.order(created_at: :desc).first
-        expect(transaction).to have_attributes(external_id: 'pi_1', transaction_type: Transaction::REFUND, status: Transaction::FAILURE)
+        expect(transaction).to have_attributes(external_id: 'pi_1', transaction_type: Transaction::CANCEL, status: Transaction::FAILURE)
       end
 
       it 'does not queue undeduct inventory job' do
@@ -113,9 +113,9 @@ describe OrderCancellationService, type: :services do
 
   describe '#seller_lapse!' do
     context 'Buy Order' do
-      context 'with a successful refund' do
+      context 'with a successful payment intent cancelation' do
         before do
-          prepare_payment_intent_refund_success
+          prepare_payment_intent_cancel_success
           service.seller_lapse!
         end
 
@@ -125,7 +125,7 @@ describe OrderCancellationService, type: :services do
 
         it 'records the transaction' do
           transaction = order.transactions.order(created_at: :desc).first
-          expect(transaction).to have_attributes(external_id: 're_1', transaction_type: Transaction::REFUND, status: Transaction::SUCCESS)
+          expect(transaction).to have_attributes(external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT, transaction_type: Transaction::CANCEL, status: Transaction::SUCCESS)
         end
 
         it 'updates the order state' do
@@ -138,15 +138,15 @@ describe OrderCancellationService, type: :services do
         end
       end
 
-      context 'with an unsuccessful refund' do
+      context 'with an unsuccessful payment intent cancelation' do
         before do
-          prepare_payment_intent_refund_failure(code: 'something', message: 'refund failed', decline_code: 'failed_refund')
+          prepare_payment_intent_cancel_failure(charge_error: { code: 'something', message: 'refund failed', decline_code: 'failed_refund' })
           expect { service.reject! }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
         end
 
         it 'raises a ProcessingError and records the transaction' do
           transaction = order.transactions.order(created_at: :desc).first
-          expect(transaction).to have_attributes(external_id: 'pi_1', transaction_type: Transaction::REFUND, status: Transaction::FAILURE)
+          expect(transaction).to have_attributes(external_id: 'pi_1', transaction_type: Transaction::CANCEL, status: Transaction::FAILURE)
         end
 
         it 'does not queue undeduct inventory job' do
