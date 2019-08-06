@@ -147,14 +147,19 @@ describe Api::GraphqlController, type: :request do
     context 'seller also has a US location' do
       let(:seller_addresses) { [Address.new(city: 'London', country: 'GB', postal_code: 'SW3 4RY'), Address.new(state: 'NY', country: 'US', postal_code: '10001')] }
 
-      it 'does not charge sales tax' do
-        [{ type: 'SHIP', address: buyer_shipping_address }, { type: 'PICKUP', address: nil }].each do |fulfillment|
-          buyer_client.execute(QueryHelper::CREATE_ORDER, input: { artworkId: gravity_artwork[:_id], quantity: 1 })
-          order = Order.last
+      it 'does not charge sales tax when fulfilled via shipping' do
+        buyer_client.execute(QueryHelper::CREATE_ORDER, input: { artworkId: gravity_artwork[:_id], quantity: 1 })
+        order = Order.last
 
-          buyer_client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: fulfillment[:type], shipping: fulfillment[:address] })
-          expect(order.reload).to have_attributes(tax_total_cents: 0)
-        end
+        buyer_client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: buyer_shipping_address })
+        expect(order.reload).to have_attributes(tax_total_cents: 0)
+      end
+      it 'does not charge sales tax when fulfilled via pickup' do
+        buyer_client.execute(QueryHelper::CREATE_ORDER, input: { artworkId: gravity_artwork[:_id], quantity: 1 })
+        order = Order.last
+
+        buyer_client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'PICKUP', shipping: nil })
+        expect(order.reload).to have_attributes(tax_total_cents: nil)
       end
     end
   end
