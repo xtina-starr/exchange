@@ -100,14 +100,14 @@ module PaymentService
       confirm: true, # it creates payment intent and tries to confirm at the same time
       setup_future_usage: 'off_session',
       confirmation_method: 'manual', # if requires action, we will confirm manually after
-      shipping: shipping_address.present? && {
+      shipping: {
         address: {
-          line1: shipping_address.street_line1,
-          line2: shipping_address.street_line2,
-          city: shipping_address.city,
-          state: shipping_address.region,
-          postal_code: shipping_address.postal_code,
-          country: shipping_address.country
+          line1: shipping_address&.street_line1,
+          line2: shipping_address&.street_line2,
+          city: shipping_address&.city,
+          state: shipping_address&.region,
+          postal_code: shipping_address&.postal_code,
+          country: shipping_address&.country
         },
         name: shipping_name
       }
