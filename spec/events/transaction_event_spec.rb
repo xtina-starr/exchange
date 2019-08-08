@@ -10,7 +10,7 @@ describe TransactionEvent, type: :events do
       shipping_address_line1: '123 Main St',
       shipping_address_line2: 'Apt 2',
       shipping_city: 'Chicago',
-      shipping_country: 'USA',
+      shipping_country: 'US',
       shipping_postal_code: '60618',
       shipping_region: 'IL'
     }
@@ -111,6 +111,8 @@ describe TransactionEvent, type: :events do
       expect(event.properties[:order][:line_items]).to match_array(line_item_properties)
       expect(event.properties[:order][:last_offer][:from_participant]).to eq 'buyer'
       expect(event.properties[:order][:last_offer][:amount_cents]).to eq 100000
+      expect(event.properties[:order][:shipping_country]).to eq 'US'
+      expect(event.properties[:order][:shipping_name]).to eq 'Fname Lname'
       expect(event.properties[:failure_code]).to eq 'stolen_card'
       expect(event.properties[:failure_message]).to eq 'who stole it?'
       expect(event.properties[:status]).to eq Transaction::FAILURE

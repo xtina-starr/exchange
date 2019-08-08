@@ -46,7 +46,9 @@ class TransactionEvent < Events::BaseEvent
       state_reason: order.state_reason,
       state_expires_at: order.state_expires_at,
       updated_at: order.updated_at,
-      last_offer: last_offer_details(order)
+      last_offer: last_offer_details(order),
+      shipping_country: order.shipping_country,
+      shipping_name: order.shipping_name
     }
   end
 
