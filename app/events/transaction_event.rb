@@ -17,6 +17,8 @@ class TransactionEvent < Events::BaseEvent
       order: order_details,
       failure_code: @object.failure_code,
       failure_message: @object.failure_message,
+      external_id: @object.external_id,
+      external_type: @object.external_type,
       decline_code: @object.decline_code,
       transaction_type: @object.transaction_type,
       status: @object.status
