@@ -46,7 +46,7 @@ class TransactionEvent < Events::BaseEvent
       updated_at: order.updated_at,
       last_offer: last_offer_details(order),
       shipping_country: order.shipping_country,
-      shipping_name: order.shipping_name,
+      shipping_name: order.shipping_name
     }
   end
 
