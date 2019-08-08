@@ -35,7 +35,7 @@ describe TransactionEvent, type: :events do
               **shipping_info)
   end
 
-  let(:transaction) { Fabricate(:transaction, order: order, failure_code: 'stolen_card', failure_message: 'who stole it?', status: Transaction::FAILURE) }
+  let(:transaction) { Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT, failure_code: 'stolen_card', failure_message: 'who stole it?', status: Transaction::FAILURE) }
   let(:line_item1) { Fabricate(:line_item, list_price_cents: 200, order: order, commission_fee_cents: 40) }
   let(:line_item2) { Fabricate(:line_item, list_price_cents: 100, quantity: 2, order: order, commission_fee_cents: 20) }
   let!(:line_items) { [line_item1, line_item2] }
@@ -76,7 +76,7 @@ describe TransactionEvent, type: :events do
   end
 
   describe '#object' do
-    it 'returns order id' do
+    it 'returns transaction id' do
       expect(event.object[:id]).to eq transaction.id.to_s
     end
   end
@@ -86,7 +86,12 @@ describe TransactionEvent, type: :events do
       order.update!(last_offer: last_offer)
     end
 
-    it 'returns correct properties for a submitted order' do
+    it 'returns correct transaction properties' do
+      expect(event.properties[:external_id]).to eq 'pi_1'
+      expect(event.properties[:external_type]).to eq Transaction::PAYMENT_INTENT
+    end
+
+    it 'returns correct order properties' do
       order.submit!
       expect(event.properties[:order][:id]).to eq order.id
       expect(event.properties[:order][:mode]).to eq Order::BUY
