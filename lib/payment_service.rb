@@ -33,11 +33,19 @@ module PaymentService
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
   rescue Stripe::CardError => e
-    transaction_from_payment_intent_failure(e, capture: true)
+    transaction_from_payment_intent_failure(e, transaction_type: Transaction::CAPTURE)
   end
 
   def self.refund(external_id, external_type)
     external_type == Transaction::PAYMENT_INTENT ? refund_payment(external_id) : refund_charge(external_id)
+  end
+
+  def self.cancel_payment_intent(payment_intent_id)
+    payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
+    payment_intent.cancel
+    Transaction.new(external_id: payment_intent_id, external_type: Transaction::PAYMENT_INTENT, transaction_type: Transaction::CANCEL, status: Transaction::SUCCESS, payload: payment_intent.to_h)
+  rescue Stripe::StripeError => e
+    generate_transaction_from_exception(e, Transaction::CANCEL, external_id: payment_intent_id, external_type: Transaction::PAYMENT_INTENT)
   end
 
   def self.refund_charge(charge_id)
@@ -55,7 +63,25 @@ module PaymentService
     generate_transaction_from_exception(e, Transaction::REFUND, external_id: external_id, external_type: Transaction::PAYMENT_INTENT)
   end
 
-  def self.create_payment_intent(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:)
+  def self.confirm_payment_intent(payment_intent_id)
+    payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
+    raise Errors::ProcessingError, :cannot_confirm unless payment_intent.status == 'processing'
+
+    payment_intent.confirm
+    Transaction.new(
+      external_id: payment_intent.id,
+      external_type: Transaction::PAYMENT_INTENT,
+      transaction_type: Transaction::CONFIRM,
+      status: Transaction::SUCCESS,
+      amount_cents: payment_intent.amount,
+      source_id: payment_intent.payment_method,
+      payload: payment_intent.to_h
+    )
+  rescue Stripe::CardError => e
+    transaction_from_payment_intent_failure(e)
+  end
+
+  def self.create_payment_intent(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:, shipping_address: nil, shipping_name: nil)
     payment_intent = Stripe::PaymentIntent.create(
       amount: buyer_amount,
       currency: currency_code,
@@ -73,7 +99,18 @@ module PaymentService
       capture_method: capture ? 'automatic' : 'manual',
       confirm: true, # it creates payment intent and tries to confirm at the same time
       setup_future_usage: 'off_session',
-      confirmation_method: 'manual' # if requires action, we will confirm manually after
+      confirmation_method: 'manual', # if requires action, we will confirm manually after
+      shipping: {
+        address: {
+          line1: shipping_address&.street_line1,
+          line2: shipping_address&.street_line2,
+          city: shipping_address&.city,
+          state: shipping_address&.region,
+          postal_code: shipping_address&.postal_code,
+          country: shipping_address&.country
+        },
+        name: shipping_name
+      }
     )
     new_transaction = Transaction.new(
       external_id: payment_intent.id,
@@ -87,13 +124,15 @@ module PaymentService
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
   rescue Stripe::CardError => e
-    transaction_from_payment_intent_failure(e, capture: capture)
+    transaction_from_payment_intent_failure(e, transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD)
   end
 
   def self.update_transaction_with_payment_intent(transaction, payment_intent)
     case payment_intent.status # https://stripe.com/docs/payments/intents#intent-statuses
     when 'requires_capture'
       transaction.status = Transaction::REQUIRES_CAPTURE
+    when 'requires_action'
+      transaction.status = Transaction::REQUIRES_ACTION
     when 'succeeded'
       transaction.status = Transaction::SUCCESS
     else
@@ -116,7 +155,7 @@ module PaymentService
     )
   end
 
-  def self.transaction_from_payment_intent_failure(exc, capture:)
+  def self.transaction_from_payment_intent_failure(exc, transaction_type: nil)
     body = exc.json_body
     pi = body[:error][:payment_intent]
     # attempting confirm failed
@@ -127,7 +166,7 @@ module PaymentService
       source_id: pi[:last_payment_error][:payment_method][:id],
       destination_id: pi[:transfer_data][:destination],
       amount_cents: pi[:amount],
-      transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD,
+      transaction_type: transaction_type,
       failure_code: pi[:last_payment_error][:code],
       failure_message: pi[:last_payment_error][:message],
       decline_code: pi[:last_payment_error][:decline_code],

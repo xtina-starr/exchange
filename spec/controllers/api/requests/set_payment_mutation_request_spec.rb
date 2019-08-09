@@ -77,8 +77,10 @@ describe Api::GraphqlController, type: :request do
 
       context 'with an order in pending state' do
         context 'with a credit card that belongs to the buyer' do
-          it 'sets payments on the order' do
+          before do
             expect(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
+          end
+          it 'sets payments on the order' do
             response = client.execute(mutation, set_payment_input)
             expect(response.data.set_payment.order_or_error.order.id).to eq order.id.to_s
             expect(response.data.set_payment.order_or_error.order.state).to eq 'PENDING'
@@ -87,6 +89,13 @@ describe Api::GraphqlController, type: :request do
             expect(order.reload.credit_card_id).to eq credit_card_id
             expect(order.state).to eq Order::PENDING
             expect(order.state_expires_at).to eq(order.state_updated_at + 2.days)
+          end
+          context 'with existing external_charge_id on order' do
+            it 'clears external_charge_id so we create new payment intent when creating charge nex' do
+              order.update!(external_charge_id: 'pi_1')
+              client.execute(mutation, set_payment_input)
+              expect(order.reload.external_charge_id).to be_nil
+            end
           end
         end
         context 'with a credit card that does not belong to the buyer' do

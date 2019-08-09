@@ -11,7 +11,9 @@ class Transaction < ApplicationRecord
   TYPES = [
     HOLD = 'hold'.freeze,
     CAPTURE = 'capture'.freeze,
-    REFUND = 'refund'.freeze
+    REFUND = 'refund'.freeze,
+    CONFIRM = 'confirm'.freeze,
+    CANCEL = 'cancel'.freeze
   ].freeze
 
   STATUSES = [
@@ -27,6 +29,10 @@ class Transaction < ApplicationRecord
 
   def failed?
     status == FAILURE
+  end
+
+  def requires_action?
+    status == REQUIRES_ACTION
   end
 
   def failure_data

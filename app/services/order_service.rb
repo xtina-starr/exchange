@@ -34,7 +34,8 @@ module OrderService
     credit_card = Gravity.get_credit_card(credit_card_id)
     raise Errors::ValidationError.new(:invalid_credit_card, credit_card_id: credit_card_id) unless credit_card.dig(:user, :_id) == order.buyer_id
 
-    order.update!(credit_card_id: credit_card_id)
+    # nilify external_charge_id in case we had in progress payment intent so we create a new one
+    order.update!(credit_card_id: credit_card_id, external_charge_id: nil)
     order
   end
 
@@ -60,7 +61,7 @@ module OrderService
       raise Errors::InsufficientInventoryError if order_processor.failed_inventory?
       # in case of failed transaction, we need to rollback this block,
       # but still need to add transaction, so we raise an ActiveRecord::Rollback
-      raise ActiveRecord::Rollback if order_processor.failed_payment?
+      raise ActiveRecord::Rollback if order_processor.failed_payment? || order_processor.requires_action?
 
       order.update!(external_charge_id: order_processor.transaction.external_id)
     end
@@ -68,6 +69,13 @@ module OrderService
     order.transactions << order_processor.transaction
     PostTransactionNotificationJob.perform_later(order_processor.transaction.id, user_id)
     raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction) if order_processor.failed_payment?
+
+    if order_processor.requires_action?
+      # because of an issue with `ActiveRecord::Rollback` we have to force a reload here
+      # rollback does not clean the model and calling update on it will raise error
+      order.reload.update!(external_charge_id: order_processor.transaction.external_id)
+      raise Errors::PaymentRequiresActionError, order_processor.action_data
+    end
 
     OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)

@@ -24,8 +24,14 @@ class OrderProcessor
     raise Errors::ValidationError, @validation_error unless valid?
 
     deduct_inventory
-    @transaction = PaymentService.hold_payment(construct_charge_params)
-    undeduct_inventory if @transaction.failed?
+    @transaction = if @order.external_charge_id
+      # here we are assuming this external_charge_id is a PaymentIntent id.
+      # we already have a payment intent on this order
+      PaymentService.confirm_payment_intent(@order.external_charge_id)
+    else
+      PaymentService.hold_payment(construct_charge_params)
+    end
+    undeduct_inventory if @transaction.failed? || @transaction.requires_action?
   rescue Errors::InsufficientInventoryError
     undeduct_inventory
     @insufficient_inventory = true
@@ -36,14 +42,22 @@ class OrderProcessor
 
     deduct_inventory
     @transaction = PaymentService.capture_without_hold(construct_charge_params)
-    undeduct_inventory if @transaction.failed?
+    undeduct_inventory if @transaction.failed? || @transaction.requires_action?
   rescue Errors::InsufficientInventoryError
     undeduct_inventory
     @insufficient_inventory = true
   end
 
   def failed_payment?
-    @transaction.present? && @transaction.failed?
+    @transaction&.failed?
+  end
+
+  def requires_action?
+    @transaction&.requires_action?
+  end
+
+  def action_data
+    requires_action? && { client_secret: @transaction.payload['client_secret'] }
   end
 
   def failed_inventory?
@@ -82,7 +96,9 @@ class OrderProcessor
       seller_amount: @order.seller_total_cents,
       currency_code: @order.currency_code,
       metadata: charge_metadata,
-      description: charge_description
+      description: charge_description,
+      shipping_address: @order.shipping_address,
+      shipping_name: @order.shipping_name
     }
   end
 

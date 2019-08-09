@@ -10,10 +10,10 @@ AllCops:
     - 'db/migrate/**'
 
 Metrics/ParameterLists:
-  Max: 9
+  Max: 10
 
 Metrics/AbcSize:
-  Max: 52
+  Max: 59
   Exclude:
     - "db/migrate/*"
 
@@ -25,12 +25,14 @@ Metrics/BlockLength:
     - "spec/**/*"
 
 Metrics/MethodLength:
-  Max: 32
+  Max: 43
   Exclude:
     - "db/migrate/*"
 
 Metrics/ModuleLength:
-  Max: 151
+  Max: 160
+  Exclude:
+    - "spec/**/*"
 
 Style/Documentation:
   Enabled: false

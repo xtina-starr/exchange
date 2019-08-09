@@ -7,7 +7,7 @@ class OrderCancellationService
 
   def seller_lapse!
     @order.seller_lapse! do
-      process_stripe_refund if @order.mode == Order::BUY
+      cancel_payment_intent if @order.mode == Order::BUY
     end
     process_inventory_undeduction
     OrderEvent.delay_post(@order, Order::CANCELED)
@@ -22,7 +22,7 @@ class OrderCancellationService
 
   def reject!(rejection_reason = nil)
     @order.reject!(rejection_reason) do
-      process_stripe_refund if @order.mode == Order::BUY
+      cancel_payment_intent if @order.mode == Order::BUY
     end
     Exchange.dogstatsd.increment 'order.reject'
     process_inventory_undeduction
@@ -53,6 +53,13 @@ class OrderCancellationService
 
     payment_transaction = @order.transactions.where(external_id: @order.external_charge_id).first
     @transaction = PaymentService.refund(@order.external_charge_id, payment_transaction.external_type)
+    raise Errors::ProcessingError.new(:refund_failed, @transaction.failure_data) if @transaction.failed?
+  end
+
+  def cancel_payment_intent
+    raise Errors::ValidationError.new(:unsupported_payment_method, @order.payment_method) unless @order.payment_method == Order::CREDIT_CARD
+
+    @transaction = PaymentService.cancel_payment_intent(@order.external_charge_id)
     raise Errors::ProcessingError.new(:refund_failed, @transaction.failure_data) if @transaction.failed?
   end
 

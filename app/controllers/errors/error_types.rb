@@ -55,9 +55,11 @@ module Errors
     processing: %i[
       artwork_version_mismatch
       cannot_capture
+      cannot_confirm
       capture_failed
       charge_authorization_failed
       insufficient_inventory
+      payment_requires_action
       received_partial_refund
       refund_failed
       tax_calculator_failure

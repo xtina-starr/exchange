@@ -17,6 +17,8 @@ class TransactionEvent < Events::BaseEvent
       order: order_details,
       failure_code: @object.failure_code,
       failure_message: @object.failure_message,
+      external_id: @object.external_id,
+      external_type: @object.external_type,
       decline_code: @object.decline_code,
       transaction_type: @object.transaction_type,
       status: @object.status
@@ -44,7 +46,9 @@ class TransactionEvent < Events::BaseEvent
       state_reason: order.state_reason,
       state_expires_at: order.state_expires_at,
       updated_at: order.updated_at,
-      last_offer: last_offer_details(order)
+      last_offer: last_offer_details(order),
+      shipping_country: order.shipping_country,
+      shipping_name: order.shipping_name
     }
   end
 

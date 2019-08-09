@@ -21,7 +21,48 @@ describe PaymentService, type: :services do
     }
   end
 
+  let(:params_with_shipping) do
+    params.merge(
+      shipping_address: Address.new(address_line1: '123 nowhere st', address_line2: 'apt 321', postal_code: '312', city: 'ny', country: 'US', region: 'NY'),
+      shipping_name: 'Homer'
+    )
+  end
+
   describe '#hold_payment' do
+    it 'calls stripe with expected values' do
+      expect(Stripe::PaymentIntent).to receive(:create).with(
+        amount: buyer_amount,
+        currency: currency_code,
+        description: 'Gallery via Artsy',
+        payment_method_types: ['card'],
+        payment_method: 'cc_1',
+        customer: 'ca_1',
+        on_behalf_of: 'ma-1',
+        transfer_data: {
+          destination: 'ma-1',
+          amount: seller_amount
+        },
+        off_session: false,
+        metadata: { this: 'is', a: 'test' },
+        capture_method: 'manual',
+        confirm: true,
+        setup_future_usage: 'off_session',
+        confirmation_method: 'manual',
+        shipping: {
+          address: {
+            line1: '123 nowhere st',
+            line2: 'apt 321',
+            city: 'ny',
+            state: 'NY',
+            postal_code: '312',
+            country: 'US'
+          },
+          name: 'Homer'
+        }
+      ).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
+      PaymentService.hold_payment(params_with_shipping)
+    end
+
     it "authorizes a charge on the user's credit card" do
       prepare_payment_intent_create_success(amount: 20_00)
       transaction = PaymentService.hold_payment(params)
@@ -35,10 +76,27 @@ describe PaymentService, type: :services do
         failure_code: nil,
         failure_message: nil,
         decline_code: nil,
-        payload: { 'id' => 'pi_1' }
+        payload: { 'client_secret' => 'pi_test1', 'id' => 'pi_1' }
       )
     end
-    it 'stores failed attempt data on transaction' do
+    it 'returns transaction for requires_action' do
+      prepare_payment_intent_create_failure(status: 'requires_action')
+      transaction = PaymentService.hold_payment(params)
+      expect(transaction).to have_attributes(
+        external_type: Transaction::PAYMENT_INTENT,
+        amount_cents: buyer_amount,
+        source_id: 'cc_1',
+        destination_id: 'ma-1',
+        failure_code: nil,
+        failure_message: nil,
+        decline_code: nil,
+        transaction_type: Transaction::HOLD,
+        status: Transaction::REQUIRES_ACTION
+      )
+      expect(transaction.payload).to match('client_secret' => 'pi_test1', 'id' => 'pi_1')
+    end
+
+    it 'returns failed attempt transaction' do
       prepare_payment_intent_create_failure(status: 'requires_payment_method', capture: false, charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
       transaction = PaymentService.hold_payment(params)
       expect(transaction).to have_attributes(
@@ -56,6 +114,35 @@ describe PaymentService, type: :services do
     end
   end
 
+  describe '#confirm_payment_intent' do
+    it 'raises error if payment_intent not in expected state' do
+      mock_retrieve_payment_intent(status: 'requires_action')
+      expect { PaymentService.confirm_payment_intent('pi_1') }.to raise_error(Errors::ProcessingError)
+    end
+    it 'confirms the payment intent and stores transaction' do
+      prepare_payment_intent_confirm_success
+      transaction = PaymentService.confirm_payment_intent('pi_1')
+      expect(transaction).to have_attributes(
+        external_id: 'pi_1',
+        external_type: Transaction::PAYMENT_INTENT,
+        transaction_type: Transaction::CONFIRM,
+        status: Transaction::SUCCESS
+      )
+    end
+    it 'confirms the payment intent and stores failed transaction' do
+      prepare_payment_intent_confirm_failure(charge_error: { code: 'capture_charge', decline_code: 'do_not_honor', message: 'The card was declined' })
+      transaction = PaymentService.confirm_payment_intent('pi_1')
+      expect(transaction).to have_attributes(
+        external_id: 'pi_1',
+        external_type: Transaction::PAYMENT_INTENT,
+        failure_code: 'capture_charge',
+        failure_message: 'Your card was declined.',
+        decline_code: 'do_not_honor',
+        status: Transaction::FAILURE
+      )
+    end
+  end
+
   describe '#capture_authorized_hold' do
     it 'captures a payment_intent' do
       prepare_payment_intent_capture_success(amount: 20_00)
@@ -66,7 +153,7 @@ describe PaymentService, type: :services do
         transaction_type: Transaction::CAPTURE,
         source_id: 'cc_1',
         status: Transaction::SUCCESS,
-        payload: { 'id' => 'pi_1' }
+        payload: { 'client_secret' => 'pi_test1', 'id' => 'pi_1' }
       )
     end
 
