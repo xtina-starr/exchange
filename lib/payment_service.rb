@@ -65,7 +65,7 @@ module PaymentService
 
   def self.confirm_payment_intent(payment_intent_id)
     payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
-    raise Errors::ProcessingError, :cannot_confirm unless payment_intent.status == 'processing'
+    raise Errors::ProcessingError, :cannot_confirm unless payment_intent.status == 'requires_confirmation'
 
     payment_intent.confirm
     Transaction.new(
