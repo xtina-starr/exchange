@@ -35,6 +35,9 @@ class OrderProcessor
   rescue Errors::InsufficientInventoryError
     undeduct_inventory
     @insufficient_inventory = true
+  rescue Errors::ProcessingError => e
+    undeduct_inventory
+    raise e
   end
 
   def charge!
@@ -114,7 +117,8 @@ class OrderProcessor
       buyer_type: @order.buyer_type,
       seller_id: @order.seller_id,
       seller_type: @order.seller_type,
-      type: @order.auction_seller? ? 'auction-bn' : 'bn-mo'
+      type: @order.auction_seller? ? 'auction-bn' : 'bn-mo',
+      mode: @order.mode
     }
   end
 end

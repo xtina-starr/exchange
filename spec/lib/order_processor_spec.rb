@@ -281,4 +281,19 @@ describe OrderProcessor, type: :services do
       end
     end
   end
+
+  describe '#charge_metadata' do
+    it 'includes all expected metadata' do
+      metadata = order_processor.send(:charge_metadata)
+      expect(metadata).to match(
+        exchange_order_id: order.id,
+        buyer_id: 'buyer1',
+        buyer_type: 'user',
+        seller_id: 'seller1',
+        seller_type: 'gallery',
+        type: 'bn-mo',
+        mode: 'buy'
+      )
+    end
+  end
 end
