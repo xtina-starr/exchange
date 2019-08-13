@@ -74,6 +74,7 @@ module OrderService
       # because of an issue with `ActiveRecord::Rollback` we have to force a reload here
       # rollback does not clean the model and calling update on it will raise error
       order.reload.update!(external_charge_id: order_processor.transaction.external_id)
+      Exchange.dogstatsd.increment 'submit.requires_action'
       raise Errors::PaymentRequiresActionError, order_processor.action_data
     end
 
