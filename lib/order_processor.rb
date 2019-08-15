@@ -10,42 +10,63 @@ class OrderProcessor
 
   attr_accessor :order, :transaction, :validation_error
 
-  def initialize(order, user_id)
+  def initialize(order, user_id, offer = nil)
     @order = order
+    @offer = offer
     @user_id = user_id
     @validation_error = nil
     @transaction = nil
     @deducted_inventory = []
     @validated = false
     @insufficient_inventory = false
+    @totals_set = false
+    @state_changed = false
+  end
+
+  def rollback!
+    undeduct_inventory! unless @deducted_inventory.empty?
+    reset_totals! if @totals_set
+    order.rollback! if @state_changed
+  end
+
+  def transition(action)
+    order.send(action)
+    @state_changed = true
+  end
+
+  def set_totals!
+    order.line_items.each { |li| li.update!(commission_fee_cents: li.current_commission_fee_cents) } if order.mode === Order::BUY
+    totals = order.mode == Order::BUY ? BuyOrderTotals.new(@order) : OfferOrderTotals.new(@offer)
+    order.update!(
+      transaction_fee_cents: totals.transaction_fee_cents,
+      commission_rate: order.current_commission_rate,
+      commission_fee_cents: totals.commission_fee_cents,
+      seller_total_cents: totals.seller_total_cents
+    )
+
+    @totals_set = true
+  end
+
+  def reset_totals!
+    order.line_items.each { |li|  li.update!(commission_fee_cents: nil) } if order.mode === Order::BUY
+    order.update!(transaction_fee_cents: nil, commission_rate: nil, commission_fee_cents: nil, seller_total_cents: nil)
   end
 
   def hold!
     raise Errors::ValidationError, @validation_error unless valid?
 
-    deduct_inventory
     @transaction = if @order.external_charge_id
-      # here we are assuming this external_charge_id is a PaymentIntent id.
       # we already have a payment intent on this order
       PaymentService.confirm_payment_intent(@order.external_charge_id)
     else
       PaymentService.hold_payment(construct_charge_params)
     end
-    undeduct_inventory if @transaction.failed? || @transaction.requires_action?
-  rescue Errors::InsufficientInventoryError
-    undeduct_inventory
-    @insufficient_inventory = true
-  rescue Errors::ProcessingError => e
-    undeduct_inventory
-    raise e
   end
 
   def charge!
     raise Errors::ValidationError, @validation_error unless valid?
 
-    deduct_inventory
     @transaction = PaymentService.capture_without_hold(construct_charge_params)
-    undeduct_inventory if @transaction.failed? || @transaction.requires_action?
   rescue Errors::InsufficientInventoryError
     undeduct_inventory
     @insufficient_inventory = true
@@ -76,19 +97,36 @@ class OrderProcessor
     @validation_error.nil?
   end
 
-  private
-
-  def undeduct_inventory
+  def undeduct_inventory!
     @deducted_inventory.each { |li| Gravity.undeduct_inventory(li) }
     @deducted_inventory = []
   end
 
-  def deduct_inventory
+  def deduct_inventory!
     # Try holding artwork and deduct inventory
     @order.line_items.each do |li|
       Gravity.deduct_inventory(li)
       @deducted_inventory << li
     end
+  rescue Errors::InsufficientInventoryError
+    undeduct_inventory
+    @insufficient_inventory = true
+  end
+
+  def store_transaction
+    order.transactions << transaction
+    PostTransactionNotificationJob.perform_later(transaction.id, @user_id)
+  end
+
+  def set_payment!
+    @order.update!(external_charge_id: transaction.external_id)
+  end
+
+  def set_follow_ups
+    OrderEvent.delay_post(order, Order::SUBMITTED, @user_id)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
+    Exchange.dogstatsd.increment 'order.submitted'
   end
 
   def construct_charge_params
