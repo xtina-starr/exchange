@@ -68,26 +68,26 @@ module OfferService
     order = offer.order
     order_processor = OrderProcessor.new(order, user_id, offer)
     raise Errors::ValidationError, order_processor.validation_error unless order_processor.valid?
-    order_processor.transition(:approve!)
-    order_processor.deduct_inventory!
-    if order_processor.failed_inventory?
-      order_processor.rollback!
+
+    order_processor.advance_state(:approve!)
+    unless order_processor.deduct_inventory
+      order_processor.revert!
       raise Errors::InsufficientInventoryError
     end
     order_processor.set_totals!
-    order_processor.charge!
+    order_processor.charge
     order_processor.store_transaction
     if order_processor.failed_payment?
-      order_processor.rollback!
+      order_processor.revert!
       raise Errors::FailedTransactionError.new(:capture_failed, order_processor.transaction)
+
     elsif order_processor.requires_action?
-      order_processor.rollback!
-      order_processor.set_payment!
-      raise Errors::PaymentRequiresActionError.new(order_processor.action_data)
-    else
-      order_processor.set_payment!
-      order_processor.set_follow_ups
+      order_processor.revert!
+      order_processor.set_external_payment!
+      raise Errors::PaymentRequiresActionError, order_processor.action_data
     end
+    order_processor.set_external_payment!
+    order_processor.on_success
     order
   end
 

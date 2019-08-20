@@ -48,29 +48,27 @@ module OrderService
     order_processor = OrderProcessor.new(order, user_id)
     raise Errors::ValidationError, order_processor.validation_error unless order_processor.valid?
 
-    order_processor.transition(:submit!)
-    order_processor.deduct_inventory!
-    if order_processor.failed_inventory?
-      order_processor.rollback!
+    order_processor.advance_state(:submit!)
+    unless order_processor.deduct_inventory
+      order_processor.revert!
       raise Errors::InsufficientInventoryError
     end
 
     order_processor.set_totals!
-    order_processor.hold!
+    order_processor.hold
     order_processor.store_transaction
 
     if order_processor.failed_payment?
-      order_processor.rollback!
+      order_processor.revert!
       raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction)
     elsif order_processor.requires_action?
-      order_processor.rollback!
-      order_processor.set_payment!
+      order_processor.revert!
+      order_processor.set_external_payment!
       Exchange.dogstatsd.increment 'submit.requires_action'
-      raise Errors::PaymentRequiresActionError.new(order_processor.action_data)
-    else
-      order_processor.set_payment!
-      order_processor.set_follow_ups
+      raise Errors::PaymentRequiresActionError, order_processor.action_data
     end
+    order_processor.set_external_payment!
+    order_processor.on_success
     order
   end
 

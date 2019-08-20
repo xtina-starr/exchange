@@ -5,11 +5,30 @@ describe OrderProcessor, type: :services do
   include_context 'include stripe helper'
   let(:buyer_id) { 'buyer1' }
   let(:seller_id) { 'seller1' }
-  let(:order) { Fabricate(:order, buyer_id: buyer_id, fulfillment_type: Order::PICKUP, credit_card_id: 'cc1', seller_id: seller_id) }
-  let!(:line_item1) { Fabricate(:line_item, order: order, artwork_id: 'a1', quantity: 1) }
-  let(:stub_line_item_1_gravity_deduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a1/inventory").with(body: { deduct: 1 }) }
-  let(:stub_line_item_1_gravity_undeduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a1/inventory").with(body: { undeduct: 1 }) }
-  let!(:line_item2) { Fabricate(:line_item, order: order, artwork_id: 'a2', quantity: 2) }
+  let(:order_mode) { Order::BUY }
+  let(:order) do
+    Fabricate(
+      :order,
+      mode: order_mode,
+      buyer_id: buyer_id,
+      fulfillment_type: Order::SHIP,
+      credit_card_id: 'cc1',
+      seller_id: seller_id,
+      shipping_name: 'Fname Lname',
+      shipping_address_line1: '12 Vanak St',
+      shipping_address_line2: 'P 80',
+      shipping_city: 'Tehran',
+      shipping_postal_code: '02198',
+      buyer_phone_number: '00123456',
+      shipping_country: 'IR'
+    )
+  end
+  let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1') }
+  let(:stub_artwork_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1").to_return(status: 200, body: artwork.to_json) }
+  let!(:line_item1) { Fabricate(:line_item, order: order, quantity: 1, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1') }
+  let(:line_item2) { Fabricate(:line_item, order: order, artwork_id: 'a2', quantity: 2) }
+  let(:stub_line_item_1_gravity_deduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }) }
+  let(:stub_line_item_1_gravity_undeduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }) }
   let(:stub_line_item_2_gravity_deduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a2/inventory").with(body: { deduct: 2 }) }
   let(:stub_line_item_2_gravity_undeduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a2/inventory").with(body: { undeduct: 2 }) }
 
@@ -20,93 +39,169 @@ describe OrderProcessor, type: :services do
   let(:stub_gravity_merchant_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/merchant_accounts?partner_id=seller1").to_return(body: gravity_merchant_accounts.to_json) }
   let(:gravity_credit_card) { { external_id: 'cc_1', customer_account: { external_id: 'ca_1' } } }
   let(:stub_gravity_card_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/credit_card/cc1").to_return(body: gravity_credit_card.to_json) }
-  let(:order_processor) { OrderProcessor.new(order, buyer_id) }
+  let(:offer) { nil }
+  let(:order_processor) { OrderProcessor.new(order, buyer_id, offer) }
+
+  describe 'set_totals!' do
+    before do
+      stub_gravity_partner
+      stub_artwork_request
+      order_processor.set_totals!
+    end
+    context 'buy order' do
+      it 'sets correct totals on order' do
+        expect(order.reload).to have_attributes(
+          transaction_fee_cents: 29_30,
+          commission_rate: 0.8,
+          commission_fee_cents: 800_00,
+          seller_total_cents: 170_70
+        )
+      end
+      it 'sets correct totals on line items' do
+        expect(line_item1.reload.commission_fee_cents).to eq 800_00
+      end
+      it 'sets totals_set' do
+        expect(order_processor.instance_variable_get(:@totals_set)).to be true
+      end
+    end
+    context 'offer order' do
+      let(:order_mode) { Order::OFFER }
+      let(:offer) { Fabricate(:offer, order: order, amount_cents: 1000_00, shipping_total_cents: 200_00, tax_total_cents: 100_00) }
+      it 'sets correct totals on order' do
+        expect(order.reload).to have_attributes(
+          transaction_fee_cents: 38_00,
+          commission_rate: 0.8,
+          commission_fee_cents: 800_00,
+          seller_total_cents: 462_00
+        )
+      end
+      it 'does not set totals on line items' do
+        expect(line_item1.reload.commission_fee_cents).to be_nil
+      end
+      it 'sets totals_set' do
+        expect(order_processor.instance_variable_get(:@totals_set)).to be true
+      end
+    end
+  end
+
+  describe 'reset_totals!' do
+    it 'resets totals on an order' do
+      order.update!(
+        transaction_fee_cents: 38_00,
+        commission_rate: 0.8,
+        commission_fee_cents: 800_00,
+        seller_total_cents: 462_00
+      )
+      order_processor.reset_totals!
+      expect(order.reload).to have_attributes(
+        transaction_fee_cents: nil,
+        commission_rate: nil,
+        commission_fee_cents: nil,
+        seller_total_cents: nil
+      )
+    end
+    it 'sets totals_set' do
+      expect(order_processor.instance_variable_get(:@totals_set)).to be false
+    end
+  end
+
+  describe 'revert!' do
+  end
+
+  describe 'failed_payment?' do
+  end
+
+  describe 'requires_action?' do
+  end
+
+  describe 'action_data' do
+  end
+
+  describe 'valid?' do
+    it 'returns false and sets error missing shipping info' do
+      order.update!(fulfillment_type: nil)
+      expect(order_processor.valid?).to eq false
+      expect(order_processor.validation_error).to eq :missing_required_info
+    end
+
+    it 'returns false and sets error when missing payment info' do
+      order.update!(credit_card_id: nil)
+      expect(order_processor.valid?).to eq false
+      expect(order_processor.validation_error).to eq :missing_required_info
+    end
+
+    it 'returns false and sets error if you try to process an order that was paid for by wire transfer' do
+      order.update!(payment_method: Order::WIRE_TRANSFER)
+      expect(order_processor.valid?).to eq false
+      expect(order_processor.validation_error).to eq :unsupported_payment_method
+    end
+
+    context 'missing credit card info' do
+      let(:gravity_credit_card) { { external_id: nil } }
+      before do
+        stub_gravity_card_request
+      end
+
+      it 'returns false and sets error' do
+        expect(order_processor.valid?).to eq false
+        expect(order_processor.validation_error).to eq :credit_card_missing_external_id
+        expect(stub_gravity_card_request).to have_been_requested
+      end
+    end
+  end
+
+  describe 'deduct_inventory' do
+    before do
+      line_item2
+    end
+    it 'returns true when fully deducted inventory' do
+      stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
+      stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
+      expect(order_processor.deduct_inventory).to be true
+      expect(stub_line_item_1_gravity_deduct).to have_been_requested
+      expect(stub_line_item_2_gravity_deduct).to have_been_requested
+    end
+    it 'returns false on insufficient inventory' do
+      stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
+      stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
+      expect(order_processor.deduct_inventory).to be false
+      expect(stub_line_item_1_gravity_deduct).to have_been_requested
+      expect(stub_line_item_2_gravity_deduct).to have_been_requested
+    end
+  end
+
+  describe 'undedudct_inventory!' do
+    before do
+      order_processor.instance_variable_set(:@deducted_inventory, [line_item1, line_item2])
+    end
+    it 'calls undeduct for line items' do
+      stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
+      stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
+      order_processor.undeduct_inventory!
+      expect(stub_line_item_1_gravity_undeduct).to have_been_requested
+      expect(stub_line_item_2_gravity_undeduct).to have_been_requested
+    end
+  end
+
+  describe 'store_transaction' do
+  end
+
+  describe 'set_external_payment!' do
+  end
+
+  describe 'on success' do
+  end
 
   describe '#hold' do
-    context 'invalid order' do
-      it 'raises validation error missing shipping info' do
-        order.update!(fulfillment_type: nil)
-        expect { order_processor.hold! }.to raise_error do |e|
-          expect(e.code).to eq :missing_required_info
-        end
-      end
-
-      it 'raises validation error when missing payment info' do
-        order.update!(credit_card_id: nil)
-        expect { order_processor.hold! }.to raise_error do |e|
-          expect(e.code).to eq :missing_required_info
-        end
-      end
-
-      it 'raises validation error if you try to process an order that was paid for by wire transfer' do
-        order.update!(payment_method: Order::WIRE_TRANSFER)
-        expect { order_processor.hold! }.to raise_error do |e|
-          expect(e.code).to eq :unsupported_payment_method
-        end
-      end
-
-      context 'missing credit card info' do
-        let(:gravity_credit_card) { { external_id: nil } }
-        before do
-          stub_gravity_card_request
-        end
-
-        it 'raises validation error' do
-          expect { order_processor.hold! }.to raise_error do |e|
-            expect(e.code).to eq :credit_card_missing_external_id
-          end
-          expect(stub_gravity_card_request).to have_been_requested
-        end
-      end
+    before do
+      stub_gravity_card_request
+      stub_gravity_merchant_account_request
+      stub_gravity_partner
     end
-
-    context 'failed deduct inventory' do
-      before do
-        stub_gravity_card_request
-        stub_gravity_merchant_account_request
-        stub_gravity_partner
-      end
-
-      it 'does not call stripe' do
-        stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        expect(PaymentService).not_to receive(:capture_without_hold)
-        order_processor.hold!
-        expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
-        expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
-      end
-
-      it 'handles partial failure' do
-        stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_undeduct
-        expect(PaymentService).not_to receive(:capture_without_hold)
-        order_processor.hold!
-        expect(stub_line_item_1_gravity_undeduct).to have_been_requested
-        expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
-        expect(order_processor.failed_inventory?).to be true
-      end
-    end
-
     context 'failed hold' do
       before do
-        stub_gravity_card_request
-        stub_gravity_merchant_account_request
-        stub_gravity_partner
-        stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
-        order_processor.hold!
-      end
-
-      it 'deducts and undeducts inventory' do
-        expect(stub_line_item_1_gravity_deduct).to have_been_requested
-        expect(stub_line_item_2_gravity_deduct).to have_been_requested
-        expect(stub_line_item_1_gravity_undeduct).to have_been_requested
-        expect(stub_line_item_2_gravity_undeduct).to have_been_requested
+        order_processor.hold
       end
 
       it 'sets processor transaction' do
@@ -116,22 +211,8 @@ describe OrderProcessor, type: :services do
 
     context 'hold requires action' do
       before do
-        stub_gravity_card_request
-        stub_gravity_merchant_account_request
-        stub_gravity_partner
-        stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         prepare_payment_intent_create_failure(status: 'requires_action')
-        order_processor.hold!
-      end
-
-      it 'deducts and undeducts inventory' do
-        expect(stub_line_item_1_gravity_deduct).to have_been_requested
-        expect(stub_line_item_2_gravity_deduct).to have_been_requested
-        expect(stub_line_item_1_gravity_undeduct).to have_been_requested
-        expect(stub_line_item_2_gravity_undeduct).to have_been_requested
+        order_processor.hold
       end
 
       it 'sets processor transaction' do
@@ -149,135 +230,40 @@ describe OrderProcessor, type: :services do
 
     context 'successful hold' do
       before do
-        stub_gravity_card_request
-        stub_gravity_merchant_account_request
-        stub_gravity_partner
-        stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         prepare_payment_intent_create_success(amount: 20_00)
+        order_processor.hold
       end
 
-      it 'deducts inventory' do
-        order_processor.hold!
-        expect(stub_line_item_1_gravity_deduct).to have_been_requested
-        expect(stub_line_item_2_gravity_deduct).to have_been_requested
-        expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
-        expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
+      it 'sets order_processor.transaction' do
+        expect(order_processor.transaction).to have_attributes(status: Transaction::SUCCESS, transaction_type: Transaction::HOLD)
       end
     end
   end
 
   describe '#charge' do
-    context 'invalid order' do
-      it 'raises validation error when missing shipping info' do
-        order.update!(fulfillment_type: nil)
-        expect { order_processor.charge! }.to raise_error do |e|
-          expect(e.code).to eq :missing_required_info
-        end
-      end
-
-      it 'raises validation error when missing payment info' do
-        order.update!(credit_card_id: nil)
-        expect { order_processor.charge! }.to raise_error do |e|
-          expect(e.code).to eq :missing_required_info
-        end
-      end
-
-      it 'raises validation error if you try to process an order that was paid for by wire transfer' do
-        order.update!(payment_method: Order::WIRE_TRANSFER)
-        expect { order_processor.charge! }.to raise_error do |e|
-          expect(e.code).to eq :unsupported_payment_method
-        end
-      end
-
-      context 'missing credit card info' do
-        let(:gravity_credit_card) { { external_id: nil } }
-        before do
-          stub_gravity_card_request
-        end
-
-        it 'raises validation error' do
-          expect { order_processor.charge! }.to raise_error do |e|
-            expect(e.code).to eq :credit_card_missing_external_id
-          end
-          expect(stub_gravity_card_request).to have_been_requested
-        end
-      end
+    before do
+      stub_gravity_card_request
+      stub_gravity_merchant_account_request
+      stub_gravity_partner
     end
-    context 'failed deduct inventory' do
-      before do
-        stub_gravity_card_request
-        stub_gravity_merchant_account_request
-        stub_gravity_partner
-      end
-
-      it 'does not call stripe' do
-        stub_line_item_1_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        expect(PaymentService).not_to receive(:capture_without_hold)
-        order_processor.charge!
-        expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
-        expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
-        expect(order_processor.failed_inventory?).to be true
-      end
-
-      it 'handles partial failure' do
-        stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_deduct.to_return(status: 400, body: {}.to_json)
-        stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_undeduct
-        expect(PaymentService).not_to receive(:capture_without_hold)
-        order_processor.charge!
-        expect(stub_line_item_1_gravity_undeduct).to have_been_requested
-        expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
-        expect(order_processor.failed_inventory?).to be true
-      end
-    end
-
     context 'failed charge' do
       before do
-        stub_gravity_card_request
-        stub_gravity_merchant_account_request
-        stub_gravity_partner
-        stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
-        order_processor.charge!
+        order_processor.charge
       end
-
-      it 'deducts and undeducts inventory' do
-        expect(stub_line_item_1_gravity_deduct).to have_been_requested
-        expect(stub_line_item_2_gravity_deduct).to have_been_requested
-        expect(stub_line_item_1_gravity_undeduct).to have_been_requested
-        expect(stub_line_item_2_gravity_undeduct).to have_been_requested
-      end
-
-      it 'raises failed transaction error' do
+      it 'sets order_processor.transaction' do
         expect(order_processor.transaction).to have_attributes(failure_code: 'card_declined', decline_code: 'do_not_honor')
       end
     end
 
     context 'successful charge' do
       before do
-        stub_gravity_card_request
-        stub_gravity_merchant_account_request
-        stub_gravity_partner
-        stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
-        stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
         prepare_payment_intent_create_success(amount: 20_00)
-        order_processor.charge!
+        order_processor.charge
       end
 
-      it 'deducts inventory' do
-        expect(stub_line_item_1_gravity_deduct).to have_been_requested
-        expect(stub_line_item_2_gravity_deduct).to have_been_requested
-        expect(stub_line_item_1_gravity_undeduct).not_to have_been_requested
-        expect(stub_line_item_2_gravity_undeduct).not_to have_been_requested
+      it 'sets order_processor.transaction' do
+        expect(order_processor.transaction).to have_attributes(status: Transaction::SUCCESS)
       end
     end
   end
