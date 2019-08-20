@@ -106,15 +106,75 @@ describe OrderProcessor, type: :services do
   end
 
   describe 'revert!' do
+    it 'undeducts inventory if there are deducted inventories' do
+      order_processor.instance_variable_set(:@deducted_inventory, [line_item1, line_item2])
+      stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
+      stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
+      order_processor.revert!
+      expect(stub_line_item_1_gravity_undeduct).to have_been_requested
+      expect(stub_line_item_2_gravity_undeduct).to have_been_requested
+    end
+    it 'resets totals if totals were set on the orders' do
+      order.update!(
+        transaction_fee_cents: 38_00,
+        commission_rate: 0.8,
+        commission_fee_cents: 800_00,
+        seller_total_cents: 462_00
+      )
+      order_processor.instance_variable_set(:@totals_set, true)
+      order_processor.revert!
+      expect(order.reload).to have_attributes(
+        transaction_fee_cents: nil,
+        commission_rate: nil,
+        commission_fee_cents: nil,
+        seller_total_cents: nil
+      )
+    end
+    it 'it reverts submitted order to pending' do
+      order_processor.instance_variable_set(:@deducted_inventory, [])
+      order.submit!
+      order_processor.instance_variable_set(:@state_changed, true)
+      order_processor.revert!
+      expect(order.reload.state).to eq Order::PENDING
+      expect(order_processor.instance_variable_get(:@state_changed)).to eq false
+    end
+    it 'it reverts approved order to pending' do
+      order.submit!
+      order.approve!
+      order_processor.instance_variable_set(:@state_changed, true)
+      order_processor.revert!
+      expect(order.reload.state).to eq Order::SUBMITTED
+      expect(order_processor.instance_variable_get(:@state_changed)).to eq false
+    end
   end
 
   describe 'failed_payment?' do
+    it 'returns true when transaction is failed' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::FAILURE))
+      expect(order_processor.failed_payment?).to be true
+    end
+    it 'returns false when transaction was successful' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::SUCCESS))
+      expect(order_processor.failed_payment?).to be false
+    end
   end
 
   describe 'requires_action?' do
+    it 'returns true when transaction requires action' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::REQUIRES_ACTION))
+      expect(order_processor.requires_action?).to be true
+    end
+    it 'returns false when transaction was successful' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::SUCCESS))
+      expect(order_processor.requires_action?).to be false
+    end
   end
 
   describe 'action_data' do
+    it 'returns true when transaction requires action' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::REQUIRES_ACTION, payload: { 'client_secret' => 'super_secret' }))
+      expect(order_processor.action_data).to eq(client_secret: 'super_secret')
+    end
   end
 
   describe 'valid?' do
@@ -184,9 +244,19 @@ describe OrderProcessor, type: :services do
   end
 
   describe 'store_transaction' do
+    it 'stores transaction on the order' do
+      transaction = Transaction.new(status: Transaction::SUCCESS, transaction_type: Transaction::HOLD)
+      order_processor.instance_variable_set(:@transaction, transaction)
+      expect { order_processor.store_transaction }.to change(order.transactions, :count).by(1)
+    end
   end
 
   describe 'set_external_payment!' do
+    it 'stores transaction on the order' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1'))
+      order_processor.set_external_payment!
+      expect(order.reload.external_charge_id).to eq 'pi_1'
+    end
   end
 
   describe 'on success' do

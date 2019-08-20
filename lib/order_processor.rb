@@ -18,7 +18,7 @@ class OrderProcessor
     reset_totals! if @totals_set
     return unless @state_changed
 
-    order.rollback!
+    order.revert!
     @state_changed = false
   end
 
