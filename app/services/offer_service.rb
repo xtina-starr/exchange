@@ -83,10 +83,8 @@ module OfferService
 
     elsif order_processor.requires_action?
       order_processor.revert!
-      order_processor.set_external_payment!
       raise Errors::PaymentRequiresActionError, order_processor.action_data
     end
-    order_processor.set_external_payment!
     order_processor.on_success
     order
   end

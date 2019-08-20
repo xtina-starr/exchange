@@ -249,13 +249,20 @@ describe OrderProcessor, type: :services do
       order_processor.instance_variable_set(:@transaction, transaction)
       expect { order_processor.store_transaction }.to change(order.transactions, :count).by(1)
     end
-  end
-
-  describe 'set_external_payment!' do
-    it 'stores transaction on the order' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1'))
-      order_processor.set_external_payment!
+    it 'stores external_id on the order when transaction was successful' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1', status: Transaction::SUCCESS))
+      order_processor.store_transaction
       expect(order.reload.external_charge_id).to eq 'pi_1'
+    end
+    it 'stores external_id on the order when transaction requires action' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1', status: Transaction::REQUIRES_ACTION))
+      order_processor.store_transaction
+      expect(order.reload.external_charge_id).to eq 'pi_1'
+    end
+    it 'does not store external_id on the order when transaction failed' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1', status: Transaction::FAILURE))
+      order_processor.store_transaction
+      expect(order.reload.external_charge_id).to be_nil
     end
   end
 

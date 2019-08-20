@@ -98,11 +98,8 @@ class OrderProcessor
 
   def store_transaction
     order.transactions << transaction
+    order.update!(external_charge_id: transaction.external_id) unless transaction.failed?
     PostTransactionNotificationJob.perform_later(transaction.id, @user_id)
-  end
-
-  def set_external_payment!
-    @order.update!(external_charge_id: transaction.external_id)
   end
 
   def on_success

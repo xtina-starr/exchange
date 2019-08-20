@@ -63,11 +63,9 @@ module OrderService
       raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction)
     elsif order_processor.requires_action?
       order_processor.revert!
-      order_processor.set_external_payment!
       Exchange.dogstatsd.increment 'submit.requires_action'
       raise Errors::PaymentRequiresActionError, order_processor.action_data
     end
-    order_processor.set_external_payment!
     order_processor.on_success
     order
   end
