@@ -43,6 +43,7 @@ describe Api::GraphqlController, type: :request do
         get_merchant_account: seller_merchant_account
       )
       prepare_payment_intent_create_success(amount: 900_00)
+      prepare_setup_intent_create(status: 'succeeded')
     end
 
     it 'succeeds in the process of buyer offers -> seller counters -> buyer accepts' do

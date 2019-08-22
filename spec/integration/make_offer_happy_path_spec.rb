@@ -38,7 +38,9 @@ describe Api::GraphqlController, type: :request do
         deduct_inventory: nil,
         get_merchant_account: seller_merchant_account
       )
+      prepare_setup_intent_create(status: 'succeeded')
       prepare_payment_intent_create_success(amount: 800_00)
+      prepare_setup_intent_create(status: 'succeeded')
     end
 
     it 'succeeds the process of buyer create -> add initial offer -> set shipping -> set payment -> submit -> seller accepts' do
@@ -93,7 +95,8 @@ describe Api::GraphqlController, type: :request do
       # Buyer submits offer order
       expect do
         buyer_client.execute(OfferQueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
-      end.to change(order.transactions, :count).by(0)
+      end.to change(order.transactions, :count).by(1)
+      expect(order.transactions.first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, status: Transaction::SUCCESS, transaction_type: Transaction::CONFIRM)
       expect(order.reload).to have_attributes(
         state: Order::SUBMITTED,
         items_total_cents: 500_00,

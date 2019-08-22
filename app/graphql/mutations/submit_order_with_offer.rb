@@ -10,8 +10,11 @@ class Mutations::SubmitOrderWithOffer < Mutations::BaseMutation
     authorize_offer_owner_request!(offer)
 
     OfferService.submit_order_with_offer(offer, current_user_id)
+    PaymentMethodService.confirm_payment_method!(offer.order)
 
     { order_or_error: { order: offer.order } }
+  rescue Errors::PaymentRequiresActionError => e
+    { order_or_error: { action_data: e.action_data } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end

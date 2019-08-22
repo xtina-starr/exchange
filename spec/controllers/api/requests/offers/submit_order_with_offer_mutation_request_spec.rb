@@ -4,6 +4,7 @@ require 'support/gravity_helper'
 describe Api::GraphqlController, type: :request do
   describe 'submit order with offer' do
     include_context 'GraphQL Client'
+    include_context 'include stripe helper'
 
     let(:seller_id) { jwt_partner_ids.first }
     let(:buyer_id) { jwt_user_id }
@@ -150,10 +151,15 @@ describe Api::GraphqlController, type: :request do
           }
         }
       end
+      let(:seller_merchant_account) { { external_id: 'ma-1' } }
       before do
-        allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-        allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
+        allow(Gravity).to receive_messages(
+          get_artwork: artwork,
+          fetch_partner: gravity_v1_partner,
+          get_credit_card: credit_card,
+          get_merchant_account: seller_merchant_account
+        )
+        prepare_setup_intent_create(status: 'succeeded')
       end
 
       it 'submits the order and updates submitted_at on the offer' do
