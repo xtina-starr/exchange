@@ -25,41 +25,26 @@ module OfferService
   end
 
   def self.submit_pending_offer(offer)
-    order = offer.order
-    raise Errors::ValidationError, :invalid_offer if offer.submitted?
-    raise Errors::InsufficientInventoryError unless order.inventory?
-
-    order = offer.order
-    offer_order_totals = OfferOrderTotals.new(offer)
-    order.with_lock do
-      offer.update!(submitted_at: Time.now.utc)
-      order.update!(
-        last_offer: offer,
-        shipping_total_cents: offer_order_totals.shipping_total_cents,
-        tax_total_cents: offer_order_totals.tax_total_cents,
-        commission_rate: offer_order_totals.commission_rate,
-        items_total_cents: offer_order_totals.items_total_cents,
-        buyer_total_cents: offer_order_totals.buyer_total_cents,
-        commission_fee_cents: offer_order_totals.commission_fee_cents,
-        transaction_fee_cents: offer_order_totals.transaction_fee_cents,
-        seller_total_cents: offer_order_totals.seller_total_cents,
-        state_expires_at: Offer::EXPIRATION.from_now # expand order expiration
-      )
-    end
-    post_submit_offer(offer)
+    op = OfferProcessor.new(offer)
+    op.validate_offer!
+    op.check_inventory!
+    op.update_offer_submission_timestamp
+    op.set_order_totals!
+    op.on_success
     offer
   end
 
   def self.submit_order_with_offer(offer, user_id)
-    order = offer.order
-    validate_order_submission!(order)
-
-    order.submit! do
-      submit_pending_offer(offer)
-    end
-
-    OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
-    Exchange.dogstatsd.increment 'order.submit'
+    op = OfferProcessor.new(offer, user_id)
+    op.validate_offer!
+    op.validate_order!
+    op.check_inventory!
+    op.confirm_payment_method!
+    op.submit_order!
+    op.update_offer_submission_timestamp
+    op.set_order_totals!
+    op.on_success
+    op.order_on_success
   end
 
   def self.accept_offer(offer, user_id)
@@ -87,29 +72,5 @@ module OfferService
     end
     order_processor.on_success
     order
-  end
-
-  class << self
-    private
-
-    def post_submit_offer(offer)
-      OrderFollowUpJob.set(wait_until: offer.order.state_expires_at).perform_later(offer.order.id, offer.order.state)
-      OfferEvent.delay_post(offer, OfferEvent::SUBMITTED)
-      OfferRespondReminderJob.set(wait_until: offer.order.state_expires_at - Order::DEFAULT_EXPIRATION_REMINDER)
-                             .perform_later(offer.order.id, offer.id)
-      Exchange.dogstatsd.increment 'offer.submit'
-    end
-
-    def validate_order_submission!(order)
-      raise Errors::ValidationError, :cant_submit unless order.mode == Order::OFFER
-      raise Errors::ValidationError, :missing_required_info unless order.can_commit?
-
-      unless order.valid_artwork_version?
-        Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
-        raise Errors::ProcessingError, :artwork_version_mismatch
-      end
-      credit_card_error = order.assert_credit_card
-      raise Errors::ValidationError, credit_card_error if credit_card_error
-    end
   end
 end

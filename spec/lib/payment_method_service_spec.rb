@@ -17,12 +17,9 @@ describe PaymentMethodService, type: :services do
       stub_gravity_card_request
     end
     context 'when requires action' do
-      it 'raises error and stores transaction' do
+      it 'returns requires_action transaction' do
         prepare_setup_intent_create(payment_method: 'cc_1', status: 'requires_action')
-        expect { PaymentMethodService.confirm_payment_method!(order) }.to raise_error do |e|
-          expect(e).to be_kind_of(Errors::PaymentRequiresActionError)
-        end
-        transaction = order.transactions.first
+        transaction = PaymentMethodService.confirm_payment_method!(order)
         expect(transaction).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, status: Transaction::REQUIRES_ACTION, transaction_type: Transaction::CONFIRM)
       end
     end
@@ -30,9 +27,9 @@ describe PaymentMethodService, type: :services do
       before do
         prepare_setup_intent_create(payment_method: 'cc_1', status: 'succeeded')
       end
-      it 'stores transaction' do
-        expect { PaymentMethodService.confirm_payment_method!(order) }.to change(order.transactions, :count).by(1)
-        expect(order.transactions.first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, status: Transaction::SUCCESS, transaction_type: Transaction::CONFIRM)
+      it 'returns successful transaction' do
+        transaction = PaymentMethodService.confirm_payment_method!(order)
+        expect(transaction).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, status: Transaction::SUCCESS, transaction_type: Transaction::CONFIRM)
       end
     end
   end

@@ -11,7 +11,7 @@ module PaymentMethodService
       usage: 'off_session',
       metadata: metadata(order)
     )
-    transaction = Transaction.new(
+    Transaction.new(
       external_id: setup_intent.id,
       external_type: Transaction::SETUP_INTENT,
       source_id: setup_intent.payment_method,
@@ -21,11 +21,6 @@ module PaymentMethodService
       status: transaction_status_from_intent(setup_intent),
       payload: setup_intent.to_h
     )
-    order.transactions << transaction
-    return unless transaction.requires_action?
-
-    Exchange.dogstatsd.increment 'offer.requires_action'
-    raise Errors::PaymentRequiresActionError, transaction.action_data
   end
 
   def self.metadata(order)
