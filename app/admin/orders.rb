@@ -36,7 +36,7 @@ ActiveAdmin.register Order do
     end
     column :state_expires_at
     column 'Items Total' do |order|
-       format_money_cents(order.items_total_cents)
+      format_money_cents(order.items_total_cents, currency_code: order.currency_code)
     end
   end
 
@@ -287,7 +287,7 @@ ActiveAdmin.register Order do
 
         order.offers.submitted.order(created_at: :desc).each do |offer|
           date = offer.created_at
-          amount = format_money_cents(offer.amount_cents)
+          amount = format_money_cents(offer.amount_cents, currency_code: offer.currency_code)
 
           if order.state == Order::APPROVED && order.last_offer == offer
             events << {
@@ -333,37 +333,37 @@ ActiveAdmin.register Order do
           no_credit_card_found = true
         end
         if no_credit_card_found
-          h5 "Paid #{format_money_cents(order.buyer_total_cents)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
+          h5 "Paid #{format_money_cents(order.buyer_total_cents, currency_code: order.currency_code)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
         else
-          h5 "Paid #{format_money_cents(order.buyer_total_cents)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
+          h5 "Paid #{format_money_cents(order.buyer_total_cents, currency_code: order.currency_code)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
         end
       end
 
       attributes_table_for order do
         row "Artwork List Price" do |_order|
-          format_money_cents order.total_list_price_cents
+          format_money_cents(order.total_list_price_cents, currency_code: order.currency_code)
         end
         row "Accepted Offer" do |_order|
-          format_money_cents order.items_total_cents
+          format_money_cents(order.items_total_cents, currency_code: order.currency_code)
         end if order.mode == Order::OFFER
 
         row "Shipping" do |order|
-          format_money_cents order.shipping_total_cents
+          format_money_cents(order.shipping_total_cents, currency_code: order.currency_code)
         end
         row "Sales Tax" do |order|
-          format_money_cents order.tax_total_cents
+          format_money_cents(order.tax_total_cents, currency_code: order.currency_code)
         end
         row "Buyer Paid" do |order|
-          format_money_cents order.buyer_total_cents
+          format_money_cents(order.buyer_total_cents, currency_code: order.currency_code)
         end
         row "Processing Fee" do |order|
-          format_money_cents(order.transaction_fee_cents, negate: true)
+          format_money_cents(order.transaction_fee_cents, currency_code: order.currency_code, negate: true)
         end
         row "Artsy Fee" do |order|
-          format_money_cents(order.commission_fee_cents, negate: true)
+          format_money_cents(order.commission_fee_cents, currency_code: order.currency_code, negate: true)
         end
         row "Seller Payout" do |order|
-          format_money_cents order.seller_total_cents
+          format_money_cents(order.seller_total_cents, currency_code: order.currency_code)
         end
 
       end
