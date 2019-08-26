@@ -5,6 +5,7 @@ class Transaction < ApplicationRecord
 
   EXTERNAL_TYPES = [
     PAYMENT_INTENT = 'payment_intent'.freeze,
+    SETUP_INTENT = 'setup_intent'.freeze,
     CHARGE = 'charge'.freeze
   ].freeze
 
@@ -42,5 +43,9 @@ class Transaction < ApplicationRecord
       failure_message: failure_message,
       decline_code: decline_code
     }
+  end
+
+  def action_data
+    requires_action? && { client_secret: payload['client_secret'] }
   end
 end

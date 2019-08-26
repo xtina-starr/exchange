@@ -96,6 +96,12 @@ RSpec.shared_context 'include stripe helper' do
     mock_payment_intent_call(:retrieve, payment_intent)
   end
 
+  def prepare_setup_intent_create(payment_method: 'cc_1', status: 'succeeded')
+    setup_intent = double(id: 'si_1', payment_method: payment_method, status: status)
+    allow(setup_intent).to receive(:to_h).and_return(id: 'si_1', client_secret: 'si_test1')
+    allow(Stripe::SetupIntent).to receive(:create).and_return(setup_intent)
+  end
+
   def mock_retrieve_payment_intent(status:)
     payment_intent = double(id: 'pi_1', status: status)
     mock_payment_intent_call(:retrieve, payment_intent)

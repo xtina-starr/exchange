@@ -68,7 +68,7 @@ class OrderProcessor
   end
 
   def action_data
-    requires_action? && { client_secret: @transaction.payload['client_secret'] }
+    @transaction&.action_data
   end
 
   def valid?

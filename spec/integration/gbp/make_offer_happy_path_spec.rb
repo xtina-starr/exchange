@@ -42,6 +42,7 @@ describe Api::GraphqlController, type: :request do
         deduct_inventory: nil,
         get_merchant_account: seller_merchant_account
       )
+      prepare_setup_intent_create(status: 'succeeded')
       prepare_payment_intent_create_success(amount: 700_00)
     end
 
@@ -100,7 +101,8 @@ describe Api::GraphqlController, type: :request do
       expect do
         response = buyer_client.execute(OfferQueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
         expect(response.data.submit_order_with_offer.order_or_error.order.last_offer.currency_code).to eq('GBP')
-      end.to change(order.transactions, :count).by(0)
+      end.to change(order.transactions, :count).by(1)
+      expect(order.transactions.first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, status: Transaction::SUCCESS, transaction_type: Transaction::CONFIRM)
 
       expect(order.reload).to have_attributes(
         state: Order::SUBMITTED,

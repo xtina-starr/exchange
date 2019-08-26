@@ -12,6 +12,8 @@ class Mutations::SubmitOrderWithOffer < Mutations::BaseMutation
     OfferService.submit_order_with_offer(offer, current_user_id)
 
     { order_or_error: { order: offer.order } }
+  rescue Errors::PaymentRequiresActionError => e
+    { order_or_error: { action_data: e.action_data } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end

@@ -44,6 +44,7 @@ describe OfferService, type: :services do
   end
 
   describe '#submit_order_with_offer' do
+    include_context 'include stripe helper'
     let(:buyer_id) { 'user-id' }
     let(:seller_id) { 'partner-1' }
     let(:order_mode) { Order::OFFER }
@@ -66,6 +67,7 @@ describe OfferService, type: :services do
     let(:line_item_artwork_version) { artwork[:current_version_id] }
     let(:credit_card_id) { 'grav_c_id1' }
     let(:credit_card) { { external_id: 'cc-1', customer_account: { external_id: 'cus-1' }, deactivated_at: nil } }
+    let(:seller_merchant_account) { { external_id: 'ma-1' } }
     let(:order) { Fabricate(:order, buyer_id: buyer_id, seller_id: seller_id, mode: order_mode, state: order_state, credit_card_id: credit_card_id, **shipping_info) }
     let!(:offer) { Fabricate(:offer, order: order, submitted_at: offer_submitted_at, amount_cents: 1000_00, tax_total_cents: 20_00, shipping_total_cents: 30_00, creator_id: buyer_id, from_id: buyer_id) }
     let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: artwork[:_id], artwork_version_id: line_item_artwork_version, quantity: 2) }
@@ -126,9 +128,13 @@ describe OfferService, type: :services do
         context "#{state} order" do
           let(:order_state) { state }
           before do
-            allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-            allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
+            allow(Gravity).to receive_messages(
+              get_artwork: artwork,
+              fetch_partner: gravity_v1_partner,
+              get_credit_card: credit_card,
+              get_merchant_account: seller_merchant_account
+            )
+            prepare_setup_intent_create
           end
           it 'raises invalid_state error' do
             expect { call_service }.to raise_error do |e|
@@ -182,11 +188,15 @@ describe OfferService, type: :services do
         dd_statsd = stub_ddstatsd_instance
         allow(dd_statsd).to receive(:increment).with('order.submit')
         allow(dd_statsd).to receive(:increment).with('offer.submit')
-        allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-        allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
+        allow(Gravity).to receive_messages(
+          get_artwork: artwork,
+          fetch_partner: gravity_v1_partner,
+          get_credit_card: credit_card,
+          get_merchant_account: seller_merchant_account
+        )
         expect(OrderEvent).to receive(:delay_post).once.with(order, Order::SUBMITTED, buyer_id)
         expect(OfferEvent).to receive(:delay_post).once.with(offer, OfferEvent::SUBMITTED)
+        prepare_setup_intent_create
       end
 
       it 'submits the offer' do
