@@ -1,54 +1,62 @@
 class OrderProcessor
-  ##
-  # Responsible for processing an order which means deduct the inventory of work and process the charge
-  #
-  # provides methods for `hold!` and `charge!`. Both of these try to first deduct the inventory and then try to process payment.
-  # Caller should check `failed_inventory?` and `failed_payment?` errors to verify the success of hold/charge.
-  # In case of `failed_payment?`, the actual payment error can be accessed via the `transaction` attribute of the processor.
-  #
-  # the caller needs to verify the results by checking `failed_inventory?` and `failed_payment?` methods.
-
   attr_accessor :order, :transaction, :validation_error
 
-  def initialize(order, user_id)
+  def initialize(order, user_id, offer = nil)
     @order = order
+    @offer = offer
     @user_id = user_id
     @validation_error = nil
     @transaction = nil
     @deducted_inventory = []
     @validated = false
-    @insufficient_inventory = false
+    @totals_set = false
+    @state_changed = false
   end
 
-  def hold!
-    raise Errors::ValidationError, @validation_error unless valid?
+  def revert!
+    undeduct_inventory! if @deducted_inventory.any?
+    reset_totals! if @totals_set
+    return unless @state_changed
 
-    deduct_inventory
+    order.revert!
+    @state_changed = false
+  end
+
+  def advance_state(action)
+    order.send(action)
+    @state_changed = true
+  end
+
+  def set_totals!
+    order.line_items.each { |li| li.update!(commission_fee_cents: li.current_commission_fee_cents) } if order.mode == Order::BUY
+    totals = order.mode == Order::BUY ? BuyOrderTotals.new(@order) : OfferOrderTotals.new(@offer)
+    order.update!(
+      transaction_fee_cents: totals.transaction_fee_cents,
+      commission_rate: order.current_commission_rate,
+      commission_fee_cents: totals.commission_fee_cents,
+      seller_total_cents: totals.seller_total_cents
+    )
+
+    @totals_set = true
+  end
+
+  def reset_totals!
+    order.line_items.each { |li| li.update!(commission_fee_cents: nil) } if order.mode == Order::BUY
+    order.update!(transaction_fee_cents: nil, commission_rate: nil, commission_fee_cents: nil, seller_total_cents: nil)
+    @totals_set = false
+  end
+
+  def hold
     @transaction = if @order.external_charge_id
-      # here we are assuming this external_charge_id is a PaymentIntent id.
       # we already have a payment intent on this order
       PaymentService.confirm_payment_intent(@order.external_charge_id)
     else
       PaymentService.hold_payment(construct_charge_params)
     end
-    undeduct_inventory if @transaction.failed? || @transaction.requires_action?
-  rescue Errors::InsufficientInventoryError
-    undeduct_inventory
-    @insufficient_inventory = true
-  rescue Errors::ProcessingError => e
-    undeduct_inventory
-    raise e
   end
 
-  def charge!
-    raise Errors::ValidationError, @validation_error unless valid?
-
-    deduct_inventory
+  def charge
     @transaction = PaymentService.capture_without_hold(construct_charge_params)
-    undeduct_inventory if @transaction.failed? || @transaction.requires_action?
-  rescue Errors::InsufficientInventoryError
-    undeduct_inventory
-    @insufficient_inventory = true
   end
 
   def failed_payment?
@@ -63,10 +71,6 @@ class OrderProcessor
     requires_action? && { client_secret: @transaction.payload['client_secret'] }
   end
 
-  def failed_inventory?
-    @insufficient_inventory
-  end
-
   def valid?
     @validated ||= begin
       @validation_error = :unsupported_payment_method unless @order.payment_method == Order::CREDIT_CARD
@@ -76,9 +80,7 @@ class OrderProcessor
     @validation_error.nil?
   end
 
-  private
-
-  def undeduct_inventory
+  def undeduct_inventory!
     @deducted_inventory.each { |li| Gravity.undeduct_inventory(li) }
     @deducted_inventory = []
   end
@@ -89,6 +91,22 @@ class OrderProcessor
       Gravity.deduct_inventory(li)
       @deducted_inventory << li
     end
+    true
+  rescue Errors::InsufficientInventoryError
+    false
+  end
+
+  def store_transaction
+    order.transactions << transaction
+    order.update!(external_charge_id: transaction.external_id) unless transaction.failed?
+    PostTransactionNotificationJob.perform_later(transaction.id, @user_id)
+  end
+
+  def on_success
+    OrderEvent.delay_post(order, Order::SUBMITTED, @user_id)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
+    Exchange.dogstatsd.increment 'order.submitted'
   end
 
   def construct_charge_params
