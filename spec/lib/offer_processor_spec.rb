@@ -11,21 +11,21 @@ describe OfferProcessor, type: :services do
   describe '#validate_offer!' do
     it 'raises error when offer already submitted' do
       offer.update!(submitted_at: Time.now.utc)
-      expect{ op.validate_offer! }.to raise_error(Errors::ValidationError)
+      expect { op.validate_offer! }.to raise_error(Errors::ValidationError)
     end
     it 'does not raise error when order is not submitted' do
-      expect{ op.validate_offer! }.not_to raise_error
+      expect { op.validate_offer! }.not_to raise_error
     end
   end
 
   describe '#check_inventory!' do
     it 'raises error when there are no inventory' do
       allow(order).to receive(:inventory?).and_return(false)
-      expect{ op.check_inventory! }.to raise_error(Errors::InsufficientInventoryError)
+      expect { op.check_inventory! }.to raise_error(Errors::InsufficientInventoryError)
     end
     it 'does not raise error' do
       allow(order).to receive(:inventory?).and_return(true)
-      expect{ op.check_inventory! }.not_to raise_error
+      expect { op.check_inventory! }.not_to raise_error
     end
   end
 
@@ -48,9 +48,9 @@ describe OfferProcessor, type: :services do
     end
     it 'does not raise error Oif all good and sunny' do
       allow(order).to receive_messages(
-        :can_commit? => true,
-        :valid_artwork_version? => true,
-        :assert_credit_card => nil
+        can_commit?: true,
+        valid_artwork_version?: true,
+        assert_credit_card: nil
       )
       expect { op.validate_order! }.not_to raise_error
     end
@@ -71,7 +71,7 @@ describe OfferProcessor, type: :services do
       expect(order.transactions.first.id).to eq transaction.id
     end
     it 'adds transaction to the order and raises error in case of require action' do
-      transaction = Fabricate(:transaction, status: Transaction::REQUIRES_ACTION, payload: {client_secret: 'si_test1'})
+      transaction = Fabricate(:transaction, status: Transaction::REQUIRES_ACTION, payload: { client_secret: 'si_test1' })
       expect(PaymentMethodService).to receive(:confirm_payment_method!).with(order).and_return(transaction)
       expect { op.confirm_payment_method! }.to raise_error(Errors::PaymentRequiresActionError).and change(order.transactions, :count).by(1)
       expect(order.transactions.first.id).to eq transaction.id
