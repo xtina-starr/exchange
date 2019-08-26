@@ -55,8 +55,8 @@ class OrderProcessor
     end
   end
 
-  def charge
-    @transaction = PaymentService.capture_without_hold(construct_charge_params)
+  def charge(off_session = false)
+    @transaction = PaymentService.capture_without_hold(construct_charge_params.merge(off_session: off_session))
   end
 
   def failed_payment?

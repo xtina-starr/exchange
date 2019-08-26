@@ -60,7 +60,9 @@ module OfferService
       raise Errors::InsufficientInventoryError
     end
     order_processor.set_totals!
-    order_processor.charge
+    # if seller is accepting the offer, this is an off-session
+    off_session = offer.to_participant == Order::SELLER
+    order_processor.charge(off_session)
     order_processor.store_transaction
     if order_processor.failed_payment?
       order_processor.revert!
