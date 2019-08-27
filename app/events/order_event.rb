@@ -37,8 +37,8 @@ class OrderEvent < Events::BaseEvent
     Artsy::EventService.post_event(topic: TOPIC, event: event)
   end
 
-  def self.delay_post(order, action, user_id = nil)
-    event = new(user: user_id, action: action, model: order)
+  def self.delay_post(order, user_id = nil)
+    event = new(user: user_id, action: order.state, model: order)
     PostEventJob.perform_later(TOPIC, event.to_json, event.routing_key)
   end
 

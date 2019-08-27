@@ -71,7 +71,7 @@ class OfferProcessor
   end
 
   def order_on_success
-    OrderEvent.delay_post(order, Order::SUBMITTED, user_id)
+    OrderEvent.delay_post(order, user_id)
     Exchange.dogstatsd.increment 'order.submit'
   end
 end

@@ -194,7 +194,7 @@ describe OfferService, type: :services do
           get_credit_card: credit_card,
           get_merchant_account: seller_merchant_account
         )
-        expect(OrderEvent).to receive(:delay_post).once.with(order, Order::SUBMITTED, buyer_id)
+        expect(OrderEvent).to receive(:delay_post).once.with(order, buyer_id)
         expect(OfferEvent).to receive(:delay_post).once.with(offer, OfferEvent::SUBMITTED)
         prepare_setup_intent_create
       end
@@ -455,6 +455,13 @@ describe OfferService, type: :services do
           expect(e.code).to eq :unknown_edition_set
         end
       end
+    end
+  end
+
+  describe 'accept_offer' do
+    it 'calls charge with off_session true when seller accepting offer' do
+    end
+    it 'calls charge with off_session false when buyer accepting offer' do
     end
   end
 
