@@ -367,6 +367,15 @@ ActiveAdmin.register Order do
         end
 
       end
+
+      table_for order.transactions do
+        column 'Date', :created_at
+        column :status
+        column :transaction_type
+        column :failure_code
+        column :failure_message
+        column :decline_code
+      end
     end
 
     panel "Admin Actions and Notes" do
