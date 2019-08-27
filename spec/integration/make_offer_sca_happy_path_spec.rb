@@ -113,7 +113,7 @@ describe Api::GraphqlController, type: :request do
       expect do
         buyer_client.execute(OfferQueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
       end.to change(order.transactions, :count).by(1)
-      expect(order.transactions.first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, status: Transaction::REQUIRES_ACTION, transaction_type: Transaction::CONFIRM)
+      expect(order.transactions.order(created_at: :desc).first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, status: Transaction::SUCCESS, transaction_type: Transaction::CONFIRM)
       expect(order.reload).to have_attributes(
         state: Order::SUBMITTED,
         items_total_cents: 500_00,
