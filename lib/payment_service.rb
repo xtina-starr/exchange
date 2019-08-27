@@ -81,7 +81,7 @@ module PaymentService
     transaction_from_payment_intent_failure(e)
   end
 
-  def self.create_payment_intent(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:, shipping_address: nil, shipping_name: nil)
+  def self.create_payment_intent(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:, shipping_address: nil, shipping_name: nil, off_session: false)
     payment_intent = Stripe::PaymentIntent.create(
       amount: buyer_amount,
       currency: currency_code,
@@ -94,7 +94,7 @@ module PaymentService
         destination: merchant_account[:external_id],
         amount: seller_amount
       },
-      off_session: false,
+      off_session: off_session,
       metadata: metadata,
       capture_method: capture ? 'automatic' : 'manual',
       confirm: true, # it creates payment intent and tries to confirm at the same time

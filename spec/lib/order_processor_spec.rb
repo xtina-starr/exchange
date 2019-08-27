@@ -343,6 +343,14 @@ describe OrderProcessor, type: :services do
         expect(order_processor.transaction).to have_attributes(status: Transaction::SUCCESS)
       end
     end
+    it 'sets off_session to false by default' do
+      expect(PaymentService).to receive(:capture_without_hold).with(hash_including(off_session: false))
+      order_processor.charge
+    end
+    it 'overrides off_session when passed to method' do
+      expect(PaymentService).to receive(:capture_without_hold).with(hash_including(off_session: true))
+      order_processor.charge(true)
+    end
   end
 
   describe '#charge_metadata' do
