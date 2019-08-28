@@ -28,15 +28,22 @@ describe PaymentService, type: :services do
     )
   end
 
-  let(:offsession_payment_params) do
+  let(:off_session_payment_params) do
     params_with_shipping.merge(
       off_session: true,
       capture: false
     )
   end
 
+  let(:on_session_payment_params) do
+    params_with_shipping.merge(
+      off_session: false,
+      capture: false
+    )
+  end
+
   describe '#create_payment_intent' do
-    it 'creates a payment intent without setup_future_usage for off_session payments' do
+    it 'creates a payment intent without setup_future_usage for off-session payments' do
       expect(Stripe::PaymentIntent).to receive(:create).with(
         amount: buyer_amount,
         currency: currency_code,
@@ -66,7 +73,41 @@ describe PaymentService, type: :services do
           name: 'Homer'
         }
       ).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
-      PaymentService.create_payment_intent(offsession_payment_params)
+      PaymentService.create_payment_intent(off_session_payment_params)
+    end
+
+    it 'creates a payment intent with setup_future_usage: true for on-session payments' do
+      expect(Stripe::PaymentIntent).to receive(:create).with(
+        amount: buyer_amount,
+        currency: currency_code,
+        description: 'Gallery via Artsy',
+        payment_method_types: ['card'],
+        payment_method: 'cc_1',
+        customer: 'ca_1',
+        on_behalf_of: 'ma-1',
+        transfer_data: {
+          destination: 'ma-1',
+          amount: seller_amount
+        },
+        off_session: false,
+        metadata: { this: 'is', a: 'test' },
+        capture_method: 'manual',
+        confirm: true,
+        setup_future_usage: 'off_session',
+        confirmation_method: 'manual',
+        shipping: {
+          address: {
+            line1: '123 nowhere st',
+            line2: 'apt 321',
+            city: 'ny',
+            state: 'NY',
+            postal_code: '312',
+            country: 'US'
+          },
+          name: 'Homer'
+        }
+      ).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
+      PaymentService.create_payment_intent(on_session_payment_params)
     end
   end
 
