@@ -10,14 +10,14 @@ class OrderCancellationService
       cancel_payment_intent if @order.mode == Order::BUY
     end
     process_inventory_undeduction
-    OrderEvent.delay_post(@order, Order::CANCELED)
+    OrderEvent.delay_post(@order)
   ensure
     @order.transactions << @transaction if @transaction.present?
   end
 
   def buyer_lapse!
     @order.buyer_lapse!
-    OrderEvent.delay_post(@order, Order::CANCELED)
+    OrderEvent.delay_post(@order)
   end
 
   def reject!(rejection_reason = nil)
@@ -26,7 +26,7 @@ class OrderCancellationService
     end
     Exchange.dogstatsd.increment 'order.reject'
     process_inventory_undeduction
-    OrderEvent.delay_post(@order, Order::CANCELED, @user_id)
+    OrderEvent.delay_post(@order, @user_id)
   ensure
     @order.transactions << @transaction if @transaction.present?
   end
@@ -37,7 +37,7 @@ class OrderCancellationService
     end
     record_stats
     process_inventory_undeduction
-    OrderEvent.delay_post(@order, Order::REFUNDED, @user_id)
+    OrderEvent.delay_post(@order, @user_id)
   ensure
     @order.transactions << @transaction if @transaction.present?
   end

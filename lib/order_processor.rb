@@ -103,10 +103,10 @@ class OrderProcessor
   end
 
   def on_success
-    OrderEvent.delay_post(order, Order::SUBMITTED, @user_id)
+    OrderEvent.delay_post(order, @user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
-    Exchange.dogstatsd.increment 'order.submitted'
+    Exchange.dogstatsd.increment "order.#{order.state}"
   end
 
   def construct_charge_params
