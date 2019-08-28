@@ -462,7 +462,7 @@ describe OfferService, type: :services do
     let(:order) { Fabricate(:order, buyer_id: 'user_1', buyer_type: 'user', seller_id: 'gal_1', seller_type: 'gallery') }
     let(:seller_offer) { Fabricate(:offer, order: order, from_id: 'gal_1', from_type: 'gallery') }
     let(:buyer_offer) { Fabricate(:offer, order: order, from_id: 'user_1', from_type: 'user') }
-    it 'calls charge with off_session true when seller accepting offer' do
+    it 'calls charge with off_session true when the seller accepts an offer from the buyer' do
       order.update!(last_offer: buyer_offer)
       allow_any_instance_of(OrderProcessor).to receive_messages(
         valid?: true,
@@ -475,9 +475,9 @@ describe OfferService, type: :services do
         charge: Fabricate(:transaction)
       )
       expect_any_instance_of(OrderProcessor).to receive(:charge).with(true)
-      OfferService.accept_offer(buyer_offer, 'seller_1')
+      OfferService.accept_offer(buyer_offer, 'gal_1')
     end
-    it 'calls charge with off_session false when buyer accepting offer' do
+    it 'calls charge with off_session false when the buyer accepts an offer from the seller' do
       order.update!(last_offer: seller_offer)
       allow_any_instance_of(OrderProcessor).to receive_messages(
         valid?: true,
@@ -490,6 +490,20 @@ describe OfferService, type: :services do
       )
       expect_any_instance_of(OrderProcessor).to receive(:charge).with(false)
       OfferService.accept_offer(seller_offer, 'user_1')
+    end
+    it 'calls charge with off_session false when the buyer accepts their own offer (new payment flow)' do
+      order.update!(last_offer: buyer_offer)
+      allow_any_instance_of(OrderProcessor).to receive_messages(
+        valid?: true,
+        advance_state: nil,
+        deduct_inventory: true,
+        set_totals!: nil,
+        failed_payment?: false,
+        store_transaction: nil,
+        on_success: nil
+      )
+      expect_any_instance_of(OrderProcessor).to receive(:charge).with(false)
+      OfferService.accept_offer(buyer_offer, 'user_1')
     end
   end
 
