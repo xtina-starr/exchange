@@ -186,7 +186,7 @@ describe OfferService, type: :services do
     describe 'successful process' do
       before do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.submit')
+        allow(dd_statsd).to receive(:increment).with('order.submitted')
         allow(dd_statsd).to receive(:increment).with('offer.submit')
         allow(Gravity).to receive_messages(
           get_artwork: artwork,
@@ -458,10 +458,38 @@ describe OfferService, type: :services do
     end
   end
 
-  describe 'accept_offer' do
+  describe '#accept_offer' do
+    let(:order) { Fabricate(:order, buyer_id: 'user_1', buyer_type: 'user', seller_id: 'gal_1', seller_type: 'gallery') }
+    let(:seller_offer) { Fabricate(:offer, order: order, from_id: 'gal_1', from_type: 'gallery') }
+    let(:buyer_offer) { Fabricate(:offer, order: order, from_id: 'user_1', from_type: 'user') }
     it 'calls charge with off_session true when seller accepting offer' do
+      order.update!(last_offer: buyer_offer)
+      allow_any_instance_of(OrderProcessor).to receive_messages(
+        valid?: true,
+        advance_state: nil,
+        deduct_inventory: true,
+        set_totals!: nil,
+        failed_payment?: false,
+        store_transaction: nil,
+        on_success: nil,
+        charge: Fabricate(:transaction)
+      )
+      expect_any_instance_of(OrderProcessor).to receive(:charge).with(true)
+      OfferService.accept_offer(buyer_offer, 'seller_1')
     end
     it 'calls charge with off_session false when buyer accepting offer' do
+      order.update!(last_offer: seller_offer)
+      allow_any_instance_of(OrderProcessor).to receive_messages(
+        valid?: true,
+        advance_state: nil,
+        deduct_inventory: true,
+        set_totals!: nil,
+        failed_payment?: false,
+        store_transaction: nil,
+        on_success: nil
+      )
+      expect_any_instance_of(OrderProcessor).to receive(:charge).with(false)
+      OfferService.accept_offer(seller_offer, 'user_1')
     end
   end
 
