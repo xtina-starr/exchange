@@ -61,7 +61,8 @@ module OfferService
     end
     order_processor.set_totals!
     # if seller is accepting the offer, this is an off-session
-    off_session = offer.to_participant == Order::SELLER
+    # for failed payment flow buyer is accepting their own offer, so its on-session
+    off_session = offer.to_participant == Order::SELLER && user_id !== order.seller_id
     order_processor.charge(off_session)
     order_processor.store_transaction
     if order_processor.failed_payment?
