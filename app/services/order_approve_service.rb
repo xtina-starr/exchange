@@ -29,7 +29,7 @@ class OrderApproveService
   def post_process
     record_stats
     @order.line_items.each { |li| RecordSalesTaxJob.perform_later(li.id) }
-    OrderEvent.delay_post(@order, Order::APPROVED, @user_id)
+    OrderEvent.delay_post(@order, @user_id)
     OrderFollowUpJob.set(wait_until: @order.state_expires_at).perform_later(@order.id, @order.state)
     ReminderFollowUpJob.set(wait_until: @order.state_expiration_reminder_time).perform_later(@order.id, @order.state)
   end
