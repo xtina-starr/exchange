@@ -81,7 +81,7 @@ module PaymentService
     transaction_from_payment_intent_failure(e)
   end
 
-  def create_payment_intent_params(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata:, capture:, shipping_address:, shipping_name:, off_session:)
+  def self.create_payment_intent_params(credit_card, buyer_amount, seller_amount, merchant_account, currency_code, description, metadata, capture, shipping_address, shipping_name, off_session)
     {
       amount: buyer_amount,
       currency: currency_code,
@@ -115,9 +115,10 @@ module PaymentService
   
   def self.create_payment_intent(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:, shipping_address: nil, shipping_name: nil, off_session: false)
     payment_intent_params = create_payment_intent_params(credit_card, buyer_amount, seller_amount, merchant_account, currency_code, description, metadata, capture, shipping_address, shipping_name, off_session)
+    payment_intent_params.merge!(setup_future_usage: 'off_session') unless off_session
     
-    payment_intent_params.merge(setup_future_usage: 'off_session') unless off_session
     payment_intent = Stripe::PaymentIntent.create(payment_intent_params)
+    
     new_transaction = Transaction.new(
       external_id: payment_intent.id,
       external_type: Transaction::PAYMENT_INTENT,

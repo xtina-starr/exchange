@@ -28,6 +28,48 @@ describe PaymentService, type: :services do
     )
   end
 
+  let(:offsession_payment_params) do
+    params_with_shipping.merge(
+      off_session: true,
+      capture: false
+    )
+  end
+
+  describe '#create_payment_intent' do
+    it 'creates a payment intent without setup_future_usage for off_session payments' do
+      expect(Stripe::PaymentIntent).to receive(:create).with(
+        amount: buyer_amount,
+        currency: currency_code,
+        description: 'Gallery via Artsy',
+        payment_method_types: ['card'],
+        payment_method: 'cc_1',
+        customer: 'ca_1',
+        on_behalf_of: 'ma-1',
+        transfer_data: {
+          destination: 'ma-1',
+          amount: seller_amount
+        },
+        off_session: true,
+        metadata: { this: 'is', a: 'test' },
+        capture_method: 'manual',
+        confirm: true,
+        confirmation_method: 'manual',
+        shipping: {
+          address: {
+            line1: '123 nowhere st',
+            line2: 'apt 321',
+            city: 'ny',
+            state: 'NY',
+            postal_code: '312',
+            country: 'US'
+          },
+          name: 'Homer'
+        }
+      ).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
+      PaymentService.create_payment_intent(offsession_payment_params)
+    end
+  end
+
   describe '#hold_payment' do
     it 'calls stripe with expected values' do
       expect(Stripe::PaymentIntent).to receive(:create).with(
@@ -79,6 +121,7 @@ describe PaymentService, type: :services do
         payload: { 'client_secret' => 'pi_test1', 'id' => 'pi_1' }
       )
     end
+
     it 'returns transaction for requires_action' do
       prepare_payment_intent_create_failure(status: 'requires_action')
       transaction = PaymentService.hold_payment(params)
@@ -170,6 +213,7 @@ describe PaymentService, type: :services do
         payload: { 'client_secret' => 'pi_test1', 'id' => 'pi_1' }
       )
     end
+
     it 'returns transaction for requires_action' do
       prepare_payment_intent_create_failure(status: 'requires_action')
       transaction = PaymentService.capture_without_hold(params)
@@ -210,6 +254,7 @@ describe PaymentService, type: :services do
       mock_retrieve_payment_intent(status: 'requires_action')
       expect { PaymentService.confirm_payment_intent('pi_1') }.to raise_error(Errors::ProcessingError)
     end
+
     it 'confirms the payment intent and stores transaction' do
       prepare_payment_intent_confirm_success
       transaction = PaymentService.confirm_payment_intent('pi_1')
@@ -220,6 +265,7 @@ describe PaymentService, type: :services do
         status: Transaction::SUCCESS
       )
     end
+
     it 'confirms the payment intent and stores failed transaction' do
       prepare_payment_intent_confirm_failure(charge_error: { code: 'capture_charge', decline_code: 'do_not_honor', message: 'The card was declined' })
       transaction = PaymentService.confirm_payment_intent('pi_1')
