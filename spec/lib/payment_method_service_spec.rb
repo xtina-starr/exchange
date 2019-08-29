@@ -10,6 +10,19 @@ describe PaymentMethodService, type: :services do
   let(:stub_gravity_merchant_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/merchant_accounts?partner_id=seller1").to_return(body: [{ external_id: 'ma-1' }].to_json) }
   let(:gravity_credit_card) { { external_id: 'cc_1', customer_account: { external_id: 'ca_1' } } }
   let(:stub_gravity_card_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/credit_card/cc_1").to_return(body: gravity_credit_card.to_json) }
+  describe 'verify_payment_method' do
+    it 'returns successful transaction for succeeded payment methods' do
+      prepare_setup_intent_retrieve
+      transaction = PaymentMethodService.verify_payment_method('si_1')
+      expect(transaction).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, transaction_type: Transaction::CONFIRM, status: Transaction::SUCCESS)
+    end
+    it 'returns requires_action transaction for payment_method still needing require action' do
+      prepare_setup_intent_retrieve(status: 'requires_action')
+      transaction = PaymentMethodService.verify_payment_method('si_1')
+      expect(transaction).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, transaction_type: Transaction::CONFIRM, status: Transaction::REQUIRES_ACTION)
+    end
+  end
+
   describe 'confirm_payment_method' do
     before do
       stub_gravity_partner

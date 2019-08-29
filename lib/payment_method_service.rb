@@ -1,13 +1,12 @@
 module PaymentMethodService
-
-  def self.verify_setup_intent(setup_intent_id)
-    setup_intent = Stripe::SetupIntent.retrive(setup_intent_id)
+  def self.verify_payment_method(setup_intent_id)
+    setup_intent = Stripe::SetupIntent.retrieve(setup_intent_id)
     Transaction.new(
       external_id: setup_intent.id,
       external_type: Transaction::SETUP_INTENT,
       source_id: setup_intent.payment_method,
       destination_id: setup_intent.on_behalf_of,
-      amount_cents: order.items_total_cents,
+      amount_cents: nil,
       transaction_type: Transaction::CONFIRM,
       status: transaction_status_from_intent(setup_intent),
       payload: setup_intent.to_h
