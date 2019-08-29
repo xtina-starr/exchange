@@ -264,12 +264,12 @@ describe Api::GraphqlController, type: :request do
                   undeduct_inventory_request
                   prepare_payment_intent_create_failure(status: 'requires_action')
                 end
-        
+
                 it 'returns action data' do
                   response = client.execute(mutation, mutation_input)
                   expect(response.data.fix_failed_payment.order_or_error.action_data.client_secret).to eq 'pi_test1'
                 end
-        
+
                 it 'stores failed transaction' do
                   expect do
                     client.execute(mutation, mutation_input)
@@ -277,13 +277,12 @@ describe Api::GraphqlController, type: :request do
                   expect(order.reload.external_charge_id).to eq 'pi_1'
                   expect(order.transactions.last.requires_action?).to be true
                 end
-        
+
                 it 'undeducts inventory' do
                   client.execute(mutation, mutation_input)
                   expect(undeduct_inventory_request).to have_been_requested
                 end
               end
-
             end
 
             it 'sets payments on the order' do
