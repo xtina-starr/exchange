@@ -34,7 +34,7 @@ module OfferService
     offer
   end
 
-  def self.submit_order_with_offer(offer, user_id: user_id, confirmed_setup_intent_id: confirmed_setup_intent_id)
+  def self.submit_order_with_offer(offer, user_id:, confirmed_setup_intent_id: nil)
     op = OfferProcessor.new(offer, user_id)
     op.validate_offer!
     op.validate_order!

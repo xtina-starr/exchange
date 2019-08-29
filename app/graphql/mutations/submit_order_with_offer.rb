@@ -10,7 +10,7 @@ class Mutations::SubmitOrderWithOffer < Mutations::BaseMutation
     offer = Offer.find(offer_id)
     authorize_offer_owner_request!(offer)
 
-    OfferService.submit_order_with_offer(offer, current_user_id, confirmed_setup_intent_id)
+    OfferService.submit_order_with_offer(offer, user_id: current_user_id, confirmed_setup_intent_id: confirmed_setup_intent_id)
 
     { order_or_error: { order: offer.order } }
   rescue Errors::PaymentRequiresActionError => e
