@@ -60,9 +60,9 @@ module OfferService
       raise Errors::InsufficientInventoryError
     end
     order_processor.set_totals!
-    # if seller is accepting the offer, this is an off-session
-    # for failed payment flow buyer is accepting their own offer, so its on-session
-    off_session = offer.to_participant == Order::SELLER && user_id != order.buyer_id
+    
+    # this is an off-session if offer is from buyer and seller is accepting it (in case of failed payment buyer could accept their own offer)
+    off_session = offer.from_participant == Order::BUYER && user_id != order.buyer_id
     order_processor.charge(off_session)
     order_processor.store_transaction
     if order_processor.failed_payment?
