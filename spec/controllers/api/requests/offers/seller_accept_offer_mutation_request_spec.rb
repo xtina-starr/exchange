@@ -6,7 +6,7 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner) { { effective_commission_rate: 0.1 } }
     let(:order_seller_id) { jwt_partner_ids.first }
-    let(:order_buyer_id) { jwt_user_id }
+    let(:order_buyer_id) { 'buyer-id' }
     let(:order_state) { Order::SUBMITTED }
     let(:credit_card_id) { 'cc-1' }
     let(:merchant_account) { { external_id: 'ma-1' } }
