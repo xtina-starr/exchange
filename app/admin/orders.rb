@@ -370,8 +370,9 @@ ActiveAdmin.register Order do
 
       table_for order.transactions do
         column 'Date', :created_at
-        column :status
-        column :transaction_type
+        column 'Type', :external_type
+        column 'Action', :transaction_type
+        column 'Status', :status
         column :failure_code
         column :failure_message
         column :decline_code
