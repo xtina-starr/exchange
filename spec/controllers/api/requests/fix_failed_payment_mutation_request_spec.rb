@@ -188,7 +188,7 @@ describe Api::GraphqlController, type: :request do
                   client.execute(mutation, mutation_input)
                 end.to change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
                 expect(order.reload.external_charge_id).to be_nil
-                expect(order.transactions.last.failed?).to be true
+                expect(order.transactions.order(created_at: :desc).last.failed?).to be true
                 expect(order.last_transaction_failed?).to be true
               end
 
@@ -216,7 +216,7 @@ describe Api::GraphqlController, type: :request do
               expect(order.reload.state).to eq Order::APPROVED
               expect(order.state_updated_at).not_to be_nil
               expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
-              expect(order.reload.transactions.last.external_id).not_to be_nil
+              expect(order.reload.transactions.order(created_at: :desc).last.external_id).not_to be_nil
               expect(order.reload.transactions.order(updated_at: 'asc').last.transaction_type).to eq Transaction::CAPTURE
             end
 
@@ -250,7 +250,7 @@ describe Api::GraphqlController, type: :request do
                 expect(order.reload.state).to eq Order::APPROVED
                 expect(order.state_updated_at).not_to be_nil
                 expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
-                expect(order.reload.transactions.last.external_id).not_to be_nil
+                expect(order.reload.transactions.order(created_at: :desc).last.external_id).not_to be_nil
                 expect(order.reload.transactions.order(updated_at: 'asc').last.transaction_type).to eq Transaction::CAPTURE
               end
 
@@ -275,7 +275,7 @@ describe Api::GraphqlController, type: :request do
                     client.execute(mutation, mutation_input)
                   end.to change(order.transactions.where(status: Transaction::REQUIRES_ACTION), :count).by(1)
                   expect(order.reload.external_charge_id).to eq 'pi_1'
-                  expect(order.transactions.last.requires_action?).to be true
+                  expect(order.transactions.order(created_at: :asc).last.requires_action?).to be true
                 end
 
                 it 'undeducts inventory' do
