@@ -24,6 +24,8 @@ class Mutations::FixFailedPayment < Mutations::BaseMutation
     OfferService.accept_offer(offer, current_user_id)
 
     { order_or_error: { order: order.reload } }
+  rescue Errors::PaymentRequiresActionError => e
+    { order_or_error: { action_data: e.action_data } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end
