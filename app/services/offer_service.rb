@@ -60,7 +60,7 @@ module OfferService
       raise Errors::InsufficientInventoryError
     end
     order_processor.set_totals!
-    
+
     # this is an off-session if offer is from buyer and seller is accepting it (in case of failed payment buyer could accept their own offer)
     off_session = offer.from_participant == Order::BUYER && user_id != order.buyer_id
     order_processor.charge(off_session)
