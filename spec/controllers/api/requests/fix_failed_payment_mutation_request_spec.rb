@@ -76,6 +76,11 @@ describe Api::GraphqlController, type: :request do
                   type
                 }
               }
+              ... on OrderRequiresAction {
+                actionData {
+                  clientSecret
+                }
+              }
             }
           }
         }
@@ -248,6 +253,37 @@ describe Api::GraphqlController, type: :request do
                 expect(order.reload.transactions.last.external_id).not_to be_nil
                 expect(order.reload.transactions.order(updated_at: 'asc').last.transaction_type).to eq Transaction::CAPTURE
               end
+
+              context 'with payment requires action' do
+                before do
+                  deduct_inventory_request
+                  merchant_account_request
+                  credit_card_request
+                  artwork_request
+                  partner_account_request
+                  undeduct_inventory_request
+                  prepare_payment_intent_create_failure(status: 'requires_action')
+                end
+        
+                it 'returns action data' do
+                  response = client.execute(mutation, mutation_input)
+                  expect(response.data.fix_failed_payment.order_or_error.action_data.client_secret).to eq 'pi_test1'
+                end
+        
+                it 'stores failed transaction' do
+                  expect do
+                    client.execute(mutation, mutation_input)
+                  end.to change(order.transactions.where(status: Transaction::REQUIRES_ACTION), :count).by(1)
+                  expect(order.reload.external_charge_id).to eq 'pi_1'
+                  expect(order.transactions.last.requires_action?).to be true
+                end
+        
+                it 'undeducts inventory' do
+                  client.execute(mutation, mutation_input)
+                  expect(undeduct_inventory_request).to have_been_requested
+                end
+              end
+
             end
 
             it 'sets payments on the order' do
