@@ -133,7 +133,7 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      context 'with last_transaction_failed? == false' do
+      context 'with last_transaction.failed? == false' do
         let(:transaction_status) { Transaction::SUCCESS }
         it 'returns error' do
           response = client.execute(mutation, mutation_input)
@@ -144,7 +144,7 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      context 'with last_transaction_failed? == true' do
+      context 'with last_transaction.failed? == true' do
         context 'with a credit card that does not belong to the buyer' do
           let(:invalid_credit_card) { { id: credit_card_id, user: { _id: 'someone_else' } } }
           it 'raises an error' do
@@ -296,6 +296,45 @@ describe Api::GraphqlController, type: :request do
               expect(order.state).to eq Order::APPROVED
             end
           end
+        end
+      end
+
+      context 'with last_transaction.require_action? = true' do
+        let(:transaction_status) { Transaction::REQUIRES_ACTION }
+        let(:deduct_inventory_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }).to_return(status: 200, body: {}.to_json) }
+        let(:undeduct_inventory_request) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }).to_return(status: 200, body: {}.to_json) }
+        let(:credit_card_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/credit_card/#{credit_card_id}").to_return(status: 200, body: credit_card.to_json) }
+        let(:artwork_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1").to_return(status: 200, body: artwork.to_json) }
+        let(:merchant_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/merchant_accounts").with(query: { partner_id: seller_id }).to_return(status: 200, body: [merchant_account].to_json) }
+        let(:partner_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/partner/#{seller_id}/all").to_return(status: 200, body: gravity_v1_partner.to_json) }
+        before do
+          deduct_inventory_request
+          merchant_account_request
+          credit_card_request
+          artwork_request
+          partner_account_request
+        end
+
+        it 'approves the order' do
+          prepare_payment_intent_create_success(amount: 20_00)
+          response = client.execute(mutation, mutation_input)
+
+          expect(response.data.fix_failed_payment.order_or_error).to respond_to(:order)
+
+          expect(deduct_inventory_request).to have_been_requested
+
+          expect(response.data.fix_failed_payment.order_or_error.order).not_to be_nil
+
+          response_order = response.data.fix_failed_payment.order_or_error.order
+          expect(response_order.id).to eq order.id.to_s
+          expect(response_order.state).to eq Order::APPROVED.upcase
+
+          expect(response.data.fix_failed_payment.order_or_error).not_to respond_to(:error)
+          expect(order.reload.state).to eq Order::APPROVED
+          expect(order.state_updated_at).not_to be_nil
+          expect(order.state_expires_at).to eq(order.state_updated_at + 7.days)
+          expect(order.reload.transactions.order(created_at: :desc).last.external_id).not_to be_nil
+          expect(order.reload.transactions.order(updated_at: 'asc').last.transaction_type).to eq Transaction::CAPTURE
         end
       end
     end
