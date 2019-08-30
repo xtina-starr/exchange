@@ -200,7 +200,10 @@ class Order < ApplicationRecord
   end
 
   def last_transaction_failed?
-    transactions.present? && transactions.order(created_at: :desc).first.failed?
+    return false unless transactions.present?
+
+    last_transaction = transactions.order(created_at: :desc).first
+    last_transaction.failed? || last_transaction.requires_action?
   end
 
   private
