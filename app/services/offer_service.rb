@@ -34,12 +34,12 @@ module OfferService
     offer
   end
 
-  def self.submit_order_with_offer(offer, user_id)
+  def self.submit_order_with_offer(offer, user_id:, confirmed_setup_intent_id: nil)
     op = OfferProcessor.new(offer, user_id)
     op.validate_offer!
     op.validate_order!
     op.check_inventory!
-    op.confirm_payment_method!
+    op.confirm_payment_method!(confirmed_setup_intent_id)
     op.submit_order!
     op.update_offer_submission_timestamp
     op.set_order_totals!

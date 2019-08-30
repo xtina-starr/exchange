@@ -33,8 +33,12 @@ class OfferProcessor
     @state_changed = true
   end
 
-  def confirm_payment_method!
-    @transaction = PaymentMethodService.confirm_payment_method!(offer.order)
+  def confirm_payment_method!(confirmed_setup_intent_id = nil)
+    @transaction = if confirmed_setup_intent_id
+      PaymentMethodService.verify_payment_method(confirmed_setup_intent_id)
+    else
+      PaymentMethodService.confirm_payment_method!(offer.order)
+    end
     order.transactions << transaction
     return unless @transaction.requires_action?
 

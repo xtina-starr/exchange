@@ -64,17 +64,31 @@ describe OfferProcessor, type: :services do
   end
 
   describe '#confirm_payment_method!' do
-    it 'adds transaction to the order in case of success' do
-      transaction = Fabricate(:transaction, status: Transaction::SUCCESS)
-      expect(PaymentMethodService).to receive(:confirm_payment_method!).with(order).and_return(transaction)
-      expect { op.confirm_payment_method! }.to change(order.transactions, :count).by(1)
-      expect(order.transactions.first.id).to eq transaction.id
+    context 'without sending setup_intent_id' do
+      it 'adds transaction to the order in case of success' do
+        transaction = Fabricate(:transaction, status: Transaction::SUCCESS)
+        expect(PaymentMethodService).to receive(:confirm_payment_method!).with(order).and_return(transaction)
+        expect { op.confirm_payment_method! }.to change(order.transactions, :count).by(1)
+        expect(order.transactions.first.id).to eq transaction.id
+      end
+      it 'adds transaction to the order and raises error in case of require action' do
+        transaction = Fabricate(:transaction, status: Transaction::REQUIRES_ACTION, payload: { client_secret: 'si_test1' })
+        expect(PaymentMethodService).to receive(:confirm_payment_method!).with(order).and_return(transaction)
+        expect { op.confirm_payment_method! }.to raise_error(Errors::PaymentRequiresActionError).and change(order.transactions, :count).by(1)
+        expect(order.transactions.first.id).to eq transaction.id
+      end
     end
-    it 'adds transaction to the order and raises error in case of require action' do
-      transaction = Fabricate(:transaction, status: Transaction::REQUIRES_ACTION, payload: { client_secret: 'si_test1' })
-      expect(PaymentMethodService).to receive(:confirm_payment_method!).with(order).and_return(transaction)
-      expect { op.confirm_payment_method! }.to raise_error(Errors::PaymentRequiresActionError).and change(order.transactions, :count).by(1)
-      expect(order.transactions.first.id).to eq transaction.id
+    context 'verifying existing payment intent' do
+      it 'adds transaction to the order in case of success' do
+        prepare_setup_intent_retrieve
+        expect { op.confirm_payment_method!('si_1') }.to change(order.transactions, :count).by(1)
+        expect(order.transactions.first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, transaction_type: Transaction::CONFIRM, status: Transaction::SUCCESS)
+      end
+      it 'adds transaction to the order and raises error in case of require action' do
+        prepare_setup_intent_retrieve(status: 'requires_action')
+        expect { op.confirm_payment_method!('si_1') }.to raise_error(Errors::PaymentRequiresActionError).and change(order.transactions, :count).by(1)
+        expect(order.transactions.first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, transaction_type: Transaction::CONFIRM, status: Transaction::REQUIRES_ACTION)
+      end
     end
   end
 
