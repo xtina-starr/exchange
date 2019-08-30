@@ -232,7 +232,7 @@ describe OfferService, type: :services do
       context 'succeeded setup_intent' do
         before do
           dd_statsd = stub_ddstatsd_instance
-          allow(dd_statsd).to receive(:increment).with('order.submit')
+          allow(dd_statsd).to receive(:increment).with('order.submitted')
           allow(dd_statsd).to receive(:increment).with('offer.submit')
           allow(Gravity).to receive_messages(
             get_artwork: artwork,
@@ -240,7 +240,7 @@ describe OfferService, type: :services do
             get_credit_card: credit_card,
             get_merchant_account: seller_merchant_account
           )
-          expect(OrderEvent).to receive(:delay_post).once.with(order, Order::SUBMITTED, buyer_id)
+          expect(OrderEvent).to receive(:delay_post).once.with(order, buyer_id)
           expect(OfferEvent).to receive(:delay_post).once.with(offer, OfferEvent::SUBMITTED)
           prepare_setup_intent_retrieve(status: 'succeeded')
         end
