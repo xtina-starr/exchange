@@ -264,6 +264,11 @@ describe OrderProcessor, type: :services do
       order_processor.store_transaction
       expect(order.reload.external_charge_id).to be_nil
     end
+    it 'does not store external_id on the order when off_session transaction requires action' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1', status: Transaction::REQUIRES_ACTION))
+      order_processor.store_transaction(true)
+      expect(order.reload.external_charge_id).to be_nil
+    end
   end
 
   describe 'on success' do

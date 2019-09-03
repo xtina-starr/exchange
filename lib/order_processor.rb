@@ -100,9 +100,9 @@ class OrderProcessor
     false
   end
 
-  def store_transaction
+  def store_transaction(off_session = false)
     order.transactions << transaction
-    order.update!(external_charge_id: transaction.external_id) unless transaction.failed?
+    order.update!(external_charge_id: transaction.external_id) unless transaction.failed? || (transaction.requires_action? && off_session)
     PostTransactionNotificationJob.perform_later(transaction.id, @user_id)
   end
 

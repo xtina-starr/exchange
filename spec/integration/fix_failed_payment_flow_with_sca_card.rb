@@ -2,7 +2,8 @@ require 'rails_helper'
 require 'support/gravity_helper'
 require 'support/taxjar_helper'
 
-# create order -> set initial offer -> set payment to a card that always requires 3d auth -> set shipping -> submit offer -> seller accept but it fails processing -> buyer: reuse the same card -> buyer: fixFailedPayment -> buyer goes through SCA -> buyer resubmits -> should get accepted
+# create order -> set initial offer -> set payment to a card that always requires 3d auth -> set shipping -> submit offer -> seller accept but it fails processing
+# -> buyer: reuse the same card -> buyer: fixFailedPayment -> buyer goes through SCA -> buyer resubmits -> should get accepted
 
 describe Api::GraphqlController, type: :request do
   include_context 'include stripe helper'
@@ -123,27 +124,27 @@ describe Api::GraphqlController, type: :request do
         shipping_total_cents: 200_00,
         tax_total_cents: 100_00,
         buyer_total_cents: 800_00,
-        #seller_total_cents: 726_50,
+        seller_total_cents: 726_50,
         fulfillment_type: Order::SHIP,
         shipping_country: 'US',
         credit_card_id: 'cc-1',
-        #commission_fee_cents: 50_00,
-        external_charge_id: 'pi_1'
+        commission_fee_cents: 50_00,
+        external_charge_id: nil
       )
 
       # Buyer resubmits with same card now its on-session needs sca
       prepare_payment_intent_create_failure(status: 'requires_action', id: 'pi_2')
       expect do
-        response = buyer_client.execute(OfferQueryHelper::FAILED_PAYMENT_QUERY, input: { offerId: offer.id.to_s, creditCardId: 'cc-1'})
+        buyer_client.execute(OfferQueryHelper::FAILED_PAYMENT_QUERY, input: { offerId: offer.id.to_s, creditCardId: 'cc-1' })
       end.to change(order.transactions, :count).by(1)
       # @TODO: it sets external charge id on the order
-      expect(order.reload).to have_attributes(external_charge_id: 'pi_2', status: Order::SUBMITTED)
+      expect(order.reload).to have_attributes(external_charge_id: 'pi_2', state: Order::SUBMITTED)
 
       # Buyer does SCA and now resubmits
       mock_retrieve_payment_intent(status: 'requires_confirmation')
       prepare_payment_intent_confirm_success(id: 'pi_2')
       expect do
-        buyer_client.execute(OfferQueryHelper::FAILED_PAYMENT_QUERY, input: { offer_id: offer.id.to_s, credit_card_id: 'cc-1'})
+        buyer_client.execute(OfferQueryHelper::FAILED_PAYMENT_QUERY, input: { offerId: offer.id.to_s, creditCardId: 'cc-1' })
       end.to change(order.transactions, :count).by(1)
       expect(order.reload).to have_attributes(
         state: Order::APPROVED,
@@ -157,7 +158,7 @@ describe Api::GraphqlController, type: :request do
         fulfillment_type: Order::SHIP,
         shipping_country: 'US',
         credit_card_id: 'cc-1',
-        external_charge_id: 'pi_1'
+        external_charge_id: 'pi_2'
       )
 
       # seller fulfills order

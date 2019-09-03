@@ -164,7 +164,7 @@ module OfferQueryHelper
     }
   ).freeze
 
-  FAILED_PAYMENT_QUERY = <<-GRAPHQL
+  FAILED_PAYMENT_QUERY = %(
     mutation($input: FixFailedPaymentInput!) {
       fixFailedPayment(input: $input) {
         orderOrError {
@@ -200,5 +200,5 @@ module OfferQueryHelper
         }
       }
     }
-  GRAPHQL
+  ).freeze
 end
