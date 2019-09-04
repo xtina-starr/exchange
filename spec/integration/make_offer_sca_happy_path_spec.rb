@@ -38,85 +38,117 @@ describe Api::GraphqlController, type: :request do
         deduct_inventory: nil,
         get_merchant_account: seller_merchant_account
       )
-      prepare_payment_intent_create_success(amount: 1000_00)
       prepare_setup_intent_create(status: 'succeeded')
+      prepare_payment_intent_create_success(amount: 800_00)
     end
 
-    it 'succeeds in the process of buyer offers -> seller counters -> buyer accepts' do
-      # The first few actions here (up through a buyer submitting an initial offer)
-      # are covered by the assertions in the make_offer_happy_path_spec and aren't repeated here.
-
+    it 'succeeds the process of buyer create -> add initial offer -> set shipping -> set payment -> submit -> seller accepts' do
       # Buyer creates the offer order
-      buyer_client.execute(OfferQueryHelper::CREATE_OFFER_ORDER, input: { artworkId: gravity_artwork[:_id], quantity: 1 })
-
+      expect do
+        buyer_client.execute(OfferQueryHelper::CREATE_OFFER_ORDER, input: { artworkId: gravity_artwork[:_id], quantity: 1 })
+      end.to change(Order, :count).by(1)
       order = Order.last
+      expect(order).to have_attributes(state: Order::PENDING, mode: Order::OFFER, shipping_total_cents: nil, buyer_total_cents: nil, tax_total_cents: nil)
 
       # adds initial offer to order
-      buyer_client.execute(OfferQueryHelper::ADD_OFFER_TO_ORDER, input: { orderId: order.id, amountCents: 500_00 })
-
+      expect do
+        buyer_client.execute(OfferQueryHelper::ADD_OFFER_TO_ORDER, input: { orderId: order.id, amountCents: 500_00 })
+      end.to change(Offer, :count).by(1)
       offer = Offer.last
+      expect(order.reload).to have_attributes(state: Order::PENDING, mode: Order::OFFER, shipping_total_cents: nil, buyer_total_cents: nil, tax_total_cents: nil)
+      expect(offer.amount_cents).to eq 500_00
+      expect(offer.order_id).to eq order.id
 
       # Buyer sets shipping info
       buyer_client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: buyer_shipping_address })
+      expect(order.reload).to have_attributes(
+        state: Order::PENDING,
+        items_total_cents: nil,
+        shipping_total_cents: nil,
+        tax_total_cents: nil,
+        buyer_total_cents: nil,
+        fulfillment_type: Order::SHIP,
+        shipping_country: 'US',
+        shipping_city: 'New York',
+        shipping_address_line1: '401 Broadway',
+        shipping_address_line2: 'Suite 80',
+        shipping_postal_code: '10012'
+      )
+
+      expect(offer.reload).to have_attributes(
+        amount_cents: 500_00,
+        shipping_total_cents: 200_00,
+        tax_total_cents: 100_00,
+        buyer_total_cents: 800_00
+      )
 
       # Buyer sets credit card
       buyer_client.execute(QueryHelper::SET_CREDIT_CARD, input: { id: order.id.to_s, creditCardId: buyer_credit_card[:id] })
-
-      # Buyer submits offer order
-      buyer_client.execute(OfferQueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
-
-      # Here we start making new assertions, as this is new behavior not tested by any
-      # of our other integration tests.
-
-      # Seller submits counteroffer
-      expect do
-        seller_client.execute(OfferQueryHelper::SELLER_COUNTER_OFFER, input: { offerId: offer.id.to_s, amountCents: 700_00 })
-      end.to change(order.transactions, :count).by(0).and change(order.offers, :count).by(1)
       expect(order.reload).to have_attributes(
-        state: Order::SUBMITTED,
-        items_total_cents: 700_00,
-        shipping_total_cents: 200_00,
-        buyer_total_cents: 1000_00,
-        tax_total_cents: 100_00,
-        commission_fee_cents: 70_00,
-        transaction_fee_cents: 29_30,
-        seller_total_cents: 900_70,
+        state: Order::PENDING,
         fulfillment_type: Order::SHIP,
         shipping_country: 'US',
         credit_card_id: 'cc-1'
       )
 
-      seller_counter = order.offers.order(created_at: :desc).first
-      expect(seller_counter).to have_attributes(
-        amount_cents: 700_00,
+      # Buyer submits offer order
+      prepare_setup_intent_create(status: 'requires_action')
+      expect do
+        buyer_client.execute(OfferQueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
+      end.to change(order.transactions, :count).by(1)
+      expect(order.transactions.first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, status: Transaction::REQUIRES_ACTION, transaction_type: Transaction::CONFIRM)
+      expect(order.reload).to have_attributes(
+        state: Order::PENDING,
+        items_total_cents: nil,
+        shipping_total_cents: nil,
+        tax_total_cents: nil,
+        buyer_total_cents: nil,
+        seller_total_cents: nil,
+        credit_card_id: 'cc-1',
+        commission_fee_cents: nil
+      )
+
+      # Resubmit after SCA
+      prepare_setup_intent_create(status: 'succeeded')
+      expect do
+        buyer_client.execute(OfferQueryHelper::SUBMIT_ORDER_WITH_OFFER, input: { offerId: offer.id.to_s })
+      end.to change(order.transactions, :count).by(1)
+      expect(order.transactions.order(created_at: :desc).first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, status: Transaction::SUCCESS, transaction_type: Transaction::CONFIRM)
+      expect(order.reload).to have_attributes(
+        state: Order::SUBMITTED,
+        items_total_cents: 500_00,
         shipping_total_cents: 200_00,
         tax_total_cents: 100_00,
-        buyer_total_cents: 1000_00
+        buyer_total_cents: 800_00,
+        seller_total_cents: 726_50,
+        fulfillment_type: Order::SHIP,
+        shipping_country: 'US',
+        credit_card_id: 'cc-1',
+        commission_fee_cents: 50_00
       )
-      expect(seller_counter.submitted_at).to_not be_nil
 
-      # Buyer accepts offer
+      # seller accepts offer
       expect do
-        buyer_client.execute(OfferQueryHelper::BUYER_ACCEPT_OFFER, input: { offerId: seller_counter.id.to_s })
+        seller_client.execute(OfferQueryHelper::SELLER_ACCEPT_OFFER, input: { offerId: offer.id.to_s })
       end.to change(order.transactions, :count).by(1)
       expect(order.reload).to have_attributes(
         state: Order::APPROVED,
-        items_total_cents: 700_00,
+        items_total_cents: 500_00,
         shipping_total_cents: 200_00,
-        buyer_total_cents: 1000_00,
+        buyer_total_cents: 800_00,
         tax_total_cents: 100_00,
-        commission_fee_cents: 70_00,
-        transaction_fee_cents: 29_30,
-        seller_total_cents: 900_70,
+        commission_fee_cents: 50_00,
+        transaction_fee_cents: 23_50,
+        seller_total_cents: 726_50,
         fulfillment_type: Order::SHIP,
         shipping_country: 'US',
-        credit_card_id: 'cc-1'
+        credit_card_id: 'cc-1',
+        external_charge_id: 'pi_1'
       )
       expect(order.transactions.order(created_at: :desc).first).to have_attributes(
         transaction_type: Transaction::CAPTURE,
-        amount_cents: 1000_00,
-        status: Transaction::SUCCESS,
-        source_id: 'cc_1'
+        amount_cents: 800_00,
+        status: Transaction::SUCCESS
       )
 
       # seller fulfills order

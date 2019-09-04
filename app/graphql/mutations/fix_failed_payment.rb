@@ -16,7 +16,7 @@ class Mutations::FixFailedPayment < Mutations::BaseMutation
       order.last_transaction_failed? &&
       offer.id == order.last_offer.id
 
-    order = OrderService.set_payment!(order, credit_card_id)
+    order = OrderService.set_payment!(order, credit_card_id) if credit_card_id != order.credit_card_id
 
     # Note that the buyer might be 'accepting' their own offer here.
     # If they are, we know the seller attepted to accept it before
@@ -24,6 +24,8 @@ class Mutations::FixFailedPayment < Mutations::BaseMutation
     OfferService.accept_offer(offer, current_user_id)
 
     { order_or_error: { order: order.reload } }
+  rescue Errors::PaymentRequiresActionError => e
+    { order_or_error: { action_data: e.action_data } }
   rescue Errors::ApplicationError => e
     { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
   end

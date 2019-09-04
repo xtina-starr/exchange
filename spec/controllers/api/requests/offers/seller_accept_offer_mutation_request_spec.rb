@@ -6,7 +6,7 @@ describe Api::GraphqlController, type: :request do
     include_context 'GraphQL Client'
     let(:partner) { { effective_commission_rate: 0.1 } }
     let(:order_seller_id) { jwt_partner_ids.first }
-    let(:order_buyer_id) { jwt_user_id }
+    let(:order_buyer_id) { 'buyer-id' }
     let(:order_state) { Order::SUBMITTED }
     let(:credit_card_id) { 'cc-1' }
     let(:merchant_account) { { external_id: 'ma-1' } }
@@ -193,6 +193,11 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
+      it 'calls creates off_session payment intent' do
+        expect(Stripe::PaymentIntent).to receive(:create).with(hash_including(off_session: true)).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
+        client.execute(mutation, seller_accept_offer_input)
+      end
+
       it 'approves the order' do
         prepare_payment_intent_create_success(amount: 20_00)
         response = client.execute(mutation, seller_accept_offer_input)
@@ -227,9 +232,11 @@ describe Api::GraphqlController, type: :request do
   end
 
   def mock_pre_process_calls
-    allow(Gravity).to receive(:get_artwork).and_return(artwork)
-    allow(Gravity).to receive(:get_merchant_account).and_return(merchant_account)
-    allow(Gravity).to receive(:get_credit_card).and_return(credit_card)
-    allow(Gravity).to receive(:fetch_partner).and_return(partner)
+    allow(Gravity).to receive_messages(
+      get_artwork: artwork,
+      get_merchant_account: merchant_account,
+      get_credit_card: credit_card,
+      fetch_partner: partner
+    )
   end
 end

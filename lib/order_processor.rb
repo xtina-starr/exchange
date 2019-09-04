@@ -55,8 +55,12 @@ class OrderProcessor
     end
   end
 
-  def charge
-    @transaction = PaymentService.capture_without_hold(construct_charge_params)
+  def charge(off_session = false)
+    @transaction = if @order.external_charge_id
+      PaymentService.confirm_payment_intent(@order.external_charge_id)
+    else
+      PaymentService.capture_without_hold(construct_charge_params.merge(off_session: off_session))
+    end
   end
 
   def failed_payment?
@@ -68,7 +72,7 @@ class OrderProcessor
   end
 
   def action_data
-    requires_action? && { client_secret: @transaction.payload['client_secret'] }
+    @transaction&.action_data
   end
 
   def valid?
@@ -96,17 +100,17 @@ class OrderProcessor
     false
   end
 
-  def store_transaction
+  def store_transaction(off_session = false)
     order.transactions << transaction
-    order.update!(external_charge_id: transaction.external_id) unless transaction.failed?
+    order.update!(external_charge_id: transaction.external_id) unless transaction.failed? || (transaction.requires_action? && off_session)
     PostTransactionNotificationJob.perform_later(transaction.id, @user_id)
   end
 
   def on_success
-    OrderEvent.delay_post(order, Order::SUBMITTED, @user_id)
+    OrderEvent.delay_post(order, @user_id)
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
-    Exchange.dogstatsd.increment 'order.submitted'
+    Exchange.dogstatsd.increment "order.#{order.state}"
   end
 
   def construct_charge_params

@@ -264,6 +264,11 @@ describe OrderProcessor, type: :services do
       order_processor.store_transaction
       expect(order.reload.external_charge_id).to be_nil
     end
+    it 'does not store external_id on the order when off_session transaction requires action' do
+      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1', status: Transaction::REQUIRES_ACTION))
+      order_processor.store_transaction(true)
+      expect(order.reload.external_charge_id).to be_nil
+    end
   end
 
   describe 'on success' do
@@ -342,6 +347,14 @@ describe OrderProcessor, type: :services do
       it 'sets order_processor.transaction' do
         expect(order_processor.transaction).to have_attributes(status: Transaction::SUCCESS)
       end
+    end
+    it 'sets off_session to false by default' do
+      expect(PaymentService).to receive(:capture_without_hold).with(hash_including(off_session: false))
+      order_processor.charge
+    end
+    it 'overrides off_session when passed to method' do
+      expect(PaymentService).to receive(:capture_without_hold).with(hash_including(off_session: true))
+      order_processor.charge(true)
     end
   end
 

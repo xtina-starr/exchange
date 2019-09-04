@@ -44,6 +44,7 @@ describe OfferService, type: :services do
   end
 
   describe '#submit_order_with_offer' do
+    include_context 'include stripe helper'
     let(:buyer_id) { 'user-id' }
     let(:seller_id) { 'partner-1' }
     let(:order_mode) { Order::OFFER }
@@ -66,10 +67,11 @@ describe OfferService, type: :services do
     let(:line_item_artwork_version) { artwork[:current_version_id] }
     let(:credit_card_id) { 'grav_c_id1' }
     let(:credit_card) { { external_id: 'cc-1', customer_account: { external_id: 'cus-1' }, deactivated_at: nil } }
+    let(:seller_merchant_account) { { external_id: 'ma-1' } }
     let(:order) { Fabricate(:order, buyer_id: buyer_id, seller_id: seller_id, mode: order_mode, state: order_state, credit_card_id: credit_card_id, **shipping_info) }
     let!(:offer) { Fabricate(:offer, order: order, submitted_at: offer_submitted_at, amount_cents: 1000_00, tax_total_cents: 20_00, shipping_total_cents: 30_00, creator_id: buyer_id, from_id: buyer_id) }
     let!(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 2000_00, artwork_id: artwork[:_id], artwork_version_id: line_item_artwork_version, quantity: 2) }
-    let(:call_service) { OfferService.submit_order_with_offer(offer, buyer_id) }
+    let(:call_service) { OfferService.submit_order_with_offer(offer, user_id: buyer_id) }
 
     describe 'failed process' do
       before do
@@ -126,9 +128,13 @@ describe OfferService, type: :services do
         context "#{state} order" do
           let(:order_state) { state }
           before do
-            allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-            allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
+            allow(Gravity).to receive_messages(
+              get_artwork: artwork,
+              fetch_partner: gravity_v1_partner,
+              get_credit_card: credit_card,
+              get_merchant_account: seller_merchant_account
+            )
+            prepare_setup_intent_create
           end
           it 'raises invalid_state error' do
             expect { call_service }.to raise_error do |e|
@@ -180,21 +186,25 @@ describe OfferService, type: :services do
     describe 'successful process' do
       before do
         dd_statsd = stub_ddstatsd_instance
-        allow(dd_statsd).to receive(:increment).with('order.submit')
+        allow(dd_statsd).to receive(:increment).with('order.submitted')
         allow(dd_statsd).to receive(:increment).with('offer.submit')
-        allow(Gravity).to receive(:get_artwork).with(artwork[:_id]).and_return(artwork)
-        allow(Gravity).to receive(:get_credit_card).with(credit_card_id).and_return(credit_card)
-        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/all").and_return(gravity_v1_partner)
-        expect(OrderEvent).to receive(:delay_post).once.with(order, Order::SUBMITTED, buyer_id)
+        allow(Gravity).to receive_messages(
+          get_artwork: artwork,
+          fetch_partner: gravity_v1_partner,
+          get_credit_card: credit_card,
+          get_merchant_account: seller_merchant_account
+        )
+        expect(OrderEvent).to receive(:delay_post).once.with(order, buyer_id)
         expect(OfferEvent).to receive(:delay_post).once.with(offer, OfferEvent::SUBMITTED)
+        prepare_setup_intent_create
       end
 
-      it 'submits the offer' do
+      it 'submits offer and order' do
         expect do
           call_service
           expect(order.reload.state).to eq(Order::SUBMITTED)
           expect(offer.reload.submitted_at).not_to be_nil
-        end.to change(order.state_histories, :count).by(1)
+        end.to change(order.state_histories, :count).by(1).and change(order.transactions, :count).by(1)
       end
 
       it 'queues related jobs' do
@@ -215,6 +225,51 @@ describe OfferService, type: :services do
         expect(order.tax_total_cents).to eq 20_00
         expect(order.buyer_total_cents).to eq 1000_00 + 30_00 + 20_00
         expect(order.transaction_fee_cents).to eq(offer.buyer_total_cents * 2.9 / 100 + 30)
+      end
+    end
+
+    describe 'resubmitting with confirmed_setup_intent' do
+      context 'succeeded setup_intent' do
+        before do
+          dd_statsd = stub_ddstatsd_instance
+          allow(dd_statsd).to receive(:increment).with('order.submitted')
+          allow(dd_statsd).to receive(:increment).with('offer.submit')
+          allow(Gravity).to receive_messages(
+            get_artwork: artwork,
+            fetch_partner: gravity_v1_partner,
+            get_credit_card: credit_card,
+            get_merchant_account: seller_merchant_account
+          )
+          expect(OrderEvent).to receive(:delay_post).once.with(order, buyer_id)
+          expect(OfferEvent).to receive(:delay_post).once.with(offer, OfferEvent::SUBMITTED)
+          prepare_setup_intent_retrieve(status: 'succeeded')
+        end
+        it 'submits the order and offer' do
+          expect do
+            OfferService.submit_order_with_offer(offer, user_id: buyer_id, confirmed_setup_intent_id: 'si_1')
+            expect(order.reload.state).to eq(Order::SUBMITTED)
+            expect(offer.reload.submitted_at).not_to be_nil
+          end.to change(order.state_histories, :count).by(1).and change(order.transactions, :count).by(1)
+        end
+      end
+      context 'requires_action setup_intent' do
+        before do
+          allow(Gravity).to receive_messages(
+            get_artwork: artwork,
+            fetch_partner: gravity_v1_partner,
+            get_credit_card: credit_card,
+            get_merchant_account: seller_merchant_account
+          )
+          prepare_setup_intent_retrieve(status: 'requires_action')
+        end
+        it 'stores transaction and raises error' do
+          expect do
+            OfferService.submit_order_with_offer(offer, user_id: buyer_id, confirmed_setup_intent_id: 'si_1')
+            expect(order.reload.state).to eq(Order::PENDING)
+            expect(offer.reload.submitted_at).to be_nil
+          end.to raise_error(Errors::PaymentRequiresActionError).and change(order.state_histories, :count).by(0).and change(order.transactions, :count).by(1)
+          expect(order.transactions.first).to have_attributes(external_id: 'si_1', external_type: Transaction::SETUP_INTENT, transaction_type: Transaction::CONFIRM, status: Transaction::REQUIRES_ACTION)
+        end
       end
     end
   end
@@ -445,6 +500,56 @@ describe OfferService, type: :services do
           expect(e.code).to eq :unknown_edition_set
         end
       end
+    end
+  end
+
+  describe '#accept_offer' do
+    let(:order) { Fabricate(:order, buyer_id: 'user_1', buyer_type: 'user', seller_id: 'gal_1', seller_type: 'gallery') }
+    let(:seller_offer) { Fabricate(:offer, order: order, from_id: 'gal_1', from_type: 'gallery') }
+    let(:buyer_offer) { Fabricate(:offer, order: order, from_id: 'user_1', from_type: 'user') }
+    it 'calls charge and  with off_session true when the seller accepts an offer from the buyer' do
+      order.update!(last_offer: buyer_offer)
+      allow_any_instance_of(OrderProcessor).to receive_messages(
+        valid?: true,
+        advance_state: nil,
+        deduct_inventory: true,
+        set_totals!: nil,
+        failed_payment?: false,
+        store_transaction: nil,
+        on_success: nil,
+        charge: Fabricate(:transaction)
+      )
+      expect_any_instance_of(OrderProcessor).to receive(:charge).with(true)
+      expect_any_instance_of(OrderProcessor).to receive(:store_transaction).with(true)
+      OfferService.accept_offer(buyer_offer, 'gal_1')
+    end
+    it 'calls charge with off_session false when the buyer accepts an offer from the seller' do
+      order.update!(last_offer: seller_offer)
+      allow_any_instance_of(OrderProcessor).to receive_messages(
+        valid?: true,
+        advance_state: nil,
+        deduct_inventory: true,
+        set_totals!: nil,
+        failed_payment?: false,
+        store_transaction: nil,
+        on_success: nil
+      )
+      expect_any_instance_of(OrderProcessor).to receive(:charge).with(false)
+      OfferService.accept_offer(seller_offer, 'user_1')
+    end
+    it 'calls charge with off_session false when the buyer accepts their own offer (new payment flow)' do
+      order.update!(last_offer: buyer_offer)
+      allow_any_instance_of(OrderProcessor).to receive_messages(
+        valid?: true,
+        advance_state: nil,
+        deduct_inventory: true,
+        set_totals!: nil,
+        failed_payment?: false,
+        store_transaction: nil,
+        on_success: nil
+      )
+      expect_any_instance_of(OrderProcessor).to receive(:charge).with(false)
+      OfferService.accept_offer(buyer_offer, 'user_1')
     end
   end
 
