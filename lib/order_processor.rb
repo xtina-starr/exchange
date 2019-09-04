@@ -56,7 +56,11 @@ class OrderProcessor
   end
 
   def charge(off_session = false)
-    @transaction = PaymentService.capture_without_hold(construct_charge_params.merge(off_session: off_session))
+    @transaction = if @order.external_charge_id
+      PaymentService.confirm_payment_intent(@order.external_charge_id)
+    else
+      PaymentService.capture_without_hold(construct_charge_params.merge(off_session: off_session))
+    end
   end
 
   def failed_payment?
@@ -96,9 +100,9 @@ class OrderProcessor
     false
   end
 
-  def store_transaction
+  def store_transaction(off_session = false)
     order.transactions << transaction
-    order.update!(external_charge_id: transaction.external_id) unless transaction.failed?
+    order.update!(external_charge_id: transaction.external_id) unless transaction.failed? || (transaction.requires_action? && off_session)
     PostTransactionNotificationJob.perform_later(transaction.id, @user_id)
   end
 

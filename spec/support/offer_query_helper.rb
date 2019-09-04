@@ -163,4 +163,42 @@ module OfferQueryHelper
       }
     }
   ).freeze
+
+  FAILED_PAYMENT_QUERY = %(
+    mutation($input: FixFailedPaymentInput!) {
+      fixFailedPayment(input: $input) {
+        orderOrError {
+          ... on OrderWithMutationSuccess {
+            order {
+              id
+              state
+              creditCardId
+              buyer {
+                ... on Partner {
+                  id
+                }
+              }
+              seller {
+                ... on User {
+                  id
+                }
+              }
+            }
+          }
+          ... on OrderWithMutationFailure {
+            error {
+              code
+              data
+              type
+            }
+          }
+          ... on OrderRequiresAction {
+            actionData {
+              clientSecret
+            }
+          }
+        }
+      }
+    }
+  ).freeze
 end
