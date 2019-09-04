@@ -137,7 +137,6 @@ describe Api::GraphqlController, type: :request do
       expect do
         buyer_client.execute(OfferQueryHelper::FAILED_PAYMENT_QUERY, input: { offerId: offer.id.to_s, creditCardId: 'cc-1' })
       end.to change(order.transactions, :count).by(1)
-      # @TODO: it sets external charge id on the order
       expect(order.reload).to have_attributes(external_charge_id: 'pi_2', state: Order::SUBMITTED)
 
       # Buyer does SCA and now resubmits
