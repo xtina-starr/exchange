@@ -112,6 +112,8 @@ describe Api::GraphqlController, type: :request do
         commission_fee_cents: 50_00
       )
 
+      submitted_state_expiration = order.state_expires_at # setting things up to test for https://artsyproduct.atlassian.net/browse/PURCHASE-1474
+
       # seller accepts offer but off-session charge fails
       prepare_payment_intent_create_failure(status: 'requires_action')
       expect do
@@ -129,7 +131,8 @@ describe Api::GraphqlController, type: :request do
         shipping_country: 'US',
         credit_card_id: 'cc-1',
         commission_fee_cents: 50_00,
-        external_charge_id: nil
+        external_charge_id: nil,
+        state_expires_at: submitted_state_expiration # https://artsyproduct.atlassian.net/browse/PURCHASE-1474
       )
 
       # Buyer resubmits with same card now its on-session needs sca
