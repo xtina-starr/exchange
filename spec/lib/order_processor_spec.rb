@@ -133,17 +133,21 @@ describe OrderProcessor, type: :services do
     it 'it reverts submitted order to pending' do
       order_processor.instance_variable_set(:@deducted_inventory, [])
       order.submit!
+      original_state_expires_at = order.reload.state_expires_at
       order_processor.instance_variable_set(:@state_changed, true)
+      order_processor.instance_variable_set(:@original_state_expires_at, original_state_expires_at)
       order_processor.revert!
-      expect(order.reload.state).to eq Order::PENDING
+      expect(order.reload).to have_attributes(state: Order::PENDING, state_expires_at: original_state_expires_at)
       expect(order_processor.instance_variable_get(:@state_changed)).to eq false
     end
     it 'it reverts approved order to pending' do
       order.submit!
       order.approve!
+      original_state_expires_at = order.reload.state_expires_at
       order_processor.instance_variable_set(:@state_changed, true)
+      order_processor.instance_variable_set(:@original_state_expires_at, original_state_expires_at)
       order_processor.revert!
-      expect(order.reload.state).to eq Order::SUBMITTED
+      expect(order.reload).to have_attributes(state: Order::SUBMITTED, state_expires_at: original_state_expires_at)
       expect(order_processor.instance_variable_get(:@state_changed)).to eq false
     end
   end
