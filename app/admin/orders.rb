@@ -287,7 +287,7 @@ ActiveAdmin.register Order do
 
         order.offers.submitted.order(created_at: :desc).each do |offer|
           date = offer.created_at
-          amount = format_money_cents(offer.amount_cents, currency_code: offer.currency_code)
+          amount = format_money_cents(offer.amount_cents, currency_code: offer.order.currency_code)
 
           if order.state == Order::APPROVED && order.last_offer == offer
             events << {
