@@ -1,5 +1,5 @@
 class ArtsyAuthToken
-  ADMIN_ROLE = 'sales_admin'.freeze
+  ADMIN_ROLE = 'admin'.freeze
   def initialize(jwt)
     @jwt = jwt
     @decoded_token = decode_token
