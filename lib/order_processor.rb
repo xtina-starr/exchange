@@ -11,6 +11,7 @@ class OrderProcessor
     @validated = false
     @totals_set = false
     @state_changed = false
+    @original_state_expires_at = nil
   end
 
   def revert!
@@ -19,10 +20,12 @@ class OrderProcessor
     return unless @state_changed
 
     order.revert!
+    order.update!(state_expires_at: @original_state_expires_at)
     @state_changed = false
   end
 
   def advance_state(action)
+    @original_state_expires_at = order.state_expires_at
     order.send(action)
     @state_changed = true
   end
