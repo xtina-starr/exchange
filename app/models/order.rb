@@ -18,7 +18,8 @@ class Order < ApplicationRecord
 
   PAYMENT_METHODS = [
     CREDIT_CARD = 'credit card'.freeze,
-    WIRE_TRANSFER = 'wire transfer'.freeze
+    WIRE_TRANSFER = 'wire transfer'.freeze,
+    OTHER = 'other'.freeze
   ].freeze
 
   # For more docs about states go to:

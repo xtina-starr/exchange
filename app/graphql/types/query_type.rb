@@ -76,12 +76,12 @@ class Types::QueryType < Types::BaseObject
     context[:current_user][:roles].include?('trusted')
   end
 
-  def sales_admin?
-    context[:current_user][:roles].include?('sales_admin')
+  def admin?
+    context[:current_user][:roles].include?('admin')
   end
 
   def validate_order_request!(order)
-    return if trusted? || sales_admin? ||
+    return if trusted? || admin? ||
               (order.buyer_type == Order::USER && order.buyer_id == context[:current_user][:id]) ||
               (order.seller_type != Order::USER && context[:current_user][:partner_ids].include?(order.seller_id))
 
@@ -94,7 +94,7 @@ class Types::QueryType < Types::BaseObject
   end
 
   def validate_orders_request!(params)
-    return if trusted? || sales_admin?
+    return if trusted? || admin?
 
     if params[:buyer_id].present?
       raise ActiveRecord::RecordNotFound unless params[:buyer_id] == context[:current_user][:id]
