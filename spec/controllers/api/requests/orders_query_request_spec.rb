@@ -190,7 +190,24 @@ describe Api::GraphqlController, type: :request do
     end
 
     context "sales admin accessing another account's order" do
-      let(:jwt_roles) { 'admin' }
+      let(:jwt_roles) { 'sales_admin' }
+
+      it 'allows action' do
+        expect do
+          client.execute(query, buyerId: second_user)
+        end.to_not raise_error
+      end
+
+      it 'returns expected payload' do
+        result = client.execute(query, buyerId: second_user)
+        expect(result.data.orders.edges.count).to eq 1
+        ids = ids_from_result_data(result)
+        expect(ids).to match_array([user2_order1.id])
+      end
+    end
+
+    context "liaison accessing another account's order" do
+      let(:jwt_roles) { 'partner_support' }
 
       it 'allows action' do
         expect do

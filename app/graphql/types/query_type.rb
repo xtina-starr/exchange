@@ -76,12 +76,13 @@ class Types::QueryType < Types::BaseObject
     context[:current_user][:roles].include?('trusted')
   end
 
-  def admin?
-    context[:current_user][:roles].include?('admin')
+  def trusted_admin?
+    user_roles = context[:current_user][:roles]
+    ArtsyAuthToken.trusted_admin?(user_roles)
   end
 
   def validate_order_request!(order)
-    return if trusted? || admin? ||
+    return if trusted? || trusted_admin? ||
               (order.buyer_type == Order::USER && order.buyer_id == context[:current_user][:id]) ||
               (order.seller_type != Order::USER && context[:current_user][:partner_ids].include?(order.seller_id))
 
@@ -94,7 +95,7 @@ class Types::QueryType < Types::BaseObject
   end
 
   def validate_orders_request!(params)
-    return if trusted? || admin?
+    return if trusted? || trusted_admin?
 
     if params[:buyer_id].present?
       raise ActiveRecord::RecordNotFound unless params[:buyer_id] == context[:current_user][:id]
