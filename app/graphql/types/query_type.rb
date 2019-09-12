@@ -77,7 +77,7 @@ class Types::QueryType < Types::BaseObject
   end
 
   def trusted_admin?
-    user_roles = context[:current_user][:roles]
+    user_roles = Array(context[:current_user][:roles])
     ArtsyAuthToken.trusted_admin?(user_roles)
   end
 
