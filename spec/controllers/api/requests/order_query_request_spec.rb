@@ -396,8 +396,43 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      context "sales admin accessing another account's order" do
+      context 'normal admin accessing an order' do
         let(:jwt_roles) { 'admin' }
+
+        it 'raises error' do
+          expect do
+            client.execute(query, id: user2_order1.id)
+          end.to raise_error do |error|
+            expect(error).to be_a(Graphlient::Errors::ServerError)
+            expect(error.message).to eq 'the server responded with status 404'
+            expect(error.status_code).to eq 404
+            expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
+            expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
+          end
+        end
+      end
+
+      context "sales admin accessing another account's order" do
+        let(:jwt_roles) { 'sales_admin' }
+
+        it 'allows action' do
+          expect do
+            client.execute(query, id: user2_order1.id)
+          end.to_not raise_error
+        end
+
+        it 'returns expected payload' do
+          result = client.execute(query, id: user2_order1.id)
+          expect(result.data.order.buyer.id).to eq user2_order1.buyer_id
+          expect(result.data.order.seller.id).to eq user2_order1.seller_id
+          expect(result.data.order.currency_code).to eq 'USD'
+          expect(result.data.order.state).to eq 'PENDING'
+          expect(result.data.order.items_total_cents).to eq 0
+        end
+      end
+
+      context "liaison accessing another account's order" do
+        let(:jwt_roles) { 'partner_support' }
 
         it 'allows action' do
           expect do

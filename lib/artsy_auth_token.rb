@@ -1,5 +1,10 @@
 class ArtsyAuthToken
-  ADMIN_ROLE = 'admin'.freeze
+  TRUSTED_ADMIN_ROLES = %w[partner_support sales_admin].freeze
+
+  def self.trusted_admin?(user_roles)
+    (TRUSTED_ADMIN_ROLES & user_roles).any?
+  end
+
   def initialize(jwt)
     @jwt = jwt
     @decoded_token = decode_token
@@ -8,7 +13,7 @@ class ArtsyAuthToken
   def admin?
     return false unless @decoded_token
 
-    @decoded_token['roles'].include? ADMIN_ROLE
+    self.class.trusted_admin?(@decoded_token['roles'])
   end
 
   def current_user
