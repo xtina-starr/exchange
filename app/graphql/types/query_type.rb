@@ -77,7 +77,8 @@ class Types::QueryType < Types::BaseObject
   end
 
   def trusted_admin?
-    ArtsyAuthToken.trusted_admin?(context[:current_user][:roles])
+    user_roles = context[:current_user][:roles].split(',')
+    ArtsyAuthToken.trusted_admin?(user_roles)
   end
 
   def validate_order_request!(order)
