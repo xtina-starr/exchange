@@ -2,7 +2,7 @@ class ArtsyAuthToken
   TRUSTED_ADMIN_ROLES = %w[partner_support sales_admin].freeze
 
   def self.trusted_admin?(user_roles)
-    (TRUSTED_ADMIN_ROLES & user_roles).any?
+    TRUSTED_ADMIN_ROLES.any? { |role| user_roles.include?(role) }
   end
 
   def initialize(jwt)
