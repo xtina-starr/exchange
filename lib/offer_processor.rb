@@ -40,7 +40,9 @@ class OfferProcessor
       PaymentMethodService.confirm_payment_method!(offer.order)
     end
     order.transactions << transaction
-    return unless @transaction.requires_action?
+    return unless transaction.requires_action? || transaction.failed?
+
+    raise Errors::FailedTransactionError.new(:payment_method_confirmation_failed, transaction) if transaction.failed?
 
     Exchange.dogstatsd.increment 'offer.requires_action'
     raise Errors::PaymentRequiresActionError, transaction.action_data
