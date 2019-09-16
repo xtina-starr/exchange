@@ -102,6 +102,12 @@ RSpec.shared_context 'include stripe helper' do
     allow(Stripe::SetupIntent).to receive(:create).and_return(setup_intent)
   end
 
+  def prepare_setup_intent_create_failure(charge_error:)
+    error = Stripe::CardError.new(charge_error[:message], charge_error[:decline_code], charge_error[:code])
+    allow(error).to receive(:json_body).and_return(error: { setup_intent: basic_setup_intent(code: charge_error[:code], decline_code: charge_error[:decline_code]) })
+    allow(Stripe::SetupIntent).to receive(:create).and_raise(error)
+  end
+
   def prepare_setup_intent_retrieve(payment_method: 'cc_1', status: 'succeeded', on_behalf_of: 'acc_123')
     setup_intent = double(id: 'si_1', payment_method: payment_method, status: status, on_behalf_of: on_behalf_of)
     allow(setup_intent).to receive(:to_h).and_return(id: 'si_1', client_secret: 'si_test1')
@@ -305,6 +311,92 @@ RSpec.shared_context 'include stripe helper' do
         destination: 'ma_1'
       },
       transfer_group: nil
+    }
+  end
+
+  def basic_setup_intent(code: 'card_declined', decline_code: 'do_not_honor')
+    {
+      id: 'seti_1FJEY2GK3Gnpfa3OloLFhpiV',
+      object: 'setup_intent',
+      application: nil,
+      cancellation_reason: nil,
+      client_secret: 'seti_1FJEY2GK3Gnpfa3OloLFhpiV_secret_FosI3jo5pM0sXWNtJcK1YfGlqCuDq7F',
+      created: 1568618578,
+      customer: 'cus_9DPsU3LXXND065',
+      description: nil,
+      last_setup_error: {
+        code: code,
+        decline_code: decline_code,
+        doc_url: 'https://stripe.com/docs/error-codes/card-declined',
+        message: 'Your card was declined.',
+        param: '',
+        payment_method: {
+          id: 'card_1BfuyGGK3Gnpfa3OrYYQhDNk',
+          object: 'payment_method',
+          billing_details: {
+            address: {
+              city: 'Some City',
+              country: 'SWE',
+              line1: 'first address line',
+              line2: nil,
+              postal_code: '181 56',
+              state: ''
+            },
+            email: nil,
+            name: 'Random guy',
+            phone: nil
+          },
+          card: {
+            brand: 'amex',
+            checks: {
+              address_line1_check: 'pass',
+              address_postal_code_check: 'pass',
+              cvc_check: nil
+            },
+            country: 'SE',
+            exp_month: 1,
+            exp_year: 2020,
+            fingerprint: 'fingerprint',
+            funding: 'credit',
+            generated_from: nil,
+            last4: '1234',
+            three_d_secure_usage: {
+              supported: false
+            },
+            wallet: nil
+          },
+          created: 1514919524,
+          customer: 'cus_1',
+          livemode: true,
+          metadata: {
+          },
+          type: 'card'
+        },
+        type: 'card_error'
+      },
+      livemode: true,
+      metadata: {
+        exchange_order_id: 'exchange_test',
+        buyer_id: 'buyer_id',
+        buyer_type: 'user',
+        seller_id: 'seller_id',
+        seller_type: 'gallery',
+        type: 'bn-mo',
+        mode: 'offer'
+      },
+      next_action: nil,
+      on_behalf_of: 'acct_1234',
+      payment_method: nil,
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic'
+        }
+      },
+      payment_method_types: [
+        'card'
+      ],
+      status: 'requires_payment_method',
+      usage: 'off_session'
     }
   end
   # rubocop:enable Metrics/MethodLength
