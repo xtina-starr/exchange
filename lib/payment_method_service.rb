@@ -35,6 +35,18 @@ module PaymentMethodService
       status: transaction_status_from_intent(setup_intent),
       payload: setup_intent.to_h
     )
+  rescue Stripe::CardError => e
+    body = e.json_body[:error]
+    Transaction.new(
+      external_id: body[:setup_intent][:id],
+      external_type: Transaction::SETUP_INTENT,
+      failure_code: body[:code],
+      failure_message: body[:message],
+      decline_code: body[:decline_code],
+      transaction_type: Transaction::CONFIRM,
+      status: Transaction::FAILURE,
+      payload: e.json_body
+    )
   end
 
   def self.metadata(order)

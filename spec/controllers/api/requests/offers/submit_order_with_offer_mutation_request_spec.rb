@@ -180,6 +180,34 @@ describe Api::GraphqlController, type: :request do
       end
     end
 
+    describe 'payment method fails' do
+      let(:submit_order_input) do
+        {
+          input: {
+            offerId: offer.id.to_s
+          }
+        }
+      end
+      before do
+        allow(Gravity).to receive_messages(
+          get_artwork: artwork,
+          fetch_partner: gravity_v1_partner,
+          get_credit_card: credit_card,
+          get_merchant_account: seller_merchant_account
+        )
+        prepare_setup_intent_create_failure(charge_error: { message: 'card declined', code: 'do_not_honor' })
+      end
+
+      it 'submits the order and updates submitted_at on the offer' do
+        response = client.execute(mutation, submit_order_input)
+        expect(response.data.submit_order_with_offer.order_or_error).to respond_to(:error)
+        expect(response.data.submit_order_with_offer.order_or_error).not_to respond_to(:order)
+        expect(response.data.submit_order_with_offer.order_or_error.error.code).to eq 'payment_method_confirmation_failed'
+        expect(response.data.submit_order_with_offer.order_or_error.error.type).to eq 'processing'
+        expect(order.reload.state).to eq Order::PENDING
+      end
+    end
+
     describe 'successful mutations' do
       let(:submit_order_input) do
         {
