@@ -79,6 +79,8 @@ module PaymentService
     )
   rescue Stripe::CardError => e
     transaction_from_payment_intent_failure(e)
+  rescue Stripe::StripeError => e
+    transaction_from_payment_intent_failure(e)
   end
 
   def self.create_payment_intent_params(credit_card, buyer_amount, seller_amount, merchant_account, currency_code, description, metadata, capture, shipping_address, shipping_name, off_session)

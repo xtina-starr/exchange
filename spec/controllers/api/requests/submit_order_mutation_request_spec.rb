@@ -167,7 +167,7 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      context 'with failed stripe charge' do
+      context 'with failed stripe payment intent create' do
         before do
           deduct_inventory_request
           merchant_account_request
@@ -227,6 +227,42 @@ describe Api::GraphqlController, type: :request do
         end
 
         it 'does not change order state' do
+          client.execute(mutation, submit_order_input)
+          expect(order.reload.state).to eq Order::PENDING
+        end
+      end
+
+      context 'with confirming a unauthenticated payment intent' do
+        before do
+          deduct_inventory_request
+          merchant_account_request
+          credit_card_request
+          artwork_request
+          partner_account_request
+          undeduct_inventory_request
+          prepare_payment_intent_confirm_raise_invalid
+          order.update!(external_charge_id: 'pi_1')
+        end
+
+        it 'raises processing error' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.order_or_error.error.code).to eq 'charge_authorization_failed'
+        end
+
+        it 'stores failed transaction' do
+          expect do
+            client.execute(mutation, submit_order_input)
+          end.to change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
+          expect(order.reload.external_charge_id).to eq 'pi_1'
+          expect(order.transactions.last.failed?).to be true
+        end
+
+        it 'undeducts inventory' do
+          client.execute(mutation, submit_order_input)
+          expect(undeduct_inventory_request).to have_been_requested
+        end
+
+        it 'puts order back in pending state' do
           client.execute(mutation, submit_order_input)
           expect(order.reload.state).to eq Order::PENDING
         end
