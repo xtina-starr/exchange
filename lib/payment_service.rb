@@ -79,7 +79,7 @@ module PaymentService
     )
   rescue Stripe::CardError => e
     transaction_from_payment_intent_failure(e)
-  rescue Stripe::InvalidRequestError => e
+  rescue Stripe::StripeError => e
     transaction_from_payment_intent_failure(e)
   end
 
