@@ -41,6 +41,22 @@ RSpec.shared_context 'include stripe helper' do
     mock_payment_intent_call(:retrieve, payment_intent)
   end
 
+  def prepare_payment_intent_confirm_raise_invalid(payment_method: 'cc_1', amount: 20_00, message: 'You cannot confirm this PaymentIntent because it’s missing a payment method.', code: 'payment_intent_unexpected_state')
+    payment_intent = double(
+      id: 'pi_1',
+      payment_method: payment_method,
+      amount: amount,
+      capture_method: 'manual',
+      status: 'requires_confirmation',
+      transfer_data: double(destination: 'ma_1'),
+      last_payment_error: double(message: message, code: code)
+    )
+    error = Stripe::InvalidRequestError.new(message, code)
+    allow(error).to receive(:json_body).and_return(error: { payment_intent: basic_payment_intent(status: 'requires_payment_method', capture: true, amount: amount, code: code, decline_code: nil) })
+    allow(payment_intent).to receive(:confirm).and_raise(error)
+    mock_payment_intent_call(:retrieve, payment_intent)
+  end
+
   def prepare_payment_intent_confirm_success(id: 'pi_1', payment_method: 'cc_1', amount: 20_00)
     payment_intent = double(id: id, payment_method: payment_method, amount: amount, capture_method: 'manual', transfer_data: double(destination: 'ma_1'))
     allow(payment_intent).to receive(:status).and_return('requires_confirmation', 'requires_capture')

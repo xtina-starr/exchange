@@ -68,6 +68,10 @@ module OrderService
     end
     order_processor.on_success
     order
+  rescue StandardError => e
+    # catch all
+    order_processor&.revert!
+    raise e
   end
 
   def self.fulfill_at_once!(order, fulfillment, user_id)
