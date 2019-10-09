@@ -65,7 +65,7 @@ module PaymentService
 
   def self.confirm_payment_intent(payment_intent_id)
     payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
-    raise Errors::ProcessingError, :cannot_confirm unless payment_intent.status == 'requires_confirmation'
+    return payment_intent_transaction_failure(payment_intent_id: payment_intent_id, transaction_type: Transaction::CONFIRM, failure_code: 'cannot_confirm', failure_message: 'Payment intent is not in a confirmable state') if payment_intent.status != 'requires_confirmation'
 
     payment_intent.confirm
     Transaction.new(
@@ -180,6 +180,17 @@ module PaymentService
       failure_message: pi[:last_payment_error][:message],
       decline_code: pi[:last_payment_error][:decline_code],
       payload: exc.json_body
+    )
+  end
+
+  def self.payment_intent_transaction_failure(payment_intent_id:, transaction_type:, failure_code:, failure_message:)
+    Transaction.new(
+      external_id: payment_intent_id,
+      external_type: Transaction::PAYMENT_INTENT,
+      transaction_type: transaction_type,
+      failure_code: failure_code,
+      failure_message: failure_message,
+      status: Transaction::FAILURE
     )
   end
 end
