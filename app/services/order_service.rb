@@ -58,11 +58,9 @@ module OrderService
     order_processor.hold
     order_processor.store_transaction
 
-    if order_processor.failed_payment?
-      order_processor.revert!
-      raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction)
-    elsif order_processor.requires_action?
-      order_processor.revert!
+    raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction) if order_processor.failed_payment?
+
+    if order_processor.requires_action?
       Exchange.dogstatsd.increment 'submit.requires_action'
       raise Errors::PaymentRequiresActionError, order_processor.action_data
     end

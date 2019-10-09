@@ -291,9 +291,16 @@ describe PaymentService, type: :services do
   end
 
   describe '#confirm_payment_intent' do
-    it 'raises error if payment_intent not in expected state' do
+    it 'returns failed transaction if payment_intent is not in expected state' do
       mock_retrieve_payment_intent(status: 'requires_action')
-      expect { PaymentService.confirm_payment_intent('pi_1') }.to raise_error(Errors::ProcessingError)
+      transaction = PaymentService.confirm_payment_intent('pi_1')
+      expect(transaction).to have_attributes(
+        external_id: 'pi_1',
+        external_type: Transaction::PAYMENT_INTENT,
+        transaction_type: Transaction::CONFIRM,
+        status: Transaction::FAILURE,
+        failure_code: 'cannot_confirm'
+      )
     end
 
     it 'confirms the payment intent and stores transaction' do
