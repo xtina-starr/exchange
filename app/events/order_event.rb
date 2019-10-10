@@ -30,6 +30,7 @@ class OrderEvent < Events::BaseEvent
     transaction_fee_cents
     updated_at
     total_list_price_cents
+    external_charge_id
   ].freeze
 
   def self.post(order, action, user_id)

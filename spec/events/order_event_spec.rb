@@ -32,6 +32,7 @@ describe OrderEvent, type: :events do
       items_total_cents: 300,
       buyer_total_cents: 380,
       state: 'submitted',
+      external_charge_id: 'pi_1',
       **shipping_info
     )
   end
@@ -111,6 +112,7 @@ describe OrderEvent, type: :events do
         expect(event.properties[:state_expires_at]).to eq Time.parse('2018-08-19 15:48:00 -0400')
         expect(event.properties[:total_list_price_cents]).to eq(400)
         expect(event.properties[:last_offer]).to be_nil
+        expect(event.properties[:external_charge_id]).to eq 'pi_1'
       end
     end
     context 'with last_offer' do
