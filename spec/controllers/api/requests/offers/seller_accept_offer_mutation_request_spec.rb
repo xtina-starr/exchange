@@ -45,7 +45,7 @@ describe Api::GraphqlController, type: :request do
         tax_total_cents: 300_00
       )
     end
-    let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
+    let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1') }
 
     let(:mutation) do
       <<-GRAPHQL

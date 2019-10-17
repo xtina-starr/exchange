@@ -1,9 +1,7 @@
 module LineItemHelper
   def artwork
     @artwork ||= begin
-      artwork = Gravity.get_artwork(artwork_id)
-      validate_artwork!(artwork)
-      artwork
+      Gravity.get_artwork(artwork_id) || raise(Errors::ValidationError, :unknown_artwork)
     end
   end
 
@@ -31,12 +29,5 @@ module LineItemHelper
 
   def current_commission_fee_cents
     total_list_price_cents * order.current_commission_rate
-  end
-
-  private
-
-  def validate_artwork!(artwork)
-    raise Errors::ValidationError, :unknown_artwork unless artwork
-    raise Errors::ValidationError, :missing_artwork_location if artwork[:location].blank?
   end
 end
