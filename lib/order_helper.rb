@@ -12,7 +12,11 @@ module OrderHelper
   end
 
   def artworks
-    @artworks ||= line_items.uniq.map { |li| [li.artwork_id, li.artwork] }.to_h
+    @artworks ||= line_items.map(&:artwork)
+  end
+
+  def artists
+    @artists ||= artworks.map { |a| a[:artist] }
   end
 
   def credit_card
