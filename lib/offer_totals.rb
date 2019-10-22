@@ -18,8 +18,7 @@ class OfferTotals
 
   def artwork
     @artwork ||= begin
-      artwork_id = @order.line_items.first.artwork_id # this is with assumption of Offer order only having one lineItem
-      @order.artworks[artwork_id]
+      @order.line_items.first&.artwork # this is with assumption of Offer order only having one lineItem
     end
   end
 

@@ -280,6 +280,7 @@ describe OrderProcessor, type: :services do
 
   describe '#hold' do
     before do
+      stub_artwork_request
       stub_gravity_card_request
       stub_gravity_merchant_account_request
       stub_gravity_partner
@@ -328,6 +329,7 @@ describe OrderProcessor, type: :services do
 
   describe '#charge' do
     before do
+      stub_artwork_request
       stub_gravity_card_request
       stub_gravity_merchant_account_request
       stub_gravity_partner
@@ -363,6 +365,9 @@ describe OrderProcessor, type: :services do
   end
 
   describe '#charge_metadata' do
+    before do
+      stub_artwork_request
+    end
     it 'includes all expected metadata' do
       metadata = order_processor.send(:charge_metadata)
       expect(metadata).to match(
@@ -372,7 +377,9 @@ describe OrderProcessor, type: :services do
         seller_id: 'seller1',
         seller_type: 'gallery',
         type: 'bn-mo',
-        mode: 'buy'
+        mode: 'buy',
+        artist_ids: 'artist-id',
+        artist_names: 'BNMOsy'
       )
     end
   end

@@ -143,7 +143,9 @@ class OrderProcessor
       seller_id: @order.seller_id,
       seller_type: @order.seller_type,
       type: @order.auction_seller? ? 'auction-bn' : 'bn-mo',
-      mode: @order.mode
+      mode: @order.mode,
+      artist_ids: @order.artists.map { |a| a[:_id] }.join(','),
+      artist_names: @order.artists.map { |a| a[:name] }.join(',')
     }
   end
 end
