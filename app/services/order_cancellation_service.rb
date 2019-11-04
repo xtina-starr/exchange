@@ -24,8 +24,8 @@ class OrderCancellationService
     @order.reject!(rejection_reason) do
       cancel_payment_intent if @order.mode == Order::BUY
     end
+    process_inventory_undeduction if @order.mode == Order::BUY
     Exchange.dogstatsd.increment 'order.reject'
-    process_inventory_undeduction
     OrderEvent.delay_post(@order, @user_id)
   ensure
     @order.transactions << @transaction if @transaction.present?
