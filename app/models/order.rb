@@ -52,7 +52,8 @@ class Order < ApplicationRecord
       seller_rejected_other: 'seller_rejected_other'.freeze,
       seller_rejected: 'seller_rejected'.freeze,
       buyer_rejected: 'buyer_rejected'.freeze,
-      buyer_lapsed: 'buyer_lapsed'.freeze
+      buyer_lapsed: 'buyer_lapsed'.freeze,
+      admin_canceled: 'admin_canceled'.freeze
     }
   }.freeze
 
