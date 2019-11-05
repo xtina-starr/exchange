@@ -45,9 +45,14 @@ ActiveAdmin.register Order do
     redirect_to resource_path, notice: "Refunded!"
   end
 
-  member_action :reject, method: :post do
+  member_action :cancel, method: :post do
     OrderCancellationService.new(resource, resource.buyer_id).reject!(Order::REASONS[Order::CANCELED][:admin_canceled])
     redirect_to resource_path, notice: "Canceled by Artsy admin!"
+  end
+
+  member_action :buyer_reject, method: :post do
+    OrderCancellationService.new(resource, resource.buyer_id).reject!(Order::REASONS[Order::CANCELED][:buyer_rejected])
+    redirect_to resource_path, notice: "Canceled on behalf of buyer!"
   end
 
   member_action :approve_order, method: :post do
@@ -89,6 +94,7 @@ ActiveAdmin.register Order do
   action_item :refund, only: :show do
     if order.state == Order::SUBMITTED
       link_to 'Buyer Reject', buyer_reject_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to reject this order on behalf of buyer?'}
+      link_to 'Cancel Order', cancel_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to cancel this order?'}
     end
   end
 

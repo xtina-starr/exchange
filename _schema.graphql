@@ -214,6 +214,11 @@ type BuyerRejectOfferPayload {
 
 enum CancelReasonTypeEnum {
   """
+  cancelation reason is: admin_canceled
+  """
+  ADMIN_CANCELED
+
+  """
   cancelation reason is: buyer_lapsed
   """
   BUYER_LAPSED
