@@ -91,13 +91,13 @@ ActiveAdmin.register Order do
     end
   end
 
-  action_item :refund, only: :show do
-    if order.state == Order::SUBMITTED
-      link_to 'Buyer Reject', buyer_reject_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to reject this order on behalf of buyer?'}
-      link_to 'Cancel Order', cancel_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to cancel this order?'}
-    end
+  action_item :buyer_reject, only: :show do
+    link_to 'Buyer Reject', buyer_reject_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to reject this order on behalf of buyer?'} if order.state == Order::SUBMITTED
   end
 
+  action_item :cancel_order, only: :show do
+    link_to 'Cancel Order', cancel_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to cancel this order?'} if order.state == Order::SUBMITTED
+  end
 
   action_item :approve_order, only: :show do
     if order.state == Order::SUBMITTED && resource.mode == Order::BUY
