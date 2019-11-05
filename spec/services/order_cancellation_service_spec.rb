@@ -20,7 +20,7 @@ describe OrderCancellationService, type: :services do
         service.reject!
       end
 
-      it 'queues undeduct inventory job' do
+      it 'queues undeduct inventory job for buy now order' do
         expect(UndeductLineItemInventoryJob).to have_been_enqueued.with(line_items.first.id)
       end
 
@@ -36,6 +36,14 @@ describe OrderCancellationService, type: :services do
 
       it 'queues notification job' do
         expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.canceled')
+      end
+
+      context 'offer order' do
+        let(:order_mode) { Order::OFFER }
+        let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00)] }
+        it 'does not queue undeduct inventory job for make offer order' do
+          expect(UndeductLineItemInventoryJob).not_to have_been_enqueued
+        end
       end
     end
 
