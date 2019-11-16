@@ -7,15 +7,6 @@ module PaymentService
     create_payment_intent(payment_params.merge(capture: true))
   end
 
-  def self.capture_authorized_charge(charge_id)
-    # @TODO: we can remove this code after 7 days of moving to payment intents
-    charge = Stripe::Charge.retrieve(charge_id)
-    charge.capture
-    Transaction.new(external_id: charge.id, external_type: Transaction::CHARGE, source_id: charge.payment_method, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::CAPTURE, status: Transaction::SUCCESS)
-  rescue Stripe::StripeError => e
-    generate_transaction_from_exception(e, Transaction::CAPTURE, external_id: charge_id, external_type: Transaction::CHARGE)
-  end
-
   def self.capture_authorized_hold(payment_intent_id)
     payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
     raise Errors::ProcessingError, :cannot_capture unless payment_intent.status == 'requires_capture'
