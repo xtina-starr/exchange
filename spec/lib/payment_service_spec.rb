@@ -298,7 +298,7 @@ describe PaymentService, type: :services do
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
         transaction_type: Transaction::CONFIRM,
-        status: Transaction::FAILURE,
+        status: Transaction::REQUIRES_ACTION,
         failure_code: 'cannot_confirm'
       )
     end

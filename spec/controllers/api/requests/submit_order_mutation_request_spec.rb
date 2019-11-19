@@ -232,6 +232,42 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
+      context 'with order with existing payment_intent and payment requires action' do
+        before do
+          deduct_inventory_request
+          merchant_account_request
+          credit_card_request
+          artwork_request
+          partner_account_request
+          undeduct_inventory_request
+          prepare_payment_intent_confirm_failure(id: 'pi_something', status: 'requires_action', charge_error: { message: 'failed confirm', code: 'failed', decline_code: 'decline_failed' })
+          order.update!(external_charge_id: 'pi_something')
+        end
+
+        it 'returns action data' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.order_or_error.action_data.client_secret).to eq 'pi_test1'
+        end
+
+        it 'stores failed transaction' do
+          expect do
+            client.execute(mutation, submit_order_input)
+          end.to change(order.transactions.where(status: Transaction::REQUIRES_ACTION), :count).by(1)
+          expect(order.reload.external_charge_id).to eq 'pi_something'
+          expect(order.transactions.last.requires_action?).to be true
+        end
+
+        it 'undeducts inventory' do
+          client.execute(mutation, submit_order_input)
+          expect(undeduct_inventory_request).to have_been_requested
+        end
+
+        it 'does not change order state' do
+          client.execute(mutation, submit_order_input)
+          expect(order.reload.state).to eq Order::PENDING
+        end
+      end
+
       context 'with confirming a unauthenticated payment intent' do
         before do
           deduct_inventory_request
