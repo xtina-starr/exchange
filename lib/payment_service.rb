@@ -56,7 +56,7 @@ module PaymentService
 
   def self.confirm_payment_intent(payment_intent_id)
     payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
-    return payment_intent_transaction_failure(payment_intent) if payment_intent.status != 'requires_confirmation'
+    return payment_intent_confirmation_failure(payment_intent) if payment_intent.status != 'requires_confirmation'
 
     payment_intent.confirm
     Transaction.new(
@@ -174,7 +174,7 @@ module PaymentService
     )
   end
 
-  def self.payment_intent_transaction_failure(payment_intent)
+  def self.payment_intent_confirmation_failure(payment_intent)
     Transaction.new(
       external_id: payment_intent.id,
       external_type: Transaction::PAYMENT_INTENT,
