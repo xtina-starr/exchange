@@ -7,15 +7,6 @@ module PaymentService
     create_payment_intent(payment_params.merge(capture: true))
   end
 
-  def self.capture_authorized_charge(charge_id)
-    # @TODO: we can remove this code after 7 days of moving to payment intents
-    charge = Stripe::Charge.retrieve(charge_id)
-    charge.capture
-    Transaction.new(external_id: charge.id, external_type: Transaction::CHARGE, source_id: charge.payment_method, destination_id: charge.destination, amount_cents: charge.amount, transaction_type: Transaction::CAPTURE, status: Transaction::SUCCESS)
-  rescue Stripe::StripeError => e
-    generate_transaction_from_exception(e, Transaction::CAPTURE, external_id: charge_id, external_type: Transaction::CHARGE)
-  end
-
   def self.capture_authorized_hold(payment_intent_id)
     payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
     raise Errors::ProcessingError, :cannot_capture unless payment_intent.status == 'requires_capture'
@@ -65,7 +56,7 @@ module PaymentService
 
   def self.confirm_payment_intent(payment_intent_id)
     payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
-    return payment_intent_transaction_failure(payment_intent_id: payment_intent_id, transaction_type: Transaction::CONFIRM, failure_code: 'cannot_confirm', failure_message: 'Payment intent is not in a confirmable state') if payment_intent.status != 'requires_confirmation'
+    return payment_intent_confirmation_failure(payment_intent) if payment_intent.status != 'requires_confirmation'
 
     payment_intent.confirm
     Transaction.new(
@@ -183,14 +174,15 @@ module PaymentService
     )
   end
 
-  def self.payment_intent_transaction_failure(payment_intent_id:, transaction_type:, failure_code:, failure_message:)
+  def self.payment_intent_confirmation_failure(payment_intent)
     Transaction.new(
-      external_id: payment_intent_id,
+      external_id: payment_intent.id,
       external_type: Transaction::PAYMENT_INTENT,
-      transaction_type: transaction_type,
-      failure_code: failure_code,
-      failure_message: failure_message,
-      status: Transaction::FAILURE
+      transaction_type: Transaction::CONFIRM,
+      failure_code: 'cannot_confirm',
+      failure_message: "Payment intent is not in a confirmable state: #{payment_intent.status}",
+      status: payment_intent.status == 'requires_action' ? Transaction::REQUIRES_ACTION : Transaction::FAILURE,
+      payload: payment_intent.to_h
     )
   end
 end
