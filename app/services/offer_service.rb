@@ -55,23 +55,21 @@ module OfferService
     raise Errors::ValidationError, order_processor.validation_error unless order_processor.valid?
 
     order_processor.advance_state(:approve!)
-    unless order_processor.deduct_inventory
-      order_processor.revert!
-      raise Errors::InsufficientInventoryError
-    end
+    raise Errors::InsufficientInventoryError unless order_processor.deduct_inventory
+
     # this is an off-session if offer is from buyer and seller is accepting it (in case of failed payment buyer could accept their own offer)
     off_session = offer.from_participant == Order::BUYER && user_id != order.buyer_id
     order_processor.charge(off_session)
     order_processor.store_transaction(off_session)
-    if order_processor.failed_payment?
-      order_processor.revert!
-      raise Errors::FailedTransactionError.new(:capture_failed, order_processor.transaction)
+    raise Errors::FailedTransactionError.new(:capture_failed, order_processor.transaction) if order_processor.failed_payment?
 
-    elsif order_processor.requires_action?
-      order_processor.revert!
-      raise Errors::PaymentRequiresActionError, order_processor.action_data
-    end
+    raise Errors::PaymentRequiresActionError, order_processor.action_data if order_processor.requires_action?
+
     order_processor.on_success
     order
+  rescue StandardError => e
+    # catch all
+    order_processor&.revert!
+    raise e
   end
 end
