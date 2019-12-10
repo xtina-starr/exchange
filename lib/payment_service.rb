@@ -74,6 +74,29 @@ module PaymentService
     transaction_from_payment_intent_failure(e)
   end
 
+  def self.create_payment_intent(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:, shipping_address: nil, shipping_name: nil, off_session: false)
+    payment_intent_params = create_payment_intent_params(credit_card, buyer_amount, seller_amount, merchant_account, currency_code, description, metadata, capture, shipping_address, shipping_name, off_session)
+    payment_intent_params.merge!(setup_future_usage: 'off_session') unless off_session
+
+    payment_intent = Stripe::PaymentIntent.create(payment_intent_params)
+
+    new_transaction = Transaction.new(
+      external_id: payment_intent.id,
+      external_type: Transaction::PAYMENT_INTENT,
+      source_id: payment_intent.payment_method,
+      destination_id: merchant_account[:external_id],
+      amount_cents: payment_intent.amount,
+      transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD,
+      payload: payment_intent.to_h
+    )
+    update_transaction_with_payment_intent(new_transaction, payment_intent)
+    new_transaction
+  rescue Stripe::CardError => e
+    transaction_from_payment_intent_failure(e, transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD)
+  rescue Stripe::StripeError => e
+    transaction_from_payment_intent_failure(e, transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD)
+  end
+
   def self.create_payment_intent_params(credit_card, buyer_amount, seller_amount, merchant_account, currency_code, description, metadata, capture, shipping_address, shipping_name, off_session)
     {
       amount: buyer_amount,
@@ -104,27 +127,6 @@ module PaymentService
         name: shipping_name
       }
     }
-  end
-
-  def self.create_payment_intent(credit_card:, buyer_amount:, seller_amount:, merchant_account:, currency_code:, description:, metadata: {}, capture:, shipping_address: nil, shipping_name: nil, off_session: false)
-    payment_intent_params = create_payment_intent_params(credit_card, buyer_amount, seller_amount, merchant_account, currency_code, description, metadata, capture, shipping_address, shipping_name, off_session)
-    payment_intent_params.merge!(setup_future_usage: 'off_session') unless off_session
-
-    payment_intent = Stripe::PaymentIntent.create(payment_intent_params)
-
-    new_transaction = Transaction.new(
-      external_id: payment_intent.id,
-      external_type: Transaction::PAYMENT_INTENT,
-      source_id: payment_intent.payment_method,
-      destination_id: merchant_account[:external_id],
-      amount_cents: payment_intent.amount,
-      transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD,
-      payload: payment_intent.to_h
-    )
-    update_transaction_with_payment_intent(new_transaction, payment_intent)
-    new_transaction
-  rescue Stripe::CardError => e
-    transaction_from_payment_intent_failure(e, transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD)
   end
 
   def self.update_transaction_with_payment_intent(transaction, payment_intent)
