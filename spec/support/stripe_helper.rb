@@ -2,20 +2,6 @@ RSpec.shared_context 'include stripe helper' do
   before { StripeMock.start }
   after { StripeMock.stop }
 
-  def prepare_charge_capture_failure(charge_id, code, decline_code)
-    error = Stripe::StripeError.new
-    allow(error).to receive(:json_body).and_return(error: stripe_exception_json_body(charge_id: charge_id, code: code, decline_code: decline_code))
-    fail_charge = double
-    allow(fail_charge).to receive(:capture).and_raise(error)
-    allow(Stripe::Charge).to receive(:retrieve).and_return(fail_charge)
-  end
-
-  def prepare_charge_capture_success(charge_id = 'ch_1', destination_id = 'ac_1', amount = 200_00)
-    charge = double(id: charge_id, payment_method: 'cc_1', destination: destination_id, amount: amount)
-    allow(Stripe::Charge).to receive(:retrieve).and_return(charge)
-    allow(charge).to receive(:capture)
-  end
-
   def prepare_payment_intent_create_failure(id: 'pi_1', status: 'requires_payment_method', charge_error: nil, capture: false, payment_method: 'cc_1', amount: 20_00, client_secret: 'pi_test1')
     case status
     when 'requires_action'
@@ -23,6 +9,10 @@ RSpec.shared_context 'include stripe helper' do
       mock_payment_intent_call(:create, payment_intent)
     when 'requires_payment_method'
       error = Stripe::CardError.new(charge_error[:message], charge_error[:decline_code], charge_error[:code])
+      allow(error).to receive(:json_body).and_return(error: { payment_intent: basic_payment_intent(status: status, capture: capture, amount: amount, code: charge_error[:code], decline_code: charge_error[:decline_code]) })
+      allow(Stripe::PaymentIntent).to receive(:create).and_raise(error)
+    when 'testmode_charges_only'
+      error = Stripe::StripeError.new
       allow(error).to receive(:json_body).and_return(error: { payment_intent: basic_payment_intent(status: status, capture: capture, amount: amount, code: charge_error[:code], decline_code: charge_error[:decline_code]) })
       allow(Stripe::PaymentIntent).to receive(:create).and_raise(error)
     end

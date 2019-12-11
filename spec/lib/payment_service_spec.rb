@@ -288,6 +288,18 @@ describe PaymentService, type: :services do
       )
       expect(transaction.payload).not_to be_nil
     end
+
+    it 'returns failed transaction if payment_intent cannot be created (restricted partner account)' do
+      prepare_payment_intent_create_failure(status: 'testmode_charges_only', capture: true, charge_error: { code: 'testmode_charges_only', decline_code: 'testmode_charges_only', message: 'Connected account is not setup.' })
+      transaction = PaymentService.capture_without_hold(params)
+      expect(transaction).to have_attributes(
+        external_id: 'pi_1',
+        external_type: Transaction::PAYMENT_INTENT,
+        transaction_type: Transaction::CAPTURE,
+        status: Transaction::FAILURE,
+        failure_code: 'testmode_charges_only'
+      )
+    end
   end
 
   describe '#confirm_payment_intent' do
