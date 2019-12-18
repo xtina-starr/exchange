@@ -24,7 +24,7 @@ module OrderService
 
     order_shipping = OrderShipping.new(order)
     case fulfillment_type
-    when Order::PICKUP then order_shipping.pickup!
+    when Order::PICKUP then order_shipping.pickup!(shipping)
     when Order::SHIP then order_shipping.ship!(shipping)
     end
     order
