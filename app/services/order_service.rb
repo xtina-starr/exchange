@@ -72,6 +72,26 @@ module OrderService
     raise e
   end
 
+  def self.approve!(order, user_id)
+    raise Errors::ValidationError.new(:unsupported_payment_method, order.payment_method) unless order.payment_method == Order::CREDIT_CARD
+
+    transaction = nil
+    order.approve! do
+      transaction = PaymentService.capture_authorized_hold(order.external_charge_id)
+      raise Errors::ProcessingError.new(:capture_failed, transaction.failure_data) if transaction.failed?
+    end
+
+    order.line_items.each { |li| RecordSalesTaxJob.perform_later(li.id) }
+    OrderEvent.delay_post(order, user_id)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
+    Exchange.dogstatsd.increment 'order.approve'
+    Exchange.dogstatsd.count('order.money_collected', order.buyer_total_cents)
+    Exchange.dogstatsd.count('order.commission_collected', order.commission_fee_cents)
+  ensure
+    order.transactions << transaction if transaction.present?
+  end
+
   def self.fulfill_at_once!(order, fulfillment, user_id)
     order.fulfill! do
       fulfillment = Fulfillment.create!(fulfillment.slice(:courier, :tracking_id, :estimated_delivery))
