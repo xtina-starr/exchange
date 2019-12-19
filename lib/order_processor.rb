@@ -12,6 +12,7 @@ class OrderProcessor
     @totals_set = false
     @state_changed = false
     @original_state_expires_at = nil
+    @payment_service = PaymentService.new(@order)
   end
 
   def revert!
@@ -52,17 +53,17 @@ class OrderProcessor
   def hold
     @transaction = if @order.external_charge_id
       # we already have a payment intent on this order
-      PaymentService.confirm_payment_intent(@order.external_charge_id)
+      @payment_service.confirm_payment_intent
     else
-      PaymentService.hold_payment(construct_charge_params)
+      @payment_service.hold
     end
   end
 
   def charge(off_session = false)
     @transaction = if @order.external_charge_id
-      PaymentService.confirm_payment_intent(@order.external_charge_id)
+      @payment_service.confirm_payment_intent
     else
-      PaymentService.capture_without_hold(construct_charge_params.merge(off_session: off_session))
+      @payment_service.immediate_capture(off_session: off_session)
     end
   end
 
@@ -114,38 +115,5 @@ class OrderProcessor
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
     Exchange.dogstatsd.increment "order.#{order.state}"
-  end
-
-  def construct_charge_params
-    {
-      credit_card: @order.credit_card,
-      buyer_amount: @order.buyer_total_cents,
-      merchant_account: @order.merchant_account,
-      seller_amount: @order.seller_total_cents,
-      currency_code: @order.currency_code,
-      metadata: charge_metadata,
-      description: charge_description,
-      shipping_address: @order.shipping_address,
-      shipping_name: @order.shipping_name
-    }
-  end
-
-  def charge_description
-    partner_name = (@order.partner[:name] || '').parameterize[0...12].upcase
-    "#{partner_name} via Artsy"
-  end
-
-  def charge_metadata
-    {
-      exchange_order_id: @order.id,
-      buyer_id: @order.buyer_id,
-      buyer_type: @order.buyer_type,
-      seller_id: @order.seller_id,
-      seller_type: @order.seller_type,
-      type: @order.auction_seller? ? 'auction-bn' : 'bn-mo',
-      mode: @order.mode,
-      artist_ids: @order.artists.map { |a| a[:_id] }.join(','),
-      artist_names: @order.artists.map { |a| a[:name] }.join(',')
-    }
   end
 end

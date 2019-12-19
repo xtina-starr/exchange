@@ -75,9 +75,10 @@ module OrderService
   def self.approve!(order, user_id)
     raise Errors::ValidationError.new(:unsupported_payment_method, order.payment_method) unless order.payment_method == Order::CREDIT_CARD
 
+    payment_service = PaymentService.new(order)
     transaction = nil
     order.approve! do
-      transaction = PaymentService.capture_authorized_hold(order.external_charge_id)
+      transaction = payment_service.capture_hold
       raise Errors::ProcessingError.new(:capture_failed, transaction.failure_data) if transaction.failed?
     end
 
