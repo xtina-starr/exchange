@@ -3,6 +3,7 @@ class OrderCancellationService
     @order = order
     @user_id = user_id
     @transaction = nil
+    @payment_service = PaymentService.new(@order)
   end
 
   def seller_lapse!
@@ -51,15 +52,14 @@ class OrderCancellationService
   def process_stripe_refund
     raise Errors::ValidationError.new(:unsupported_payment_method, @order.payment_method) unless @order.payment_method == Order::CREDIT_CARD
 
-    payment_transaction = @order.transactions.where(external_id: @order.external_charge_id).first
-    @transaction = PaymentService.refund(@order.external_charge_id, payment_transaction.external_type)
+    @transaction = @payment_service.refund
     raise Errors::ProcessingError.new(:refund_failed, @transaction.failure_data) if @transaction.failed?
   end
 
   def cancel_payment_intent
     raise Errors::ValidationError.new(:unsupported_payment_method, @order.payment_method) unless @order.payment_method == Order::CREDIT_CARD
 
-    @transaction = PaymentService.cancel_payment_intent(@order.external_charge_id)
+    @transaction = @payment_service.cancel_payment_intent
     raise Errors::ProcessingError.new(:refund_failed, @transaction.failure_data) if @transaction.failed?
   end
 
