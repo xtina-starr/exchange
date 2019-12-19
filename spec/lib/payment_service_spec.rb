@@ -37,9 +37,9 @@ describe PaymentService, type: :services do
       on_behalf_of: 'ma-1',
       transfer_data: {
         destination: 'ma-1',
-        amount: 10_00,
-        transfer_group: order.id
+        amount: 10_00
       },
+      transfer_group: order.id,
       off_session: false,
       metadata: {
         artist_ids: 'artist-id',
