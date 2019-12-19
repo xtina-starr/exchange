@@ -37,7 +37,8 @@ module Gravity
     url = "/partner/#{partner_id}/locations"
     params = { private: true }
     params = params.merge(address_type: ['Business', 'Sales tax nexus']) if tax_only
-    locations = Adapters::GravityV1.get(url, params: params)
+    locations = Gravity.fetch_all(url, params)
+
     raise Errors::ValidationError.new(:missing_partner_location, partner_id: partner_id) if locations.blank?
 
     locations.map { |loc| Address.new(loc) }
@@ -76,5 +77,20 @@ module Gravity
   rescue Adapters::GravityError, StandardError => e
     Rails.logger.warn("Could not fetch user #{user_id} from gravity: #{e.message}")
     nil
+  end
+
+  def self.fetch_all(url, params)
+    items = []
+    page = 1
+    size = 10
+
+    loop do
+      params = params.merge(page: page, size: size)
+      new_items = Adapters::GravityV1.get(url, params: params)
+      items += new_items if new_items
+      page += 1
+      break if new_items.blank? || new_items.size < size
+    end
+    items
   end
 end
