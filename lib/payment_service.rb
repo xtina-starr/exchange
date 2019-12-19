@@ -30,7 +30,7 @@ class PaymentService
     )
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
-  rescue Stripe::CardError => e
+  rescue Stripe::StripeError => e
     transaction_from_payment_intent_failure(e, transaction_type: Transaction::CAPTURE)
   end
 
@@ -61,7 +61,7 @@ class PaymentService
       source_id: payment_intent.payment_method,
       payload: payment_intent.to_h
     )
-  rescue Stripe::CardError, Stripe::StripeError => e
+  rescue Stripe::StripeError => e
     transaction_from_payment_intent_failure(e)
   end
 
@@ -99,7 +99,7 @@ class PaymentService
     )
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
-  rescue Stripe::CardError, Stripe::StripeError => e
+  rescue Stripe::StripeError => e
     transaction_from_payment_intent_failure(e, transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD)
   end
 
