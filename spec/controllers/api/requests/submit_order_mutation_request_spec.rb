@@ -108,7 +108,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with order without shipping info' do
         before do
-          order.update_attributes! shipping_country: nil
+          order.update! shipping_country: nil
         end
         it 'returns error' do
           allow(Gravity).to receive(:get_artwork).and_return(artwork)
@@ -134,7 +134,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with order in non-pending state' do
         before do
-          order.update_attributes! state: Order::APPROVED
+          order.update! state: Order::APPROVED
         end
         it 'returns error' do
           allow(Gravity).to receive(:get_artwork).and_return(artwork)

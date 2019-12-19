@@ -37,6 +37,9 @@ Metrics/ModuleLength:
   Exclude:
     - "spec/**/*"
 
+Style/FormatStringToken:
+  Enabled: false
+
 Style/Documentation:
   Enabled: false
 
