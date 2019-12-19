@@ -15,7 +15,6 @@ class PaymentService
   end
 
   def capture_hold
-    payment_intent = Stripe::PaymentIntent.retrieve(@payment_intent_id)
     raise Errors::ProcessingError, :cannot_capture unless payment_intent.status == 'requires_capture'
 
     payment_intent.capture
@@ -40,7 +39,6 @@ class PaymentService
   end
 
   def cancel_payment_intent
-    payment_intent = Stripe::PaymentIntent.retrieve(@payment_intent_id)
     payment_intent.cancel
     Transaction.new(external_id: @payment_intent_id, external_type: Transaction::PAYMENT_INTENT, transaction_type: Transaction::CANCEL, status: Transaction::SUCCESS, payload: payment_intent.to_h)
   rescue Stripe::StripeError => e
@@ -48,7 +46,6 @@ class PaymentService
   end
 
   def confirm_payment_intent
-    payment_intent = Stripe::PaymentIntent.retrieve(@payment_intent_id)
     return payment_intent_confirmation_failure(payment_intent) if payment_intent.status != 'requires_confirmation'
 
     payment_intent.confirm
@@ -66,6 +63,10 @@ class PaymentService
   end
 
   private
+
+  def payment_intent
+    @payment_intent ||= Stripe::PaymentIntent.retrieve(@payment_intent_id)
+  end
 
   def refund_charge(charge_id)
     refund = Stripe::Refund.create(charge: charge_id, reverse_transfer: true)
