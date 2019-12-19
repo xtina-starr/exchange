@@ -7,6 +7,7 @@ describe OrderShipping, type: :services do
   let(:artwork_id) { 'artwork-id' }
   let(:order) { Fabricate(:order, buyer_id: buyer_id, buyer_type: Order::USER, seller_id: seller_id, seller_type: 'gallery') }
   let(:line_item) { Fabricate(:line_item, order: order, list_price_cents: 500, quantity: 2, artwork_id: artwork_id) }
+  let(:buyer_phone_number) { '8005882300' }
   let(:order_shipping) { OrderShipping.new(order) }
   before do
     line_item
@@ -18,10 +19,13 @@ describe OrderShipping, type: :services do
     context 'Buy Order' do
       before do
         allow_any_instance_of(Tax::CalculatorService).to receive_messages(sales_tax: 100, artsy_should_remit_taxes?: false)
-        order_shipping.pickup!
+        order_shipping.pickup!(buyer_phone_number)
       end
       it 'sets pickup fulfillment type' do
         expect(order.fulfillment_type).to eq Order::PICKUP
+      end
+      it 'sets buyer phone number' do
+        expect(order.buyer_phone_number).to eq buyer_phone_number
       end
       it 'sets shipping to 0' do
         expect(order.shipping_total_cents).to eq 0
