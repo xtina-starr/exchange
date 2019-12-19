@@ -115,9 +115,9 @@ class PaymentService
       on_behalf_of: order.merchant_account[:external_id],
       transfer_data: {
         destination: order.merchant_account[:external_id],
-        amount: order.seller_total_cents,
-        transfer_group: order.id
+        amount: order.seller_total_cents
       },
+      transfer_group: order.id,
       off_session: off_session,
       metadata: metadata,
       capture_method: capture ? 'automatic' : 'manual',
