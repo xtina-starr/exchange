@@ -24,7 +24,7 @@ module OrderService
 
     order_shipping = OrderShipping.new(order)
     case fulfillment_type
-    when Order::PICKUP then order_shipping.pickup!
+    when Order::PICKUP then order_shipping.pickup!(shipping&.dig(:phone_number))
     when Order::SHIP then order_shipping.ship!(shipping)
     end
     order
@@ -70,6 +70,27 @@ module OrderService
     # catch all
     order_processor&.revert!
     raise e
+  end
+
+  def self.approve!(order, user_id)
+    raise Errors::ValidationError.new(:unsupported_payment_method, order.payment_method) unless order.payment_method == Order::CREDIT_CARD
+
+    payment_service = PaymentService.new(order)
+    transaction = nil
+    order.approve! do
+      transaction = payment_service.capture_hold
+      raise Errors::ProcessingError.new(:capture_failed, transaction.failure_data) if transaction.failed?
+    end
+
+    order.line_items.each { |li| RecordSalesTaxJob.perform_later(li.id) }
+    OrderEvent.delay_post(order, user_id)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
+    Exchange.dogstatsd.increment 'order.approve'
+    Exchange.dogstatsd.count('order.money_collected', order.buyer_total_cents)
+    Exchange.dogstatsd.count('order.commission_collected', order.commission_fee_cents)
+  ensure
+    order.transactions << transaction if transaction.present?
   end
 
   def self.fulfill_at_once!(order, fulfillment, user_id)

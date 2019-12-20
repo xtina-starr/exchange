@@ -3,11 +3,11 @@ class OrderShipping
     @order = order
   end
 
-  def pickup!
+  def pickup!(buyer_phone_number)
     @order.with_lock do
       @order.update!(
         fulfillment_type: Order::PICKUP,
-        buyer_phone_number: nil,
+        buyer_phone_number: buyer_phone_number,
         shipping_name: nil,
         shipping_address_line1: nil,
         shipping_address_line2: nil,

@@ -141,6 +141,12 @@ describe Api::GraphqlController, type: :request do
           expect(@response.data.set_shipping.order_or_error.order.shipping_total_cents).to eq 0
           expect(order.reload.shipping_total_cents).to eq 0
         end
+        context 'when phone number is passed' do
+          let(:shipping_address) { { phoneNumber: phone_number } }
+          it 'adds the buyer phone number' do
+            expect(order.reload.buyer_phone_number).to eq '00123456789'
+          end
+        end
       end
       context 'Ship Order' do
         before do

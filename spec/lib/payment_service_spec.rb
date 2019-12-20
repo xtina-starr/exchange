@@ -3,152 +3,91 @@ require 'support/gravity_helper'
 
 describe PaymentService, type: :services do
   include_context 'include stripe helper'
-
-  let(:currency_code) { 'usd' }
-  let(:buyer_amount) { 20_00 }
-  let(:seller_amount) { 10_00 }
+  let(:order) do
+    Fabricate(
+      :order,
+      buyer_total_cents: 20_00,
+      seller_total_cents: 10_00,
+      currency_code: 'usd',
+      external_charge_id: 'pi_1',
+      shipping_address_line1: '123 nowhere st',
+      shipping_address_line2: 'apt 321',
+      shipping_postal_code: '312',
+      shipping_city: 'ny',
+      shipping_country: 'US',
+      shipping_region: 'NY',
+      shipping_name: 'Homer',
+      fulfillment_type: Order::SHIP
+    )
+  end
+  let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'artwork-1')] }
   let(:credit_card) { { external_id: 'cc_1', customer_account: { external_id: 'ca_1' } } }
   let(:merchant_account) { { external_id: 'ma-1' } }
-  let(:params) do
+
+  let(:service) { PaymentService.new(order) }
+
+  let(:stripe_call_params) do
     {
-      buyer_amount: buyer_amount,
-      credit_card: credit_card,
-      currency_code: currency_code,
-      description: 'Gallery via Artsy',
-      merchant_account: merchant_account,
-      metadata: { this: 'is', a: 'test' },
-      seller_amount: seller_amount
+      amount: 20_00,
+      currency: 'USD',
+      description: 'INVOICING-DE via Artsy',
+      payment_method_types: ['card'],
+      payment_method: 'cc_1',
+      customer: 'ca_1',
+      on_behalf_of: 'ma-1',
+      transfer_data: {
+        destination: 'ma-1',
+        amount: 10_00
+      },
+      transfer_group: order.id,
+      off_session: false,
+      metadata: {
+        artist_ids: 'artist-id',
+        artist_names: 'BNMOsy',
+        buyer_id: order.buyer_id,
+        buyer_type: 'user',
+        exchange_order_id: order.id,
+        mode: order.mode,
+        seller_id: order.seller_id,
+        seller_type: 'gallery',
+        type: 'bn-mo'
+      },
+      capture_method: 'manual',
+      confirm: true,
+      setup_future_usage: 'off_session',
+      confirmation_method: 'manual',
+      shipping: {
+        address: {
+          line1: '123 nowhere st',
+          line2: 'apt 321',
+          city: 'ny',
+          state: 'NY',
+          postal_code: '312',
+          country: 'US'
+        },
+        name: 'Homer'
+      }
     }
   end
 
-  let(:params_with_shipping) do
-    params.merge(
-      shipping_address: Address.new(address_line1: '123 nowhere st', address_line2: 'apt 321', postal_code: '312', city: 'ny', country: 'US', region: 'NY'),
-      shipping_name: 'Homer'
+  before do
+    allow(Gravity).to receive_messages(
+      fetch_partner: gravity_v1_partner,
+      get_merchant_account: merchant_account,
+      get_credit_card: credit_card,
+      get_artwork: gravity_v1_artwork
     )
   end
 
-  let(:off_session_payment_params) do
-    params_with_shipping.merge(
-      off_session: true,
-      capture: false
-    )
-  end
-
-  let(:on_session_payment_params) do
-    params_with_shipping.merge(
-      off_session: false,
-      capture: false
-    )
-  end
-
-  describe '#create_payment_intent' do
-    it 'creates a payment intent without setup_future_usage for off-session payments' do
-      expect(Stripe::PaymentIntent).to receive(:create).with(
-        amount: buyer_amount,
-        currency: currency_code,
-        description: 'Gallery via Artsy',
-        payment_method_types: ['card'],
-        payment_method: 'cc_1',
-        customer: 'ca_1',
-        on_behalf_of: 'ma-1',
-        transfer_data: {
-          destination: 'ma-1',
-          amount: seller_amount
-        },
-        off_session: true,
-        metadata: { this: 'is', a: 'test' },
-        capture_method: 'manual',
-        confirm: true,
-        confirmation_method: 'manual',
-        shipping: {
-          address: {
-            line1: '123 nowhere st',
-            line2: 'apt 321',
-            city: 'ny',
-            state: 'NY',
-            postal_code: '312',
-            country: 'US'
-          },
-          name: 'Homer'
-        }
-      ).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
-      PaymentService.create_payment_intent(off_session_payment_params)
-    end
-
-    it 'creates a payment intent with setup_future_usage: true for on-session payments' do
-      expect(Stripe::PaymentIntent).to receive(:create).with(
-        amount: buyer_amount,
-        currency: currency_code,
-        description: 'Gallery via Artsy',
-        payment_method_types: ['card'],
-        payment_method: 'cc_1',
-        customer: 'ca_1',
-        on_behalf_of: 'ma-1',
-        transfer_data: {
-          destination: 'ma-1',
-          amount: seller_amount
-        },
-        off_session: false,
-        metadata: { this: 'is', a: 'test' },
-        capture_method: 'manual',
-        confirm: true,
-        setup_future_usage: 'off_session',
-        confirmation_method: 'manual',
-        shipping: {
-          address: {
-            line1: '123 nowhere st',
-            line2: 'apt 321',
-            city: 'ny',
-            state: 'NY',
-            postal_code: '312',
-            country: 'US'
-          },
-          name: 'Homer'
-        }
-      ).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
-      PaymentService.create_payment_intent(on_session_payment_params)
-    end
-  end
-
-  describe '#hold_payment' do
+  describe '#hold' do
     it 'calls stripe with expected values' do
-      expect(Stripe::PaymentIntent).to receive(:create).with(
-        amount: buyer_amount,
-        currency: currency_code,
-        description: 'Gallery via Artsy',
-        payment_method_types: ['card'],
-        payment_method: 'cc_1',
-        customer: 'ca_1',
-        on_behalf_of: 'ma-1',
-        transfer_data: {
-          destination: 'ma-1',
-          amount: seller_amount
-        },
-        off_session: false,
-        metadata: { this: 'is', a: 'test' },
-        capture_method: 'manual',
-        confirm: true,
-        setup_future_usage: 'off_session',
-        confirmation_method: 'manual',
-        shipping: {
-          address: {
-            line1: '123 nowhere st',
-            line2: 'apt 321',
-            city: 'ny',
-            state: 'NY',
-            postal_code: '312',
-            country: 'US'
-          },
-          name: 'Homer'
-        }
-      ).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
-      PaymentService.hold_payment(params_with_shipping)
+      expect(Stripe::PaymentIntent).to receive(:create).with(stripe_call_params).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
+      service.hold
     end
 
     it "authorizes a charge on the user's credit card" do
       prepare_payment_intent_create_success(amount: 20_00)
-      transaction = PaymentService.hold_payment(params)
+      transaction = service.hold
       expect(transaction).to have_attributes(
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
@@ -165,10 +104,10 @@ describe PaymentService, type: :services do
 
     it 'returns transaction for requires_action' do
       prepare_payment_intent_create_failure(status: 'requires_action')
-      transaction = PaymentService.hold_payment(params)
+      transaction = service.hold
       expect(transaction).to have_attributes(
         external_type: Transaction::PAYMENT_INTENT,
-        amount_cents: buyer_amount,
+        amount_cents: 20_00,
         source_id: 'cc_1',
         destination_id: 'ma-1',
         failure_code: nil,
@@ -182,10 +121,10 @@ describe PaymentService, type: :services do
 
     it 'returns failed attempt transaction' do
       prepare_payment_intent_create_failure(status: 'requires_payment_method', capture: false, charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
-      transaction = PaymentService.hold_payment(params)
+      transaction = service.hold
       expect(transaction).to have_attributes(
         external_type: Transaction::PAYMENT_INTENT,
-        amount_cents: buyer_amount,
+        amount_cents: 20_00,
         source_id: 'cc_1',
         destination_id: 'ma_1',
         failure_code: 'card_declined',
@@ -198,49 +137,20 @@ describe PaymentService, type: :services do
     end
   end
 
-  describe '#capture_without_hold' do
+  describe '#immediate_capture' do
     it 'calls stripe with expected values' do
-      expect(Stripe::PaymentIntent).to receive(:create).with(
-        amount: buyer_amount,
-        currency: currency_code,
-        description: 'Gallery via Artsy',
-        payment_method_types: ['card'],
-        payment_method: 'cc_1',
-        customer: 'ca_1',
-        on_behalf_of: 'ma-1',
-        transfer_data: {
-          destination: 'ma-1',
-          amount: seller_amount
-        },
-        off_session: false,
-        metadata: { this: 'is', a: 'test' },
-        capture_method: 'automatic',
-        confirm: true,
-        setup_future_usage: 'off_session',
-        confirmation_method: 'manual',
-        shipping: {
-          address: {
-            line1: '123 nowhere st',
-            line2: 'apt 321',
-            city: 'ny',
-            state: 'NY',
-            postal_code: '312',
-            country: 'US'
-          },
-          name: 'Homer'
-        }
-      ).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
-      PaymentService.capture_without_hold(params_with_shipping)
+      expect(Stripe::PaymentIntent).to receive(:create).with(stripe_call_params.merge(capture_method: 'automatic')).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
+      service.immediate_capture(off_session: false)
     end
 
     it 'overrides off_session when passed in' do
       expect(Stripe::PaymentIntent).to receive(:create).with(hash_including(off_session: true)).and_return(double(id: 'pi_1', payment_method: 'cc_1', amount: 123, status: 'requires_capture', to_h: {}))
-      PaymentService.capture_without_hold(params_with_shipping.merge(off_session: true))
+      service.immediate_capture(off_session: true)
     end
 
-    it "authorizes a charge on the user's credit card" do
+    it 'returns correct transaction' do
       prepare_payment_intent_create_success(amount: 20_00)
-      transaction = PaymentService.capture_without_hold(params)
+      transaction = service.immediate_capture(off_session: false)
       expect(transaction).to have_attributes(
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
@@ -257,10 +167,10 @@ describe PaymentService, type: :services do
 
     it 'returns transaction for requires_action' do
       prepare_payment_intent_create_failure(status: 'requires_action')
-      transaction = PaymentService.capture_without_hold(params)
+      transaction = service.immediate_capture(off_session: false)
       expect(transaction).to have_attributes(
         external_type: Transaction::PAYMENT_INTENT,
-        amount_cents: buyer_amount,
+        amount_cents: 20_00,
         source_id: 'cc_1',
         destination_id: 'ma-1',
         failure_code: nil,
@@ -274,10 +184,10 @@ describe PaymentService, type: :services do
 
     it 'returns failed attempt transaction' do
       prepare_payment_intent_create_failure(status: 'requires_payment_method', capture: false, charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
-      transaction = PaymentService.capture_without_hold(params)
+      transaction = service.immediate_capture(off_session: false)
       expect(transaction).to have_attributes(
         external_type: Transaction::PAYMENT_INTENT,
-        amount_cents: buyer_amount,
+        amount_cents: 20_00,
         source_id: 'cc_1',
         destination_id: 'ma_1',
         failure_code: 'card_declined',
@@ -291,7 +201,7 @@ describe PaymentService, type: :services do
 
     it 'returns failed transaction if payment_intent cannot be created (restricted partner account)' do
       prepare_payment_intent_create_failure(status: 'testmode_charges_only', capture: true, charge_error: { code: 'testmode_charges_only', decline_code: 'testmode_charges_only', message: 'Connected account is not setup.' })
-      transaction = PaymentService.capture_without_hold(params)
+      transaction = service.immediate_capture(off_session: false)
       expect(transaction).to have_attributes(
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
@@ -305,7 +215,7 @@ describe PaymentService, type: :services do
   describe '#confirm_payment_intent' do
     it 'returns failed transaction if payment_intent is not in expected state' do
       mock_retrieve_payment_intent(status: 'requires_action')
-      transaction = PaymentService.confirm_payment_intent('pi_1')
+      transaction = service.confirm_payment_intent
       expect(transaction).to have_attributes(
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
@@ -317,7 +227,7 @@ describe PaymentService, type: :services do
 
     it 'confirms the payment intent and stores transaction' do
       prepare_payment_intent_confirm_success
-      transaction = PaymentService.confirm_payment_intent('pi_1')
+      transaction = service.confirm_payment_intent
       expect(transaction).to have_attributes(
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
@@ -328,7 +238,7 @@ describe PaymentService, type: :services do
 
     it 'confirms the payment intent and stores failed transaction' do
       prepare_payment_intent_confirm_failure(charge_error: { code: 'capture_charge', decline_code: 'do_not_honor', message: 'The card was declined' })
-      transaction = PaymentService.confirm_payment_intent('pi_1')
+      transaction = service.confirm_payment_intent
       expect(transaction).to have_attributes(
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
@@ -340,10 +250,10 @@ describe PaymentService, type: :services do
     end
   end
 
-  describe '#capture_authorized_hold' do
+  describe '#capture_hold' do
     it 'captures a payment_intent' do
       prepare_payment_intent_capture_success(amount: 20_00)
-      transaction = PaymentService.capture_authorized_hold('pi_1')
+      transaction = service.capture_hold
       expect(transaction).to have_attributes(
         external_type: Transaction::PAYMENT_INTENT,
         amount_cents: 20_00,
@@ -356,7 +266,7 @@ describe PaymentService, type: :services do
 
     it 'stores failures on transaction' do
       prepare_payment_intent_capture_failure(charge_error: { code: 'capture_charge', decline_code: 'do_not_honor', message: 'The card was declined' })
-      transaction = PaymentService.capture_authorized_hold('pi_1')
+      transaction = service.capture_hold
       expect(transaction).to have_attributes(
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
@@ -371,14 +281,17 @@ describe PaymentService, type: :services do
   end
 
   describe '#refund_payment' do
+    before do
+      Fabricate(:transaction, order: order, external_id: order.external_charge_id, external_type: Transaction::PAYMENT_INTENT)
+    end
     it 'refunds a charge for the full amount' do
       prepare_payment_intent_refund_success
-      transaction = PaymentService.refund_payment('pi_1')
+      transaction = service.refund
       expect(transaction).to have_attributes(external_id: 're_1', transaction_type: Transaction::REFUND, status: Transaction::SUCCESS, payload: { 'id' => 're_1' })
     end
     it 'catches Stripe errors and returns a failed transaction' do
       prepare_payment_intent_refund_failure(code: 'processing_error', message: 'The card was declined', decline_code: 'failed_refund')
-      transaction = PaymentService.refund_payment('pi_1')
+      transaction = service.refund
       expect(transaction).to have_attributes(
         external_id: 'pi_1',
         external_type: Transaction::PAYMENT_INTENT,
@@ -389,6 +302,23 @@ describe PaymentService, type: :services do
         status: Transaction::FAILURE
       )
       expect(transaction.payload).not_to be_nil
+    end
+  end
+
+  describe '#metadata' do
+    it 'includes all expected metadata' do
+      metadata = service.send(:metadata)
+      expect(metadata).to match(
+        exchange_order_id: order.id,
+        buyer_id: order.buyer_id,
+        buyer_type: 'user',
+        seller_id: order.seller_id,
+        seller_type: 'gallery',
+        type: 'bn-mo',
+        mode: 'buy',
+        artist_ids: 'artist-id',
+        artist_names: 'BNMOsy'
+      )
     end
   end
 end

@@ -3,6 +3,7 @@ require 'support/gravity_helper'
 
 describe OrderService, type: :services do
   include_context 'use stripe mock'
+  include_context 'include stripe helper'
   let(:state) { Order::PENDING }
   let(:state_reason) { state == Order::CANCELED ? 'seller_lapsed' : nil }
   let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state, state_reason: state_reason, buyer_id: 'b123') }
@@ -239,6 +240,68 @@ describe OrderService, type: :services do
             expect(error.code).to eq :invalid_state
             expect(error.data).to match(state: state)
           end
+        end
+      end
+    end
+  end
+
+  describe 'approve!' do
+    let(:state) { Order::SUBMITTED }
+    context 'buy now, capture payment_intent' do
+      it 'raises error when approving wire transfer orders' do
+        order.update!(payment_method: Order::WIRE_TRANSFER)
+        expect { OrderService.approve!(order, user_id) }.to raise_error do |e|
+          expect(e.code).to eq :unsupported_payment_method
+        end
+      end
+
+      context 'failed stripe capture' do
+        before do
+          prepare_payment_intent_capture_failure(charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
+        end
+        it 'adds failed transaction and stays in submitted state' do
+          expect { OrderService.approve!(order, user_id) }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
+          transaction = order.transactions.order(created_at: :desc).first
+          expect(transaction).to have_attributes(
+            status: Transaction::FAILURE,
+            failure_code: 'card_declined',
+            failure_message: 'Your card was declined.',
+            decline_code: 'do_not_honor',
+            external_id: 'pi_1',
+            external_type: Transaction::PAYMENT_INTENT
+          )
+          expect(order.reload.state).to eq Order::SUBMITTED
+          expect(OrderEvent).not_to receive(:delay_post)
+          expect(OrderFollowUpJob).not_to receive(:set)
+          expect(RecordSalesTaxJob).not_to receive(:perform_later)
+        end
+      end
+
+      context 'with failed post_process' do
+        it 'is in approved state' do
+          prepare_payment_intent_capture_success
+          allow(OrderEvent).to receive(:delay_post).and_raise('Perform what later?!')
+          expect { OrderService.approve!(order, user_id) }.to raise_error(RuntimeError).and change(order.transactions, :count).by(1)
+          expect(order.reload.state).to eq Order::APPROVED
+        end
+      end
+
+      context 'with successful approval' do
+        before do
+          prepare_payment_intent_capture_success
+          ActiveJob::Base.queue_adapter = :test
+          expect { OrderService.approve!(order, user_id) }.to change(order.transactions, :count).by(1)
+        end
+        it 'adds successful transaction, updates the state and queues expected jobs' do
+          expect(order.transactions.order(created_at: :desc).first).to have_attributes(
+            status: Transaction::SUCCESS,
+            external_id: 'pi_1',
+            external_type: Transaction::PAYMENT_INTENT
+          )
+          expect(order.state).to eq Order::APPROVED
+          expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.approved')
+          expect(OrderFollowUpJob).to have_been_enqueued.with(order.id, Order::APPROVED)
+          line_items.each { |li| expect(RecordSalesTaxJob).to have_been_enqueued.with(li.id) }
         end
       end
     end

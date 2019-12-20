@@ -56,7 +56,7 @@ ActiveAdmin.register Order do
   end
 
   member_action :approve_order, method: :post do
-    OrderApproveService.new(resource, current_user[:id]).process!
+    OrderService.approve!(resource, current_user[:id])
     redirect_to resource_path, notice: "Order approved!"
   end
 
