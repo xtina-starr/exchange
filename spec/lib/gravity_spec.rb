@@ -29,7 +29,7 @@ describe Gravity, type: :services do
   describe '#fetch_partner_locations' do
     let(:valid_locations) { [{ country: 'US', state: 'NY', postal_code: '12345' }, { country: 'US', state: 'FL', postal_code: '67890' }] }
     let(:invalid_location) { [{ country: 'US', state: 'Floridada' }] }
-    let(:base_params) { { private: true, page: 1, size: 10 } }
+    let(:base_params) { { private: true, page: 1, size: 20 } }
     let(:tax_only_params) { base_params.merge(address_type: ['Business', 'Sales tax nexus']) }
 
     context 'calls the correct location Gravity endpoint' do
@@ -72,7 +72,7 @@ describe Gravity, type: :services do
     context 'with more than 10 partner locations' do
       it 'correctly returns all locations' do
         first_location_group = []
-        10.times.each { first_location_group << { country: 'US', state: 'FL', postal_code: '67890' } }
+        20.times.each { first_location_group << { country: 'US', state: 'FL', postal_code: '67890' } }
 
         second_location_group = []
         7.times.each { second_location_group << { country: 'US', state: 'MA', postal_code: '67890' } }
@@ -88,7 +88,7 @@ describe Gravity, type: :services do
         ).and_return(second_location_group)
 
         locations = Gravity.fetch_partner_locations(seller_id, tax_only: true)
-        expect(locations.length).to eq(17)
+        expect(locations.length).to eq(27)
       end
     end
   end
@@ -189,23 +189,23 @@ describe Gravity, type: :services do
 
   describe '#fetch_all' do
     it 'paginates until there are no more items' do
-      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 1, size: 10 }).and_return([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 2, size: 10 }).and_return([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 3, size: 10 }).and_return([1, 2, 3])
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 1, size: 20 }).and_return([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 2, size: 20 }).and_return([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 3, size: 20 }).and_return([1, 2, 3])
 
       response = Gravity.fetch_all('/test', {})
-      expect(response.length).to eq 23
+      expect(response.length).to eq 43
     end
 
     it 'only makes one call if there are less than 10 items' do
-      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 1, size: 10 }).and_return([1, 2, 3])
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 1, size: 20 }).and_return([1, 2, 3])
 
       response = Gravity.fetch_all('/test', {})
       expect(response.length).to eq 3
     end
 
     it 'returns no items' do
-      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 1, size: 10 }).and_return([])
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 1, size: 20 }).and_return([])
 
       response = Gravity.fetch_all('/test', {})
       expect(response.length).to eq 0

@@ -82,7 +82,7 @@ module Gravity
   def self.fetch_all(url, params)
     items = []
     page = 1
-    size = 10
+    size = 20
 
     loop do
       params = params.merge(page: page, size: size)
