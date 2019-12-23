@@ -63,7 +63,7 @@ describe Api::GraphqlController, type: :request do
 
     context 'with order not in submitted state' do
       before do
-        order.update_attributes! state: Order::PENDING
+        order.update! state: Order::PENDING
       end
       it 'returns error' do
         response = client.execute(mutation, reject_order_input)
@@ -76,7 +76,7 @@ describe Api::GraphqlController, type: :request do
     context 'with proper permission' do
       before do
         Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
-        order.update_attributes! state: Order::SUBMITTED
+        order.update! state: Order::SUBMITTED
       end
       it 'rejects the order' do
         prepare_payment_intent_cancel_success

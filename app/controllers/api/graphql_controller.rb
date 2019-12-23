@@ -10,7 +10,7 @@ module Api
         user_agent: request.headers['User-Agent'],
         user_ip: request.headers['x-forwarded-for']
       }
-      result = ExchangeSchema.execute(query, variables: variables, context: context, operation_name: operation_name)
+      result = ExchangeSchema.execute(query, variables: variables, context: context, operation_name: operation_name, max_depth: 13)
       render json: result
     end
 
