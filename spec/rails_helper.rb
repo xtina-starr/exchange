@@ -12,7 +12,7 @@ require 'paper_trail/frameworks/rspec'
 
 WebMock.disable_net_connect!(allow_localhost: true)
 
-Dir['./spec/support/**/*.rb'].each { |f| require f }
+Dir['./spec/support/**/*.rb'].sort.each { |f| require f }
 
 ActiveRecord::Migration.maintain_test_schema!
 

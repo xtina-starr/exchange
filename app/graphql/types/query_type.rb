@@ -41,7 +41,7 @@ class Types::QueryType < Types::BaseObject
   def orders(params = {})
     validate_orders_request!(params)
     sort = params.delete(:sort)
-    order_clause = sort_to_order[sort] || {}
+    order_clause = sort_to_order[sort] || { state_updated_at: :desc }
     Order.where(params).order(order_clause)
   end
 
