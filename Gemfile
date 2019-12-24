@@ -23,7 +23,7 @@ gem 'money' # Library for dealing with money and currency conversion
 gem 'omniauth-artsy', '~> 0.2.3'
 gem 'paper_trail'
 gem 'sentry-raven'
-gem 'sidekiq'
+gem 'sidekiq', '<6' # for sending emails in the background (<6 necessary for Redis 3 compatibility)
 gem 'stripe'
 gem 'taxjar-ruby', require: 'taxjar'
 
