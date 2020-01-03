@@ -11,7 +11,8 @@ class Mutations::SetShipping < Mutations::BaseMutation
   def resolve(id:, fulfillment_type:, shipping: {}, phone_number: nil)
     order = Order.find(id)
     authorize_buyer_request!(order)
-    OrderService.set_shipping!(order, fulfillment_type: fulfillment_type, shipping: shipping, phone_number: phone_number || shipping&.to_h[:phone_number])
+    # byebug
+    OrderService.set_shipping!(order, fulfillment_type: fulfillment_type, shipping: shipping, phone_number: phone_number || (shipping ? (shipping&.to_h[:phone_number]) : nil))
     {
       order_or_error: { order: order }
     }
