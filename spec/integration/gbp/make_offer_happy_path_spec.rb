@@ -179,7 +179,7 @@ describe Api::GraphqlController, type: :request do
         buyer_client.execute(OfferQueryHelper::ADD_OFFER_TO_ORDER, input: { orderId: order.id, amountCents: 500_00 })
         offer = Offer.last
 
-        buyer_client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'PICKUP', shipping: nil })
+        buyer_client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'PICKUP', shipping: nil})
         expect(offer.reload).to have_attributes(tax_total_cents: nil)
       end
     end
