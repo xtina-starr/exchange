@@ -14,6 +14,11 @@ end
 
 class Types::Pickup < Types::BaseObject
   field :fulfillment_type, String, null: false
+  field :phone_number, String, null: true
+
+  def phone_number
+    object.buyer_phone_number
+  end
 
   def fulfillment_type
     Order::PICKUP
