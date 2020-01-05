@@ -1078,6 +1078,7 @@ type Partner {
 
 type Pickup {
   fulfillmentType: String!
+  phoneNumber: String
 }
 
 type Query {
@@ -1319,6 +1320,7 @@ input SetShippingInput {
   clientMutationId: String
   fulfillmentType: OrderFulfillmentTypeEnum!
   id: ID!
+  phoneNumber: String
   shipping: ShippingAttributes
 }
 
@@ -1357,7 +1359,7 @@ input ShippingAttributes {
   city: String
   country: String
   name: String
-  phoneNumber: String!
+  phoneNumber: String
   postalCode: String
   region: String
 }
