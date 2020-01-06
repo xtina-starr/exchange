@@ -160,6 +160,35 @@ describe Api::GraphqlController, type: :request do
           end
         end
 
+        context 'when passing phone number in address' do
+          before do
+            expect(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'], page: 1, size: 20 }).and_return([{ country: 'US', state: 'NY' }])
+          end
+          let(:set_shipping_input) do
+            {
+              input: {
+                id: order.id.to_s,
+                fulfillmentType: fulfillment_type,
+                shipping: {
+                  name: 'Fname Lname',
+                  country: shipping_country,
+                  city: 'New York',
+                  phoneNumber: '2813308004',
+                  region: shipping_region,
+                  postalCode: shipping_postal_code,
+                  addressLine1: '401 Broadway',
+                  addressLine2: 'Suite 80'
+                },
+              }.compact
+            }
+          end
+          it 'does not fail' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(order.reload.buyer_phone_number).to eq '2813308004'
+          end
+        end
+
         context 'with no partner locations' do
           before do
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
