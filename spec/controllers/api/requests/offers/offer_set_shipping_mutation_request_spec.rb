@@ -179,12 +179,12 @@ describe Api::GraphqlController, type: :request do
                   postalCode: shipping_postal_code,
                   addressLine1: '401 Broadway',
                   addressLine2: 'Suite 80'
-                },
+                }
               }.compact
             }
           end
           it 'does not fail' do
-            response = client.execute(mutation, set_shipping_input)
+            client.execute(mutation, set_shipping_input)
             expect(order.reload.buyer_phone_number).to eq '2813308004'
           end
         end
