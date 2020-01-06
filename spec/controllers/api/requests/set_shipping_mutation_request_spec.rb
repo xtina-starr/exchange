@@ -81,7 +81,8 @@ describe Api::GraphqlController, type: :request do
         input: {
           id: order.id.to_s,
           fulfillmentType: fulfillment_type,
-          shipping: shipping_address
+          shipping: shipping_address,
+          phoneNumber: phone_number
         }.compact
       }
     end
