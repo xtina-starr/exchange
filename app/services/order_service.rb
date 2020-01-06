@@ -21,6 +21,7 @@ module OrderService
 
   def self.set_shipping!(order, fulfillment_type:, shipping:, phone_number:)
     raise Errors::ValidationError, :invalid_state unless order.state == Order::PENDING
+    raise Errors::ValidationError, :missing_phone_number unless phone_number.present?
 
     order_shipping = OrderShipping.new(order)
     case fulfillment_type

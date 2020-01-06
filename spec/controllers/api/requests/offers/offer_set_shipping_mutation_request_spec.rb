@@ -154,9 +154,9 @@ describe Api::GraphqlController, type: :request do
         context 'without passing phone number' do
           let(:phone_number) { nil }
           it 'fails' do
-            expect do
-              client.execute(mutation, set_shipping_input)
-            end.to raise_error(/was provided invalid value for shipping.phoneNumber/)
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_phone_number'
           end
         end
 
