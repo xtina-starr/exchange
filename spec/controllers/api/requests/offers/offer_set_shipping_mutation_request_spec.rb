@@ -151,7 +151,7 @@ describe Api::GraphqlController, type: :request do
           let(:phone_number) { nil }
           it 'does not raise a validation error' do
             response = client.execute(mutation, set_shipping_input)
-            expect(@response.data.set_shipping.order_or_error).not_to respond_to(:error)
+            expect(response.data.set_shipping.order_or_error).not_to respond_to(:error)
           end
         end
       end
