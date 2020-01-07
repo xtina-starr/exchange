@@ -146,6 +146,14 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.shipping_total_cents).to be_nil
           expect(offer.reload.shipping_total_cents).to eq 0
         end
+
+        context 'without passing phone number' do
+          let(:phone_number) { nil }
+          it 'does not raise a validation error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(@response.data.set_shipping.order_or_error).not_to respond_to(:error)
+          end
+        end
       end
       context 'Ship Order' do
         before do
