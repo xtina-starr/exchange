@@ -76,7 +76,6 @@ describe Api::GraphqlController, type: :request do
         city: 'New York',
         region: shipping_region,
         postalCode: shipping_postal_code,
-        phoneNumber: phone_number,
         addressLine1: '401 Broadway',
         addressLine2: 'Suite 80'
       }
@@ -86,7 +85,8 @@ describe Api::GraphqlController, type: :request do
         input: {
           id: order.id.to_s,
           fulfillmentType: fulfillment_type,
-          shipping: shipping_address
+          shipping: shipping_address,
+          phoneNumber: phone_number
         }.compact
       }
     end
@@ -146,6 +146,14 @@ describe Api::GraphqlController, type: :request do
           expect(order.reload.shipping_total_cents).to be_nil
           expect(offer.reload.shipping_total_cents).to eq 0
         end
+
+        context 'without passing phone number' do
+          let(:phone_number) { nil }
+          it 'does not raise a validation error' do
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error).not_to respond_to(:error)
+          end
+        end
       end
       context 'Ship Order' do
         before do
@@ -154,9 +162,38 @@ describe Api::GraphqlController, type: :request do
         context 'without passing phone number' do
           let(:phone_number) { nil }
           it 'fails' do
-            expect do
-              client.execute(mutation, set_shipping_input)
-            end.to raise_error(/was provided invalid value for shipping.phoneNumber/)
+            response = client.execute(mutation, set_shipping_input)
+            expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
+            expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_phone_number'
+          end
+        end
+
+        context 'when passing phone number in address' do
+          before do
+            expect(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+            allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'], page: 1, size: 20 }).and_return([{ country: 'US', state: 'NY' }])
+          end
+          let(:set_shipping_input) do
+            {
+              input: {
+                id: order.id.to_s,
+                fulfillmentType: fulfillment_type,
+                shipping: {
+                  name: 'Fname Lname',
+                  country: shipping_country,
+                  city: 'New York',
+                  phoneNumber: '2813308004',
+                  region: shipping_region,
+                  postalCode: shipping_postal_code,
+                  addressLine1: '401 Broadway',
+                  addressLine2: 'Suite 80'
+                }
+              }.compact
+            }
+          end
+          it 'does not fail' do
+            client.execute(mutation, set_shipping_input)
+            expect(order.reload.buyer_phone_number).to eq '2813308004'
           end
         end
 

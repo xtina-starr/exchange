@@ -20,14 +20,14 @@ class OrderShipping
     end
   end
 
-  def ship!(shipping_info)
+  def ship!(shipping_info, buyer_phone_number)
     @shipping_address = Address.new(shipping_info)
     raise Errors::ValidationError, :missing_country if @shipping_address&.country.blank?
 
     @order.with_lock do
       @order.update!(
         fulfillment_type: Order::SHIP,
-        buyer_phone_number: shipping_info[:phone_number],
+        buyer_phone_number: buyer_phone_number,
         shipping_name: shipping_info[:name],
         shipping_address_line1: @shipping_address&.street_line1,
         shipping_address_line2: @shipping_address&.street_line2,

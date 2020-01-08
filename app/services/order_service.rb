@@ -19,13 +19,14 @@ module OrderService
     end
   end
 
-  def self.set_shipping!(order, fulfillment_type:, shipping:)
+  def self.set_shipping!(order, fulfillment_type:, shipping:, phone_number:)
     raise Errors::ValidationError, :invalid_state unless order.state == Order::PENDING
+    raise Errors::ValidationError, :missing_phone_number if fulfillment_type == Order::SHIP && phone_number.nil?
 
     order_shipping = OrderShipping.new(order)
     case fulfillment_type
-    when Order::PICKUP then order_shipping.pickup!(shipping&.dig(:phone_number))
-    when Order::SHIP then order_shipping.ship!(shipping)
+    when Order::PICKUP then order_shipping.pickup!(phone_number)
+    when Order::SHIP then order_shipping.ship!(shipping, phone_number)
     end
     order
   end

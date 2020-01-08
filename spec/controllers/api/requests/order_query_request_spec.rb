@@ -10,10 +10,12 @@ describe Api::GraphqlController, type: :request do
     let(:state) { Order::PENDING }
     let(:created_at) { 2.days.ago }
     let(:order_mode) { Order::BUY }
+    let(:fulfillment_type) { Order::SHIP }
     let!(:user1_order1) do
       Fabricate(
         :order,
         mode: order_mode,
+        fulfillment_type: fulfillment_type,
         seller_id: seller_id,
         seller_type: 'gallery',
         buyer_id: user_id,
@@ -51,6 +53,18 @@ describe Api::GraphqlController, type: :request do
             }
             state
             stateReason
+            requestedFulfillment{
+              ... on Ship {
+                phoneNumber
+                addressLine1
+                region
+                country
+                city
+              }
+              ... on Pickup {
+                phoneNumber
+              }
+            }
             currencyCode
             itemsTotalCents
             shippingTotalCents
@@ -126,6 +140,18 @@ describe Api::GraphqlController, type: :request do
             seller {
               ... on Partner {
                 id
+              }
+            }
+            requestedFulfillment{
+              ... on Ship {
+                phoneNumber
+                addressLine1
+                region
+                country
+                city
+              }
+              ... on Pickup {
+                phoneNumber
               }
             }
             state
@@ -346,6 +372,31 @@ describe Api::GraphqlController, type: :request do
         it 'returns state_reason' do
           result = client.execute(query, id: user1_order1.id)
           expect(result.data.order.state_reason).to eq 'seller_lapsed'
+        end
+      end
+
+      context 'when pickup' do
+        let(:fulfillment_type) { Order::PICKUP }
+        it 'returns proper pickup information' do
+          user1_order1.update!(buyer_phone_number: '6178339999')
+          result = client.execute(query, id: user1_order1.id)
+          expect(result.data.order.requested_fulfillment).to have_attributes(
+            phone_number: '6178339999'
+          )
+        end
+      end
+
+      context 'when ship' do
+        it 'returns proper shipping information' do
+          user1_order1.update!(buyer_phone_number: '6178339999', shipping_address_line1: '123 Random St', shipping_region: 'NY', shipping_city: 'Brooklyn', shipping_country: 'Absurdistan')
+          result = client.execute(query, id: user1_order1.id)
+          expect(result.data.order.requested_fulfillment).to have_attributes(
+            phone_number: '6178339999',
+            address_line1: '123 Random St',
+            region: 'NY',
+            city: 'Brooklyn',
+            country: 'Absurdistan'
+          )
         end
       end
     end

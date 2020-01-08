@@ -19,6 +19,14 @@ class Types::QueryType < Types::BaseObject
     argument :mode, Types::OrderModeEnum, required: false
   end
 
+  field :my_orders, Types::OrderConnectionWithTotalCountType, null: true, connection: true do
+    description 'Return my orders'
+    argument :seller_id, String, required: false
+    argument :state, Types::OrderStateEnum, required: false
+    argument :sort, Types::OrderConnectionSortEnum, required: false
+    argument :mode, Types::OrderModeEnum, required: false
+  end
+
   field :line_items, Types::LineItemType.connection_type, null: true, connection: true do
     argument :artwork_id, String, required: false
     argument :edition_set_id, String, required: false
@@ -43,6 +51,14 @@ class Types::QueryType < Types::BaseObject
     sort = params.delete(:sort)
     order_clause = sort_to_order[sort] || { state_updated_at: :desc }
     Order.where(params).order(order_clause)
+  end
+
+  def my_orders(params = {})
+    raise ActiveRecord::RecordNotFound unless context[:current_user][:id]
+
+    sort = params.delete(:sort)
+    order_clause = sort_to_order[sort] || { state_updated_at: :desc }
+    Order.where(params.merge(buyer_id: context[:current_user][:id])).order(order_clause)
   end
 
   def line_items(args = {})
