@@ -1,10 +1,9 @@
 require 'rails_helper'
 
-def ids_from_result_data(result)
-  result.data.my_orders.edges.map(&:node).map(&:id)
-end
-
 describe Api::GraphqlController, type: :request do
+  def ids_from_my_orders_result_data(result)
+    result.data.my_orders.edges.map(&:node).map(&:id)
+  end
   describe 'my_orders query' do
     include_context 'GraphQL Client'
     let(:seller_id) { jwt_partner_ids.first }
@@ -46,21 +45,21 @@ describe Api::GraphqlController, type: :request do
       it 'returns orders by a seller' do
         result = client.execute(query, sellerId: second_seller_id)
         expect(result.data.my_orders.edges.count).to eq 2
-        ids = ids_from_result_data(result)
+        ids = ids_from_my_orders_result_data(result)
         expect(ids).to match_array([user1_order2.id, user1_offer_order1.id])
       end
 
       it 'returns order in specified state' do
         fulfilled_order = Fabricate(:order, buyer_id: my_user_id, state: Order::FULFILLED)
         result = client.execute(query, state: 'FULFILLED')
-        ids = ids_from_result_data(result)
+        ids = ids_from_my_orders_result_data(result)
         expect(ids).to match_array([fulfilled_order.id])
       end
 
       it 'returns my orders' do
         result = client.execute(query)
         expect(result.data.my_orders.edges.count).to eq 3
-        ids = ids_from_result_data(result)
+        ids = ids_from_my_orders_result_data(result)
         expect(ids).to match_array([user1_order1.id, user1_order2.id, user1_offer_order1.id])
       end
 
@@ -74,27 +73,27 @@ describe Api::GraphqlController, type: :request do
       describe 'sort' do
         it 'sorts by updated_at in ascending order' do
           result = client.execute(query, sort: 'UPDATED_AT_ASC')
-          ids = ids_from_result_data(result)
+          ids = ids_from_my_orders_result_data(result)
           expect(ids).to eq([user1_order1.id, user1_order2.id, user1_offer_order1.id])
         end
 
         it 'sorts by updated_at in descending order' do
           result = client.execute(query, sort: 'UPDATED_AT_DESC')
-          ids = ids_from_result_data(result)
+          ids = ids_from_my_orders_result_data(result)
           expect(ids).to eq([user1_offer_order1.id, user1_order2.id, user1_order1.id])
         end
 
         it 'sorts by state_updated_at in ascending order' do
           user1_order1.update!(state_updated_at: Time.now)
           result = client.execute(query, sort: 'STATE_UPDATED_AT_ASC')
-          ids = ids_from_result_data(result)
+          ids = ids_from_my_orders_result_data(result)
           expect(ids).to eq([user1_order2.id, user1_offer_order1.id, user1_order1.id])
         end
 
         it 'sorts by state_updated_at in descending order' do
           user1_order1.update!(state_updated_at: Time.now)
           result = client.execute(query, sort: 'STATE_UPDATED_AT_DESC')
-          ids = ids_from_result_data(result)
+          ids = ids_from_my_orders_result_data(result)
           expect(ids).to eq([user1_order1.id, user1_offer_order1.id, user1_order2.id])
         end
 
@@ -102,7 +101,7 @@ describe Api::GraphqlController, type: :request do
           user1_order1.update!(state_expires_at: 1.day.from_now)
           user1_order2.update!(state_expires_at: 2.days.from_now)
           result = client.execute(query, sort: 'STATE_EXPIRES_AT_ASC')
-          ids = ids_from_result_data(result)
+          ids = ids_from_my_orders_result_data(result)
           expect(ids).to eq([user1_order1.id, user1_offer_order1.id, user1_order2.id])
         end
 
@@ -110,7 +109,7 @@ describe Api::GraphqlController, type: :request do
           user1_order1.update!(state_expires_at: 1.day.from_now)
           user1_order2.update!(state_expires_at: 2.days.from_now)
           result = client.execute(query, sort: 'STATE_EXPIRES_AT_DESC')
-          ids = ids_from_result_data(result)
+          ids = ids_from_my_orders_result_data(result)
           expect(ids).to eq([user1_order2.id, user1_offer_order1.id, user1_order1.id])
         end
       end

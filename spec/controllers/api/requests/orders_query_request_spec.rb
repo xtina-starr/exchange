@@ -1,10 +1,10 @@
 require 'rails_helper'
 
-def ids_from_result_data(result)
-  result.data.orders.edges.map(&:node).map(&:id)
-end
-
 describe Api::GraphqlController, type: :request do
+  def ids_from_result_data(result)
+    result.data.orders.edges.map(&:node).map(&:id)
+  end
+
   describe 'orders query' do
     include_context 'GraphQL Client'
     let(:seller_id) { jwt_partner_ids.first }
