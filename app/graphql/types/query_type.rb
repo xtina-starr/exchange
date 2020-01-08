@@ -55,6 +55,7 @@ class Types::QueryType < Types::BaseObject
 
   def my_orders(params = {})
     raise ActiveRecord::RecordNotFound unless context[:current_user][:id]
+
     sort = params.delete(:sort)
     order_clause = sort_to_order[sort] || { state_updated_at: :desc }
     Order.where(params.merge(buyer_id: context[:current_user][:id])).order(order_clause)
