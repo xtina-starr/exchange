@@ -126,4 +126,36 @@ module OrderService
   def self.abandon!(order)
     order.abandon!
   end
+
+  def self.seller_lapse!(order)
+    order.seller_lapse!
+    order_cancelation_processor = OrderCancellationProcessor.new(order)
+    order_cancelation_processor.cancel_payment if order.mode == Order::BUY
+    order_cancelation_processor.queue_undeduct_inventory_jobs if order.mode == Order::BUY
+    order_cancelation_processor.notify
+  end
+
+  def self.buyer_lapse!(order)
+    # this currently only happens in case of offers where we haven't deduct/hold any inventory or charge
+    # so all we need to do is to change state
+    order.buyer_lapse!
+    OrderEvent.delay_post(order)
+  end
+
+  def self.reject!(order, user_id, reason = nil)
+    order.reject!(reason)
+    order_cancelation_processor = OrderCancellationProcessor.new(order, user_id)
+    order_cancelation_processor.cancel_payment if order.mode == Order::BUY
+    order_cancelation_processor.queue_undeduct_inventory_jobs if order.mode == Order::BUY
+    order_cancelation_processor.notify
+  end
+
+  def self.refund!
+    order.refund!
+    order_cancelation_processor = OrderCancellationProcessor.new(order)
+    order_cancelation_processor.refund_payment
+    order_cancelation_processor.store_transaction
+    order_cancelation_processor.queue_undeduct_inventory_jobs
+    order_cancelation_processor.notify
+  end
 end
