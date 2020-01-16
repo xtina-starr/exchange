@@ -41,7 +41,7 @@ ActiveAdmin.register Order do
   end
 
   member_action :refund, method: :post do
-    OrderServoce.refund!(resource)
+OrderService.refund!(resource)
     redirect_to resource_path, notice: "Refunded!"
   end
 
