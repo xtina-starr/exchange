@@ -125,6 +125,7 @@ module OrderService
 
   def self.abandon!(order)
     order.abandon!
+    Exchange.dogstatsd.increment 'order.abandoned'
   end
 
   def self.seller_lapse!(order)
@@ -133,6 +134,7 @@ module OrderService
     order_cancelation_processor.cancel_payment if order.mode == Order::BUY
     order_cancelation_processor.queue_undeduct_inventory_jobs if order.mode == Order::BUY
     order_cancelation_processor.notify
+    Exchange.dogstatsd.increment 'order.seller_lapsed'
   end
 
   def self.buyer_lapse!(order)
@@ -140,6 +142,7 @@ module OrderService
     # so all we need to do is to change state
     order.buyer_lapse!
     OrderEvent.delay_post(order)
+    Exchange.dogstatsd.increment 'order.buyer_lapsed'
   end
 
   def self.reject!(order, user_id, reason = nil)
@@ -148,14 +151,16 @@ module OrderService
     order_cancelation_processor.cancel_payment if order.mode == Order::BUY
     order_cancelation_processor.queue_undeduct_inventory_jobs if order.mode == Order::BUY
     order_cancelation_processor.notify
+    Exchange.dogstatsd.increment 'order.reject'
   end
 
-  def self.refund!
+  def self.refund!(order)
     order.refund!
     order_cancelation_processor = OrderCancellationProcessor.new(order)
     order_cancelation_processor.refund_payment
-    order_cancelation_processor.store_transaction
     order_cancelation_processor.queue_undeduct_inventory_jobs
     order_cancelation_processor.notify
+    Exchange.dogstatsd.increment 'order.refund'
+    Exchange.dogstatsd.count('order.money_refunded', order.buyer_total_cents)
   end
 end
