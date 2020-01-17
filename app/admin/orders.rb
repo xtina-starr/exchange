@@ -75,7 +75,7 @@ ActiveAdmin.register Order do
 
   member_action :confirm_fulfillment, method: :post do
     if resource.fulfillment_type == Order::SHIP
-      OrderService.confirm_fulfillment!(resource, current_user[:id])
+      OrderService.confirm_fulfillment!(resource, current_user[:id], true)
     end
     redirect_to resource_path, notice: "Fulfillment confirmed!"
   end
