@@ -161,6 +161,6 @@ module OrderService
     order_cancelation_processor.queue_undeduct_inventory_jobs
     order_cancelation_processor.notify
     Exchange.dogstatsd.increment 'order.refund'
-    Exchange.dogstatsd.count('order.money_refunded', order.buyer_total_cents)
+    Exchange.dogstatsd.count("order.money_refunded_#{order.currency_code}", order.buyer_total_cents)
   end
 end
