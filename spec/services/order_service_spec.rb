@@ -6,7 +6,8 @@ describe OrderService, type: :services do
   include_context 'include stripe helper'
   let(:state) { Order::PENDING }
   let(:state_reason) { state == Order::CANCELED ? 'seller_lapsed' : nil }
-  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state, state_reason: state_reason, buyer_id: 'b123') }
+  let(:fulfillment_type) { Order::SHIP }
+  let(:order) { Fabricate(:order, external_charge_id: captured_charge.id, state: state, state_reason: state_reason, buyer_id: 'b123', fulfillment_type: fulfillment_type) }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
 
@@ -199,6 +200,56 @@ describe OrderService, type: :services do
           expect do
             OrderService.fulfill_at_once!(order, fulfillment_params, user_id)
           end.to raise_error(Errors::ValidationError).and change(Fulfillment, :count).by(0)
+        end
+      end
+    end
+  end
+
+  describe 'confirm_fulfillment!' do
+    context 'with order in approved state' do
+      let(:state) { Order::APPROVED }
+
+      it 'raises error for pickup orders' do
+        order.update!(fulfillment_type: Order::PICKUP)
+        expect { OrderService.confirm_fulfillment!(order, user_id) }.to raise_error do |e|
+          expect(e).to be_a Errors::ValidationError
+          expect(e.code).to eq :wrong_fulfillment_type
+        end
+      end
+
+      it 'changes order state to fulfilled' do
+        OrderService.confirm_fulfillment!(order, user_id)
+        expect(order.reload.state).to eq Order::FULFILLED
+        expect(order.reload.fulfilled_by_admin_id).to be_nil
+      end
+
+      it 'queues job to post fulfillment event' do
+        OrderService.confirm_fulfillment!(order, user_id)
+        expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.fulfilled')
+      end
+
+      it 'does not add fulfillments' do
+        expect do
+          OrderService.confirm_fulfillment!(order, user_id)
+        end.to change(Fulfillment, :count).by(0)
+      end
+
+      it 'sets fulfilled_by_admin_id when it was fulfilled by admin' do
+        OrderService.confirm_fulfillment!(order, user_id, fulfilled_by_admin: true)
+        expect(order.reload.fulfilled_by_admin_id).to eq user_id
+      end
+    end
+
+    Order::STATES.reject { |s| s == Order::APPROVED }.each do |state|
+      context "order in #{state}" do
+        let(:state) { state }
+        it 'raises error' do
+          expect do
+            OrderService.confirm_fulfillment!(order, user_id)
+          end.to raise_error do |error|
+            expect(error).to be_a Errors::ValidationError
+            expect(error.code).to eq :invalid_state
+          end
         end
       end
     end
