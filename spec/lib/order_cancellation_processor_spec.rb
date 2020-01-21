@@ -1,13 +1,13 @@
 require 'rails_helper'
 
-describe OrderCancellationProcessor, type: :services do
+describe OrderCancelationProcessor, type: :services do
   include_context 'include stripe helper'
   let(:order_mode) { Order::BUY }
   let(:payment_method) { Order::CREDIT_CARD }
   let(:order) { Fabricate(:order, external_charge_id: 'pi_1', buyer_id: 'buyer', buyer_type: Order::USER, payment_method: payment_method) }
   let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
   let(:user_id) { 'user-id' }
-  let(:processor) { OrderCancellationProcessor.new(order, user_id) }
+  let(:processor) { OrderCancelationProcessor.new(order, user_id) }
 
   describe 'refund_payment' do
     before do

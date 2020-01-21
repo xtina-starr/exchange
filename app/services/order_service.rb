@@ -130,7 +130,7 @@ module OrderService
 
   def self.seller_lapse!(order)
     order.seller_lapse!
-    order_cancelation_processor = OrderCancellationProcessor.new(order)
+    order_cancelation_processor = OrderCancelationProcessor.new(order)
     order_cancelation_processor.cancel_payment if order.mode == Order::BUY
     order_cancelation_processor.queue_undeduct_inventory_jobs if order.mode == Order::BUY
     order_cancelation_processor.notify
@@ -147,7 +147,7 @@ module OrderService
 
   def self.reject!(order, user_id, reason = nil)
     order.reject!(reason)
-    order_cancelation_processor = OrderCancellationProcessor.new(order, user_id)
+    order_cancelation_processor = OrderCancelationProcessor.new(order, user_id)
     order_cancelation_processor.cancel_payment if order.mode == Order::BUY
     order_cancelation_processor.queue_undeduct_inventory_jobs if order.mode == Order::BUY
     order_cancelation_processor.notify
@@ -156,7 +156,7 @@ module OrderService
 
   def self.refund!(order)
     order.refund!
-    order_cancelation_processor = OrderCancellationProcessor.new(order)
+    order_cancelation_processor = OrderCancelationProcessor.new(order)
     order_cancelation_processor.refund_payment
     order_cancelation_processor.queue_undeduct_inventory_jobs
     order_cancelation_processor.notify

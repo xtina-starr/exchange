@@ -1,4 +1,4 @@
-class OrderCancellationProcessor
+class OrderCancelationProcessor
   def initialize(order, user_id = nil)
     @order = order
     @user_id = user_id

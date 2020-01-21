@@ -566,7 +566,7 @@ describe OrderService, type: :services do
 
     context 'with an offer-mode order' do
       let!(:offer) { Fabricate(:offer, order: order, from_id: order.buyer_id, from_type: order.buyer_type) }
-      let(:service) { OrderCancellationProcessor.new(order, 'seller') }
+      let(:service) { OrderCancelationProcessor.new(order, 'seller') }
 
       before do
         # last_offer is set in Orders::InitialOffer. "Stubbing" out the
