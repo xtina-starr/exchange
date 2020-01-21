@@ -235,7 +235,7 @@ describe OrderService, type: :services do
       end
 
       it 'sets fulfilled_by_admin_id when it was fulfilled by admin' do
-        OrderService.confirm_fulfillment!(order, user_id, true)
+        OrderService.confirm_fulfillment!(order, user_id, fulfilled_by_admin: true)
         expect(order.reload.fulfilled_by_admin_id).to eq user_id
       end
     end

@@ -113,7 +113,7 @@ module OrderService
     order
   end
 
-  def self.confirm_fulfillment!(order, user_id, fulfilled_by_admin = false)
+  def self.confirm_fulfillment!(order, user_id, fulfilled_by_admin: false)
     raise Errors::ValidationError, :wrong_fulfillment_type unless order.fulfillment_type == Order::SHIP
 
     order.fulfill! do
