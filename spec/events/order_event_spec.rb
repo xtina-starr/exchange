@@ -33,6 +33,7 @@ describe OrderEvent, type: :events do
       buyer_total_cents: 380,
       state: 'submitted',
       external_charge_id: 'pi_1',
+      fulfilled_by_admin_id: 'admin1',
       **shipping_info
     )
   end
@@ -113,6 +114,7 @@ describe OrderEvent, type: :events do
         expect(event.properties[:total_list_price_cents]).to eq(400)
         expect(event.properties[:last_offer]).to be_nil
         expect(event.properties[:external_charge_id]).to eq 'pi_1'
+        expect(event.properties[:fulfilled_by_admin_id]).to eq 'admin1'
       end
     end
     context 'with last_offer' do
