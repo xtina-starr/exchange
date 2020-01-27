@@ -55,6 +55,7 @@ module Errors
     ],
     processing: %i[
       artwork_version_mismatch
+      cancel_payment_failed
       cannot_capture
       capture_failed
       charge_authorization_failed
