@@ -1,6 +1,7 @@
 import {danger, warn, fail} from "danger"
 
 const addedOrModified = danger.git.modified_files.concat(danger.git.created_files)
+const added = danger.git.created_files
 const fileInGraphQLFolder = addedOrModified.find(f => f.startsWith("app/graphql"))
 if (fileInGraphQLFolder) {
   warn("If you want these changes to be reflected in Metaphysics, you will need to [update the stored schema](https://github.com/artsy/exchange#did-you-change-graphql-schema).")
@@ -17,4 +18,9 @@ if (danger.git.created_files.includes("exchange.graphql")) {
 const fileInModelsFolder = addedOrModified.find(f => f.startsWith("app/models"))
 if (fileInModelsFolder) {
   warn("You have updated models folder please consider [notifying Analytics Team](https://github.com/artsy/exchange#did-you-change-models).")
+}
+
+const newFileInModelsFolder = added.find(f => f.startsWith("app/models"))
+if (newFileInModelsFolder) {
+  warn("You have added something to the models folder. Please consider [implementing the PaperTrail pattern](https://github.com/artsy/exchange#user-content-papertrail-audit-logging).")
 }
