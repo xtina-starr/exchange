@@ -16,7 +16,6 @@ ActiveAdmin.register FraudReview do
   controller do
     def create
       create! do |format|
-        byebug
         format.html { redirect_to admin_order_path(params[:order_id]) }
       end
     end
