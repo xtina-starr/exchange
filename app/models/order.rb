@@ -91,6 +91,7 @@ class Order < ApplicationRecord
   has_many :transactions, dependent: :destroy
   has_many :state_histories, dependent: :destroy
   has_many :admin_notes, dependent: :destroy
+  has_many :fraud_reviews, dependent: :destroy
   has_many :offers, dependent: :destroy
   belongs_to :last_offer, class_name: 'Offer', optional: true
 

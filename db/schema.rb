@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_01_16_202202) do
+ActiveRecord::Schema.define(version: 2020_01_24_213353) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -38,6 +38,16 @@ ActiveRecord::Schema.define(version: 2020_01_16_202202) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["order_id"], name: "index_admin_notes_on_order_id"
+  end
+
+  create_table "fraud_reviews", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "order_id"
+    t.string "admin_id", null: false
+    t.boolean "considered_fraudulent"
+    t.text "reason"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["order_id"], name: "index_fraud_reviews_on_order_id"
   end
 
   create_table "fulfillment_versions", force: :cascade do |t|
@@ -222,6 +232,7 @@ ActiveRecord::Schema.define(version: 2020_01_16_202202) do
   end
 
   add_foreign_key "admin_notes", "orders"
+  add_foreign_key "fraud_reviews", "orders"
   add_foreign_key "line_item_fulfillments", "fulfillments"
   add_foreign_key "line_item_fulfillments", "line_items"
   add_foreign_key "line_items", "orders"
