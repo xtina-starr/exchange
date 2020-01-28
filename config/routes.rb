@@ -6,8 +6,6 @@ Rails.application.routes.draw do
     get '/health', to: 'health#index'
     post '/webhooks/stripe', to: 'webhooks#stripe'
   end
-  resources :admin_notes
-  resources :fraud_reviews
   ActiveAdmin.routes(self)
   mount ArtsyAuth::Engine => '/'
   constraints ->(req) { req.session[:access_token].present? && ArtsyAuthToken.new(req.session[:access_token]).admin? } do
