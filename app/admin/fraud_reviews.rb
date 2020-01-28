@@ -1,4 +1,5 @@
 ActiveAdmin.register FraudReview do
+  actions :all, except: %i[update destroy edit]
   belongs_to :order
   permit_params :order_id, :admin_id, :considered_fraudulent, :reason, :context
 
@@ -10,5 +11,14 @@ ActiveAdmin.register FraudReview do
       f.input :reason
     end
     f.actions
+  end
+
+  controller do
+    def create
+      create! do |format|
+        byebug
+        format.html { redirect_to admin_order_path(params[:order_id]) }
+      end
+    end
   end
 end
