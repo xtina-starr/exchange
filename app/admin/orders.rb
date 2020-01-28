@@ -402,7 +402,7 @@ OrderService.refund!(resource)
 
     panel "Fraud Review" do
       h5 link_to("Add fraud review",  new_admin_order_fraud_review_path(order), class: :button)
-      table_for(order.fraud_reviews) do
+      table_for(order.fraud_reviews.order(created_at: :desc) do
         column :created_at
         column "Reviewed by" do |fraud_review|
           Gravity.get_user(fraud_review.admin_id)[:name]
