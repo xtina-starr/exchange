@@ -407,7 +407,6 @@ OrderService.refund!(resource)
         column "Reviewed by" do |fraud_review|
           Gravity.get_user(fraud_review.admin_id)[:name]
         end
-        column :context
         column :considered_fraudulent
         column :reason
       end

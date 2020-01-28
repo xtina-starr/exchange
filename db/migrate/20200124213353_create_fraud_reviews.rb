@@ -4,7 +4,6 @@ class CreateFraudReviews < ActiveRecord::Migration[6.0]
       t.references :order, foreign_key: true, type: :uuid
       t.string :admin_id, null: false
       t.boolean :considered_fraudulent
-      t.string :context
       t.text :reason
 
       t.timestamps

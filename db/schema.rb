@@ -44,7 +44,6 @@ ActiveRecord::Schema.define(version: 2020_01_24_213353) do
     t.uuid "order_id"
     t.string "admin_id", null: false
     t.boolean "considered_fraudulent"
-    t.string "context"
     t.text "reason"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
