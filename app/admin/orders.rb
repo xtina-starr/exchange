@@ -388,7 +388,7 @@ OrderService.refund!(resource)
     panel "Admin Actions and Notes" do
       #TODO: Add "Add note" button
       h5 link_to("Add note", new_admin_order_admin_note_path(order), class: :button)
-      table_for(order.admin_notes) do
+      table_for(order.admin_notes.order(created_at: :desc)) do
         column :created_at
         column "Admin" do |fraud_review|
           Gravity.get_user(fraud_review.admin_id)[:name]
