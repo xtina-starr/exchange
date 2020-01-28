@@ -390,10 +390,26 @@ OrderService.refund!(resource)
       h5 link_to("Add note", new_admin_order_admin_note_path(order), class: :button)
       table_for(order.admin_notes) do
         column :created_at
+        column "Admin" do |fraud_review|
+          Gravity.get_user(fraud_review.admin_id)[:name]
+        end
         column "Note Type" do |admin_note|
           admin_note.note_type.to_s.humanize
         end
         column :description
+      end
+    end
+
+    panel "Fraud Review" do
+      h5 link_to("Add fraud review",  new_admin_order_fraud_review_path(order), class: :button)
+      table_for(order.fraud_reviews) do
+        column :created_at
+        column "Reviewed by" do |fraud_review|
+          Gravity.get_user(fraud_review.admin_id)[:name]
+        end
+        column :context
+        column :considered_fraudulent
+        column :reason
       end
     end
   end
