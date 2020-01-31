@@ -41,17 +41,17 @@ ActiveAdmin.register Order do
   end
 
   member_action :refund, method: :post do
-OrderService.refund!(resource)
+    OrderService.refund!(resource)
     redirect_to resource_path, notice: "Refunded!"
   end
 
   member_action :cancel, method: :post do
-    OrderCancellationService.new(resource, resource.buyer_id).reject!(Order::REASONS[Order::CANCELED][:admin_canceled])
+    OrderService.reject!(resource, current_user[:id], Order::REASONS[Order::CANCELED][:admin_canceled])
     redirect_to resource_path, notice: "Canceled by Artsy admin!"
   end
 
   member_action :buyer_reject, method: :post do
-    OrderCancellationService.new(resource, resource.buyer_id).reject!(Order::REASONS[Order::CANCELED][:buyer_rejected])
+    OrderService.reject!(resource, resource.buyer_id, Order::REASONS[Order::CANCELED][:buyer_rejected])
     redirect_to resource_path, notice: "Canceled on behalf of buyer!"
   end
 

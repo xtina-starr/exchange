@@ -192,13 +192,13 @@ class PaymentService
       status: Transaction::FAILURE,
       external_id: pi[:id],
       external_type: Transaction::PAYMENT_INTENT,
-      source_id: pi[:last_payment_error][:payment_method][:id],
-      destination_id: pi[:transfer_data][:destination],
+      source_id: pi.dig(:last_payment_error, :payment_method, :id),
+      destination_id: pi.dig(:transfer_data, :destination),
       amount_cents: pi[:amount],
       transaction_type: transaction_type,
-      failure_code: pi[:last_payment_error][:code],
-      failure_message: pi[:last_payment_error][:message],
-      decline_code: pi[:last_payment_error][:decline_code],
+      failure_code: pi.dig(:last_payment_error, :code),
+      failure_message: pi.dig(:last_payment_error, :message),
+      decline_code: pi.dig(:last_payment_error, :decline_code),
       payload: exc.json_body
     )
   end
