@@ -204,7 +204,6 @@ def gravity_v1_partner(options={})
     alternate_names: ["Partner Success Invoicing Demo Partner"],
     contract_type: "Subscription",
     billing_location_id: '581b46959c18db1dee001f50',
-    payments_enabled: true,
     commission_rate: 0.7,
     effective_commission_rate: 0.8,
   }.merge(options)
