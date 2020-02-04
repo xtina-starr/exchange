@@ -40,7 +40,7 @@ end
 
 group :test do
   gem 'capybara'
-  gem 'coveralls', require: false
+  gem 'simplecov', require: false
   gem 'danger'
   gem 'fabrication'
   gem 'selenium-webdriver'
