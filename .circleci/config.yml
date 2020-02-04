@@ -34,9 +34,10 @@ workflows:
             - run:
                 name: Copy coverage artifacts
                 command: mkdir -p ./coverage && docker cp hokusai_exchange_1:/app/coverage ./
-                when: always
+                when: on_success
             - codecov/upload:
                 file: ./coverage/.resultset.json
+                when: on_success
 
       # staging
       - hokusai/push:
