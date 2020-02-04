@@ -40,10 +40,10 @@ end
 
 group :test do
   gem 'capybara'
-  gem 'simplecov', require: false
   gem 'danger'
   gem 'fabrication'
   gem 'selenium-webdriver'
+  gem 'simplecov', require: false
   gem 'stripe-ruby-mock', '~> 2.5.8', require: 'stripe_mock'
   gem 'timecop'
   gem 'webmock'
