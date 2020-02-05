@@ -1,6 +1,7 @@
 version: 2.1
 
 orbs:
+  codecov: codecov/codecov@1.0.5
   hokusai: artsy/hokusai@0.7.2
 
 not_staging_or_release: &not_staging_or_release
@@ -29,6 +30,14 @@ workflows:
       - hokusai/test:
           name: test
           <<: *not_staging_or_release
+          post-steps:
+            - run:
+                name: Copy coverage artifacts
+                command: mkdir -p ./coverage && docker cp hokusai_exchange_1:/app/coverage ./
+                when: on_success
+            - codecov/upload:
+                file: ./coverage/.resultset.json
+                when: on_success
 
       # staging
       - hokusai/push:
