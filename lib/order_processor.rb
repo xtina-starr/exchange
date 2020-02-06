@@ -14,7 +14,7 @@ class OrderProcessor
     @original_state_expires_at = nil
     @payment_service = PaymentService.new(@order)
     @exempted_commission = false 
-    @revert_reason = nil
+    @reversion_reason = nil
   end
 
   def revert!
@@ -122,10 +122,12 @@ class OrderProcessor
 
   # Called during approval and before capture - should alter the seller_total_cents, commission_cents, commission_rate
   # After this is called, exemption exists in Gravity and we're ready to alter the order
-  def debit_commission_exemption(action)
-    gmv_to_exempt = Gravity.debit_commission_exemption(order.seller_id, order.items_total_cents, order.currency_code, order.id, action)
-    apply_commission_exemption
-    gmv_to_exempt
+  def debit_commission_exemption(notes)
+    gmv_to_exempt_and_currency_code = Gravity.debit_commission_exemption(order.seller_id, order.items_total_cents, order.currency_code, order.id, notes)
+    apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor])
+    gmv_to_exempt_and_currency_code
+  rescue Errors::InternalError
+    {}
   end
   
   def apply_commission_exemption(exemption_amount_cents)

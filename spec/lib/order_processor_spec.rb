@@ -32,12 +32,6 @@ describe OrderProcessor, type: :services do
   let(:stub_line_item_1_gravity_undeduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }) }
   let(:stub_line_item_2_gravity_deduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a2/inventory").with(body: { deduct: 2 }) }
   let(:stub_line_item_2_gravity_undeduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a2/inventory").with(body: { undeduct: 2 }) }
-
-  # TODO: Add currency to graphql_response
-  let(:debit_commission_exemption_gravity_response) { { "data" => { "debitCommissionExemption" => { "amountOfExemptGmvOrError" => { "amountMinor" => 1000 } } } } }
-  let(:stub_debit_commission_exemption_gravity) { stub_request(:put, "#{Rails.application.config_for(:gravity)['graphql_api_root']}").with(body: debit_commission_exemption_gravity_response ) }
-  # something like
-  allow(Gravity).to receive(:debit_commission_exemption).and_return(1000)
   
   # stubbed requests
   let(:gravity_partner) { gravity_v1_partner(_id: seller_id) }
@@ -399,7 +393,6 @@ describe OrderProcessor, type: :services do
       expect(order.commission_fee_cents).to eq 800_00
       expect(order.seller_total_cents).to eq 170_70
     end
-
   end
 
   describe 'debit_commission_exemption' do
@@ -410,7 +403,7 @@ describe OrderProcessor, type: :services do
     end
     context 'on success' do
       it 'calls apply_commission_exemption' do
-        stub_debit_commission_exemption_gravity
+        allow(Gravity).to receive(:debit_commission_exemption).and_return({currency_code: 'USD', amount_minor: 10_00})
         expect(order_processor).to receive(:apply_commission_exemption).with(10_00)
         order_processor.debit_commission_exemption("test debit")
       end
@@ -418,6 +411,7 @@ describe OrderProcessor, type: :services do
 
     context 'on failure' do
       it 'does not alter commission' do
+        allow(Gravity).to receive(:debit_commission_exemption).and_raise(Errors::InternalError.new(:gravity, message: 'yep that\'s an error'))
         exemption = order_processor.debit_commission_exemption("test debit")
         expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
         expect(order.commission_fee_cents).to eq 800_00
