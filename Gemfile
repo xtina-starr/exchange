@@ -49,4 +49,4 @@ group :test do
   gem 'webmock'
 end
 
-gem "artemis", "~> 0.5.2"
+gem 'artemis', '~> 0.5.2'

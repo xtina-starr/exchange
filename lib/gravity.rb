@@ -104,9 +104,8 @@ module Gravity
       }
     }
     response = GravityGraphql.authenticated.debit_commission_exemption(mutation_args).to_h
-    final = response['data']['debitCommissionExemption']['amountOfExemptGmvOrError']
+    response['data']['debitCommissionExemption']['amountOfExemptGmvOrError']
   rescue Gravity::GraphQLError
-    byebug
     raise Errors::InternalError.new(:gravity, message: e.message)
   end
 

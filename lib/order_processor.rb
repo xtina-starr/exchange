@@ -13,14 +13,14 @@ class OrderProcessor
     @state_changed = false
     @original_state_expires_at = nil
     @payment_service = PaymentService.new(@order)
-    @exempted_commission = false 
+    @exempted_commission = false
     @reversion_reason = nil
   end
 
   def revert!
     undeduct_inventory! if @deducted_inventory.any?
     reset_totals! if @totals_set
-    revert_debit_exemption(@reversion_reason) if @exempted_commission && @exempted_commission > 0
+    revert_debit_exemption(@reversion_reason) if @exempted_commission
     return unless @state_changed
 
     order.revert!
@@ -129,14 +129,14 @@ class OrderProcessor
   rescue Errors::InternalError
     {}
   end
-  
+
   def apply_commission_exemption(exemption_amount_cents)
-    return unless exemption_amount_cents > 0
+    return unless exemption_amount_cents.positive?
 
     final_commission_cents = (order.items_total_cents - exemption_amount_cents) * order.commission_rate
     order.line_items.each { |li| li.update!(commission_fee_cents: final_commission_cents) } if order.mode == Order::BUY
     order.update!(
-      commission_fee_cents: @order.line_items.map(&:commission_fee_cents).sum,
+      commission_fee_cents: @order.line_items.map(&:commission_fee_cents).sum
     )
     totals = order.mode == Order::BUY ? BuyOrderTotals.new(@order) : OfferOrderTotals.new(@offer)
     order.update!(seller_total_cents: totals.seller_total_cents)
