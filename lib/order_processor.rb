@@ -120,8 +120,7 @@ class OrderProcessor
     Exchange.dogstatsd.increment "order.#{order.state}"
   end
 
-  # Called during approval and before capture - should alter the seller_total_cents, commission_cents, commission_rate
-  # After this is called, exemption exists in Gravity and we're ready to alter the order
+  # Call Gravity to check if the partner should be charged commission on this order and apply it if so
   def debit_commission_exemption(notes)
     gmv_to_exempt_and_currency_code = Gravity.debit_commission_exemption(order.seller_id, order.items_total_cents, order.currency_code, order.id, notes)
     apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor])
@@ -130,11 +129,24 @@ class OrderProcessor
     {}
   end
 
+  # Update commission on an order and line items
   def apply_commission_exemption(exemption_amount_cents)
     return unless exemption_amount_cents.positive?
 
-    final_commission_cents = (order.items_total_cents - exemption_amount_cents) * order.commission_rate
-    order.line_items.each { |li| li.update!(commission_fee_cents: final_commission_cents) } if order.mode == Order::BUY
+    # Update the commission of the line items until we run out of exemption credit
+    exemption_running_total = exemption_amount_cents
+    order.line_items.each do |li|
+      if exemption_running_total >= li.list_price_cents
+        exemption_running_total -= li.list_price_cents
+        li.update!(commission_fee_cents: 0)
+      else
+        commission_cents = (li.list_price_cents - exemption_running_total) * order.commission_rate
+        exemption_running_total = 0
+        li.update!(commission_fee_cents: commission_cents)
+      end
+    end
+
+    # Update the toplevel commission on the order
     order.update!(
       commission_fee_cents: @order.line_items.map(&:commission_fee_cents).sum
     )
