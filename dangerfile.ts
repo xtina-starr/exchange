@@ -22,5 +22,5 @@ if (fileInModelsFolder) {
 
 const newFileInModelsFolder = added.find(f => f.startsWith("app/models"))
 if (newFileInModelsFolder) {
-  warn("You have added something to the models folder. Please consider [implementing the PaperTrail pattern](https://github.com/artsy/exchange#user-content-papertrail-audit-logging).")
+warn("You have added something to the models folder. Please consider [implementing the PaperTrail pattern](https://github.com/artsy/exchange/blob/master/docs/papertrail_audit_logging.md).")
 }
