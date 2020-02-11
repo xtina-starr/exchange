@@ -8,7 +8,7 @@ describe OrderService, type: :services do
   let(:fulfillment_type) { Order::SHIP }
   let(:order_mode) { Order::BUY }
   let(:order) { Fabricate(:order, mode: order_mode, external_charge_id: 'pi_1', state: state, state_reason: state_reason, buyer_id: 'b123', fulfillment_type: fulfillment_type) }
-  let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
+  let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00, sales_tax_cents: 0, shipping_total_cents: 0), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00, sales_tax_cents: 0, shipping_total_cents: 0)] }
   let(:user_id) { 'user-id' }
 
   describe 'create_with_artwork' do
@@ -303,6 +303,50 @@ describe OrderService, type: :services do
         order.update!(payment_method: Order::WIRE_TRANSFER)
         expect { OrderService.approve!(order, user_id) }.to raise_error do |e|
           expect(e.code).to eq :unsupported_payment_method
+        end
+      end
+
+      context 'commission exemption' do
+        context 'failed commission exemption' do
+          before do
+            prepare_payment_intent_capture_success
+            ActiveJob::Base.queue_adapter = :test
+            allow(Gravity).to receive(:debit_commission_exemption).and_raise(Errors::InternalError.new(:gravity, message: 'yep that\'s an error'))
+            expect { OrderService.approve!(order, user_id) }.to change(order.transactions, :count).by(1)
+          end
+          it 'still successfully processes the order' do
+            expect(order.transactions.order(created_at: :desc).first).to have_attributes(
+              status: Transaction::SUCCESS,
+              external_id: 'pi_1',
+              external_type: Transaction::PAYMENT_INTENT
+            )
+            expect(order.state).to eq Order::APPROVED
+            expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.approved')
+            expect(OrderFollowUpJob).to have_been_enqueued.with(order.id, Order::APPROVED)
+            line_items.each { |li| expect(RecordSalesTaxJob).to have_been_enqueued.with(li.id) }
+          end
+        end
+        context 'successful commission exemption' do
+          before do
+            order.update!(items_total_cents: 20_00, commission_rate: 0.25, shipping_total_cents: 100_00)
+            prepare_payment_intent_capture_update_transfer_data_success(amount: 20_00, transfer_amount: 15_00)
+            ActiveJob::Base.queue_adapter = :test
+            allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 15_00)
+            expect { OrderService.approve!(order, user_id) }.to change(order.transactions, :count).by(1)
+          end
+          it 'successfully processes the order' do
+            expect(order.transactions.order(created_at: :desc).first).to have_attributes(
+              status: Transaction::SUCCESS,
+              external_id: 'pi_1',
+              external_type: Transaction::PAYMENT_INTENT,
+              payload: hash_including('transfer_data' => {'amount' => 1500})
+            )
+            expect(order.state).to eq Order::APPROVED
+            expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.approved')
+            expect(OrderFollowUpJob).to have_been_enqueued.with(order.id, Order::APPROVED)
+            line_items.each { |li| expect(RecordSalesTaxJob).to have_been_enqueued.with(li.id) }
+            expect(order.transactions)
+          end
         end
       end
 
