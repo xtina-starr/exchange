@@ -411,6 +411,8 @@ describe OrderProcessor, type: :services do
   context 'with multiple line items' do
     before do
       line_item3
+      stub_gravity_partner
+      stub_artwork_request
       order_processor.set_totals!
     end
     context 'with commission exemption larger than each individual line item' do
@@ -419,7 +421,7 @@ describe OrderProcessor, type: :services do
         order_processor.apply_commission_exemption(2500_00)
         expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
         expect(order.commission_fee_cents).to eq 400_00
-        expect(order.seller_total_cents).to eq 2570_70
+        expect(order.seller_total_cents).to eq 2512_70
       end
     end
     context 'with commission exmeption smaller than each individual line item' do
@@ -428,7 +430,7 @@ describe OrderProcessor, type: :services do
         order_processor.apply_commission_exemption(500_00)
         expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
         expect(order.commission_fee_cents).to eq 2000_00
-        expect(order.seller_total_cents).to eq 970_70
+        expect(order.seller_total_cents).to eq 912_70
       end
     end
     context 'with commission exemption equal to the total of all line items' do
@@ -437,7 +439,7 @@ describe OrderProcessor, type: :services do
         order_processor.apply_commission_exemption(3000_00)
         expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
         expect(order.commission_fee_cents).to eq 0
-        expect(order.seller_total_cents).to eq 2970_70
+        expect(order.seller_total_cents).to eq 2912_70
       end
     end
   end
