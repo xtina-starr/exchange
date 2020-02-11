@@ -17,12 +17,13 @@ class OrderProcessor
     @reversion_reason = nil
   end
 
-  def revert!
+  def revert!(reversion_reason = nil)
     undeduct_inventory! if @deducted_inventory.any?
     reset_totals! if @totals_set
     revert_debit_exemption(@reversion_reason) if @exempted_commission
     return unless @state_changed
 
+    @reversion_reason = reversion_reason
     order.revert!
     order.update!(state_expires_at: @original_state_expires_at)
     @state_changed = false
@@ -124,9 +125,8 @@ class OrderProcessor
   def debit_commission_exemption(notes)
     gmv_to_exempt_and_currency_code = Gravity.debit_commission_exemption(order.seller_id, order.items_total_cents, order.currency_code, order.id, notes)
     apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor])
-    gmv_to_exempt_and_currency_code
   rescue Errors::InternalError
-    {}
+    nil
   end
 
   # Update commission on an order and line items

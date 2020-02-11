@@ -51,7 +51,7 @@ module OrderService
 
     order_processor.advance_state(:submit!)
     unless order_processor.deduct_inventory
-      order_processor.revert!
+      order_processor.revert!("Insufficient inventory")
       raise Errors::InsufficientInventoryError
     end
 
@@ -69,8 +69,7 @@ module OrderService
     order
   rescue StandardError => e
     # catch all
-    order_processor.revert_reason = e.message
-    order_processor&.revert!
+    order_processor&.revert!(e.message)
     raise e
   end
 
