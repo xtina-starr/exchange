@@ -8,7 +8,10 @@ describe OrderService, type: :services do
   let(:fulfillment_type) { Order::SHIP }
   let(:order_mode) { Order::BUY }
   let(:order) { Fabricate(:order, mode: order_mode, external_charge_id: 'pi_1', state: state, state_reason: state_reason, buyer_id: 'b123', fulfillment_type: fulfillment_type) }
-  let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00, sales_tax_cents: 0, shipping_total_cents: 0), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00, sales_tax_cents: 0, shipping_total_cents: 0)] }
+  let!(:line_items) do
+    [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00, sales_tax_cents: 0, shipping_total_cents: 0),
+     Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00, sales_tax_cents: 0, shipping_total_cents: 0)]
+  end
   let(:user_id) { 'user-id' }
 
   describe 'create_with_artwork' do
@@ -339,7 +342,7 @@ describe OrderService, type: :services do
               status: Transaction::SUCCESS,
               external_id: 'pi_1',
               external_type: Transaction::PAYMENT_INTENT,
-              payload: hash_including('transfer_data' => {'amount' => 1500})
+              payload: hash_including('transfer_data' => { 'amount' => 1500 })
             )
             expect(order.state).to eq Order::APPROVED
             expect(PostEventJob).to have_been_enqueued.with('commerce', kind_of(String), 'order.approved')
@@ -355,6 +358,7 @@ describe OrderService, type: :services do
           prepare_payment_intent_capture_failure(charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
         end
         it 'adds failed transaction and stays in submitted state' do
+          allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
           expect { OrderService.approve!(order, user_id) }.to raise_error(Errors::ProcessingError).and change(order.transactions, :count).by(1)
           transaction = order.transactions.order(created_at: :desc).first
           expect(transaction).to have_attributes(
@@ -376,6 +380,7 @@ describe OrderService, type: :services do
         it 'is in approved state' do
           prepare_payment_intent_capture_success
           allow(OrderEvent).to receive(:delay_post).and_raise('Perform what later?!')
+          allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
           expect { OrderService.approve!(order, user_id) }.to raise_error(RuntimeError).and change(order.transactions, :count).by(1)
           expect(order.reload.state).to eq Order::APPROVED
         end
@@ -385,6 +390,7 @@ describe OrderService, type: :services do
         before do
           prepare_payment_intent_capture_success
           ActiveJob::Base.queue_adapter = :test
+          allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
           expect { OrderService.approve!(order, user_id) }.to change(order.transactions, :count).by(1)
         end
         it 'adds successful transaction, updates the state and queues expected jobs' do

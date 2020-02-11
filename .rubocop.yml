@@ -33,7 +33,7 @@ Metrics/MethodLength:
     - "db/migrate/*"
 
 Metrics/ModuleLength:
-  Max: 136
+  Max: 137
   Exclude:
     - "spec/**/*"
 
