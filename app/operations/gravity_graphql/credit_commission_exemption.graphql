@@ -3,6 +3,7 @@ mutation($input: CreditCommissionExemptionInput!) {
     totalRemainingGmvOrError {
       ... on Money {
         amountMinor
+        currencyCode
       }
       ... on Error {
         message
