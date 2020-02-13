@@ -94,7 +94,7 @@ module Gravity
     items
   end
 
-  def self.debit_commission_exemption(partner_id, amount_minor, currency_code, reference_id, notes)
+  def self.debit_commission_exemption(partner_id:, amount_minor:, currency_code:, reference_id:, notes:)
     mutation_args = {
       input: {
         partnerId: partner_id,
@@ -107,7 +107,7 @@ module Gravity
     response['data']['debitCommissionExemption']['amountOfExemptGmvOrError']
   end
 
-  def self.credit_commission_exemption(partner_id, amount_minor, currency_code, reference_id, notes)
+  def self.credit_commission_exemption(partner_id:, amount_minor:, currency_code:, reference_id:, notes:)
     mutation_args = {
       input: {
         partnerId: partner_id,

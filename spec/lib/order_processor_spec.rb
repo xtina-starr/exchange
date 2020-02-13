@@ -158,7 +158,7 @@ describe OrderProcessor, type: :services do
       order_processor.instance_variable_set(:@reversion_reason, 'super ugly artwork')
       order_processor.instance_variable_set(:@exempted_commission, true)
 
-      expect(Gravity).to receive(:credit_commission_exemption).with(order.seller_id, order.items_total_cents, order.currency_code, order.id, 'super ugly artwork')
+      expect(Gravity).to receive(:credit_commission_exemption).with(partner_id: order.seller_id, amount_minor: order.items_total_cents, currency_code: order.currency_code, reference_id: order.id, notes: 'super ugly artwork')
       order_processor.revert!
     end
   end

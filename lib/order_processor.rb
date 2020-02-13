@@ -123,7 +123,11 @@ class OrderProcessor
 
   # Call Gravity to check if the partner should be charged commission on this order and apply it if so
   def debit_commission_exemption(notes)
-    gmv_to_exempt_and_currency_code = Gravity.debit_commission_exemption(order.seller_id, order.items_total_cents, order.currency_code, order.id, notes)
+    gmv_to_exempt_and_currency_code = Gravity.debit_commission_exemption(partner_id: order.seller_id,
+                                                                         amount_minor: order.items_total_cents,
+                                                                         currency_code: order.currency_code,
+                                                                         reference_id: order.id,
+                                                                         notes: notes)
     apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor])
   rescue GravityGraphql::GraphQLError
     nil
@@ -156,6 +160,6 @@ class OrderProcessor
   end
 
   def revert_debit_exemption(reversion_reason)
-    Gravity.credit_commission_exemption(order.seller_id, order.items_total_cents, order.currency_code, order.id, reversion_reason)
+    Gravity.credit_commission_exemption(partner_id: order.seller_id, amount_minor: order.items_total_cents, currency_code: order.currency_code, reference_id: order.id, notes: reversion_reason)
   end
 end
