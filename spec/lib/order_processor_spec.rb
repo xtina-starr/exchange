@@ -460,7 +460,7 @@ describe OrderProcessor, type: :services do
 
     context 'on failure' do
       it 'does not alter commission' do
-        allow(Gravity).to receive(:debit_commission_exemption).and_raise(Errors::InternalError.new(:gravity, message: 'yep that\'s an error'))
+        allow(Gravity).to receive(:debit_commission_exemption).and_raise(GravityGraphql::GraphQLError)
         order_processor.debit_commission_exemption('test debit')
         expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
         expect(order.commission_fee_cents).to eq 800_00

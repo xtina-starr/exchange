@@ -314,7 +314,7 @@ describe OrderService, type: :services do
           before do
             prepare_payment_intent_capture_success
             ActiveJob::Base.queue_adapter = :test
-            allow(Gravity).to receive(:debit_commission_exemption).and_raise(Errors::InternalError.new(:gravity, message: 'yep that\'s an error'))
+            allow(Gravity).to receive(:debit_commission_exemption).and_raise(GravityGraphql::GraphQLError)
             expect { OrderService.approve!(order, user_id) }.to change(order.transactions, :count).by(1)
           end
           it 'still successfully processes the order' do
