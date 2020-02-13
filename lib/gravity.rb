@@ -104,7 +104,7 @@ module Gravity
       }
     }
     response = GravityGraphql.authenticated.debit_commission_exemption(mutation_args).to_h
-    response['data']['debitCommissionExemption']['amountOfExemptGmvOrError']
+    response.dig('data', 'debitCommissionExemption', 'amountOfExemptGmvOrError')
   end
 
   def self.credit_commission_exemption(partner_id:, amount_minor:, currency_code:, reference_id:, notes:)
@@ -116,7 +116,7 @@ module Gravity
         notes: notes
       }
     }
-    response = GravityGraphql.authenticated.credit_commission_exemption(mutation_args)
-    response['data']['creditCommissionExemption']
+    response = GravityGraphql.authenticated.credit_commission_exemption(mutation_args).to_h
+    response.dig('data', 'creditCommissionExemption')
   end
 end
