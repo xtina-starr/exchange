@@ -122,7 +122,7 @@ class OrderProcessor
   end
 
   # Call Gravity to check if the partner should be charged commission on this order and apply it if so
-  def debit_commission_exemption(notes)
+  def debit_commission_exemption(notes: '')
     gmv_to_exempt_and_currency_code = Gravity.debit_commission_exemption(partner_id: order.seller_id,
                                                                          amount_minor: order.items_total_cents,
                                                                          currency_code: order.currency_code,

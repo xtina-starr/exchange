@@ -80,7 +80,7 @@ module OrderService
     order_processor = OrderProcessor.new(order, user_id)
     transaction = nil
     order.approve! do
-      order_processor.debit_commission_exemption('Exchange debit')
+      order_processor.debit_commission_exemption
       transaction = payment_service.capture_hold
       raise Errors::ProcessingError.new(:capture_failed, transaction.failure_data) if transaction.failed?
     end
