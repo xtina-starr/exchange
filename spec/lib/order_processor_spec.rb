@@ -155,11 +155,10 @@ describe OrderProcessor, type: :services do
     it 'it reverts debit commission exemption' do
       order.submit!
       order.approve!
-      order_processor.instance_variable_set(:@reversion_reason, 'super ugly artwork')
       order_processor.instance_variable_set(:@exempted_commission, true)
 
-      expect(Gravity).to receive(:credit_commission_exemption).with(partner_id: order.seller_id, amount_minor: order.items_total_cents, currency_code: order.currency_code, reference_id: order.id, notes: 'super ugly artwork')
-      order_processor.revert!
+      expect(Gravity).to receive(:credit_commission_exemption).with(partner_id: order.seller_id, amount_minor: order.items_total_cents, currency_code: order.currency_code, reference_id: order.id, notes: 'insufficient_inventory')
+      order_processor.revert!('insufficient_inventory')
     end
   end
 
@@ -454,14 +453,14 @@ describe OrderProcessor, type: :services do
       it 'calls apply_commission_exemption' do
         allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 10_00)
         expect(order_processor).to receive(:apply_commission_exemption).with(10_00)
-        order_processor.debit_commission_exemption(notes: 'test debit')
+        order_processor.debit_commission_exemption
       end
     end
 
     context 'on failure' do
       it 'does not alter commission' do
         allow(Gravity).to receive(:debit_commission_exemption).and_raise(GravityGraphql::GraphQLError)
-        order_processor.debit_commission_exemption(notes: 'test debit')
+        order_processor.debit_commission_exemption
         expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
         expect(order.commission_fee_cents).to eq 800_00
       end

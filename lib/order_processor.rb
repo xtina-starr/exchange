@@ -14,16 +14,14 @@ class OrderProcessor
     @original_state_expires_at = nil
     @payment_service = PaymentService.new(@order)
     @exempted_commission = false
-    @reversion_reason = nil
   end
 
   def revert!(reversion_reason = nil)
     undeduct_inventory! if @deducted_inventory.any?
     reset_totals! if @totals_set
-    revert_debit_exemption(@reversion_reason) if @exempted_commission
+    revert_debit_exemption(reversion_reason) if @exempted_commission
     return unless @state_changed
 
-    @reversion_reason = reversion_reason
     order.revert!
     order.update!(state_expires_at: @original_state_expires_at)
     @state_changed = false
