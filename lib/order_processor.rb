@@ -128,6 +128,7 @@ class OrderProcessor
                                                                          notes: notes)
     apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor])
   rescue GravityGraphql::GraphQLError
+    Rails.logger.error("Could not execute Gravity GraphQL query for order #{order.id}")
     nil
   end
 

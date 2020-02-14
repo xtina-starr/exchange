@@ -460,6 +460,7 @@ describe OrderProcessor, type: :services do
     context 'on failure' do
       it 'does not alter commission' do
         allow(Gravity).to receive(:debit_commission_exemption).and_raise(GravityGraphql::GraphQLError)
+        expect(Rails.logger).to receive(:error).with("Could not execute Gravity GraphQL query for order #{order.id}")
         order_processor.debit_commission_exemption
         expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
         expect(order.commission_fee_cents).to eq 800_00
