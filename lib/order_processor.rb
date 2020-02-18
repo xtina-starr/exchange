@@ -13,11 +13,13 @@ class OrderProcessor
     @state_changed = false
     @original_state_expires_at = nil
     @payment_service = PaymentService.new(@order)
+    @exempted_commission = false
   end
 
-  def revert!
+  def revert!(reversion_reason = nil)
     undeduct_inventory! if @deducted_inventory.any?
     reset_totals! if @totals_set
+    revert_debit_exemption(reversion_reason) if @exempted_commission
     return unless @state_changed
 
     order.revert!
@@ -115,5 +117,48 @@ class OrderProcessor
     OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
     ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
     Exchange.dogstatsd.increment "order.#{order.state}"
+  end
+
+  # Call Gravity to check if the partner should be charged commission on this order and apply it if so
+  def debit_commission_exemption(notes: '')
+    gmv_to_exempt_and_currency_code = Gravity.debit_commission_exemption(partner_id: order.seller_id,
+                                                                         amount_minor: order.items_total_cents,
+                                                                         currency_code: order.currency_code,
+                                                                         reference_id: order.id,
+                                                                         notes: notes)
+    apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor])
+  rescue GravityGraphql::GraphQLError
+    Rails.logger.error("Could not execute Gravity GraphQL query for order #{order.id}")
+    nil
+  end
+
+  # Update commission on an order and line items
+  def apply_commission_exemption(exemption_amount_cents)
+    return unless exemption_amount_cents.positive?
+
+    # Update the commission of the line items until we run out of exemption credit
+    exemption_running_total = exemption_amount_cents
+    order.line_items.each do |li|
+      if exemption_running_total >= li.list_price_cents
+        exemption_running_total -= li.list_price_cents
+        li.update!(commission_fee_cents: 0)
+      else
+        commission_cents = (li.list_price_cents - exemption_running_total) * order.commission_rate
+        exemption_running_total = 0
+        li.update!(commission_fee_cents: commission_cents)
+      end
+    end
+
+    # Update the toplevel commission on the order
+    order.update!(
+      commission_fee_cents: @order.line_items.map(&:commission_fee_cents).sum
+    )
+    totals = order.mode == Order::BUY ? BuyOrderTotals.new(@order) : OfferOrderTotals.new(@offer)
+    order.update!(seller_total_cents: totals.seller_total_cents)
+    @exempted_commission = true
+  end
+
+  def revert_debit_exemption(reversion_reason)
+    Gravity.credit_commission_exemption(partner_id: order.seller_id, amount_minor: order.items_total_cents, currency_code: order.currency_code, reference_id: order.id, notes: reversion_reason) if @exempted_commission
   end
 end
