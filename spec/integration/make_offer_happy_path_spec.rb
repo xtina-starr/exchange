@@ -111,6 +111,7 @@ describe Api::GraphqlController, type: :request do
       )
 
       # seller accepts offer
+      allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
       expect do
         seller_client.execute(OfferQueryHelper::SELLER_ACCEPT_OFFER, input: { offerId: offer.id.to_s })
       end.to change(order.transactions, :count).by(1)
