@@ -450,20 +450,32 @@ describe OrderProcessor, type: :services do
       order_processor.set_totals!
     end
     context 'on success' do
-      it 'calls apply_commission_exemption' do
+      it 'calls apply_commission_exemption if result has amount_minor' do
         allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 10_00)
         expect(order_processor).to receive(:apply_commission_exemption).with(10_00)
         order_processor.debit_commission_exemption
       end
+
+      it 'does not call apply_commission_exemption if result is missing amount_minor' do
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(foo: 'bar')
+        expect(order_processor).not_to receive(:apply_commission_exemption)
+        order_processor.debit_commission_exemption
+      end
     end
 
-    context 'on failure' do
-      it 'does not alter commission' do
+    context 'failure' do
+      it 'does not call apply_commission when error is raised' do
         allow(Gravity).to receive(:debit_commission_exemption).and_raise(GravityGraphql::GraphQLError)
         expect(Rails.logger).to receive(:error).with("Could not execute Gravity GraphQL query for order #{order.id}")
         order_processor.debit_commission_exemption
         expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
         expect(order.commission_fee_cents).to eq 800_00
+      end
+
+      it 'does not call apply_commission_exemption when response is nil' do
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(nil)
+        expect(order_processor).not_to receive(:apply_commission_exemption)
+        order_processor.debit_commission_exemption
       end
     end
   end

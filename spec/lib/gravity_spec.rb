@@ -211,4 +211,20 @@ describe Gravity, type: :services do
       expect(response.length).to eq 0
     end
   end
+
+  describe '#debit_commission_exemption' do
+    let(:parameters) { { partner_id: seller_id, amount_minor: 100, currency_code: 'USD', reference_id: 'order123', notes: 'hi' } }
+    let(:response) { { 'data' => { 'debitCommissionExemption' => { 'amountOfExemptGmvOrError' => { 'fooBar' => 'baz' } } } } }
+    it 'returns snake-cased amountOfExemptGmvOrError if it is included in the response body' do
+      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return(response)
+      return_value = Gravity.debit_commission_exemption(parameters)
+      expect(return_value).to eq(foo_bar: 'baz')
+    end
+
+    it 'returns nil if amountOfExemptGmvOrError is not included in the response body' do
+      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return({})
+      return_value = Gravity.debit_commission_exemption(parameters)
+      expect(return_value).to be nil
+    end
+  end
 end
