@@ -122,7 +122,7 @@ module Gravity
         notes: notes
       }
     }
-    response = GravityGraphql.authenticated.credit_commission_exemption(mutation_args).to_h
-    response.dig('data', 'creditCommissionExemption')
+    GravityGraphql.authenticated.credit_commission_exemption(mutation_args)
+    nil
   end
 end

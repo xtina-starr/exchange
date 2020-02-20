@@ -227,4 +227,13 @@ describe Gravity, type: :services do
       expect(return_value).to be nil
     end
   end
+
+  describe '#credit_commission_exemption' do
+    it 'requests the credit commission exemption mutation and returns nil' do
+      mutation = stub_request(:post, Rails.application.config_for(:graphql)[:gravity_graphql][:url]).to_return(status: 200, body: { foo: { bar: 'baz' } }.to_json)
+      retval = Gravity.credit_commission_exemption(partner_id: seller_id, amount_minor: 100, currency_code: 'USD', reference_id: 'order123', notes: 'hi')
+      expect(mutation).to have_been_requested
+      expect(retval).to be nil
+    end
+  end
 end

@@ -499,6 +499,7 @@ describe OrderService, type: :services do
     [Order::APPROVED, Order::FULFILLED].each do |state|
       before do
         Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
+        stub_request(:post, Rails.application.config_for(:graphql)[:gravity_graphql][:url]).to_return(status: 200, body: '{}', headers: {})
       end
       context "#{state} order" do
         let(:state) { state }
