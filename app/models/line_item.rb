@@ -9,6 +9,9 @@ class LineItem < ApplicationRecord
 
   validate :offer_order_lacks_line_items, on: :create
 
+  validates :artwork_version_id, presence: true
+  validates :artwork_id, presence: true
+
   def total_list_price_cents
     list_price_cents * quantity
   end
