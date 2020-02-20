@@ -214,19 +214,18 @@ describe Gravity, type: :services do
 
   describe '#debit_commission_exemption' do
     let(:parameters) { { partner_id: seller_id, amount_minor: 100, currency_code: 'USD', reference_id: 'order123', notes: 'hi' } }
-    let(:debit_response_success) { { data: { debitCommissionExemption: { amountOfExemptGmvOrError: { amountMinor: 10, currencyCode: 'USD' } } } } }
-    let(:debit_response_error) { { data: { debitCommissionExemption: { amountOfExemptGmvOrError: { message: 'Amount must be positive', code: 'negative_amount' } } } } }
-    it 'returns a snake-cased hash on successful execution' do
-      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return(debit_response_success)
+    # Full response looks like: #<GraphQL::Client::Response:0x00007fbad5a3f650 @original_hash={"data"=>{"debitCommissionExemption"=>{"amountOfExemptGmvOrError"=>{"__typename"=>"Money", "amountMinor"=>490, "currencyCode"=>"USD"}}}}, @data=#< debitCommissionExemption=...>, @errors=#<GraphQL::Client::Errors @messages={} @details={}>, @extensions=nil> }
+    let(:response) { { 'data' => { 'debitCommissionExemption' => { 'amountOfExemptGmvOrError' => { 'fooBar' => 'baz' } } } } }
+    it 'returns snake-cased amountOfExemptGmvOrError if it is included in the response body' do
+      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return(response)
       return_value = Gravity.debit_commission_exemption(parameters)
-      expect(return_value).to eq(amount_minor: 10, currency_code: 'USD')
+      expect(return_value).to eq(foo_bar: 'baz')
     end
 
-    it 'returns a snake-cased hash on error' do
-      parameters[:amount_minor] = -100
-      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return(debit_response_error)
+    it 'returns nil if amountOfExemptGmvOrError is not included in the response body' do
+      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return({})
       return_value = Gravity.debit_commission_exemption(parameters)
-      expect(return_value).to eq(message: 'Amount must be positive', code: 'negative_amount')
+      expect(return_value).to be nil
     end
   end
 end

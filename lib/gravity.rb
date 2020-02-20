@@ -104,9 +104,13 @@ module Gravity
       }
     }
     response = GravityGraphql.authenticated.debit_commission_exemption(mutation_args).to_h
-    gmv_or_error = response.dig(:data, :debitCommissionExemption, :amountOfExemptGmvOrError)
-    # Convert hash to snake case
-    gmv_or_error.transform_keys { |key| key.to_s.underscore.to_sym }
+    gmv_or_error = response.dig('data', 'debitCommissionExemption', 'amountOfExemptGmvOrError')
+    if gmv_or_error.nil?
+      nil
+    else
+      # Convert hash to snake case
+      gmv_or_error.transform_keys { |key| key.to_s.underscore.to_sym }
+    end
   end
 
   def self.credit_commission_exemption(partner_id:, amount_minor:, currency_code:, reference_id:, notes:)
