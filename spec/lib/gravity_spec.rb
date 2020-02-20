@@ -211,4 +211,22 @@ describe Gravity, type: :services do
       expect(response.length).to eq 0
     end
   end
+
+  describe '#debit_commission_exemption' do
+    let(:parameters) { { partner_id: seller_id, amount_minor: 100, currency_code: 'USD', reference_id: 'order123', notes: 'hi' } }
+    let(:debit_response_success) { { data: { debitCommissionExemption: { amountOfExemptGmvOrError: { amountMinor: 10, currencyCode: 'USD' } } } } }
+    let(:debit_response_error) { { data: { debitCommissionExemption: { amountOfExemptGmvOrError: { message: 'Amount must be positive', code: 'negative_amount' } } } } }
+    it 'returns a snake-cased hash on successful execution' do
+      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return(debit_response_success)
+      return_value = Gravity.debit_commission_exemption(parameters)
+      expect(return_value).to eq(amount_minor: 10, currency_code: 'USD')
+    end
+
+    it 'returns a snake-cased hash on error' do
+      parameters[:amount_minor] = -100
+      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return(debit_response_error)
+      return_value = Gravity.debit_commission_exemption(parameters)
+      expect(return_value).to eq(message: 'Amount must be positive', code: 'negative_amount')
+    end
+  end
 end
