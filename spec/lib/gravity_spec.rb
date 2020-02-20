@@ -214,7 +214,11 @@ describe Gravity, type: :services do
 
   describe '#debit_commission_exemption' do
     let(:parameters) { { partner_id: seller_id, amount_minor: 100, currency_code: 'USD', reference_id: 'order123', notes: 'hi' } }
-    # Full response looks like: #<GraphQL::Client::Response:0x00007fbad5a3f650 @original_hash={"data"=>{"debitCommissionExemption"=>{"amountOfExemptGmvOrError"=>{"__typename"=>"Money", "amountMinor"=>490, "currencyCode"=>"USD"}}}}, @data=#< debitCommissionExemption=...>, @errors=#<GraphQL::Client::Errors @messages={} @details={}>, @extensions=nil> }
+    # Full response looks like:
+    # #<GraphQL::Client::Response:0x00007fbad5a3f650
+    # @original_hash={"data"=>{"debitCommissionExemption"=>{"amountOfExemptGmvOrError"=>{"__typename"=>"Money", "amountMinor"=>490, "currencyCode"=>"USD"}}}},
+    # @data=#< debitCommissionExemption=...>,
+    # @errors=#<GraphQL::Client::Errors @messages={} @details={}>, @extensions=nil> }
     let(:response) { { 'data' => { 'debitCommissionExemption' => { 'amountOfExemptGmvOrError' => { 'fooBar' => 'baz' } } } } }
     it 'returns snake-cased amountOfExemptGmvOrError if it is included in the response body' do
       allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return(response)
