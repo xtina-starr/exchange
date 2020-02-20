@@ -126,7 +126,8 @@ class OrderProcessor
                                                                          currency_code: order.currency_code,
                                                                          reference_id: order.id,
                                                                          notes: notes)
-    apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor])
+    response_is_valid = !gmv_to_exempt_and_currency_code.nil? && gmv_to_exempt_and_currency_code.key?(:amount_minor)
+    apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor]) if response_is_valid
   rescue GravityGraphql::GraphQLError
     Rails.logger.error("Could not execute Gravity GraphQL query for order #{order.id}")
     nil
