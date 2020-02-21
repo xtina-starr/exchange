@@ -126,7 +126,7 @@ class OrderProcessor
                                                                          currency_code: order.currency_code,
                                                                          reference_id: order.id,
                                                                          notes: notes)
-    return if gmv_to_exempt_and_currency_code.nil? || !gmv_to_exempt_and_currency_code.key?(:amount_minor)
+    return if gmv_to_exempt_and_currency_code.nil? || !gmv_to_exempt_and_currency_code.key?(:amount_minor) || gmv_to_exempt_and_currency_code[:amount_minor].zero?
 
     @exempted_commission = true
     apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor])

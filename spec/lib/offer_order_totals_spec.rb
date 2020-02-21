@@ -2,12 +2,8 @@ require 'rails_helper'
 require 'support/gravity_helper'
 
 describe OfferOrderTotals do
-  let(:partner) { { effective_commission_rate: 0.1 } }
   let(:fulfillment_type) { Order::PICKUP }
   let(:gravity_artwork) { gravity_v1_artwork(_id: 'a-1', price_listed: 1000.00, edition_sets: [], domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
-  let(:shipping_address) { nil }
-  let(:seller_locations) { [] }
-  let(:artsy_collects_sales_tax) { true }
   let(:order) { Fabricate(:order, seller_id: 'partner-1', seller_type: 'gallery', buyer_id: 'buyer1', buyer_type: Order::USER, fulfillment_type: fulfillment_type) }
   let(:offer) { Fabricate(:offer, order: order, from_id: 'partner-1', from_type: 'gallery', amount_cents: 800_00, shipping_total_cents: 0, tax_total_cents: 300_00) }
   let(:line_item) { Fabricate(:line_item, order: order, artwork_id: 'a-1') }
