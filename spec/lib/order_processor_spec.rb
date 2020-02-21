@@ -385,23 +385,23 @@ describe OrderProcessor, type: :services do
         it 'updates order with correct amount of commission and seller total' do
           order_processor.apply_commission_exemption(100_00)
           # Quick maths: we've gone from a 1000_00 order (the full amount) with 80% commission to a 900_00 order (because 100_00 is exempt) with 80% commission, so 900 x .8 = 720
-          expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
           expect(order.commission_fee_cents).to eq 720_00
+          expect(order.line_items.first.commission_fee_cents).to eq 720_00
           expect(order.seller_total_cents).to eq 250_70
         end
       end
-      context 'with commission exemption equalt to order total' do
+      context 'with commission exemption equal to order total' do
         it 'updates order with correct amount of commission and seller total' do
           order_processor.apply_commission_exemption(1000_00)
-          expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
           expect(order.commission_fee_cents).to eq 0
+          expect(order.line_items.first.commission_fee_cents).to eq 0
           expect(order.seller_total_cents).to eq 970_70
         end
       end
       it 'doesn\'t change commission when exemption is 0' do
         order_processor.apply_commission_exemption(0)
-        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
         expect(order.commission_fee_cents).to eq 800_00
+        expect(order.line_items.first.commission_fee_cents).to eq 800_00
         expect(order.seller_total_cents).to eq 170_70
       end
     end
@@ -418,7 +418,6 @@ describe OrderProcessor, type: :services do
       it 'updates order with correct amount of commission and seller total' do
         order.reload
         order_processor.apply_commission_exemption(2500_00)
-        expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
         expect(order.commission_fee_cents).to eq 400_00
         expect(order.seller_total_cents).to eq 2512_70
       end
@@ -427,7 +426,6 @@ describe OrderProcessor, type: :services do
       it 'updates order with correct amount of commission and seller total' do
         order.reload
         order_processor.apply_commission_exemption(500_00)
-        expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
         expect(order.commission_fee_cents).to eq 2000_00
         expect(order.seller_total_cents).to eq 912_70
       end
@@ -436,7 +434,6 @@ describe OrderProcessor, type: :services do
       it 'updates order with correct amount of commission and seller total' do
         order.reload
         order_processor.apply_commission_exemption(3000_00)
-        expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
         expect(order.commission_fee_cents).to eq 0
         expect(order.seller_total_cents).to eq 2912_70
       end
@@ -454,12 +451,14 @@ describe OrderProcessor, type: :services do
         allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 10_00)
         expect(order_processor).to receive(:apply_commission_exemption).with(10_00)
         order_processor.debit_commission_exemption
+        expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
       end
 
       it 'does not call apply_commission_exemption if result is missing amount_minor' do
         allow(Gravity).to receive(:debit_commission_exemption).and_return(foo: 'bar')
         expect(order_processor).not_to receive(:apply_commission_exemption)
         order_processor.debit_commission_exemption
+        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
       end
     end
 
@@ -476,6 +475,7 @@ describe OrderProcessor, type: :services do
         allow(Gravity).to receive(:debit_commission_exemption).and_return(nil)
         expect(order_processor).not_to receive(:apply_commission_exemption)
         order_processor.debit_commission_exemption
+        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
       end
     end
   end
