@@ -29,37 +29,66 @@ describe Gravity, type: :services do
   describe '#fetch_partner_locations' do
     let(:valid_locations) { [{ country: 'US', state: 'NY', postal_code: '12345' }, { country: 'US', state: 'FL', postal_code: '67890' }] }
     let(:invalid_location) { [{ country: 'US', state: 'Floridada' }] }
+    let(:base_params) { { private: true, page: 1, size: 20 } }
+    let(:tax_only_params) { base_params.merge(address_type: ['Business', 'Sales tax nexus']) }
+
     context 'calls the correct location Gravity endpoint' do
       context 'without tax_only flag' do
         it 'does not filter by address type' do
-          expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true }).and_return(valid_locations)
+          expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: base_params).and_return(valid_locations)
           Gravity.fetch_partner_locations(seller_id)
         end
       end
+
       context 'with tax_only flag' do
         it 'filters by address type' do
-          expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { address_type: ['Business', 'Sales tax nexus'], private: true }).and_return(valid_locations)
+          expect(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: tax_only_params).and_return(valid_locations)
           Gravity.fetch_partner_locations(seller_id, tax_only: true)
         end
       end
     end
+
     context 'with at least one partner location' do
       context 'with valid partner locations' do
         it 'returns new addresses for each location' do
-          allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { address_type: ['Business', 'Sales tax nexus'], private: true }).and_return(valid_locations)
+          allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: tax_only_params).and_return(valid_locations)
           partner_addresses = Gravity.fetch_partner_locations(seller_id, tax_only: true)
           partner_addresses.each { |ad| expect(ad).to be_a Address }
         end
       end
     end
+
     context 'with no partner locations' do
       it 'raises error' do
-        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true }).and_return([])
+        allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: base_params).and_return([])
         expect { Gravity.fetch_partner_locations(seller_id) }.to raise_error do |error|
           expect(error).to be_a Errors::ValidationError
           expect(error.code).to eq :missing_partner_location
           expect(error.data[:partner_id]).to eq seller_id
         end
+      end
+    end
+
+    context 'with more than 10 partner locations' do
+      it 'correctly returns all locations' do
+        first_location_group = []
+        20.times.each { first_location_group << { country: 'US', state: 'FL', postal_code: '67890' } }
+
+        second_location_group = []
+        7.times.each { second_location_group << { country: 'US', state: 'MA', postal_code: '67890' } }
+
+        allow(Adapters::GravityV1).to receive(:get).with(
+          "/partner/#{seller_id}/locations",
+          params: tax_only_params
+        ).and_return(first_location_group)
+
+        allow(Adapters::GravityV1).to receive(:get).with(
+          "/partner/#{seller_id}/locations",
+          params: tax_only_params.merge(page: 2)
+        ).and_return(second_location_group)
+
+        locations = Gravity.fetch_partner_locations(seller_id, tax_only: true)
+        expect(locations.length).to eq(27)
       end
     end
   end
@@ -155,6 +184,47 @@ describe Gravity, type: :services do
         expect(Adapters::GravityV1).to receive(:get).and_raise(Adapters::GravityError, 'timeout')
         expect(Gravity.get_user(user_id)).to be_nil
       end
+    end
+  end
+
+  describe '#fetch_all' do
+    it 'paginates until there are no more items' do
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 1, size: 20 }).and_return([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 2, size: 20 }).and_return([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 3, size: 20 }).and_return([1, 2, 3])
+
+      response = Gravity.fetch_all('/test', {})
+      expect(response.length).to eq 43
+    end
+
+    it 'only makes one call if there are less than 10 items' do
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 1, size: 20 }).and_return([1, 2, 3])
+
+      response = Gravity.fetch_all('/test', {})
+      expect(response.length).to eq 3
+    end
+
+    it 'returns no items' do
+      allow(Adapters::GravityV1).to receive(:get).with('/test', params: { page: 1, size: 20 }).and_return([])
+
+      response = Gravity.fetch_all('/test', {})
+      expect(response.length).to eq 0
+    end
+  end
+
+  describe '#debit_commission_exemption' do
+    let(:parameters) { { partner_id: seller_id, amount_minor: 100, currency_code: 'USD', reference_id: 'order123', notes: 'hi' } }
+    let(:response) { { 'data' => { 'debitCommissionExemption' => { 'amountOfExemptGmvOrError' => { 'fooBar' => 'baz' } } } } }
+    it 'returns snake-cased amountOfExemptGmvOrError if it is included in the response body' do
+      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return(response)
+      return_value = Gravity.debit_commission_exemption(parameters)
+      expect(return_value).to eq(foo_bar: 'baz')
+    end
+
+    it 'returns nil if amountOfExemptGmvOrError is not included in the response body' do
+      allow(GravityGraphql).to receive_message_chain(:authenticated, :debit_commission_exemption).and_return({})
+      return_value = Gravity.debit_commission_exemption(parameters)
+      expect(return_value).to be nil
     end
   end
 end

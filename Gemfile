@@ -2,10 +2,10 @@ source 'https://rubygems.org'
 
 ruby File.read('.ruby-version')
 
-gem 'rails', '5.2.1'
+gem 'rails', '6.0'
 
 gem 'pg'
-gem 'puma', '~> 3.12.0'
+gem 'puma', '~> 3.12.2'
 
 gem 'activeadmin'
 gem 'artsy-auth'
@@ -23,7 +23,7 @@ gem 'money' # Library for dealing with money and currency conversion
 gem 'omniauth-artsy', '~> 0.2.3'
 gem 'paper_trail'
 gem 'sentry-raven'
-gem 'sidekiq'
+gem 'sidekiq', '<6' # for sending emails in the background (<6 necessary for Redis 3 compatibility)
 gem 'stripe'
 gem 'taxjar-ruby', require: 'taxjar'
 
@@ -40,11 +40,13 @@ end
 
 group :test do
   gem 'capybara'
-  gem 'coveralls', require: false
   gem 'danger'
   gem 'fabrication'
   gem 'selenium-webdriver'
+  gem 'simplecov', require: false
   gem 'stripe-ruby-mock', '~> 2.5.8', require: 'stripe_mock'
   gem 'timecop'
   gem 'webmock'
 end
+
+gem 'artemis', '~> 0.5.2'

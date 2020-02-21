@@ -45,7 +45,7 @@ describe Api::GraphqlController, type: :request do
         tax_total_cents: 300_00
       )
     end
-    let(:artwork) { { _id: 'a-1', current_version_id: '1' } }
+    let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1') }
 
     let(:mutation) do
       <<-GRAPHQL
@@ -171,6 +171,32 @@ describe Api::GraphqlController, type: :request do
         before do
           undeduct_inventory_request
           prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
+        end
+
+        it 'raises processing error' do
+          response = client.execute(mutation, seller_accept_offer_input)
+          expect(response.data.seller_accept_offer.order_or_error.error.code).to eq 'capture_failed'
+        end
+
+        it 'stores failed transaction' do
+          expect do
+            client.execute(mutation, seller_accept_offer_input)
+          end.to change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
+          expect(order.reload.external_charge_id).to be_nil
+          expect(order.transactions.last.failed?).to be true
+          expect(order.last_transaction_failed?).to be true
+        end
+
+        it 'undeducts inventory' do
+          client.execute(mutation, seller_accept_offer_input)
+          expect(undeduct_inventory_request).to have_been_requested
+        end
+      end
+
+      context 'with failed stripe with partner restricted account' do
+        before do
+          undeduct_inventory_request
+          prepare_payment_intent_create_failure(status: 'testmode_charges_only', capture: true, charge_error: { code: 'testmode_charges_only', decline_code: 'testmode_charges_only', message: 'Connected account is not setup.' })
         end
 
         it 'raises processing error' do

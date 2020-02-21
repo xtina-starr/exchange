@@ -2,17 +2,19 @@ class OrderEvent < Events::BaseEvent
   TOPIC = 'commerce'.freeze
   PROPERTIES_ATTRS = %i[
     id
-    mode
     buyer_id
-    buyer_type
     buyer_phone_number
     buyer_total_cents
+    buyer_type
     code
     commission_fee_cents
     created_at
     currency_code
+    external_charge_id
+    fulfilled_by_admin_id
     fulfillment_type
     items_total_cents
+    mode
     seller_id
     seller_total_cents
     seller_type
@@ -24,12 +26,12 @@ class OrderEvent < Events::BaseEvent
     shipping_postal_code
     shipping_region
     shipping_total_cents state
-    state_reason
     state_expires_at
+    state_reason
     tax_total_cents
+    total_list_price_cents
     transaction_fee_cents
     updated_at
-    total_list_price_cents
   ].freeze
 
   def self.post(order, action, user_id)

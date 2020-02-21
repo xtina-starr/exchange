@@ -12,11 +12,14 @@ class OrderProcessor
     @totals_set = false
     @state_changed = false
     @original_state_expires_at = nil
+    @payment_service = PaymentService.new(@order)
+    @exempted_commission = false
   end
 
-  def revert!
+  def revert!(reversion_reason = nil)
     undeduct_inventory! if @deducted_inventory.any?
     reset_totals! if @totals_set
+    revert_debit_exemption(reversion_reason) if @exempted_commission
     return unless @state_changed
 
     order.revert!
@@ -52,17 +55,17 @@ class OrderProcessor
   def hold
     @transaction = if @order.external_charge_id
       # we already have a payment intent on this order
-      PaymentService.confirm_payment_intent(@order.external_charge_id)
+      @payment_service.confirm_payment_intent
     else
-      PaymentService.hold_payment(construct_charge_params)
+      @payment_service.hold
     end
   end
 
   def charge(off_session = false)
     @transaction = if @order.external_charge_id
-      PaymentService.confirm_payment_intent(@order.external_charge_id)
+      @payment_service.confirm_payment_intent
     else
-      PaymentService.capture_without_hold(construct_charge_params.merge(off_session: off_session))
+      @payment_service.immediate_capture(off_session: off_session)
     end
   end
 
@@ -116,34 +119,47 @@ class OrderProcessor
     Exchange.dogstatsd.increment "order.#{order.state}"
   end
 
-  def construct_charge_params
-    {
-      credit_card: @order.credit_card,
-      buyer_amount: @order.buyer_total_cents,
-      merchant_account: @order.merchant_account,
-      seller_amount: @order.seller_total_cents,
-      currency_code: @order.currency_code,
-      metadata: charge_metadata,
-      description: charge_description,
-      shipping_address: @order.shipping_address,
-      shipping_name: @order.shipping_name
-    }
+  # Call Gravity to check if the partner should be charged commission on this order and apply it if so
+  def debit_commission_exemption(notes: '')
+    gmv_to_exempt_and_currency_code = Gravity.debit_commission_exemption(partner_id: order.seller_id,
+                                                                         amount_minor: order.items_total_cents,
+                                                                         currency_code: order.currency_code,
+                                                                         reference_id: order.id,
+                                                                         notes: notes)
+    response_is_valid = !gmv_to_exempt_and_currency_code.nil? && gmv_to_exempt_and_currency_code.key?(:amount_minor)
+    apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor]) if response_is_valid
+  rescue GravityGraphql::GraphQLError
+    Rails.logger.error("Could not execute Gravity GraphQL query for order #{order.id}")
+    nil
   end
 
-  def charge_description
-    partner_name = (@order.partner[:name] || '').parameterize[0...12].upcase
-    "#{partner_name} via Artsy"
+  # Update commission on an order and line items
+  def apply_commission_exemption(exemption_amount_cents)
+    return unless exemption_amount_cents.positive?
+
+    # Update the commission of the line items until we run out of exemption credit
+    exemption_running_total = exemption_amount_cents
+    order.line_items.each do |li|
+      if exemption_running_total >= li.list_price_cents
+        exemption_running_total -= li.list_price_cents
+        li.update!(commission_fee_cents: 0)
+      else
+        commission_cents = (li.list_price_cents - exemption_running_total) * order.commission_rate
+        exemption_running_total = 0
+        li.update!(commission_fee_cents: commission_cents)
+      end
+    end
+
+    # Update the toplevel commission on the order
+    order.update!(
+      commission_fee_cents: @order.line_items.map(&:commission_fee_cents).sum
+    )
+    totals = order.mode == Order::BUY ? BuyOrderTotals.new(@order) : OfferOrderTotals.new(@offer)
+    order.update!(seller_total_cents: totals.seller_total_cents)
+    @exempted_commission = true
   end
 
-  def charge_metadata
-    {
-      exchange_order_id: @order.id,
-      buyer_id: @order.buyer_id,
-      buyer_type: @order.buyer_type,
-      seller_id: @order.seller_id,
-      seller_type: @order.seller_type,
-      type: @order.auction_seller? ? 'auction-bn' : 'bn-mo',
-      mode: @order.mode
-    }
+  def revert_debit_exemption(reversion_reason)
+    Gravity.credit_commission_exemption(partner_id: order.seller_id, amount_minor: order.items_total_cents, currency_code: order.currency_code, reference_id: order.id, notes: reversion_reason) if @exempted_commission
   end
 end

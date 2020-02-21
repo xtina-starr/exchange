@@ -7,11 +7,10 @@ module Types::OrderInterface
 
   field :id, ID, null: false
   field :internalID, ID, null: false, method: :id, camelize: false
-  field :mode, Types::OrderModeEnum, null: true
-  field :code, String, null: false
   field :buyer_phone_number, String, null: true
   field :buyer_total_cents, Integer, null: true
   field :buyer, Types::OrderPartyUnionType, null: false
+  field :code, String, null: false
   field :commission_fee_cents, Integer, null: true, seller_only: true
   field :commission_rate, Float, null: true
   field :created_at, Types::DateTimeType, null: false
@@ -23,6 +22,7 @@ module Types::OrderInterface
   field :last_submitted_at, Types::DateTimeType, null: true
   field :last_transaction_failed, Boolean, null: true, method: :last_transaction_failed?
   field :line_items, Types::LineItemType.connection_type, null: true
+  field :mode, Types::OrderModeEnum, null: true
   field :requested_fulfillment, Types::RequestedFulfillmentUnionType, null: true
   field :seller_total_cents, Integer, null: true, seller_only: true
   field :seller, Types::OrderPartyUnionType, null: false
@@ -31,8 +31,8 @@ module Types::OrderInterface
   field :state_reason, String, null: true
   field :state_updated_at, Types::DateTimeType, null: true
   field :state, Types::OrderStateEnum, null: false
-  field :total_list_price_cents, Integer, null: false
   field :tax_total_cents, Integer, null: true
+  field :total_list_price_cents, Integer, null: false
   field :transaction_fee_cents, Integer, null: true, seller_only: true
   field :updated_at, Types::DateTimeType, null: false
 

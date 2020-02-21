@@ -2,18 +2,18 @@ inherit_from: .rubocop_todo.yml
 
 AllCops:
   Exclude:
-    - 'db/schema.rb'
-    - 'vendor/**/*'
-    - 'spec/support/gravity_helper.rb'
-    - 'spec/support/taxjar_helper.rb'
-    - 'app/admin/**'
-    - 'db/migrate/**'
+    - "db/schema.rb"
+    - "vendor/**/*"
+    - "spec/support/gravity_helper.rb"
+    - "spec/support/taxjar_helper.rb"
+    - "app/admin/**"
+    - "db/migrate/**"
 
 Metrics/ParameterLists:
   Max: 11
 
 Metrics/ClassLength:
-  Max: 130
+  Max: 190
 
 Metrics/AbcSize:
   Max: 61
@@ -33,9 +33,12 @@ Metrics/MethodLength:
     - "db/migrate/*"
 
 Metrics/ModuleLength:
-  Max: 170
+  Max: 137
   Exclude:
     - "spec/**/*"
+
+Style/FormatStringToken:
+  Enabled: false
 
 Style/Documentation:
   Enabled: false

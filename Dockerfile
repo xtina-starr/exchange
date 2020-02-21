@@ -1,4 +1,4 @@
-FROM ruby:2.5.3-alpine3.7
+FROM ruby:2.6.5-alpine3.10
 
 ENV PORT 8080
 EXPOSE 8080
@@ -14,7 +14,7 @@ RUN apk --no-cache add \
       postgresql-dev \
       tzdata \
       bash # debugging and datadog events
-      
+
 # Set up deploy user, working directory and shared folders for Puma / Nginx
 RUN mkdir /shared && \
     mkdir /shared/config && \

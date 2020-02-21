@@ -18,8 +18,7 @@ class OrderFollowUpJob < ApplicationJob
   end
 
   def cancel_submitted_order(order)
-    cancelation_service = OrderCancellationService.new(order)
-    buyer_lapsed_offer?(order) ? cancelation_service.buyer_lapse! : cancelation_service.seller_lapse!
+    buyer_lapsed_offer?(order) ? OrderService.buyer_lapse!(order) : OrderService.seller_lapse!(order)
   end
 
   def buyer_lapsed_offer?(order)

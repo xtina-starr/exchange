@@ -53,6 +53,10 @@ RSpec.shared_examples 'rejecting an offer' do
         client.execute(mutation, input)
       end.to change { order.reload.state }.from(Order::SUBMITTED).to(Order::CANCELED)
     end
+    it 'does not queue jobs to undeduct inventory' do
+      client.execute(mutation, input)
+      expect(UndeductLineItemInventoryJob).not_to have_been_enqueued
+    end
   end
 
   def create_order_and_original_offer

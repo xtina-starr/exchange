@@ -113,7 +113,7 @@ describe Api::GraphqlController, type: :request do
           buyer_total_cents: 1200_00,
           currency_code: 'GBP'
         )
-        @response = client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'PICKUP' })
+        @response = client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'PICKUP', phoneNumber: '9876765432' })
       end
       it 'changes shipping info' do
         expect(order.reload).to have_attributes(
@@ -122,7 +122,7 @@ describe Api::GraphqlController, type: :request do
           shipping_city: nil,
           shipping_region: nil,
           shipping_postal_code: nil,
-          buyer_phone_number: nil,
+          buyer_phone_number: '9876765432',
           shipping_name: nil,
           shipping_address_line1: nil,
           shipping_address_line2: nil

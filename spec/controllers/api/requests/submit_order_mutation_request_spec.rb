@@ -108,7 +108,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with order without shipping info' do
         before do
-          order.update_attributes! shipping_country: nil
+          order.update! shipping_country: nil
         end
         it 'returns error' do
           allow(Gravity).to receive(:get_artwork).and_return(artwork)
@@ -134,7 +134,7 @@ describe Api::GraphqlController, type: :request do
 
       context 'with order in non-pending state' do
         before do
-          order.update_attributes! state: Order::APPROVED
+          order.update! state: Order::APPROVED
         end
         it 'returns error' do
           allow(Gravity).to receive(:get_artwork).and_return(artwork)
@@ -167,7 +167,7 @@ describe Api::GraphqlController, type: :request do
         end
       end
 
-      context 'with failed stripe charge' do
+      context 'with failed stripe payment intent create' do
         before do
           deduct_inventory_request
           merchant_account_request
@@ -227,6 +227,78 @@ describe Api::GraphqlController, type: :request do
         end
 
         it 'does not change order state' do
+          client.execute(mutation, submit_order_input)
+          expect(order.reload.state).to eq Order::PENDING
+        end
+      end
+
+      context 'with order with existing payment_intent and payment requires action' do
+        before do
+          deduct_inventory_request
+          merchant_account_request
+          credit_card_request
+          artwork_request
+          partner_account_request
+          undeduct_inventory_request
+          prepare_payment_intent_confirm_failure(id: 'pi_something', status: 'requires_action', charge_error: { message: 'failed confirm', code: 'failed', decline_code: 'decline_failed' })
+          order.update!(external_charge_id: 'pi_something')
+        end
+
+        it 'returns action data' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.order_or_error.action_data.client_secret).to eq 'pi_test1'
+        end
+
+        it 'stores failed transaction' do
+          expect do
+            client.execute(mutation, submit_order_input)
+          end.to change(order.transactions.where(status: Transaction::REQUIRES_ACTION), :count).by(1)
+          expect(order.reload.external_charge_id).to eq 'pi_something'
+          expect(order.transactions.last.requires_action?).to be true
+        end
+
+        it 'undeducts inventory' do
+          client.execute(mutation, submit_order_input)
+          expect(undeduct_inventory_request).to have_been_requested
+        end
+
+        it 'does not change order state' do
+          client.execute(mutation, submit_order_input)
+          expect(order.reload.state).to eq Order::PENDING
+        end
+      end
+
+      context 'with confirming a unauthenticated payment intent' do
+        before do
+          deduct_inventory_request
+          merchant_account_request
+          credit_card_request
+          artwork_request
+          partner_account_request
+          undeduct_inventory_request
+          prepare_payment_intent_confirm_raise_invalid
+          order.update!(external_charge_id: 'pi_1')
+        end
+
+        it 'raises processing error' do
+          response = client.execute(mutation, submit_order_input)
+          expect(response.data.submit_order.order_or_error.error.code).to eq 'charge_authorization_failed'
+        end
+
+        it 'stores failed transaction' do
+          expect do
+            client.execute(mutation, submit_order_input)
+          end.to change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
+          expect(order.reload.external_charge_id).to eq 'pi_1'
+          expect(order.transactions.last.failed?).to be true
+        end
+
+        it 'undeducts inventory' do
+          client.execute(mutation, submit_order_input)
+          expect(undeduct_inventory_request).to have_been_requested
+        end
+
+        it 'puts order back in pending state' do
           client.execute(mutation, submit_order_input)
           expect(order.reload.state).to eq Order::PENDING
         end

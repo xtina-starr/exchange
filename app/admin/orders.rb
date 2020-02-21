@@ -41,17 +41,22 @@ ActiveAdmin.register Order do
   end
 
   member_action :refund, method: :post do
-    OrderCancellationService.new(resource).refund!
+    OrderService.refund!(resource)
     redirect_to resource_path, notice: "Refunded!"
   end
 
+  member_action :cancel, method: :post do
+    OrderService.reject!(resource, current_user[:id], Order::REASONS[Order::CANCELED][:admin_canceled])
+    redirect_to resource_path, notice: "Canceled by Artsy admin!"
+  end
+
   member_action :buyer_reject, method: :post do
-    OrderCancellationService.new(resource, resource.buyer_id).reject!(Order::REASONS[Order::CANCELED][:buyer_rejected])
-    redirect_to resource_path, notice: "Rejected on behalf of buyer!"
+    OrderService.reject!(resource, resource.buyer_id, Order::REASONS[Order::CANCELED][:buyer_rejected])
+    redirect_to resource_path, notice: "Canceled on behalf of buyer!"
   end
 
   member_action :approve_order, method: :post do
-    OrderApproveService.new(resource, current_user[:id]).process!
+    OrderService.approve!(resource, current_user[:id])
     redirect_to resource_path, notice: "Order approved!"
   end
 
@@ -70,7 +75,7 @@ ActiveAdmin.register Order do
 
   member_action :confirm_fulfillment, method: :post do
     if resource.fulfillment_type == Order::SHIP
-      OrderService.confirm_fulfillment!(resource, current_user[:id])
+      OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true)
     end
     redirect_to resource_path, notice: "Fulfillment confirmed!"
   end
@@ -86,12 +91,13 @@ ActiveAdmin.register Order do
     end
   end
 
-  action_item :refund, only: :show do
-    if order.state == Order::SUBMITTED
-      link_to 'Buyer Reject', buyer_reject_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to reject this order on behalf of buyer?'}
-    end
+  action_item :buyer_reject, only: :show do
+    link_to 'Buyer Reject', buyer_reject_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to reject this order on behalf of buyer?'} if order.state == Order::SUBMITTED
   end
 
+  action_item :cancel_order, only: :show do
+    link_to 'Cancel Order', cancel_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to cancel this order?'} if order.state == Order::SUBMITTED
+  end
 
   action_item :approve_order, only: :show do
     if order.state == Order::SUBMITTED && resource.mode == Order::BUY
@@ -382,12 +388,27 @@ ActiveAdmin.register Order do
     panel "Admin Actions and Notes" do
       #TODO: Add "Add note" button
       h5 link_to("Add note", new_admin_order_admin_note_path(order), class: :button)
-      table_for(order.admin_notes) do
+      table_for(order.admin_notes.order(created_at: :desc)) do
         column :created_at
+        column "Admin" do |fraud_review|
+          Gravity.get_user(fraud_review.admin_id)[:name]
+        end
         column "Note Type" do |admin_note|
           admin_note.note_type.to_s.humanize
         end
         column :description
+      end
+    end
+
+    panel "Fraud Review" do
+      h5 link_to("Add fraud review",  new_admin_order_fraud_review_path(order), class: :button)
+      table_for(order.fraud_reviews.order(created_at: :desc)) do
+        column :created_at
+        column "Reviewed by" do |fraud_review|
+          Gravity.get_user(fraud_review.admin_id)[:name]
+        end
+        column :flagged_as_fraud
+        column :reason
       end
     end
   end

@@ -19,13 +19,14 @@ module OrderService
     end
   end
 
-  def self.set_shipping!(order, fulfillment_type:, shipping:)
+  def self.set_shipping!(order, fulfillment_type:, shipping:, phone_number:)
     raise Errors::ValidationError, :invalid_state unless order.state == Order::PENDING
+    raise Errors::ValidationError, :missing_phone_number if fulfillment_type == Order::SHIP && phone_number.nil?
 
     order_shipping = OrderShipping.new(order)
     case fulfillment_type
-    when Order::PICKUP then order_shipping.pickup!
-    when Order::SHIP then order_shipping.ship!(shipping)
+    when Order::PICKUP then order_shipping.pickup!(phone_number)
+    when Order::SHIP then order_shipping.ship!(shipping, phone_number)
     end
     order
   end
@@ -50,7 +51,7 @@ module OrderService
 
     order_processor.advance_state(:submit!)
     unless order_processor.deduct_inventory
-      order_processor.revert!
+      order_processor.revert!('insufficient_inventory')
       raise Errors::InsufficientInventoryError
     end
 
@@ -58,16 +59,41 @@ module OrderService
     order_processor.hold
     order_processor.store_transaction
 
-    if order_processor.failed_payment?
-      order_processor.revert!
-      raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction)
-    elsif order_processor.requires_action?
-      order_processor.revert!
+    raise Errors::FailedTransactionError.new(:charge_authorization_failed, order_processor.transaction) if order_processor.failed_payment?
+
+    if order_processor.requires_action?
       Exchange.dogstatsd.increment 'submit.requires_action'
       raise Errors::PaymentRequiresActionError, order_processor.action_data
     end
     order_processor.on_success
     order
+  rescue StandardError => e
+    # catch all
+    order_processor&.revert!(e.message)
+    raise e
+  end
+
+  def self.approve!(order, user_id)
+    raise Errors::ValidationError.new(:unsupported_payment_method, order.payment_method) unless order.payment_method == Order::CREDIT_CARD
+
+    payment_service = PaymentService.new(order)
+    order_processor = OrderProcessor.new(order, user_id)
+    transaction = nil
+    order.approve! do
+      order_processor.debit_commission_exemption
+      transaction = payment_service.capture_hold
+      raise Errors::ProcessingError.new(:capture_failed, transaction.failure_data) if transaction.failed?
+    end
+
+    order.line_items.each { |li| RecordSalesTaxJob.perform_later(li.id) }
+    OrderEvent.delay_post(order, user_id)
+    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
+    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
+    Exchange.dogstatsd.increment 'order.approve'
+    Exchange.dogstatsd.count('order.money_collected', order.buyer_total_cents)
+    Exchange.dogstatsd.count('order.commission_collected', order.commission_fee_cents)
+  ensure
+    order.transactions << transaction if transaction.present?
   end
 
   def self.fulfill_at_once!(order, fulfillment, user_id)
@@ -89,15 +115,54 @@ module OrderService
     order
   end
 
-  def self.confirm_fulfillment!(order, user_id)
+  def self.confirm_fulfillment!(order, user_id, fulfilled_by_admin: false)
     raise Errors::ValidationError, :wrong_fulfillment_type unless order.fulfillment_type == Order::SHIP
 
-    order.fulfill!
+    order.fulfill! do
+      order.update!(fulfilled_by_admin_id: user_id) if fulfilled_by_admin
+    end
     OrderEvent.delay_post(order, user_id)
     order
   end
 
   def self.abandon!(order)
     order.abandon!
+    Exchange.dogstatsd.increment 'order.abandoned'
+  end
+
+  def self.seller_lapse!(order)
+    order.seller_lapse!
+    order_cancelation_processor = OrderCancelationProcessor.new(order)
+    order_cancelation_processor.cancel_payment if order.mode == Order::BUY
+    order_cancelation_processor.queue_undeduct_inventory_jobs if order.mode == Order::BUY
+    order_cancelation_processor.notify
+    Exchange.dogstatsd.increment 'order.seller_lapsed'
+  end
+
+  def self.buyer_lapse!(order)
+    # this currently only happens in case of offers where we haven't deduct/hold any inventory or charge
+    # so all we need to do is to change state
+    order.buyer_lapse!
+    OrderEvent.delay_post(order)
+    Exchange.dogstatsd.increment 'order.buyer_lapsed'
+  end
+
+  def self.reject!(order, user_id, reason = nil)
+    order.reject!(reason)
+    order_cancelation_processor = OrderCancelationProcessor.new(order, user_id)
+    order_cancelation_processor.cancel_payment if order.mode == Order::BUY
+    order_cancelation_processor.queue_undeduct_inventory_jobs if order.mode == Order::BUY
+    order_cancelation_processor.notify
+    Exchange.dogstatsd.increment 'order.reject'
+  end
+
+  def self.refund!(order)
+    order.refund!
+    order_cancelation_processor = OrderCancelationProcessor.new(order)
+    order_cancelation_processor.refund_payment
+    order_cancelation_processor.queue_undeduct_inventory_jobs
+    order_cancelation_processor.notify
+    Exchange.dogstatsd.increment 'order.refund'
+    Exchange.dogstatsd.count("order.money_refunded_#{order.currency_code}", order.buyer_total_cents)
   end
 end

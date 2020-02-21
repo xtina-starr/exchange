@@ -214,6 +214,11 @@ type BuyerRejectOfferPayload {
 
 enum CancelReasonTypeEnum {
   """
+  cancelation reason is: admin_canceled
+  """
+  ADMIN_CANCELED
+
+  """
   cancelation reason is: buyer_lapsed
   """
   BUYER_LAPSED
@@ -1073,6 +1078,7 @@ type Partner {
 
 type Pickup {
   fulfillmentType: String!
+  phoneNumber: String
 }
 
 type Query {
@@ -1125,6 +1131,35 @@ type Query {
     last: Int
     orderStates: [OrderStateEnum!]
   ): LineItemConnection
+
+  """
+  Return my orders
+  """
+  myOrders(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: String
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: String
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+    mode: OrderModeEnum
+    sellerId: String
+    sort: OrderConnectionSortEnum
+    state: OrderStateEnum
+  ): OrderConnectionWithTotalCount
 
   """
   Find an order by ID
@@ -1314,6 +1349,7 @@ input SetShippingInput {
   clientMutationId: String
   fulfillmentType: OrderFulfillmentTypeEnum!
   id: ID!
+  phoneNumber: String
   shipping: ShippingAttributes
 }
 
@@ -1352,7 +1388,7 @@ input ShippingAttributes {
   city: String
   country: String
   name: String
-  phoneNumber: String!
+  phoneNumber: String
   postalCode: String
   region: String
 }

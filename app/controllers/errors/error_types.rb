@@ -34,6 +34,7 @@ module Errors
       missing_region
       missing_required_info
       missing_required_param
+      missing_phone_number
       no_taxable_addresses
       not_acquireable
       not_found
@@ -54,8 +55,8 @@ module Errors
     ],
     processing: %i[
       artwork_version_mismatch
+      cancel_payment_failed
       cannot_capture
-      cannot_confirm
       capture_failed
       charge_authorization_failed
       insufficient_inventory

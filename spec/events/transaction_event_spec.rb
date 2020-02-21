@@ -113,6 +113,7 @@ describe TransactionEvent, type: :events do
       expect(event.properties[:order][:last_offer][:amount_cents]).to eq 100000
       expect(event.properties[:order][:shipping_country]).to eq 'US'
       expect(event.properties[:order][:shipping_name]).to eq 'Fname Lname'
+      expect(event.properties[:order][:shipping_region]).to eq 'IL'
       expect(event.properties[:failure_code]).to eq 'stolen_card'
       expect(event.properties[:failure_message]).to eq 'who stole it?'
       expect(event.properties[:status]).to eq Transaction::FAILURE
