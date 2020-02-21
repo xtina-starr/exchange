@@ -27,6 +27,7 @@ describe Api::GraphqlController, type: :request do
     let(:seller_merchant_account) { { external_id: 'ma-1' } }
     let(:buyer_client) { graphql_client(user_id: buyer_id, partner_ids: [], roles: 'user') }
     let(:seller_client) { graphql_client(user_id: 'partner_admin_id', partner_ids: [seller_id], roles: 'user') }
+    let(:exemption) { { currency_code: 'USD', amount_minor: 0 } }
 
     before do
       stub_tax_for_order(tax_amount: 100)
@@ -36,7 +37,8 @@ describe Api::GraphqlController, type: :request do
         fetch_partner: gravity_partner,
         get_credit_card: buyer_credit_card,
         deduct_inventory: nil,
-        get_merchant_account: seller_merchant_account
+        get_merchant_account: seller_merchant_account,
+        debit_commission_exemption: exemption
       )
       prepare_payment_intent_create_success(amount: 1000_00)
       prepare_setup_intent_create(status: 'succeeded')
@@ -96,7 +98,6 @@ describe Api::GraphqlController, type: :request do
       expect(seller_counter.submitted_at).to_not be_nil
 
       # Buyer accepts offer
-      allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
       expect do
         buyer_client.execute(OfferQueryHelper::BUYER_ACCEPT_OFFER, input: { offerId: seller_counter.id.to_s })
       end.to change(order.transactions, :count).by(1)

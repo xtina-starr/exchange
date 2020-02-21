@@ -27,6 +27,7 @@ describe Api::GraphqlController, type: :request do
     let(:seller_merchant_account) { { external_id: 'ma-1' } }
     let(:buyer_client) { graphql_client(user_id: buyer_id, partner_ids: [], roles: 'user') }
     let(:seller_client) { graphql_client(user_id: 'partner_admin_id', partner_ids: [seller_id], roles: 'user') }
+    let(:exemption) { { currency_code: 'USD', amount_minor: 0 } }
 
     before do
       stub_tax_for_order(tax_amount: 100)
@@ -37,7 +38,8 @@ describe Api::GraphqlController, type: :request do
         get_credit_card: buyer_credit_card,
         deduct_inventory: nil,
         undeduct_inventory: nil,
-        get_merchant_account: seller_merchant_account
+        get_merchant_account: seller_merchant_account,
+        debit_commission_exemption: exemption
       )
     end
 
