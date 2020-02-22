@@ -96,6 +96,7 @@ describe Api::GraphqlController, type: :request do
       }
     end
     before(:each) do
+      allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
       order.transactions << transaction
       order.update!(last_offer: offer, buyer_total_cents: offer.buyer_total_cents, shipping_total_cents: offer.shipping_total_cents)
     end
