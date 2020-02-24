@@ -123,6 +123,9 @@ module Gravity
       }
     }
     GravityGraphql.authenticated.credit_commission_exemption(mutation_args)
+  rescue
+    Rails.logger.error("Could not credit commission exemption for order #{reference_id}")
+  ensure
     nil
   end
 end
