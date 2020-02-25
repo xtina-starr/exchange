@@ -122,7 +122,11 @@ module Gravity
         notes: notes
       }
     }
-    response = GravityGraphql.authenticated.credit_commission_exemption(mutation_args).to_h
-    response.dig('data', 'creditCommissionExemption')
+    begin
+      GravityGraphql.authenticated.credit_commission_exemption(mutation_args)
+    rescue GravityGraphql::GraphQLError => e
+      Rails.logger.error("Could not credit commission exemption for order #{reference_id}: #{e.message}")
+    end
+    nil
   end
 end

@@ -3,10 +3,10 @@ require 'rails_helper'
 RSpec.describe 'visit order details', type: :system do
   let!(:order) { Fabricate(:order) }
   before do
-    stub_request(:get, "http://exchange-test-gravity.biz/user/#{order.buyer_id}")
+    stub_request(:get, "#{Rails.application.config_for(:gravity)[:api_v1_root]}/user/#{order.buyer_id}")
       .to_return(status: 200, body: {}.to_json, headers: {})
 
-    stub_request(:get, "http://exchange-test-gravity.biz/partner/#{order.seller_id}/all")
+    stub_request(:get, "#{Rails.application.config_for(:gravity)[:api_v1_root]}/partner/#{order.seller_id}/all")
       .to_return(status: 200, body: {}.to_json, headers: {})
   end
 
