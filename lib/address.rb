@@ -1,6 +1,11 @@
 class Address
   attr_reader :country, :region, :city, :street_line1, :street_line2, :postal_code
   UNITED_STATES = Carmen::Country.coded('US')
+  COUNTRY_CODES_EU_SHIPPING = %w[AT BE CH DE DK EE ES FI FR GR IE IT LV LT LU NL PL PT SK SI SE].freeze
+  # Not sure why we need this Carmen gem, but to keep with the pattern,
+  # let's run the list of country codes through that and convert to set
+  COUNTRY_CODES_EU_SHIPPING_SET = COUNTRY_CODES_EU_SHIPPING.map { |country| Carmen::Country.coded(country)&.code }.compact.to_set
+
   def initialize(address)
     @address = parse(address)
     @country = @address[:country]
@@ -29,6 +34,10 @@ class Address
     united_states? &&
       @region != UNITED_STATES.subregions.coded('HI').code &&
       @region != UNITED_STATES.subregions.coded('AK').code
+  end
+
+  def eu_local_shipping?
+    COUNTRY_CODES_EU_SHIPPING_SET.include? @country
   end
 
   private
