@@ -156,7 +156,7 @@ describe OrderProcessor, type: :services do
       order.approve!
       order_processor.instance_variable_set(:@exempted_commission, true)
 
-      expect(Gravity).to receive(:credit_commission_exemption).with(partner_id: order.seller_id, amount_minor: order.items_total_cents, currency_code: order.currency_code, reference_id: order.id, notes: 'insufficient_inventory')
+      expect(Gravity).to receive(:refund_commission_exemption).with(partner_id: order.seller_id, reference_id: order.id, notes: 'insufficient_inventory')
       order_processor.revert!('insufficient_inventory')
       expect(order_processor.instance_variable_get(:@exempted_commission)).to eq false
     end

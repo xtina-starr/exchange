@@ -144,7 +144,7 @@ class OrderProcessor
   end
 
   def revert_debit_exemption(reversion_reason)
-    Gravity.credit_commission_exemption(partner_id: order.seller_id, amount_minor: order.items_total_cents, currency_code: order.currency_code, reference_id: order.id, notes: reversion_reason)
+    Gravity.refund_commission_exemption(partner_id: order.seller_id, reference_id: order.id, notes: reversion_reason)
     @exempted_commission = false
   end
 end

@@ -1,6 +1,6 @@
-mutation($input: CreditCommissionExemptionInput!) {
-  creditCommissionExemption(input: $input) {
-    totalRemainingGmvOrError {
+mutation($input: RefundCommissionExemptionInput!) {
+  refundCommissionExemption(input: $input) {
+    gmvRefundedOrError {
       ... on Money {
         amountMinor
         currencyCode
