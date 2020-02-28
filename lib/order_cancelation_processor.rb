@@ -21,7 +21,7 @@ class OrderCancelationProcessor
     raise Errors::ProcessingError.new(:refund_failed, transaction.failure_data) if transaction.failed?
 
     # Only credit commission exemption for refunds, cancelations never deducted from commission exemption total
-    Gravity.credit_commission_exemption(partner_id: @order.seller_id, amount_minor: @order.items_total_cents, currency_code: @order.currency_code, reference_id: @order.id, notes: 'refund')
+    Gravity.refund_commission_exemption(partner_id: @order.seller_id, reference_id: @order.id, notes: 'refund')
   end
 
   def cancel_payment

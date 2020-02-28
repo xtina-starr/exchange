@@ -113,17 +113,16 @@ module Gravity
     end
   end
 
-  def self.credit_commission_exemption(partner_id:, amount_minor:, currency_code:, reference_id:, notes:)
+  def self.refund_commission_exemption(partner_id:, reference_id:, notes:)
     mutation_args = {
       input: {
         partnerId: partner_id,
-        exemption: { amountMinor: amount_minor, currencyCode: currency_code },
         referenceId: reference_id,
         notes: notes
       }
     }
     begin
-      GravityGraphql.authenticated.credit_commission_exemption(mutation_args)
+      GravityGraphql.authenticated.refund_commission_exemption(mutation_args).to_h
     rescue GravityGraphql::GraphQLError => e
       Rails.logger.error("Could not credit commission exemption for order #{reference_id}: #{e.message}")
     end
