@@ -51,7 +51,7 @@ module OrderService
 
     order_processor.advance_state(:submit!)
     unless order_processor.deduct_inventory
-      order_processor.revert!
+      order_processor.revert!('insufficient_inventory')
       raise Errors::InsufficientInventoryError
     end
 
@@ -69,7 +69,7 @@ module OrderService
     order
   rescue StandardError => e
     # catch all
-    order_processor&.revert!
+    order_processor&.revert!(e.message)
     raise e
   end
 
@@ -77,8 +77,10 @@ module OrderService
     raise Errors::ValidationError.new(:unsupported_payment_method, order.payment_method) unless order.payment_method == Order::CREDIT_CARD
 
     payment_service = PaymentService.new(order)
+    order_processor = OrderProcessor.new(order, user_id)
     transaction = nil
     order.approve! do
+      order_processor.debit_commission_exemption
       transaction = payment_service.capture_hold
       raise Errors::ProcessingError.new(:capture_failed, transaction.failure_data) if transaction.failed?
     end

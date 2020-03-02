@@ -8,9 +8,10 @@ class OfferOrderTotals
   delegate :tax_total_cents, to: :offer
   delegate :buyer_total_cents, to: :offer
 
-  def initialize(offer)
+  def initialize(offer, commission_exemption_amount_cents: nil)
     @offer = offer
     @order = offer.order
+    @commission_exemption_amount_cents = commission_exemption_amount_cents
   end
 
   def items_total_cents
@@ -22,7 +23,7 @@ class OfferOrderTotals
   end
 
   def commission_fee_cents
-    @commission_fee_cents ||= commission_rate * offer.amount_cents
+    @commission_fee_cents ||= calculate_commission_fee_cents
   end
 
   def transaction_fee_cents
@@ -39,5 +40,13 @@ class OfferOrderTotals
 
   def calculate_remittable_sales_tax
     @offer.should_remit_sales_tax? ? @offer.tax_total_cents : 0
+  end
+
+  def calculate_commission_fee_cents
+    if @commission_exemption_amount_cents.nil? || !@commission_exemption_amount_cents.positive?
+      commission_rate * offer.amount_cents
+    else
+      commission_rate * (offer.amount_cents - @commission_exemption_amount_cents)
+    end
   end
 end

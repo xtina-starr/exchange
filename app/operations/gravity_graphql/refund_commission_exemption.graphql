@@ -1,0 +1,14 @@
+mutation($input: RefundCommissionExemptionInput!) {
+  refundCommissionExemption(input: $input) {
+    gmvRefundedOrError {
+      ... on Money {
+        amountMinor
+        currencyCode
+      }
+      ... on Error {
+        message
+        code
+      }
+    }
+  }
+}

@@ -28,6 +28,7 @@ describe OrderCancelationProcessor, type: :services do
     end
 
     it 'refunds the payment and stores transaction' do
+      stub_request(:post, Rails.application.config_for(:graphql)[:gravity_graphql][:url]).to_return(status: 200, body: '{}', headers: {})
       prepare_payment_intent_refund_success
       expect { processor.refund_payment }.to change(order.transactions, :count).by(1)
       transaction = order.transactions.order(created_at: :desc).first

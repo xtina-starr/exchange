@@ -76,6 +76,7 @@ describe Api::GraphqlController, type: :request do
 
     context 'with proper permission' do
       before do
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
         Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
         order.update! state: Order::SUBMITTED, external_charge_id: 'pi_1'
         prepare_payment_intent_capture_success(amount: 20_00)

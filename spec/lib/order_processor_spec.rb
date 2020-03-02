@@ -20,12 +20,13 @@ describe OrderProcessor, type: :services do
       shipping_city: 'Tehran',
       shipping_postal_code: '02198',
       buyer_phone_number: '00123456',
-      shipping_country: 'IR'
+      shipping_country: 'IR',
+      items_total_cents: 1000_00
     )
   end
   let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1') }
   let(:stub_artwork_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1").to_return(status: 200, body: artwork.to_json) }
-  let!(:line_item1) { Fabricate(:line_item, order: order, quantity: 1, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1') }
+  let!(:line_item1) { Fabricate(:line_item, order: order, quantity: 1, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1', sales_tax_cents: 0, shipping_total_cents: 0) }
   let(:line_item2) { Fabricate(:line_item, order: order, artwork_id: 'a2', quantity: 2) }
   let(:stub_line_item_1_gravity_deduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }) }
   let(:stub_line_item_1_gravity_undeduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }) }
@@ -149,6 +150,15 @@ describe OrderProcessor, type: :services do
       order_processor.revert!
       expect(order.reload).to have_attributes(state: Order::SUBMITTED, state_expires_at: original_state_expires_at)
       expect(order_processor.instance_variable_get(:@state_changed)).to eq false
+    end
+    it 'it reverts debit commission exemption' do
+      order.submit!
+      order.approve!
+      order_processor.instance_variable_set(:@exempted_commission, true)
+
+      expect(Gravity).to receive(:refund_commission_exemption).with(partner_id: order.seller_id, reference_id: order.id, notes: 'insufficient_inventory')
+      order_processor.revert!('insufficient_inventory')
+      expect(order_processor.instance_variable_get(:@exempted_commission)).to eq false
     end
   end
 
@@ -361,6 +371,94 @@ describe OrderProcessor, type: :services do
     it 'overrides off_session when passed to method' do
       expect_any_instance_of(PaymentService).to receive(:immediate_capture).with(hash_including(off_session: true))
       order_processor.charge(true)
+    end
+  end
+
+  describe 'apply_commission_exemption' do
+    before do
+      stub_gravity_partner
+      stub_artwork_request
+      order_processor.set_totals!
+    end
+    context 'with 0 commission exemption' do
+      it 'returns nil' do
+        expect(order_processor.apply_commission_exemption(0)).to be nil
+      end
+    end
+
+    context 'with > 0 commission exemption' do
+      OrderTotal = Struct.new(:seller_total_cents, :commission_fee_cents)
+      before do
+        allow(BuyOrderTotals).to receive(:new).and_return(OrderTotal.new(5, 10))
+        allow(OfferOrderTotals).to receive(:new).and_return(OrderTotal.new(20, 30))
+      end
+      context 'with an order' do
+        it 'initializes buy order totals and updates the order' do
+          expect(order).to receive(:update!).with(seller_total_cents: 5, commission_fee_cents: 10)
+          order_processor.apply_commission_exemption(10)
+        end
+      end
+
+      context 'with an offer' do
+        let(:order_mode) { Order::OFFER }
+        let(:offer) { Fabricate(:offer, order: order, amount_cents: 1000_00, shipping_total_cents: 200_00, tax_total_cents: 100_00) }
+        it 'initializes offer order totals and updates the order' do
+          expect(order).to receive(:update!).with(seller_total_cents: 20, commission_fee_cents: 30)
+          order_processor.apply_commission_exemption(10)
+        end
+
+        it 'does not set totals on line items' do
+          order_processor.apply_commission_exemption(10)
+          expect(line_item1.reload.commission_fee_cents).to be_nil
+        end
+      end
+    end
+  end
+
+  describe 'debit_commission_exemption' do
+    before do
+      stub_gravity_partner
+      stub_artwork_request
+      order_processor.set_totals!
+    end
+    context 'on success' do
+      it 'calls apply_commission_exemption if result has amount_minor' do
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 10_00)
+        expect(order_processor).to receive(:apply_commission_exemption).with(10_00)
+        order_processor.debit_commission_exemption
+        expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
+      end
+
+      it 'does not call apply_commission_exemption if result is missing amount_minor' do
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(foo: 'bar')
+        expect(order_processor).not_to receive(:apply_commission_exemption)
+        order_processor.debit_commission_exemption
+        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
+      end
+    end
+
+    context 'failure' do
+      it 'does not call apply_commission when error is raised' do
+        allow(Gravity).to receive(:debit_commission_exemption).and_raise(GravityGraphql::GraphQLError)
+        expect(Rails.logger).to receive(:error).with("Could not execute Gravity GraphQL query for order #{order.id}")
+        order_processor.debit_commission_exemption
+        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
+        expect(order.commission_fee_cents).to eq 800_00
+      end
+
+      it 'does not call apply_commission_exemption when response is nil' do
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(nil)
+        expect(order_processor).not_to receive(:apply_commission_exemption)
+        order_processor.debit_commission_exemption
+        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
+      end
+
+      it 'does not call apply_commission_exemption when response amount is 0' do
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
+        expect(order_processor).not_to receive(:apply_commission_exemption)
+        order_processor.debit_commission_exemption
+        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
+      end
     end
   end
 end

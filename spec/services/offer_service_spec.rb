@@ -507,7 +507,7 @@ describe OfferService, type: :services do
     let(:order) { Fabricate(:order, buyer_id: 'user_1', buyer_type: 'user', seller_id: 'gal_1', seller_type: 'gallery') }
     let(:seller_offer) { Fabricate(:offer, order: order, from_id: 'gal_1', from_type: 'gallery') }
     let(:buyer_offer) { Fabricate(:offer, order: order, from_id: 'user_1', from_type: 'user') }
-    it 'calls charge and  with off_session true when the seller accepts an offer from the buyer' do
+    it 'calls charge with off_session true when the seller accepts an offer from the buyer' do
       order.update!(last_offer: buyer_offer)
       allow_any_instance_of(OrderProcessor).to receive_messages(
         valid?: true,
@@ -517,7 +517,8 @@ describe OfferService, type: :services do
         failed_payment?: false,
         store_transaction: nil,
         on_success: nil,
-        charge: Fabricate(:transaction)
+        charge: Fabricate(:transaction),
+        debit_commission_exemption: nil
       )
       expect_any_instance_of(OrderProcessor).to receive(:charge).with(true)
       expect_any_instance_of(OrderProcessor).to receive(:store_transaction).with(true)
@@ -532,7 +533,8 @@ describe OfferService, type: :services do
         set_totals!: nil,
         failed_payment?: false,
         store_transaction: nil,
-        on_success: nil
+        on_success: nil,
+        debit_commission_exemption: nil
       )
       expect_any_instance_of(OrderProcessor).to receive(:charge).with(false)
       OfferService.accept_offer(seller_offer, 'user_1')
@@ -546,10 +548,29 @@ describe OfferService, type: :services do
         set_totals!: nil,
         failed_payment?: false,
         store_transaction: nil,
-        on_success: nil
+        on_success: nil,
+        debit_commission_exemption: nil
       )
       expect_any_instance_of(OrderProcessor).to receive(:charge).with(false)
       OfferService.accept_offer(buyer_offer, 'user_1')
+    end
+
+    context 'commission exemption' do
+      it 'calls debit_commission_exemption' do
+        order.update!(last_offer: seller_offer)
+        allow_any_instance_of(OrderProcessor).to receive_messages(
+          valid?: true,
+          advance_state: nil,
+          deduct_inventory: true,
+          set_totals!: nil,
+          failed_payment?: false,
+          store_transaction: nil,
+          on_success: nil
+        )
+        expect(Gravity).to receive(:debit_commission_exemption).with(partner_id: order.seller_id, amount_minor: order.items_total_cents, currency_code: order.currency_code, reference_id: order.id, notes: '')
+        expect_any_instance_of(OrderProcessor).to receive(:charge).with(false)
+        OfferService.accept_offer(seller_offer, 'user_1')
+      end
     end
   end
 

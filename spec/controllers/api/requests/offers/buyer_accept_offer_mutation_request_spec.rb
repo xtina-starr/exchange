@@ -161,6 +161,7 @@ describe Api::GraphqlController, type: :request do
         before do
           undeduct_inventory_request
           prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
+          allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
         end
 
         it 'raises processing error' do
@@ -185,6 +186,7 @@ describe Api::GraphqlController, type: :request do
 
       it 'approves the order' do
         prepare_payment_intent_create_success(amount: 20_00)
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
         response = client.execute(mutation, buyer_accept_offer_input)
         expect(deduct_inventory_request).to have_been_requested
 

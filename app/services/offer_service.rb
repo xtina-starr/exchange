@@ -59,6 +59,9 @@ module OfferService
 
     # this is an off-session if offer is from buyer and seller is accepting it (in case of failed payment buyer could accept their own offer)
     off_session = offer.from_participant == Order::BUYER && user_id != order.buyer_id
+
+    order_processor.debit_commission_exemption
+
     order_processor.charge(off_session)
     order_processor.store_transaction(off_session)
     raise Errors::FailedTransactionError.new(:capture_failed, order_processor.transaction) if order_processor.failed_payment?
