@@ -8,11 +8,10 @@ services:
     ports:
       - 8080:8080
     environment:
-    - RAILS_ENV=test
-    - DATABASE_HOST=exchange-db
-    - DATABASE_USER=postgres
-    - REDIS_URL=redis://exchange-redis
-    - POSTGRES_HOST_AUTH_METHOD=trust
+      - RAILS_ENV=test
+      - DATABASE_HOST=exchange-db
+      - DATABASE_USER=postgres
+      - REDIS_URL=redis://exchange-redis
 
       - CI_PULL_REQUEST=$CI_PULL_REQUEST
       - CIRCLE_PULL_REQUEST=$CIRCLE_PULL_REQUEST
