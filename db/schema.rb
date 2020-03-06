@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_01_29_000433) do
+ActiveRecord::Schema.define(version: 2020_03_06_192634) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -23,8 +23,8 @@ ActiveRecord::Schema.define(version: 2020_01_29_000433) do
     t.uuid "resource_id"
     t.string "author_type"
     t.uuid "author_id"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["author_type", "author_id"], name: "index_active_admin_comments_on_author_type_and_author_id"
     t.index ["namespace"], name: "index_active_admin_comments_on_namespace"
     t.index ["resource_type", "resource_id"], name: "index_active_admin_comments_on_resource_type_and_resource_id"
@@ -92,14 +92,14 @@ ActiveRecord::Schema.define(version: 2020_01_29_000433) do
 
   create_table "line_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id"
-    t.string "artwork_id"
+    t.string "artwork_id", null: false
     t.string "edition_set_id"
     t.bigint "list_price_cents"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "quantity", default: 1, null: false
     t.bigint "sales_tax_cents"
-    t.string "artwork_version_id"
+    t.string "artwork_version_id", null: false
     t.boolean "should_remit_sales_tax"
     t.string "sales_tax_transaction_id"
     t.bigint "commission_fee_cents"
