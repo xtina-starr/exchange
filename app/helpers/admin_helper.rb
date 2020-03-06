@@ -1,8 +1,8 @@
 module AdminHelper
   def convert_currency_code_to_symbol(currency_code)
-    '$' if currency_code == 'USD'
-    '£' if currency_code == 'GBP'
-    '€' if currency_code == 'EUR'
+    return '$' if currency_code == 'USD'
+    return '£' if currency_code == 'GBP'
+    return '€' if currency_code == 'EUR'
   end
 
   def format_money_cents(amount_cents, currency_code: 'USD', negate: false)
