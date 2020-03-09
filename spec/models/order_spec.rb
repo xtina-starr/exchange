@@ -11,6 +11,8 @@ RSpec.describe Order, type: :model do
       expect(order.valid?).to be true
       order.currency_code = 'GBP'
       expect(order.valid?).to be true
+      order.currency_code = 'EUR'
+      expect(order.valid?).to be true
       order.currency_code = 'CAD'
       expect(order.valid?).to be false
       expect { order.update!(currency_code: 'CAD') }.to raise_error(ActiveRecord::RecordInvalid, 'Validation failed: Currency code is not included in the list')
