@@ -1,4 +1,4 @@
-# Exchange [![CircleCI](https://circleci.com/gh/artsy/exchange.svg?style=svg)](https://circleci.com/gh/artsy/exchange)  [![Coverage Status](https://coveralls.io/repos/github/artsy/exchange/badge.svg)](https://coveralls.io/github/artsy/exchange)
+# Exchange [![CircleCI](https://circleci.com/gh/artsy/exchange.svg?style=svg)](https://circleci.com/gh/artsy/exchange)  [![codecov](https://codecov.io/gh/artsy/exchange/branch/master/graph/badge.svg)](https://codecov.io/gh/artsy/exchange)
 Exchange aspires to be responsible for the various types of e-commerce interactions available on the Artsy platform. It's currently a prototype, with legacy e-commerce still handled by Gravity. It uses Ruby, Rails, Postgresql, and exposes a [GraphQL](http://graphql-ruby.org/) API.
 
 ## Meta
