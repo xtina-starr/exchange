@@ -20,6 +20,15 @@ describe ShippingHelper, type: :services do
       postal_code: '99503'
     )
   end
+  let(:germany_shipping) do
+    Address.new(
+      street_line1: 'Möckernstraße 10',
+      country: 'DE',
+      city: 'Berlin',
+      region: 'Berlin',
+      postal_code: '10963'
+    )
+  end
   let(:artwork_in_italy_config) do
     {
       _id: 'a-1',
@@ -29,7 +38,8 @@ describe ShippingHelper, type: :services do
         country: 'IT',
         city: 'Milan',
         state: 'Lombardy'
-      }
+      },
+      eu_shipping_origin: true
     }
   end
   let(:continental_us_artwork_config) do
@@ -41,7 +51,8 @@ describe ShippingHelper, type: :services do
         country: 'US',
         city: 'Brooklyn',
         state: 'NY'
-      }
+      },
+      eu_shipping_origin: false
     }
   end
   let(:missing_artwork_location_config) do
@@ -105,13 +116,27 @@ describe ShippingHelper, type: :services do
 
     context 'artwork in italy' do
       context 'with domestic address' do
-        it 'returns domestic cost' do
+        it 'returns domestic cost if shipping to italy' do
           expect(ShippingHelper.calculate(artwork_in_italy, Order::SHIP, italy_shipping)).to eq 100_00
         end
         context 'with nil domestic shipping' do
           it 'raises error' do
             artwork_in_italy[:domestic_shipping_fee_cents] = nil
             expect { ShippingHelper.calculate(artwork_in_italy, Order::SHIP, italy_shipping) }.to raise_error do |error|
+              expect(error).to be_a(Errors::ValidationError)
+              expect(error.code).to eq :missing_domestic_shipping_fee
+            end
+          end
+        end
+      end
+      context 'with eu local address' do
+        it 'returns domestic cost if shipping to germany' do
+          expect(ShippingHelper.calculate(artwork_in_italy, Order::SHIP, germany_shipping)).to eq 100_00
+        end
+        context 'with nil domestic shipping' do
+          it 'raises error' do
+            artwork_in_italy[:domestic_shipping_fee_cents] = nil
+            expect { ShippingHelper.calculate(artwork_in_italy, Order::SHIP, germany_shipping) }.to raise_error do |error|
               expect(error).to be_a(Errors::ValidationError)
               expect(error.code).to eq :missing_domestic_shipping_fee
             end
