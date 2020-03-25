@@ -27,7 +27,7 @@ class OfferOrderTotals
   end
 
   def transaction_fee_cents
-    @transaction_fee_cents ||= TransactionFeeCalculator.calculate(buyer_total_cents)
+    @transaction_fee_cents ||= TransactionFeeCalculator.calculate(buyer_total_cents, @order.currency_code)
   end
 
   def seller_total_cents
