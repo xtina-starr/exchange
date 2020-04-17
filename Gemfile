@@ -31,7 +31,7 @@ group :development, :test do
   gem 'byebug'
   gem 'graphlient'
   gem 'rspec-rails'
-  gem 'rubocop'
+  gem 'rubocop-rails', require: false
 end
 
 group :development do

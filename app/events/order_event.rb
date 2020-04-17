@@ -51,7 +51,7 @@ class OrderEvent < Events::BaseEvent
   end
 
   def properties
-    PROPERTIES_ATTRS.map { |att| [att, @object.send(att)] }.to_h.merge(line_items: line_items_details, last_offer: last_offer)
+    PROPERTIES_ATTRS.index_with { |att| @object.send(att) }.merge(line_items: line_items_details, last_offer: last_offer)
   end
 
   private

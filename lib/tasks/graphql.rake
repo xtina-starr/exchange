@@ -4,7 +4,7 @@ namespace 'graphql' do
     ORIG_SCHEMA_PATH = '_schema.graphql.orig'.freeze
 
     desc 'fail if there is ungenerated diff in _schema.graphql'
-    task :diff_check do
+    task diff_check: :environment do
       puts 'Checking for GraphQL schema diffs...'
 
       cp SCHEMA_FILE_PATH, ORIG_SCHEMA_PATH, verbose: false

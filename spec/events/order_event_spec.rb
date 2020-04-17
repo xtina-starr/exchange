@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 describe OrderEvent, type: :events do
-  before { Timecop.freeze(Time.parse('2018-08-16 15:48:00 -0400')) }
+  before { Timecop.freeze(Time.zone.parse('2018-08-16 15:48:00 -0400')) }
   after { Timecop.return }
 
   let(:seller_id) { 'partner-1' }
@@ -110,7 +110,7 @@ describe OrderEvent, type: :events do
         expect(event.properties[:shipping_postal_code]).to eq '60618'
         expect(event.properties[:buyer_phone_number]).to eq '00123459876'
         expect(event.properties[:shipping_region]).to eq 'IL'
-        expect(event.properties[:state_expires_at]).to eq Time.parse('2018-08-19 15:48:00 -0400')
+        expect(event.properties[:state_expires_at]).to eq Time.zone.parse('2018-08-19 15:48:00 -0400')
         expect(event.properties[:total_list_price_cents]).to eq(400)
         expect(event.properties[:last_offer]).to be_nil
         expect(event.properties[:external_charge_id]).to eq 'pi_1'
