@@ -25,7 +25,7 @@ RSpec.describe Offer, type: :model do
 
   describe '#scopes' do
     describe 'submitted' do
-      let!(:offer1) { Fabricate(:offer, submitted_at: Time.now) }
+      let!(:offer1) { Fabricate(:offer, submitted_at: Time.zone.now) }
       let!(:offer2) { Fabricate(:offer, submitted_at: nil) }
       let!(:offer3) { Fabricate(:offer, submitted_at: nil) }
       it 'returns submitted offers' do

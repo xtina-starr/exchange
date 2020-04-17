@@ -210,20 +210,20 @@ describe Tax::CollectionService, type: :services do
       it 'refunds the transaction' do
         expect(taxjar_client).to receive(:show_order).with(transaction_id).and_return(double)
         expect(@service).to receive(:post_refund)
-        @service.refund_transaction(Time.new(2018, 1, 1))
+        @service.refund_transaction(Time.zone.local(2018, 1, 1))
       end
     end
     context 'without an existing transaction in Taxjar' do
       it 'does nothing' do
         expect(taxjar_client).to receive(:show_order).with(transaction_id).and_return(nil)
         expect(@service).to_not receive(:post_refund)
-        @service.refund_transaction(Time.new(2018, 1, 1))
+        @service.refund_transaction(Time.zone.local(2018, 1, 1))
       end
     end
     context 'with an error from TaxJar' do
       it 'raises a ProcessingError with a code of tax_refund_failure' do
         expect(taxjar_client).to receive(:show_order).and_raise(Taxjar::Error)
-        expect { @service.refund_transaction(Time.new(2018, 1, 1)) }.to raise_error do |error|
+        expect { @service.refund_transaction(Time.zone.local(2018, 1, 1)) }.to raise_error do |error|
           expect(error).to be_a Errors::ProcessingError
           expect(error.type).to eq :processing
           expect(error.code).to eq :tax_refund_failure
@@ -240,7 +240,7 @@ describe Tax::CollectionService, type: :services do
   end
 
   describe '#post_refund' do
-    let(:transaction_date) { Time.new(2018, 1, 1) }
+    let(:transaction_date) { Time.zone.local(2018, 1, 1) }
     let(:params) do
       base_tax_params.merge(
         transaction_id: "refund_#{transaction_id}",
