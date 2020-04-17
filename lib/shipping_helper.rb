@@ -1,13 +1,19 @@
 class ShippingHelper
   def self.calculate(artwork, fulfillment_type, shipping_address = nil)
     return 0 if fulfillment_type == Order::PICKUP
-    raise Errors::ValidationError.new(:missing_artwork_location, artwork_id: artwork[:_id]) if artwork[:location].blank?
 
-    if domestic?(artwork, shipping_address) || eu_local_shipping?(artwork, shipping_address)
-      artwork[:domestic_shipping_fee_cents] || raise(Errors::ValidationError, :missing_domestic_shipping_fee)
+    if artwork[:location].blank?
+      exception = Errors::ValidationError.new(:missing_artwork_location, artwork_id: artwork[:_id])
+      cents = nil
+    elsif domestic?(artwork, shipping_address) || eu_local_shipping?(artwork, shipping_address)
+      exception = Errors::ValidationError.new(:missing_domestic_shipping_fee)
+      cents = artwork[:domestic_shipping_fee_cents]
     else
-      artwork[:international_shipping_fee_cents] || raise(Errors::ValidationError.new(:unsupported_shipping_location, failure_code: :domestic_shipping_only))
+      exception = Errors::ValidationError.new(:unsupported_shipping_location, failure_code: :domestic_shipping_only)
+      cents = artwork[:international_shipping_fee_cents]
     end
+
+    cents || raise(exception)
   end
 
   def self.domestic?(artwork, shipping_address)
