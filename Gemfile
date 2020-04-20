@@ -2,17 +2,18 @@ source 'https://rubygems.org'
 
 ruby File.read('.ruby-version')
 
-gem 'rails', '6.0'
+gem 'rails', '6.0.2.2'
 
 gem 'pg'
-gem 'puma', '~> 3.12.2'
+gem 'puma'
 
 gem 'activeadmin'
+gem 'artemis'
 gem 'artsy-auth'
 gem 'artsy-eventservice'
 gem 'carmen'
 gem 'dalli'
-gem 'ddtrace', '>= 0.15.0' # datadog instrumentation
+gem 'ddtrace' # datadog instrumentation
 gem 'dogstatsd-ruby', require: 'datadog/statsd' # send metrics to datadog agent
 gem 'faraday'
 gem 'graphql'
@@ -31,7 +32,7 @@ group :development, :test do
   gem 'byebug'
   gem 'graphlient'
   gem 'rspec-rails'
-  gem 'rubocop'
+  gem 'rubocop-rails', require: false
 end
 
 group :development do
@@ -44,9 +45,7 @@ group :test do
   gem 'fabrication'
   gem 'selenium-webdriver'
   gem 'simplecov', require: false
-  gem 'stripe-ruby-mock', '~> 2.5.8', require: 'stripe_mock'
+  gem 'stripe-ruby-mock', require: 'stripe_mock'
   gem 'timecop'
   gem 'webmock'
 end
-
-gem 'artemis', '~> 0.5.2'

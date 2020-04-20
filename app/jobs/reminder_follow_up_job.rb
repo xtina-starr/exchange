@@ -6,7 +6,7 @@ class ReminderFollowUpJob < ApplicationJob
 
   def perform(order_id, state)
     order = Order.find(order_id)
-    return unless order.state == state && Time.now <= order.state_expires_at
+    return unless order.state == state && Time.zone.now <= order.state_expires_at
 
     case state
     when Order::SUBMITTED
