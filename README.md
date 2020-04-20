@@ -7,7 +7,7 @@ Exchange aspires to be responsible for the various types of e-commerce interacti
 * Production: https://exchange.artsy.net, [Admin Dashboard](https://exchange.artsy.net/admin) | [Sidekiq Dashboard](https://exchange.artsy.net/admin/sidekiq)
 * Staging: https://exchange-staging.artsy.net, [Admin Dashboard](https://exchange-staging.artsy.net/admin) | [Sidekiq Dashboard](https://exchange-staging.artsy.net/admin/sidekiq)
 * GitHub: https://github.com/artsy/exchange/
-* Point People: [@ashkan18][ashkan18], [@williardx][williardx]
+* Point People: [@sweir27][], [@ansor4][]
 * CI/Deploys: [CircleCi](https://circleci.com/gh/artsy/exchange); merged PRs to `artsy/exchange#master` are automatically deployed to staging; PRs from `staging` to `release` are automatically deployed to production. [Start a deploy...](https://github.com/artsy/exchange/compare/release...staging?expand=1)
 
 ## Setup
@@ -103,6 +103,5 @@ hokusai staging logs -f
 If you think there is something we could improve in this error case, feel free to [open an issue](https://github.com/artsy/exchange/issues/new) with details about what you did and what went wrong.
 
 
-[ashkan18]: https://github.com/ashkan18
-[williardx]: https://github.com/williardx
-
+[@sweir27]: https://github.com/sweir27
+[@ansor4]: https://github.com/ansor4
