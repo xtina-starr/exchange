@@ -5,9 +5,9 @@ ActiveAdmin.register Order do
 
   scope :all
   scope('Submitted', default: true) { |scope| scope.where(state: Order::SUBMITTED) }
-  scope('Active', default: true) { |scope| scope.active }
-  scope('Pickup') { |scope| scope.where(state: [ Order::APPROVED, Order::FULFILLED, Order::SUBMITTED ], fulfillment_type: Order::PICKUP ) }
-  scope('Fulfillment Overdue') { |scope| scope.approved.where('state_expires_at < ?', Time.now) }
+  scope('Active', default: true, &:active)
+  scope('Pickup') { |scope| scope.where(state: [Order::APPROVED, Order::FULFILLED, Order::SUBMITTED], fulfillment_type: Order::PICKUP) }
+  scope('Fulfillment Overdue') { |scope| scope.approved.where('state_expires_at < ?', Time.zone.now) }
   scope('Completed') { |scope| scope.where(state: Order::FULFILLED) }
   scope('Case Closed') { |scope| scope.by_last_admin_note(AdminNote::TYPES[:case_closed]) }
   scope('Case Still Open') { |scope| scope.by_last_admin_note(AdminNote::TYPES.except(:case_closed).values) }
@@ -21,7 +21,7 @@ ActiveAdmin.register Order do
   filter :fulfillment_type, as: :check_boxes, collection: proc { Order::FULFILLMENT_TYPES }
   filter :state, as: :check_boxes, collection: proc { Order::STATES }
   filter :state_reason, as: :check_boxes, collection: proc { Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize) }
-  filter :has_offer_note , as: :check_boxes, label: 'Has Offer Note'
+  filter :has_offer_note, as: :check_boxes, label: 'Has Offer Note'
   filter :assisted
 
   index do
@@ -42,116 +42,96 @@ ActiveAdmin.register Order do
 
   member_action :refund, method: :post do
     OrderService.refund!(resource)
-    redirect_to resource_path, notice: "Refunded!"
+    redirect_to resource_path, notice: 'Refunded!'
   end
 
   member_action :cancel, method: :post do
     OrderService.reject!(resource, current_user[:id], Order::REASONS[Order::CANCELED][:admin_canceled])
-    redirect_to resource_path, notice: "Canceled by Artsy admin!"
+    redirect_to resource_path, notice: 'Canceled by Artsy admin!'
   end
 
   member_action :buyer_reject, method: :post do
     OrderService.reject!(resource, resource.buyer_id, Order::REASONS[Order::CANCELED][:buyer_rejected])
-    redirect_to resource_path, notice: "Canceled on behalf of buyer!"
+    redirect_to resource_path, notice: 'Canceled on behalf of buyer!'
   end
 
   member_action :approve_order, method: :post do
     OrderService.approve!(resource, current_user[:id])
-    redirect_to resource_path, notice: "Order approved!"
+    redirect_to resource_path, notice: 'Order approved!'
   end
 
   member_action :accept_offer, method: :post do
     return unless resource.mode == Order::OFFER && resource.state == Order::SUBMITTED
+
     OfferService.accept_offer(resource.last_offer, current_user[:id])
-    redirect_to resource_path, notice: "Offer accepted!"
+    redirect_to resource_path, notice: 'Offer accepted!'
   end
 
   member_action :confirm_pickup, method: :post do
-    if resource.fulfillment_type == Order::PICKUP
-      OrderService.confirm_pickup!(resource, current_user[:id])
-    end
-    redirect_to resource_path, notice: "Fulfillment confirmed!"
+    OrderService.confirm_pickup!(resource, current_user[:id]) if resource.fulfillment_type == Order::PICKUP
+    redirect_to resource_path, notice: 'Fulfillment confirmed!'
   end
 
   member_action :confirm_fulfillment, method: :post do
-    if resource.fulfillment_type == Order::SHIP
-      OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true)
-    end
-    redirect_to resource_path, notice: "Fulfillment confirmed!"
+    OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true) if resource.fulfillment_type == Order::SHIP
+    redirect_to resource_path, notice: 'Fulfillment confirmed!'
   end
 
   member_action :toggle_assisted, method: :post do
     resource.toggle!(:assisted)
-    redirect_to resource_path, notice: "toggled assisted flag!"
+    redirect_to resource_path, notice: 'toggled assisted flag!'
   end
 
   action_item :refund, only: :show do
-    if [Order::APPROVED, Order::FULFILLED].include? order.state
-      link_to 'Refund', refund_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to refund this order?'}
-    end
+    link_to 'Refund', refund_admin_order_path(order), method: :post, data: { confirm: 'Are you sure you want to refund this order?' } if [Order::APPROVED, Order::FULFILLED].include? order.state
   end
 
   action_item :buyer_reject, only: :show do
-    link_to 'Buyer Reject', buyer_reject_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to reject this order on behalf of buyer?'} if order.state == Order::SUBMITTED
+    link_to 'Buyer Reject', buyer_reject_admin_order_path(order), method: :post, data: { confirm: 'Are you sure you want to reject this order on behalf of buyer?' } if order.state == Order::SUBMITTED
   end
 
   action_item :cancel_order, only: :show do
-    link_to 'Cancel Order', cancel_admin_order_path(order), method: :post, data: {confirm: 'Are you sure you want to cancel this order?'} if order.state == Order::SUBMITTED
+    link_to 'Cancel Order', cancel_admin_order_path(order), method: :post, data: { confirm: 'Are you sure you want to cancel this order?' } if order.state == Order::SUBMITTED
   end
 
   action_item :approve_order, only: :show do
-    if order.state == Order::SUBMITTED && resource.mode == Order::BUY
-      link_to 'Approve Order', approve_order_admin_order_path(order), method: :post, data: {confirm: 'Approve this order?'}
-    end
+    link_to 'Approve Order', approve_order_admin_order_path(order), method: :post, data: { confirm: 'Approve this order?' } if order.state == Order::SUBMITTED && resource.mode == Order::BUY
   end
 
   action_item :accept_offer, only: :show do
-    if order.state == Order::SUBMITTED && resource.mode == Order::OFFER
-      link_to 'Accept Last Offer', accept_offer_admin_order_path(order), method: :post, data: {confirm: 'Accept last offer on this order?'}
-    end
+    link_to 'Accept Last Offer', accept_offer_admin_order_path(order), method: :post, data: { confirm: 'Accept last offer on this order?' } if order.state == Order::SUBMITTED && resource.mode == Order::OFFER
   end
 
   action_item :confirm_pickup, only: :show do
-    if order.state == Order::APPROVED && order.fulfillment_type == Order::PICKUP
-      link_to 'Confirm Pickup', confirm_pickup_admin_order_path(order), method: :post, data: {confirm: 'Confirm order pickup?'}
-    end
+    link_to 'Confirm Pickup', confirm_pickup_admin_order_path(order), method: :post, data: { confirm: 'Confirm order pickup?' } if order.state == Order::APPROVED && order.fulfillment_type == Order::PICKUP
   end
 
   action_item :confirm_fulfillment, only: :show do
-    if order.state == Order::APPROVED && order.fulfillment_type == Order::SHIP
-      link_to 'Confirm Fulfillment', confirm_fulfillment_admin_order_path(order), method: :post, data: {confirm: 'Confirm order fulfillment?'}
-    end
+    link_to 'Confirm Fulfillment', confirm_fulfillment_admin_order_path(order), method: :post, data: { confirm: 'Confirm order fulfillment?' } if order.state == Order::APPROVED && order.fulfillment_type == Order::SHIP
   end
 
   action_item :toggle_assisted_flag, only: :show do
-    if order.state != Order::PENDING
-      link_to 'Toggle Assisted', toggle_assisted_admin_order_path(order), method: :post
-    end
+    link_to 'Toggle Assisted', toggle_assisted_admin_order_path(order), method: :post if order.state != Order::PENDING
   end
 
   sidebar :contact_info, only: :show do
-
     table_for order.line_items do
       column '' do |line_item|
         artwork_info = Gravity.get_artwork(line_item.artwork_id)
         if artwork_info.present?
-          if artwork_info[:images].kind_of?(Array)
+          if artwork_info[:images].is_a?(Array)
             square_image = artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
-            if square_image
-              img :src => square_image[:image_urls][:square], :width => "100%"
-            end
+            img src: square_image[:image_urls][:square], width: '100%' if square_image
           end
           br
-          if artwork_info.key?(:title)
-            link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id)
-          end
+          link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id) if artwork_info.key?(:title)
         else
-          h3 "Failed to fetch artwork"
+          h3 'Failed to fetch artwork'
         end
       end
     end
 
-    panel "Buyer Information" do
+    panel 'Buyer Information' do
       user_info = Gravity.get_user(order.buyer_id)
 
       attributes_table_for order do
@@ -161,7 +141,7 @@ ActiveAdmin.register Order do
           end
           row 'Location' do
             if user_info[:location][:display].empty?
-              div "No location for user"
+              div 'No location for user'
             else
               user_info[:location][:display]
             end
@@ -187,14 +167,10 @@ ActiveAdmin.register Order do
           end
         end
       end
-      if order.buyer_type == 'user'
-        h5 link_to("View User in Admin", artsy_view_user_admin_url(order.buyer_id), class: :button)
-      end
-
+      h5 link_to('View User in Admin', artsy_view_user_admin_url(order.buyer_id), class: :button) if order.buyer_type == 'user'
     end
 
-    panel "Seller Information" do
-
+    panel 'Seller Information' do
       partner_info = Gravity.fetch_partner(order.seller_id)
       if partner_info.present?
         valid_partner_location = true
@@ -205,7 +181,7 @@ ActiveAdmin.register Order do
         end
 
         if valid_partner_location
-          #TODO - handle multiple partner_locations properly, instead of just taking the first.
+          # TODO: - handle multiple partner_locations properly, instead of just taking the first.
           partner_location = partner_locations.first
           partner_info[:partner_location] = partner_location
           attributes_table_for partner_info do
@@ -219,47 +195,34 @@ ActiveAdmin.register Order do
             row :email
           end
         else
-          h3 "Failed to fetch partner location info"
+          h3 'Failed to fetch partner location info'
         end
-        h5 link_to("View Partner in Admin-Partners", artsy_view_partner_admin_url(order.seller_id), class: :button)
+        h5 link_to('View Partner in Admin-Partners', artsy_view_partner_admin_url(order.seller_id), class: :button)
       else
-        h3 "Failed to fetch partner info"
+        h3 'Failed to fetch partner info'
       end
     end
   end
 
   show do
-
-    panel "Order Summary" do
+    panel 'Order Summary' do
       attributes_table_for order do
         row :code
-        row 'Type' do |order|
-          order.mode
-        end
+        row 'Type', &:mode
         row :state
-        row 'Reason' do |order|
-          order.state_reason
-        end
-        row 'Last Updated At' do |order|
-          order.updated_at
-        end
+        row 'Reason', &:state_reason
+        row 'Last Updated At', &:updated_at
 
         last_admin_note = order.last_admin_note
-        row 'Last admin action' do |order|
-          if last_admin_note.present?
-            last_admin_note.note_type.humanize
-          end
+        row 'Last admin action' do |_order|
+          last_admin_note.note_type.humanize if last_admin_note.present?
         end
         row :assisted
-        row 'Last note' do |order|
-          if last_admin_note.present?
-            last_admin_note.description
-          end
+        row 'Last note' do |_order|
+          last_admin_note.description if last_admin_note.present?
         end
 
-        row 'Last Transaction Failed' do |order|
-          order.last_transaction_failed?
-        end
+        row 'Last Transaction Failed', &:last_transaction_failed?
 
         if order.state == Order::FULFILLED && order.fulfillment_type == Order::SHIP
           row 'Shipment' do |order|
@@ -283,8 +246,6 @@ ActiveAdmin.register Order do
         column :state
         column :reason
       end
-
-
     end
 
     if order.mode == Order::OFFER
@@ -303,16 +264,16 @@ ActiveAdmin.register Order do
             }
           end
 
-          if offer.responds_to
-            events << {
+          events << if offer.responds_to
+            {
               description: "#{offer.from_participant.capitalize} made a counteroffer",
               amount: amount,
               date: date,
               note: offer.note
             }
           else
-            events << {
-              description: "Buyer made an initial offer",
+            {
+              description: 'Buyer made an initial offer',
               amount: amount,
               date: date,
               note: offer.note
@@ -328,14 +289,13 @@ ActiveAdmin.register Order do
       end
     end
 
-    panel "Transaction" do
-
+    panel 'Transaction' do
       if order.credit_card_id.present?
         no_credit_card_found = false
         begin
           credit_card_info = Gravity.get_credit_card(order.credit_card_id)
-          no_credit_card_found = !credit_card_info.present?
-        rescue
+          no_credit_card_found = credit_card_info.blank?
+        rescue StandardError
           no_credit_card_found = true
         end
         if no_credit_card_found
@@ -346,32 +306,33 @@ ActiveAdmin.register Order do
       end
 
       attributes_table_for order do
-        row "Artwork List Price" do |_order|
+        row 'Artwork List Price' do |_order|
           format_money_cents(order.total_list_price_cents, currency_code: order.currency_code)
         end
-        row "Accepted Offer" do |_order|
-          format_money_cents(order.items_total_cents, currency_code: order.currency_code)
-        end if order.mode == Order::OFFER
+        if order.mode == Order::OFFER
+          row 'Accepted Offer' do |_order|
+            format_money_cents(order.items_total_cents, currency_code: order.currency_code)
+          end
+        end
 
-        row "Shipping" do |order|
+        row 'Shipping' do |order|
           format_money_cents(order.shipping_total_cents, currency_code: order.currency_code)
         end
-        row "Sales Tax" do |order|
+        row 'Sales Tax' do |order|
           format_money_cents(order.tax_total_cents, currency_code: order.currency_code)
         end
-        row "Buyer Paid" do |order|
+        row 'Buyer Paid' do |order|
           format_money_cents(order.buyer_total_cents, currency_code: order.currency_code)
         end
-        row "Processing Fee" do |order|
+        row 'Processing Fee' do |order|
           format_money_cents(order.transaction_fee_cents, currency_code: order.currency_code, negate: true)
         end
-        row "Artsy Fee" do |order|
+        row 'Artsy Fee' do |order|
           format_money_cents(order.commission_fee_cents, currency_code: order.currency_code, negate: true)
         end
-        row "Seller Payout" do |order|
+        row 'Seller Payout' do |order|
           format_money_cents(order.seller_total_cents, currency_code: order.currency_code)
         end
-
       end
 
       table_for order.transactions do
@@ -385,26 +346,26 @@ ActiveAdmin.register Order do
       end
     end
 
-    panel "Admin Actions and Notes" do
-      #TODO: Add "Add note" button
-      h5 link_to("Add note", new_admin_order_admin_note_path(order), class: :button)
+    panel 'Admin Actions and Notes' do
+      # TODO: Add "Add note" button
+      h5 link_to('Add note', new_admin_order_admin_note_path(order), class: :button)
       table_for(order.admin_notes.order(created_at: :desc)) do
         column :created_at
-        column "Admin" do |fraud_review|
+        column 'Admin' do |fraud_review|
           Gravity.get_user(fraud_review.admin_id)[:name]
         end
-        column "Note Type" do |admin_note|
+        column 'Note Type' do |admin_note|
           admin_note.note_type.to_s.humanize
         end
         column :description
       end
     end
 
-    panel "Fraud Review" do
-      h5 link_to("Add fraud review",  new_admin_order_fraud_review_path(order), class: :button)
+    panel 'Fraud Review' do
+      h5 link_to('Add fraud review', new_admin_order_fraud_review_path(order), class: :button)
       table_for(order.fraud_reviews.order(created_at: :desc)) do
         column :created_at
-        column "Reviewed by" do |fraud_review|
+        column 'Reviewed by' do |fraud_review|
           Gravity.get_user(fraud_review.admin_id)[:name]
         end
         column :flagged_as_fraud
