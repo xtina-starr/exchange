@@ -115,19 +115,34 @@ ActiveAdmin.register Order do
   end
 
   sidebar :artwork_info, only: :show do
-    table_for order.line_items do
-      column '' do |line_item|
-        artwork_info = Gravity.get_artwork(line_item.artwork_id)
-        if artwork_info.present?
-          if artwork_info[:images].is_a?(Array)
-            square_image = artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
-            img src: square_image[:image_urls][:square], width: '100%' if square_image
-          end
-          br
-          link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id) if artwork_info.key?(:title)
-        else
-          h3 'Failed to fetch artwork'
+    order.line_items.each do |line_item|
+      artwork_info = Gravity.get_artwork(line_item.artwork_id)
+
+      if artwork_info.present?
+        if artwork_info[:images].is_a?(Array)
+          square_image = artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
+          img src: square_image[:image_urls][:square], width: '100%' if square_image
         end
+
+        attributes_table_for order do
+          row 'artwork id' do
+            artwork_info[:_id]
+          end
+
+          row 'artwork title' do
+            link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id) if artwork_info.key?(:title)
+          end
+
+          row 'import source' do
+            artwork_info[:import_source]
+          end
+
+          row 'external id' do
+            artwork_info[:external_id]
+          end
+        end
+      else
+        h3 'Failed to fetch artwork'
       end
     end
   end
