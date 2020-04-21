@@ -114,7 +114,7 @@ ActiveAdmin.register Order do
     link_to 'Toggle Assisted', toggle_assisted_admin_order_path(order), method: :post if order.state != Order::PENDING
   end
 
-  sidebar :contact_info, only: :show do
+  sidebar :artwork_info, only: :show do
     table_for order.line_items do
       column '' do |line_item|
         artwork_info = Gravity.get_artwork(line_item.artwork_id)
@@ -130,77 +130,80 @@ ActiveAdmin.register Order do
         end
       end
     end
+  end
 
-    panel 'Buyer Information' do
-      user_info = Gravity.get_user(order.buyer_id)
+  sidebar :buyer_information, only: :show do
+    user_info = Gravity.get_user(order.buyer_id)
 
-      attributes_table_for order do
-        if user_info.present?
-          row 'Name' do
-            user_info[:name]
-          end
-          row 'Location' do
-            if user_info[:location][:display].empty?
-              div 'No location for user'
-            else
-              user_info[:location][:display]
-            end
-          end
-          row 'Email' do
-            user_info[:email]
+    attributes_table_for order do
+      if user_info.present?
+        row 'Name' do
+          user_info[:name]
+        end
+        row 'Location' do
+          if user_info[:location][:display].empty?
+            div 'No location for user'
+          else
+            user_info[:location][:display]
           end
         end
-        if order.fulfillment_type == Order::SHIP
-          row :shipping_name
-          row :shipping_address do
-            if order.shipping_info?
-              div order.shipping_address_line1
-              div order.shipping_address_line2
-              div "#{order.shipping_city}, #{order.shipping_region} #{order.shipping_postal_code}"
-              div order.shipping_country
-            else
-              'None'
-            end
-          end
-          row 'Shipping Phone' do
-            number_to_phone order.buyer_phone_number
-          end
+        row 'Email' do
+          user_info[:email]
         end
       end
-      h5 link_to('View User in Admin', artsy_view_user_admin_url(order.buyer_id), class: :button) if order.buyer_type == 'user'
+
+      if order.fulfillment_type == Order::SHIP
+        row :shipping_name
+        row :shipping_address do
+          if order.shipping_info?
+            div order.shipping_address_line1
+            div order.shipping_address_line2
+            div "#{order.shipping_city}, #{order.shipping_region} #{order.shipping_postal_code}"
+            div order.shipping_country
+          else
+            'None'
+          end
+        end
+        row 'Shipping Phone' do
+          number_to_phone order.buyer_phone_number
+        end
+      end
     end
 
-    panel 'Seller Information' do
-      partner_info = Gravity.fetch_partner(order.seller_id)
-      if partner_info.present?
-        valid_partner_location = true
-        begin
-          partner_locations = Gravity.fetch_partner_locations(order.seller_id)
-        rescue Errors::ValidationError
-          valid_partner_location = false
-        end
+    h5 link_to('View User in Admin', artsy_view_user_admin_url(order.buyer_id), class: :button) if order.buyer_type == 'user'
+  end
 
-        if valid_partner_location
-          # TODO: - handle multiple partner_locations properly, instead of just taking the first.
-          partner_location = partner_locations.first
-          partner_info[:partner_location] = partner_location
-          attributes_table_for partner_info do
-            row :name
-            row :partner_location do |partner_info|
-              partner_location = partner_info[:partner_location]
-              div partner_location.street_line1
-              div partner_location.street_line2
-              div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
-            end
-            row :email
-          end
-        else
-          h3 'Failed to fetch partner location info'
-        end
-        h5 link_to('View Partner in Admin-Partners', artsy_view_partner_admin_url(order.seller_id), class: :button)
-      else
-        h3 'Failed to fetch partner info'
+  sidebar :seller_information, only: :show do
+    partner_info = Gravity.fetch_partner(order.seller_id)
+
+    if partner_info.present?
+      valid_partner_location = true
+      begin
+        partner_locations = Gravity.fetch_partner_locations(order.seller_id)
+      rescue Errors::ValidationError
+        valid_partner_location = false
       end
+
+      if valid_partner_location
+        # TODO: - handle multiple partner_locations properly, instead of just taking the first.
+        partner_location = partner_locations.first
+        partner_info[:partner_location] = partner_location
+        attributes_table_for partner_info do
+          row :name
+          row :partner_location do |partner_info|
+            partner_location = partner_info[:partner_location]
+            div partner_location.street_line1
+            div partner_location.street_line2
+            div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
+          end
+          row :email
+        end
+      else
+        h3 'Failed to fetch partner location info'
+      end
+      h5 link_to('View Partner in Admin-Partners', artsy_view_partner_admin_url(order.seller_id), class: :button)
+    else
+      h3 'Failed to fetch partner info'
     end
   end
 
