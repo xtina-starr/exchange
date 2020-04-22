@@ -7,7 +7,7 @@ Exchange aspires to be responsible for the various types of e-commerce interacti
 * Production: https://exchange.artsy.net, [Admin Dashboard](https://exchange.artsy.net/admin) | [Sidekiq Dashboard](https://exchange.artsy.net/admin/sidekiq)
 * Staging: https://exchange-staging.artsy.net, [Admin Dashboard](https://exchange-staging.artsy.net/admin) | [Sidekiq Dashboard](https://exchange-staging.artsy.net/admin/sidekiq)
 * GitHub: https://github.com/artsy/exchange/
-* Point People: [@ashkan18][ashkan18], [@williardx][williardx]
+* Point People: [@sweir27][], [@ansor4][]
 * CI/Deploys: [CircleCi](https://circleci.com/gh/artsy/exchange); merged PRs to `artsy/exchange#master` are automatically deployed to staging; PRs from `staging` to `release` are automatically deployed to production. [Start a deploy...](https://github.com/artsy/exchange/compare/release...staging?expand=1)
 
 ## Setup
@@ -73,9 +73,11 @@ There is a guide on how to add exchange operations to Metaphysics [here](https:/
 
 
 ## Talking to Exchange 🤑
+
 In order to talk to Exchange GraphQL endpoint:
+
 - Copy `.env.example` to `.env`
-- Update the `REPLACE_ME` values in the `.env` file. You can reference the values used on staging with `hokusai staging env get`.
+- Update the `REPLACE` values in the `.env` file. You can reference the values used on staging with `hokusai staging env get` or use [copy_env][] to automate the task.
 - Install `dotenv` by `gem install dotenv`
 - Start local server `dotenv rails s`
 - If you work at Artsy, get proper Gravity User Token following [these instructions](https://github.com/artsy/gravity/blob/master/doc/ApiAuthentication.md#fetching-a-user-jwt-for-the-target-service) (the client application name is "Exchange Staging").
@@ -102,7 +104,6 @@ hokusai staging logs -f
 
 If you think there is something we could improve in this error case, feel free to [open an issue](https://github.com/artsy/exchange/issues/new) with details about what you did and what went wrong.
 
-
-[ashkan18]: https://github.com/ashkan18
-[williardx]: https://github.com/williardx
-
+[copy_env]: https://github.com/jonallured/copy_env
+[@sweir27]: https://github.com/sweir27
+[@ansor4]: https://github.com/ansor4
