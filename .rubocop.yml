@@ -15,7 +15,7 @@ Metrics/ParameterLists:
   Max: 11
 
 Metrics/ClassLength:
-  Max: 190
+  Max: 1000000
 
 Metrics/AbcSize:
   Max: 61
