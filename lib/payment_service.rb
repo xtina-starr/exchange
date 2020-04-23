@@ -138,6 +138,8 @@ class PaymentService
   end
 
   def metadata
+    any_consignment_works = @order.artworks.map { |artwork| artwork[:import_source] == 'convection' }.any?
+
     {
       exchange_order_id: @order.id,
       buyer_id: @order.buyer_id,
@@ -147,7 +149,8 @@ class PaymentService
       type: @order.auction_seller? ? 'auction-bn' : 'bn-mo',
       mode: @order.mode,
       artist_ids: @order.artists.map { |a| a[:_id] }.join(','),
-      artist_names: @order.artists.map { |a| a[:name] }.join(',')
+      artist_names: @order.artists.map { |a| a[:name] }.join(','),
+      any_consignment_works: any_consignment_works
     }
   end
 
