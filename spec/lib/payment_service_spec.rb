@@ -42,6 +42,7 @@ describe PaymentService, type: :services do
       transfer_group: order.id,
       off_session: false,
       metadata: {
+        any_consignment_works: false,
         artist_ids: 'artist-id',
         artist_names: 'BNMOsy',
         buyer_id: order.buyer_id,
@@ -319,19 +320,45 @@ describe PaymentService, type: :services do
   end
 
   describe '#metadata' do
-    it 'includes all expected metadata' do
-      metadata = service.send(:metadata)
-      expect(metadata).to match(
-        exchange_order_id: order.id,
-        buyer_id: order.buyer_id,
-        buyer_type: 'user',
-        seller_id: order.seller_id,
-        seller_type: 'gallery',
-        type: 'bn-mo',
-        mode: 'buy',
-        artist_ids: 'artist-id',
-        artist_names: 'BNMOsy'
-      )
+    context 'with a normal artwork' do
+      it 'includes all expected metadata' do
+        metadata = service.send(:metadata)
+        expect(metadata).to match(
+          any_consignment_works: false,
+          exchange_order_id: order.id,
+          buyer_id: order.buyer_id,
+          buyer_type: 'user',
+          seller_id: order.seller_id,
+          seller_type: 'gallery',
+          type: 'bn-mo',
+          mode: 'buy',
+          artist_ids: 'artist-id',
+          artist_names: 'BNMOsy'
+        )
+      end
+    end
+
+    context 'with a consigned work' do
+      before do
+        consignment_artwork = gravity_v1_artwork(import_source: 'convection')
+        allow(Gravity).to receive(:get_artwork).and_return(consignment_artwork)
+      end
+
+      it 'sets the consignment flag' do
+        metadata = service.send(:metadata)
+        expect(metadata).to match(
+          any_consignment_works: true,
+          exchange_order_id: order.id,
+          buyer_id: order.buyer_id,
+          buyer_type: 'user',
+          seller_id: order.seller_id,
+          seller_type: 'gallery',
+          type: 'bn-mo',
+          mode: 'buy',
+          artist_ids: 'artist-id',
+          artist_names: 'BNMOsy'
+        )
+      end
     end
   end
 end
