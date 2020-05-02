@@ -6,8 +6,15 @@ class RecordSalesTaxJob < ApplicationJob
     return unless line_item.should_remit_sales_tax?
 
     artwork = Gravity.get_artwork(line_item.artwork_id)
+    consignment = artwork[:import_source] == 'convection'
+
     artwork_address = Address.new(artwork[:location])
-    seller_addresses = Gravity.fetch_partner_locations(line_item.order.seller_id, tax_only: true)
+    seller_addresses = if consignment
+      artwork_address
+    else
+      Gravity.fetch_partner_locations(line_item.order.seller_id, tax_only: true)
+    end
+
     service = Tax::CollectionService.new(line_item, artwork_address, seller_addresses)
     service.record_tax_collected
     line_item.update!(sales_tax_transaction_id: service.transaction.transaction_id) if service.transaction.present?
