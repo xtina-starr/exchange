@@ -17,6 +17,7 @@ gem 'ddtrace' # datadog instrumentation
 gem 'dogstatsd-ruby', require: 'datadog/statsd' # send metrics to datadog agent
 gem 'faraday'
 gem 'graphql'
+gem 'graphql-rails_logger'
 gem 'jwt'
 gem 'micromachine'
 gem 'money' # Library for dealing with money and currency conversion

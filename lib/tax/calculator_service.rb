@@ -14,7 +14,6 @@ class Tax::CalculatorService
       api_url: Rails.application.config_for(:taxjar)['taxjar_api_url'].presence
     )
   )
-
     @seller_nexus_addresses = process_nexus_addresses!(nexus_addresses)
     @fulfillment_type = fulfillment_type
     @tax_client = tax_client
