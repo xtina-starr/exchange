@@ -7,10 +7,12 @@ class RecordSalesTaxJob < ApplicationJob
 
     artwork = Gravity.get_artwork(line_item.artwork_id)
     consignment = artwork[:import_source] == 'convection'
-
     artwork_address = Address.new(artwork[:location])
+
+    # If the artwork originated from a consignment, the seller location
+    # corresponds to the artwork location for tax purposes.
     seller_addresses = if consignment
-      artwork_address
+      [artwork_address]
     else
       Gravity.fetch_partner_locations(line_item.order.seller_id, tax_only: true)
     end

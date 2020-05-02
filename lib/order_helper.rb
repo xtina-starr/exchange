@@ -15,6 +15,14 @@ module OrderHelper
     @artworks ||= line_items.map(&:artwork)
   end
 
+  def artwork
+    @artwork ||= begin
+      # This is with assumption of Offer order only having one line_item. Follows
+      # similar pattern as in offer_totals.
+      line_items.first&.artwork
+    end
+  end
+
   def artists
     @artists ||= artworks.map { |a| a[:artist] }
   end
@@ -32,7 +40,16 @@ module OrderHelper
   end
 
   def seller_locations
-    @seller_locations ||= Gravity.fetch_partner_locations(seller_id, tax_only: true)
+    consignment = artwork[:import_source] == 'convection'
+    artwork_address = Address.new(artwork[:location])
+
+    # If the artwork originated from a consignment, the seller location
+    # corresponds to the artwork location for tax purposes.
+    @seller_locations ||= if consignment
+      [artwork_address]
+    else
+      Gravity.fetch_partner_locations(seller_id, tax_only: true)
+    end
   end
 
   def inventory?

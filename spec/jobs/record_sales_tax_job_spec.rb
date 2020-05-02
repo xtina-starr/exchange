@@ -39,8 +39,7 @@ describe RecordSalesTaxJob, type: :job do
 
       context 'with an order that originated as a consignment' do
         it 'posts a transaction to TaxJar and saves the transaction id' do
-          expect(Gravity).to receive(:get_artwork).with(line_item.artwork_id).and_return(gravity_v1_artwork(location: artwork_location))
-          expect(Gravity).to receive(:fetch_partner_locations).with(line_item.order.seller_id, tax_only: true).and_return(seller_addresses)
+          expect(Gravity).to receive(:get_artwork).with(line_item.artwork_id).and_return(gravity_v1_artwork(location: artwork_location, import_source: 'convection'))
           expect(Address).to receive(:new).with(artwork_location).and_return(Address.new(artwork_location))
           RecordSalesTaxJob.perform_now(line_item.id)
           expect(line_item.reload.sales_tax_transaction_id).to eq '123'
