@@ -68,9 +68,16 @@ describe ShippingHelper, type: :services do
   let(:continental_us_artwork) { gravity_v1_artwork(continental_us_artwork_config) }
   let(:artwork_in_italy) { gravity_v1_artwork(artwork_in_italy_config) }
   let(:artwork_missing_location) { gravity_v1_artwork(missing_artwork_location_config) }
+
   describe '#calculate' do
     context 'with pickup fulfillment type' do
       it 'returns 0' do
+        expect(ShippingHelper.calculate(artwork, Order::PICKUP)).to eq 0
+      end
+    end
+    context 'when artwork is consigned' do
+      it 'returns 0' do
+        artwork[:import_source] = 'convection'
         expect(ShippingHelper.calculate(artwork, Order::PICKUP)).to eq 0
       end
     end
