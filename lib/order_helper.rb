@@ -39,12 +39,12 @@ module OrderHelper
     @merchant_account ||= Gravity.get_merchant_account(seller_id)
   end
 
-  def seller_locations
+  def nexus_addresses
     consignment = artwork[:import_source] == 'convection'
 
     # If the artwork originated from a consignment, the seller location
     # corresponds to the artwork location for tax purposes.
-    @seller_locations ||= if consignment
+    @nexus_addresses ||= if consignment
       [Address.new(artwork[:location])]
     else
       Gravity.fetch_partner_locations(seller_id, tax_only: true)

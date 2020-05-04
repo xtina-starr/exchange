@@ -63,7 +63,7 @@ class OrderShipping
         li,
         fulfillment_type: @order.fulfillment_type,
         shipping_address: @order.shipping_address,
-        seller_locations: @order.seller_locations,
+        nexus_addresses: @order.nexus_addresses,
         artsy_collects_sales_tax: @order.artsy_collects_sales_tax?
       )
       li.update!(

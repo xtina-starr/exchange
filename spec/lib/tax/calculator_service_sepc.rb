@@ -19,7 +19,7 @@ describe Tax::CalculatorService, type: :services do
     }
   end
   let(:shipping_address) { Address.new(shipping) }
-  let!(:seller_locations) do
+  let!(:nexus_addresses) do
     [
       {
         country: 'US',
@@ -37,7 +37,7 @@ describe Tax::CalculatorService, type: :services do
       }
     ]
   end
-  let!(:seller_addresses) { seller_locations.map { |ad| Address.new(ad) } }
+  let!(:seller_addresses) { nexus_addresses.map { |ad| Address.new(ad) } }
   let(:artwork_location) { Address.new(gravity_v1_artwork[:location]) }
   let(:base_tax_params) do
     {

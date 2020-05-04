@@ -38,7 +38,7 @@ class OfferTotals
         @order.shipping_address,
         shipping_total_cents,
         artwork_location,
-        @order.seller_locations
+        @order.nexus_addresses
       )
       sales_tax = @order.partner[:artsy_collects_sales_tax] ? service.sales_tax : 0
       OpenStruct.new(tax_total_cents: sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)
