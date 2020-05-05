@@ -78,7 +78,7 @@ describe ShippingHelper, type: :services do
     context 'when artwork is consigned' do
       it 'returns 0' do
         artwork[:import_source] = 'convection'
-        expect(ShippingHelper.calculate(artwork, Order::PICKUP)).to eq 0
+        expect(ShippingHelper.calculate(artwork, Order::SHIP)).to eq 0
       end
     end
     context 'with missing artowrk location' do

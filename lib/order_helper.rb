@@ -15,12 +15,10 @@ module OrderHelper
     @artworks ||= line_items.map(&:artwork)
   end
 
+  # This is with assumption of Offer order only having one line_item. Follows
+  # similar pattern as in offer_totals.
   def artwork
-    @artwork ||= begin
-      # This is with assumption of Offer order only having one line_item. Follows
-      # similar pattern as in offer_totals.
-      line_items.first&.artwork
-    end
+    @artwork ||= artworks.first
   end
 
   def artists

@@ -240,6 +240,7 @@ describe Api::GraphqlController, type: :request do
           it 'returns an error' do
             allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'], page: 1, size: 20 }).and_return([{ country: 'US', state: 'NY' }])
             allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(id: 'missing-location')
+            allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-2').and_return(id: 'missing-location')
             response = client.execute(mutation, set_shipping_input)
             expect(response.data.set_shipping.order_or_error.error.type).to eq 'validation'
             expect(response.data.set_shipping.order_or_error.error.code).to eq 'missing_artwork_location'
