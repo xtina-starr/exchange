@@ -406,4 +406,25 @@ RSpec.describe Order, type: :model do
       end
     end
   end
+
+  describe '#nexus_addresses' do
+    context 'when artwork is not consigned' do
+      it 'returns partner locations as seller locations' do
+        order = Fabricate(:order, line_items: [Fabricate(:line_item, artwork_id: 'id-0')])
+        seller_addresses = [Address.new(state: 'NY', country: 'US', postal_code: '10001'), Address.new(state: 'MA', country: 'US', postal_code: '02139')]
+        allow(Gravity).to receive(:fetch_partner_locations).and_return(seller_addresses)
+        expect(Adapters::GravityV1).to receive(:get).with('/artwork/id-0').and_return(gravity_v1_artwork)
+        expect(order.nexus_addresses).to eq seller_addresses
+      end
+    end
+
+    context 'when artwork is consigned' do
+      it 'returns artwork location as seller location' do
+        artwork = gravity_v1_artwork(import_source: 'convection')
+        order = Fabricate(:order, line_items: [Fabricate(:line_item, artwork_id: 'id-1')])
+        expect(Adapters::GravityV1).to receive(:get).with('/artwork/id-1').and_return(artwork)
+        expect(order.nexus_addresses).to eq [Address.new(artwork[:location])]
+      end
+    end
+  end
 end

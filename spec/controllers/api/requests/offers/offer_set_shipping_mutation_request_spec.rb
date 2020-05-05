@@ -170,8 +170,9 @@ describe Api::GraphqlController, type: :request do
 
         context 'when passing phone number in address' do
           before do
-            expect(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+            expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
             allow(Adapters::GravityV1).to receive(:get).with("/partner/#{seller_id}/locations", params: { private: true, address_type: ['Business', 'Sales tax nexus'], page: 1, size: 20 }).and_return([{ country: 'US', state: 'NY' }])
+            allow(Gravity).to receive(:fetch_partner_locations).and_return(seller_addresses)
           end
           let(:set_shipping_input) do
             {
@@ -321,7 +322,7 @@ describe Api::GraphqlController, type: :request do
           end
           context 'with PICKUP as fulfillment type' do
             before do
-              expect(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork1)
+              expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
             end
             let(:fulfillment_type) { 'PICKUP' }
             it 'sets total shipping cents to 0' do
@@ -333,7 +334,7 @@ describe Api::GraphqlController, type: :request do
           end
           context 'with SHIP as fulfillment type' do
             before do
-              expect(Adapters::GravityV1).to receive(:get).once.with('/artwork/a-1').and_return(artwork1)
+              expect(Adapters::GravityV1).to receive(:get).twice.with('/artwork/a-1').and_return(artwork1)
             end
             context 'with international shipping' do
               let(:shipping_country) { 'IR' }

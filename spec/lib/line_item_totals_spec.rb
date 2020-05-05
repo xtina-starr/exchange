@@ -5,11 +5,11 @@ describe LineItemTotals do
   let(:fulfillment_type) { Order::PICKUP }
   let(:artwork) { gravity_v1_artwork }
   let(:shipping_address) { nil }
-  let(:seller_locations) { [] }
+  let(:nexus_addresses) { [] }
   let(:artsy_collects_sales_tax) { true }
   let(:order) { Fabricate(:order, seller_id: 'partner-1', seller_type: 'gallery', buyer_id: 'buyer1', buyer_type: Order::USER, fulfillment_type: fulfillment_type) }
   let(:line_item) { Fabricate(:line_item, order: order, artwork_id: 'a-1') }
-  let(:line_item_totals) { LineItemTotals.new(line_item, fulfillment_type: fulfillment_type, shipping_address: shipping_address, seller_locations: seller_locations, artsy_collects_sales_tax: artsy_collects_sales_tax) }
+  let(:line_item_totals) { LineItemTotals.new(line_item, fulfillment_type: fulfillment_type, shipping_address: shipping_address, nexus_addresses: nexus_addresses, artsy_collects_sales_tax: artsy_collects_sales_tax) }
   let(:mock_tax_calculation) { allow(Tax::CalculatorService).to receive(:new).and_return(double(sales_tax: 100, artsy_should_remit_taxes?: false)) }
   before do
     allow(Adapters::GravityV1).to receive(:get).with('/artwork/a-1').and_return(artwork)
