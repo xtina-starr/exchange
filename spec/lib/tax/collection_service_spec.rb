@@ -21,7 +21,7 @@ describe Tax::CollectionService, type: :services do
   let(:shipping_total_cents) { 2222 }
   let(:transaction_id) { "#{line_item.order.id}__#{line_item.id}" }
   let(:shipping_address) { Address.new(country: 'US', postal_code: postal_code, region: shipping_region, city: 'New York', address_line1: '123 Fake St') }
-  let!(:seller_locations) do
+  let!(:nexus_addresses) do
     [
       {
         country: 'US',
@@ -39,7 +39,7 @@ describe Tax::CollectionService, type: :services do
       }
     ]
   end
-  let!(:seller_addresses) { seller_locations.map { |ad| Address.new(ad) } }
+  let!(:seller_addresses) { nexus_addresses.map { |ad| Address.new(ad) } }
   let(:artwork_location) { Address.new(gravity_v1_artwork[:location]) }
   let(:base_tax_params) do
     {

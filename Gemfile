@@ -17,6 +17,7 @@ gem 'ddtrace' # datadog instrumentation
 gem 'dogstatsd-ruby', require: 'datadog/statsd' # send metrics to datadog agent
 gem 'faraday'
 gem 'graphql'
+gem 'graphql-rails_logger'
 gem 'jwt'
 gem 'micromachine'
 gem 'money' # Library for dealing with money and currency conversion
@@ -31,6 +32,7 @@ gem 'taxjar-ruby', require: 'taxjar'
 group :development, :test do
   gem 'byebug'
   gem 'graphlient'
+  gem 'guard-rspec', require: false
   gem 'rspec-rails'
   gem 'rubocop-rails', require: false
 end

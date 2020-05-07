@@ -14,7 +14,6 @@ class Tax::CalculatorService
       api_url: Rails.application.config_for(:taxjar)['taxjar_api_url'].presence
     )
   )
-
     @seller_nexus_addresses = process_nexus_addresses!(nexus_addresses)
     @fulfillment_type = fulfillment_type
     @tax_client = tax_client
@@ -43,15 +42,15 @@ class Tax::CalculatorService
   private
 
   def fetch_sales_tax
+    tax_params = construct_tax_params(
+      line_items: [{
+        unit_price: UnitConverter.convert_cents_to_dollars(@unit_price_cents),
+        quantity: @quantity
+      }]
+    )
+
     UnitConverter.convert_dollars_to_cents(
-      @tax_client.tax_for_order(
-        construct_tax_params(
-          line_items: [{
-            unit_price: UnitConverter.convert_cents_to_dollars(@unit_price_cents),
-            quantity: @quantity
-          }]
-        )
-      ).amount_to_collect
+      @tax_client.tax_for_order(tax_params).amount_to_collect
     )
   end
 

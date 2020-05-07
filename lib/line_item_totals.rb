@@ -3,11 +3,11 @@ class LineItemTotals
   delegate :tax_total_cents, to: :tax_data
   delegate :should_remit_sales_tax, to: :tax_data
 
-  def initialize(line_item, fulfillment_type:, shipping_address:, seller_locations:, artsy_collects_sales_tax:)
+  def initialize(line_item, fulfillment_type:, shipping_address:, nexus_addresses:, artsy_collects_sales_tax:)
     @line_item = line_item
     @fulfillment_type = fulfillment_type
     @shipping_address = shipping_address
-    @seller_locations = seller_locations
+    @nexus_addresses = nexus_addresses
     @artsy_collects_sales_tax = artsy_collects_sales_tax
     @order = line_item.order
   end
@@ -35,7 +35,7 @@ class LineItemTotals
         @shipping_address,
         shipping_total_cents,
         @line_item.artwork_location,
-        @seller_locations
+        @nexus_addresses
       )
       sales_tax = @artsy_collects_sales_tax ? service.sales_tax : 0
       OpenStruct.new(tax_total_cents: sales_tax, should_remit_sales_tax: service.artsy_should_remit_taxes?)

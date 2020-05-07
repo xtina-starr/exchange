@@ -1,6 +1,9 @@
 class ShippingHelper
   def self.calculate(artwork, fulfillment_type, shipping_address = nil)
-    return 0 if fulfillment_type == Order::PICKUP
+    consignment = artwork[:import_source] == 'convection'
+    pickup = fulfillment_type == Order::PICKUP
+
+    return 0 if consignment || pickup
 
     if artwork[:location].blank?
       exception = Errors::ValidationError.new(:missing_artwork_location, artwork_id: artwork[:_id])
