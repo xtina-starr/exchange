@@ -112,7 +112,6 @@ class PaymentService
       payment_method_types: ['card'],
       payment_method: order.credit_card[:external_id],
       customer: order.credit_card[:customer_account][:external_id],
-      on_behalf_of: order.merchant_account[:external_id],
       transfer_data: {
         destination: order.merchant_account[:external_id],
         amount: order.seller_total_cents
