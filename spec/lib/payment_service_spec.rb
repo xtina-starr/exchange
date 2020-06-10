@@ -34,6 +34,7 @@ describe PaymentService, type: :services do
       payment_method_types: ['card'],
       payment_method: 'cc_1',
       customer: 'ca_1',
+      on_behalf_of: 'ma-1',
       transfer_data: {
         destination: 'ma-1',
         amount: 10_00
