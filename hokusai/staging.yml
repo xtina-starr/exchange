@@ -32,6 +32,8 @@ spec:
               value: 'true'
             - name: RAILS_ENV
               value: production
+            - name: MALLOC_ARENA_MAX
+              value: "2"
             - name: DATADOG_TRACE_AGENT_HOSTNAME
               valueFrom:
                 fieldRef:
@@ -118,6 +120,13 @@ spec:
     spec:
       containers:
         - name: exchange-sidekiq
+          env:
+            - name: MALLOC_ARENA_MAX
+              value: "2"
+            - name: DD_TRACE_AGENT_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           envFrom:
           - configMapRef:
               name: exchange-environment
