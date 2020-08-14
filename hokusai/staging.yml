@@ -88,14 +88,13 @@ spec:
             defaultMode: 420
       affinity:
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-              - key: tier
-                operator: In
-                values:
-                - foreground
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: tier
+                    operator: In
+                    values:
+                      - foreground
 
 ---
 apiVersion: extensions/v1beta1
@@ -135,14 +134,14 @@ spec:
           command: ["bundle", "exec", "sidekiq"]
       affinity:
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-              - key: tier
-                operator: In
-                values:
-                - background
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: tier
+                    operator: In
+                    values:
+                      - background
+
 ---
 apiVersion: v1
 kind: Service
