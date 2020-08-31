@@ -187,7 +187,7 @@ describe OrderService, type: :services do
       end
     end
 
-    Order::STATES.reject { |s| s == Order::APPROVED }.each do |state|
+    Order::STATES.reject { |s| [Order::APPROVED, Order::ABANDONED, Order::CANCELED].include?(s) }.each do |state|
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do
@@ -243,7 +243,7 @@ describe OrderService, type: :services do
       end
     end
 
-    Order::STATES.reject { |s| s == Order::APPROVED }.each do |state|
+    Order::STATES.reject { |s| [Order::APPROVED, Order::ABANDONED, Order::CANCELED].include?(s) }.each do |state|
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do

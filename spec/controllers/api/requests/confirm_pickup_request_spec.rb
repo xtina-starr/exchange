@@ -61,7 +61,7 @@ describe Api::GraphqlController, type: :request do
     end
 
     context 'with proper permission' do
-      Order::STATES.reject { |s| [Order::APPROVED, Order::CANCELED].include? s }.each do |state|
+      Order::STATES.reject { |s| [Order::APPROVED, Order::CANCELED, Order::ABANDONED].include? s }.each do |state|
         context "with order not in #{state} state" do
           before do
             order.update! state: state
