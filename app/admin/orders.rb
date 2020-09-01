@@ -83,18 +83,6 @@ ActiveAdmin.register Order do
     redirect_to resource_path, notice: 'toggled assisted flag!'
   end
 
-  member_action :confirm_offline_sale, method: :post do
-    if resource.fulfillment_type == Order::PICKUP
-      OrderService.confirm_pickup!(resource, current_user[:id])
-    elsif  resource.fulfillment_type == Order::SHIP
-      OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true)
-    else
-      raise Errors::ValidationError, :wrong_fulfillment_type
-    end
-    redirect_to edit_admin_order_path(resource[:id]), notice: 'Offline sale created. you can now edit the price'
-  end
-
-
   action_item :refund, only: :show do
     link_to 'Refund', refund_admin_order_path(order), method: :post, data: { confirm: 'Are you sure you want to refund this order?' } if [Order::APPROVED, Order::FULFILLED].include? order.state
   end
@@ -128,7 +116,7 @@ ActiveAdmin.register Order do
   end
 
   action_item :confirm_offline_sale, only: :show do
-    link_to 'Confirm Offline Sale', confirm_offline_sale_admin_order_path(order), method: :post if [Order::ABANDONED, Order::CANCELED].include?(order.state)
+    link_to 'Confirm Offline Sale', edit_admin_order_path(order[:id]) if [Order::ABANDONED, Order::CANCELED].include?(order.state)
   end
 
   sidebar :artwork_info, only: :show do
@@ -426,6 +414,15 @@ ActiveAdmin.register Order do
     def update
       offline_sale_date = params[:order].delete(:offline_sale_date)
       admin_note_description = params[:order].delete(:admin_note_description)
+
+      if resource.fulfillment_type == Order::PICKUP
+        OrderService.confirm_pickup!(resource, current_user[:id])
+      elsif  resource.fulfillment_type == Order::SHIP
+        OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true)
+      else
+        raise Errors::ValidationError, :wrong_fulfillment_type
+      end
+
       resource.state_histories.last.update_attributes(:created_at=> offline_sale_date, :updated_at=> offline_sale_date)
       resource.admin_notes.create!(note_type: AdminNote::TYPES[:offline_sale], admin_id: current_user[:id], description: admin_note_description)
 
