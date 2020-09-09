@@ -69,7 +69,7 @@ ActiveAdmin.register Order do
   end
 
   member_action :confirm_pickup, method: :post do
-    OrderService.confirm_pickup!(resource, current_user[:id]) if resource.fulfillment_type == Order::PICKUP
+    OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true) if resource.fulfillment_type == Order::PICKUP
     redirect_to resource_path, notice: 'Fulfillment confirmed!'
   end
 
@@ -415,13 +415,7 @@ ActiveAdmin.register Order do
       offline_sale_date = params[:order].delete(:offline_sale_date)
       admin_note_description = params[:order].delete(:admin_note_description)
 
-      if resource.fulfillment_type == Order::PICKUP
-        OrderService.confirm_pickup!(resource, current_user[:id])
-      elsif  resource.fulfillment_type == Order::SHIP
-        OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true)
-      else
-        raise Errors::ValidationError, :wrong_fulfillment_type
-      end
+      OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true)
 
       resource.state_histories.last.update_attributes(:created_at=> offline_sale_date, :updated_at=> offline_sale_date)
       resource.admin_notes.create!(note_type: AdminNote::TYPES[:offline_sale], admin_id: current_user[:id], description: admin_note_description)

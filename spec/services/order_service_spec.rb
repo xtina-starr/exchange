@@ -209,17 +209,7 @@ describe OrderService, type: :services do
   end
 
   describe 'confirm_fulfillment!' do
-    context 'with order in approved state' do
-      let(:state) { Order::APPROVED }
-
-      it 'raises error for pickup orders' do
-        order.update!(fulfillment_type: Order::PICKUP)
-        expect { OrderService.confirm_fulfillment!(order, user_id) }.to raise_error do |e|
-          expect(e).to be_a Errors::ValidationError
-          expect(e.code).to eq :wrong_fulfillment_type
-        end
-      end
-
+    shared_examples 'order to be fulfilled' do
       it 'changes order state to fulfilled' do
         OrderService.confirm_fulfillment!(order, user_id)
         expect(order.reload.state).to eq Order::FULFILLED
@@ -240,6 +230,21 @@ describe OrderService, type: :services do
       it 'sets fulfilled_by_admin_id when it was fulfilled by admin' do
         OrderService.confirm_fulfillment!(order, user_id, fulfilled_by_admin: true)
         expect(order.reload.fulfilled_by_admin_id).to eq user_id
+      end
+    end
+
+    context 'with order in approved state' do
+      let(:state) { Order::APPROVED }
+
+      context 'for PICKUP fullfillment type' do
+        before do
+          order.update!(fulfillment_type: Order::PICKUP)
+        end
+        it_behaves_like 'order to be fulfilled'
+      end
+
+      context 'for SHIP fullfilment type' do
+        it_behaves_like 'order to be fulfilled'
       end
     end
 
