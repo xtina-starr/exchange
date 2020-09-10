@@ -417,7 +417,10 @@ ActiveAdmin.register Order do
 
       OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true)
 
-      resource.state_histories.last.update_attributes(:created_at=> offline_sale_date, :updated_at=> offline_sale_date)
+      # update fulfilled state change timestamp to the `offline_sale_date` provided in the form
+      fulfillment_state = resource.state_histories.where(state: Order::FULFILLED).order(created_at: :asc).last
+      fulfillment_state.update!(created_at: offline_sale_date) if fulfillment_state
+
       resource.admin_notes.create!(note_type: AdminNote::TYPES[:offline_sale], admin_id: current_user[:id], description: admin_note_description)
 
       update! do |format|
