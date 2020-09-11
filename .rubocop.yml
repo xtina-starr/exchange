@@ -27,6 +27,7 @@ Layout/EndAlignment:
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
+    - "app/admin/**/*"
 
 Metrics/MethodLength:
   Max: 43
