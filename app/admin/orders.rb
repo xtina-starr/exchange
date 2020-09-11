@@ -398,8 +398,8 @@ ActiveAdmin.register Order do
 
   form do |f|
     f.inputs do
-      f.input :offline_sale_date, as: :date_picker, input_html: { value: Date.today }, label: 'Offline sale date' 
-      f.input :admin_note_description, as: :string, input_html: { value: '' }, label: 'Admin note' 
+      f.input :offline_sale_date, as: :date_picker, input_html: { value: Date.today }, label: 'Offline sale date'
+      f.input :admin_note_description, as: :string, input_html: { value: '' }, label: 'Admin note'
       f.input :shipping_total_cents, as: :number, label: "Shipping (#{order.currency_code} cents)"
       f.input :tax_total_cents, as: :number, label: "Sales Tax (#{order.currency_code} cents)"
       f.input :buyer_total_cents, as: :number, label: "Buyer Paid (#{order.currency_code} cents)"
@@ -419,7 +419,7 @@ ActiveAdmin.register Order do
 
       # update fulfilled state change timestamp to the `offline_sale_date` provided in the form
       fulfillment_state = resource.state_histories.where(state: Order::FULFILLED).order(created_at: :asc).last
-      fulfillment_state.update!(created_at: offline_sale_date) if fulfillment_state
+      fulfillment_state&.update!(created_at: offline_sale_date)
 
       resource.admin_notes.create!(note_type: AdminNote::TYPES[:offline_sale], admin_id: current_user[:id], description: admin_note_description)
 
@@ -427,5 +427,5 @@ ActiveAdmin.register Order do
         format.html { redirect_to admin_order_path(params[:id]) }
       end
     end
-  end  
+  end
 end
