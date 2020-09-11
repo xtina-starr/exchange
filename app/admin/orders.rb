@@ -79,7 +79,7 @@ ActiveAdmin.register Order do
   end
 
   member_action :toggle_assisted, method: :post do
-    resource.toggle!(:assisted)
+    resource.update!(assisted: !resource.assisted)
     redirect_to resource_path, notice: 'toggled assisted flag!'
   end
 
@@ -210,8 +210,8 @@ ActiveAdmin.register Order do
         partner_info[:partner_location] = partner_location
         attributes_table_for partner_info do
           row :name
-          row :partner_location do |partner_info|
-            partner_location = partner_info[:partner_location]
+          row :partner_location do |partner|
+            partner_location = partner[:partner_location]
             div partner_location.street_line1
             div partner_location.street_line2
             div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
@@ -398,7 +398,7 @@ ActiveAdmin.register Order do
 
   form do |f|
     f.inputs do
-      f.input :offline_sale_date, as: :date_picker, input_html: { value: Date.today }, label: 'Offline sale date'
+      f.input :offline_sale_date, as: :date_picker, input_html: { value: Time.zone.today }, label: 'Offline sale date'
       f.input :admin_note_description, as: :string, input_html: { value: '' }, label: 'Admin note'
       f.input :shipping_total_cents, as: :number, label: "Shipping (#{order.currency_code} cents)"
       f.input :tax_total_cents, as: :number, label: "Sales Tax (#{order.currency_code} cents)"
