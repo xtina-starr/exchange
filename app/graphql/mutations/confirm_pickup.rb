@@ -8,7 +8,10 @@ class Mutations::ConfirmPickup < Mutations::BaseMutation
   def resolve(id:)
     order = Order.find(id)
     authorize_seller_request!(order)
-    OrderService.confirm_pickup!(order, context[:current_user][:id])
+
+    raise Errors::ValidationError, :wrong_fulfillment_type unless order.fulfillment_type == Order::PICKUP
+
+    OrderService.confirm_fulfillment!(order, context[:current_user][:id])
     {
       order_or_error: { order: order }
     }
