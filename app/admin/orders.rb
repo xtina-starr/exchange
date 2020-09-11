@@ -4,6 +4,8 @@ ActiveAdmin.register Order do
   # TODO: change sort order
   config.sort_order = 'state_updated_at_desc'
 
+  config.action_items.delete_if { |item| item.name == :edit && item.display_on?(:show) }
+
   scope :all
   scope('Submitted', default: true) { |scope| scope.where(state: Order::SUBMITTED) }
   scope('Active', default: true, &:active)
