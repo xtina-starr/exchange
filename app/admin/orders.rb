@@ -81,7 +81,7 @@ ActiveAdmin.register Order do
   end
 
   member_action :toggle_assisted, method: :post do
-    resource.toggle!(:assisted)
+    resource.update!(assisted: !resource.assisted)
     redirect_to resource_path, notice: 'toggled assisted flag!'
   end
 
@@ -212,8 +212,8 @@ ActiveAdmin.register Order do
         partner_info[:partner_location] = partner_location
         attributes_table_for partner_info do
           row :name
-          row :partner_location do |partner_info|
-            partner_location = partner_info[:partner_location]
+          row :partner_location do |partner|
+            partner_location = partner[:partner_location]
             div partner_location.street_line1
             div partner_location.street_line2
             div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
@@ -400,8 +400,8 @@ ActiveAdmin.register Order do
 
   form do |f|
     f.inputs do
-      f.input :offline_sale_date, as: :date_picker, input_html: { value: Date.today }, label: 'Offline sale date' 
-      f.input :admin_note_description, as: :string, input_html: { value: '' }, label: 'Admin note' 
+      f.input :offline_sale_date, as: :date_picker, input_html: { value: Time.zone.today }, label: 'Offline sale date'
+      f.input :admin_note_description, as: :string, input_html: { value: '' }, label: 'Admin note'
       f.input :shipping_total_cents, as: :number, label: "Shipping (#{order.currency_code} cents)"
       f.input :tax_total_cents, as: :number, label: "Sales Tax (#{order.currency_code} cents)"
       f.input :buyer_total_cents, as: :number, label: "Buyer Paid (#{order.currency_code} cents)"
@@ -421,7 +421,7 @@ ActiveAdmin.register Order do
 
       # update fulfilled state change timestamp to the `offline_sale_date` provided in the form
       fulfillment_state = resource.state_histories.where(state: Order::FULFILLED).order(created_at: :asc).last
-      fulfillment_state.update!(created_at: offline_sale_date) if fulfillment_state
+      fulfillment_state&.update!(created_at: offline_sale_date)
 
       resource.admin_notes.create!(note_type: AdminNote::TYPES[:offline_sale], admin_id: current_user[:id], description: admin_note_description)
 
@@ -429,5 +429,5 @@ ActiveAdmin.register Order do
         format.html { redirect_to admin_order_path(params[:id]) }
       end
     end
-  end  
+  end
 end
