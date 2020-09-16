@@ -1,5 +1,5 @@
 ActiveAdmin.register Order do
-  permit_params :shipping_total_cents, :tax_total_cents, :buyer_total_cents, :transaction_fee_cents, :commission_fee_cents, :seller_total_cents
+  permit_params :shipping_total_cents, :tax_total_cents, :buyer_total_cents, :transaction_fee_cents, :commission_fee_cents, :seller_total_cents, :items_total_cents
   actions :all, except: %i[create destroy new]
   # TODO: change sort order
   config.sort_order = 'state_updated_at_desc'
@@ -402,6 +402,8 @@ ActiveAdmin.register Order do
     f.inputs do
       f.input :offline_sale_date, as: :date_picker, input_html: { value: Time.zone.today }, label: 'Offline sale date'
       f.input :admin_note_description, as: :string, input_html: { value: '' }, label: 'Admin note'
+      f.input :total_list_price_cents, as: :number, input_html: { value: order.total_list_price_cents }, label: "Artwork list price (#{order.currency_code} cents)"
+      f.input :items_total_cents, as: :number, label: "Accepted offer (#{order.currency_code} cents)" if order.mode == Order::OFFER
       f.input :shipping_total_cents, as: :number, label: "Shipping (#{order.currency_code} cents)"
       f.input :tax_total_cents, as: :number, label: "Sales Tax (#{order.currency_code} cents)"
       f.input :buyer_total_cents, as: :number, label: "Buyer Paid (#{order.currency_code} cents)"
@@ -416,12 +418,15 @@ ActiveAdmin.register Order do
     def update
       offline_sale_date = params[:order].delete(:offline_sale_date)
       admin_note_description = params[:order].delete(:admin_note_description)
+      total_list_price_cents = params[:order].delete(:total_list_price_cents)
 
       OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true)
 
       # update fulfilled state change timestamp to the `offline_sale_date` provided in the form
       fulfillment_state = resource.state_histories.where(state: Order::FULFILLED).order(created_at: :asc).last
       fulfillment_state&.update!(created_at: offline_sale_date)
+
+      resource.update_total_list_price_cents(total_list_price_cents)
 
       resource.admin_notes.create!(note_type: AdminNote::TYPES[:offline_sale], admin_id: current_user[:id], description: admin_note_description)
 
