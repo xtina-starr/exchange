@@ -107,16 +107,8 @@ module OrderService
     order
   end
 
-  def self.confirm_pickup!(order, user_id)
-    raise Errors::ValidationError, :wrong_fulfillment_type unless order.fulfillment_type == Order::PICKUP
-
-    order.fulfill!
-    OrderEvent.delay_post(order, user_id)
-    order
-  end
-
   def self.confirm_fulfillment!(order, user_id, fulfilled_by_admin: false)
-    raise Errors::ValidationError, :wrong_fulfillment_type unless order.fulfillment_type == Order::SHIP
+    raise Errors::ValidationError, :wrong_fulfillment_type unless [Order::SHIP, Order::PICKUP].include? order.fulfillment_type
 
     order.fulfill! do
       order.update!(fulfilled_by_admin_id: user_id) if fulfilled_by_admin

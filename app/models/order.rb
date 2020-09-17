@@ -259,7 +259,7 @@ class Order < ApplicationRecord
     machine.when(:seller_lapse, SUBMITTED => CANCELED)
     machine.when(:buyer_lapse, SUBMITTED => CANCELED)
     machine.when(:cancel, SUBMITTED => CANCELED)
-    machine.when(:fulfill, APPROVED => FULFILLED)
+    machine.when(:fulfill, APPROVED => FULFILLED, CANCELED => FULFILLED, ABANDONED => FULFILLED)
     machine.when(:refund, APPROVED => REFUNDED, FULFILLED => REFUNDED)
     machine.on(:any) do
       self.state = machine.state

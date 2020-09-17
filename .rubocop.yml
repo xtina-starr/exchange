@@ -8,7 +8,6 @@ AllCops:
     - "vendor/**/*"
     - "spec/support/gravity_helper.rb"
     - "spec/support/taxjar_helper.rb"
-    - "app/admin/**"
     - "db/migrate/**"
 
 Metrics/ParameterLists:
@@ -28,6 +27,7 @@ Layout/EndAlignment:
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
+    - "app/admin/**/*"
 
 Metrics/MethodLength:
   Max: 43

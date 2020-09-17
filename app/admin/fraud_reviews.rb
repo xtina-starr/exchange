@@ -5,9 +5,9 @@ ActiveAdmin.register FraudReview do
 
   form do |f|
     f.inputs do
-      f.input :order_id, as: :string, input_html: {readonly: true, value: order.id}, wrapper_html: { style: "display:none" }
-      f.input :admin_id, input_html: {readonly: true, value: current_user[:id]}, wrapper_html: { style: "display:none" }
-      f.input :flagged_as_fraud, label: "Flag as fraud"
+      f.input :order_id, as: :string, input_html: { readonly: true, value: order.id }, wrapper_html: { style: 'display:none' }
+      f.input :admin_id, input_html: { readonly: true, value: current_user[:id] }, wrapper_html: { style: 'display:none' }
+      f.input :flagged_as_fraud, label: 'Flag as fraud'
       f.input :reason
     end
     f.actions

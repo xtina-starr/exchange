@@ -187,7 +187,7 @@ describe OrderService, type: :services do
       end
     end
 
-    Order::STATES.reject { |s| s == Order::APPROVED }.each do |state|
+    Order::STATES.reject { |s| [Order::APPROVED, Order::ABANDONED, Order::CANCELED].include?(s) }.each do |state|
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do
@@ -209,17 +209,7 @@ describe OrderService, type: :services do
   end
 
   describe 'confirm_fulfillment!' do
-    context 'with order in approved state' do
-      let(:state) { Order::APPROVED }
-
-      it 'raises error for pickup orders' do
-        order.update!(fulfillment_type: Order::PICKUP)
-        expect { OrderService.confirm_fulfillment!(order, user_id) }.to raise_error do |e|
-          expect(e).to be_a Errors::ValidationError
-          expect(e.code).to eq :wrong_fulfillment_type
-        end
-      end
-
+    shared_examples 'order to be fulfilled' do
       it 'changes order state to fulfilled' do
         OrderService.confirm_fulfillment!(order, user_id)
         expect(order.reload.state).to eq Order::FULFILLED
@@ -243,7 +233,22 @@ describe OrderService, type: :services do
       end
     end
 
-    Order::STATES.reject { |s| s == Order::APPROVED }.each do |state|
+    context 'with order in approved state' do
+      let(:state) { Order::APPROVED }
+
+      context 'for PICKUP fullfillment type' do
+        before do
+          order.update!(fulfillment_type: Order::PICKUP)
+        end
+        it_behaves_like 'order to be fulfilled'
+      end
+
+      context 'for SHIP fullfilment type' do
+        it_behaves_like 'order to be fulfilled'
+      end
+    end
+
+    Order::STATES.reject { |s| [Order::APPROVED, Order::ABANDONED, Order::CANCELED].include?(s) }.each do |state|
       context "order in #{state}" do
         let(:state) { state }
         it 'raises error' do
