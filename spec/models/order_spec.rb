@@ -427,4 +427,32 @@ RSpec.describe Order, type: :model do
       end
     end
   end
+
+  describe 'update_total_list_price_cents' do
+    context 'when order has only one line item' do
+      it 'updates price on first line item' do
+        order = Fabricate(:order, line_items: [Fabricate(:line_item, artwork_id: 'id-0')])
+        order.update_total_list_price_cents(256)
+        expect(order.total_list_price_cents).to be(256)
+      end
+    end
+    context 'when order has no line item' do
+      it 'raises error' do
+        expect { order.update_total_list_price_cents(256) }.to raise_error(Errors::ValidationError)
+      end
+    end
+    context 'when order has multiple line item' do
+      it 'raises error' do
+        line_items = [Fabricate(:line_item, artwork_id: 'id-0'), Fabricate(:line_item, artwork_id: 'id-1')]
+        order = Fabricate(:order, line_items: line_items)
+        expect { order.update_total_list_price_cents(256) }.to raise_error(Errors::ValidationError)
+      end
+    end
+    context 'when line item has a quantity other than 1' do
+      it 'raises error' do
+        order = Fabricate(:order, line_items: [Fabricate(:line_item, artwork_id: 'id-0', quantity: 2)])
+        expect { order.update_total_list_price_cents(256) }.to raise_error(Errors::ValidationError)
+      end
+    end
+  end
 end
