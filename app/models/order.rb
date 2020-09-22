@@ -188,6 +188,12 @@ class Order < ApplicationRecord
     line_items.map(&:total_list_price_cents).sum
   end
 
+  def update_total_list_price_cents(price)
+    raise Errors::ValidationError, :more_than_one_line_item unless line_items.count == 1 && line_items.first.quantity == 1
+
+    line_items.first.update!(list_price_cents: price)
+  end
+
   def can_commit?
     shipping_info? && payment_info?
   end

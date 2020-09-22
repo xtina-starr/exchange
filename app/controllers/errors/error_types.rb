@@ -35,12 +35,12 @@ module Errors
       missing_required_info
       missing_required_param
       missing_phone_number
+      more_than_one_line_item
       no_taxable_addresses
       not_acquireable
       not_found
       not_last_offer
       not_offerable
-      offer_more_than_one_line_item
       offer_not_from_buyer
       order_not_submitted
       uncommittable_action
