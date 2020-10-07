@@ -22,7 +22,7 @@ class Types::QueryType < Types::BaseObject
   field :my_orders, Types::OrderConnectionWithTotalCountType, null: true, connection: true do
     description 'Return my orders'
     argument :seller_id, String, required: false
-    argument :state, Types::OrderStateEnum, required: false
+    argument :states, [Types::OrderStateEnum], required: false
     argument :sort, Types::OrderConnectionSortEnum, required: false
     argument :mode, Types::OrderModeEnum, required: false
   end
@@ -56,6 +56,8 @@ class Types::QueryType < Types::BaseObject
   def my_orders(params = {})
     raise ActiveRecord::RecordNotFound unless context[:current_user][:id]
 
+    states = params.delete(:states)
+    params = params.merge(state: states) if states.present?
     sort = params.delete(:sort)
     order_clause = sort_to_order[sort] || { state_updated_at: :desc }
     Order.where(params.merge(buyer_id: context[:current_user][:id])).order(order_clause)

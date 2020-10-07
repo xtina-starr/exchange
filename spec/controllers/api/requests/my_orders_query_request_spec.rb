@@ -17,8 +17,8 @@ describe Api::GraphqlController, type: :request do
 
     let(:query) do
       <<-GRAPHQL
-        query($sellerId: String, $state: OrderStateEnum, $sort: OrderConnectionSortEnum, $mode: OrderModeEnum, $first: Int) {
-          myOrders(sellerId: $sellerId, state: $state, sort: $sort, mode: $mode, first: $first) {
+        query($sellerId: String, $states: [OrderStateEnum!], $sort: OrderConnectionSortEnum, $mode: OrderModeEnum, $first: Int) {
+          myOrders(sellerId: $sellerId, states: $states, sort: $sort, mode: $mode, first: $first) {
             totalCount
             edges {
               node {
@@ -49,11 +49,12 @@ describe Api::GraphqlController, type: :request do
         expect(ids).to match_array([user1_order2.id, user1_offer_order1.id])
       end
 
-      it 'returns order in specified state' do
+      it 'returns order in specified states' do
         fulfilled_order = Fabricate(:order, buyer_id: my_user_id, state: Order::FULFILLED)
-        result = client.execute(query, state: 'FULFILLED')
+        submitted_order = Fabricate(:order, buyer_id: my_user_id, state: Order::SUBMITTED)
+        result = client.execute(query, states: %w[FULFILLED SUBMITTED])
         ids = ids_from_my_orders_result_data(result)
-        expect(ids).to match_array([fulfilled_order.id])
+        expect(ids).to match_array([fulfilled_order.id, submitted_order.id])
       end
 
       it 'returns my orders' do
