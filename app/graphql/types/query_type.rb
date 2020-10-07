@@ -57,7 +57,7 @@ class Types::QueryType < Types::BaseObject
     raise ActiveRecord::RecordNotFound unless context[:current_user][:id]
 
     states = params.delete(:states)
-    params = params.merge(state: states) if states.present?
+    params = params.merge(state: states) unless states.nil?
     sort = params.delete(:sort)
     order_clause = sort_to_order[sort] || { state_updated_at: :desc }
     Order.where(params.merge(buyer_id: context[:current_user][:id])).order(order_clause)

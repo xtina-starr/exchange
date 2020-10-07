@@ -57,6 +57,12 @@ describe Api::GraphqlController, type: :request do
         expect(ids).to match_array([fulfilled_order.id, submitted_order.id])
       end
 
+      it 'returns empty array when an empty state array is passed' do
+        result = client.execute(query, states: [])
+        expect(result.data.my_orders.total_count).to eq 0
+        expect(result.data.my_orders.edges).to eq []
+      end
+
       it 'returns my orders' do
         result = client.execute(query)
         expect(result.data.my_orders.edges.count).to eq 3
