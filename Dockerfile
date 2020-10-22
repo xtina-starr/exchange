@@ -12,7 +12,6 @@ RUN apk --no-cache add \
       git \
       nodejs \
       postgresql-dev \
-      tzdata \
       bash # debugging and datadog events
 
 # Set up deploy user, working directory and shared folders for Puma / Nginx

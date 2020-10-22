@@ -28,6 +28,7 @@ gem 'sentry-raven'
 gem 'sidekiq', '<6' # for sending emails in the background (<6 necessary for Redis 3 compatibility)
 gem 'stripe'
 gem 'taxjar-ruby', require: 'taxjar'
+gem 'tzinfo-data' # overrides system TZ database
 
 group :development, :test do
   gem 'byebug'
