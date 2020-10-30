@@ -2,9 +2,7 @@
 version: "2"
 services:
   exchange:
-    extends:
-      file: build.yml
-      service: exchange
+{% include 'templates/docker-compose-service.yml.j2' %}
     ports:
       - 8080:8080
     environment:

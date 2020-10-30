@@ -10,9 +10,7 @@ services:
       - RAILS_ENV=development
       - PGDATA=/tmp
     env_file: ../.env
-    extends:
-      file: build.yml
-      service: exchange
+{% include 'templates/docker-compose-service.yml.j2' %}
     ports:
       - 8080:8080
     volumes:
@@ -24,9 +22,7 @@ services:
   exchange-redis:
     image: redis:3.2-alpine
   worker:
-    extends:
-      file: build.yml
-      service: exchange
+{% include 'templates/docker-compose-service.yml.j2' %}
     environment:
       - DATABASE_HOST=exchange-db
       - DATABASE_USER=postgres
