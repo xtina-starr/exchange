@@ -17,6 +17,7 @@ class OrderProcessor
   end
 
   def revert!(reversion_reason = nil)
+    Rails.logger.warn("Order #{order.id}/#{order.code} reverted. Reason: #{reversion_reason}")
     undeduct_inventory! if @deducted_inventory.any?
     reset_totals! if @totals_set
     revert_debit_exemption(reversion_reason) if @exempted_commission
