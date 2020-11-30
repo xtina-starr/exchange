@@ -107,6 +107,11 @@ describe OrderProcessor, type: :services do
   end
 
   describe 'revert!' do
+    let(:revert_reason) { 'revert reason' }
+    it 'logs a warning' do
+      expect(Rails.logger).to receive(:warn).with("Order #{order.id}/#{order.code} reverted. Reason: #{revert_reason}")
+      order_processor.revert! revert_reason
+    end
     it 'undeducts inventory if there are deducted inventories' do
       order_processor.instance_variable_set(:@deducted_inventory, [line_item1, line_item2])
       stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
