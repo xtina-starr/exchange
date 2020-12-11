@@ -55,7 +55,13 @@ We use the [PaperTrail gem](https://github.com/paper-trail-gem/paper_trail) to m
 ### Analytics Notification
 If you changed something in the `/models` make sure to inform #data (analytics) team about it in case it impacts their reports.
 
+## Running Prettier Ruby
 
+Exchange uses [Prettier Ruby](https://github.com/prettier/plugin-ruby) to standarize coding styles:
+
+```sh
+bundle exec rake prettier
+```
 
 ## Did You Change GraphQL Schema?
 Metaphysics is the current consumer of Exchange GraphQL schema and keeps a copy of latest schema in https://github.com/artsy/metaphysics/tree/master/src/data, if you have changed Exchange GraphQL schema, make sure you also update the copy of this schema in Metaphysics. In order to do so follow these steps:

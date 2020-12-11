@@ -35,6 +35,7 @@ group :development, :test do
   gem 'byebug'
   gem 'graphlient'
   gem 'guard-rspec', require: false
+  gem 'prettier'
   gem 'rspec-rails'
   gem 'rubocop-rails', require: false
 end

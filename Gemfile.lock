@@ -289,6 +289,7 @@ GEM
     pg (1.2.3)
     polyamorous (2.3.2)
       activerecord (>= 5.2.1)
+    prettier (1.0.0)
     pry (0.13.0)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -479,6 +480,7 @@ DEPENDENCIES
   omniauth-artsy (~> 0.2.3)
   paper_trail
   pg
+  prettier
   puma
   rails (= 6.0.2.2)
   rspec-rails
