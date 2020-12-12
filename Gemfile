@@ -37,7 +37,6 @@ group :development, :test do
   gem 'guard-rspec', require: false
   gem 'prettier'
   gem 'rspec-rails'
-  gem 'rubocop-rails', require: false
 end
 
 group :development do

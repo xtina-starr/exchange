@@ -443,7 +443,6 @@ RSpec.shared_context 'include stripe helper' do
     }.merge(props)
   end
 
-  # rubocop:disable Metrics/MethodLength
   def basic_payment_intent(
     status:,
     capture:,
@@ -709,5 +708,4 @@ RSpec.shared_context 'include stripe helper' do
       usage: 'off_session'
     }
   end
-  # rubocop:enable Metrics/MethodLength
 end
