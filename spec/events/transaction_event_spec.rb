@@ -17,27 +17,62 @@ describe TransactionEvent, type: :events do
   end
 
   let(:last_offer) do
-    Fabricate(:offer, order: order, amount_cents: 1000_00, tax_total_cents: 20_00, shipping_total_cents: 30_00, creator_id: user_id, from_id: user_id)
+    Fabricate(
+      :offer,
+      order: order,
+      amount_cents: 1000_00,
+      tax_total_cents: 20_00,
+      shipping_total_cents: 30_00,
+      creator_id: user_id,
+      from_id: user_id
+    )
   end
 
   let(:order) do
-    Fabricate(:order,
-              buyer_id: user_id,
-              buyer_type: Order::USER,
-              buyer_phone_number: '00123459876',
-              seller_id: seller_id,
-              seller_type: 'gallery',
-              currency_code: 'usd',
-              shipping_total_cents: 50,
-              tax_total_cents: 30,
-              items_total_cents: 300,
-              buyer_total_cents: 380,
-              **shipping_info)
+    Fabricate(
+      :order,
+      buyer_id: user_id,
+      buyer_type: Order::USER,
+      buyer_phone_number: '00123459876',
+      seller_id: seller_id,
+      seller_type: 'gallery',
+      currency_code: 'usd',
+      shipping_total_cents: 50,
+      tax_total_cents: 30,
+      items_total_cents: 300,
+      buyer_total_cents: 380,
+      **shipping_info
+    )
   end
 
-  let(:transaction) { Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT, failure_code: 'stolen_card', failure_message: 'who stole it?', status: Transaction::FAILURE) }
-  let(:line_item1) { Fabricate(:line_item, list_price_cents: 200, order: order, commission_fee_cents: 40) }
-  let(:line_item2) { Fabricate(:line_item, list_price_cents: 100, quantity: 2, order: order, commission_fee_cents: 20) }
+  let(:transaction) do
+    Fabricate(
+      :transaction,
+      order: order,
+      external_id: 'pi_1',
+      external_type: Transaction::PAYMENT_INTENT,
+      failure_code: 'stolen_card',
+      failure_message: 'who stole it?',
+      status: Transaction::FAILURE
+    )
+  end
+  let(:line_item1) do
+    Fabricate(
+      :line_item,
+      list_price_cents: 200,
+      order: order,
+      commission_fee_cents: 40
+    )
+  end
+  let(:line_item2) do
+    Fabricate(
+      :line_item,
+      list_price_cents: 100,
+      quantity: 2,
+      order: order,
+      commission_fee_cents: 20
+    )
+  end
   let!(:line_items) { [line_item1, line_item2] }
   let(:line_item_properties) do
     [
@@ -60,11 +95,20 @@ describe TransactionEvent, type: :events do
     ]
   end
 
-  let(:event) { TransactionEvent.new(user: user_id, action: transaction.status, model: transaction) }
+  let(:event) do
+    TransactionEvent.new(
+      user: user_id,
+      action: transaction.status,
+      model: transaction
+    )
+  end
 
   describe 'post' do
     it 'calls ArtsyEventService to post event' do
-      expect(Artsy::EventService).to receive(:post_event).with(topic: 'commerce', event: instance_of(TransactionEvent))
+      expect(Artsy::EventService).to receive(:post_event).with(
+        topic: 'commerce',
+        event: instance_of(TransactionEvent)
+      )
       TransactionEvent.post(transaction, user_id)
     end
   end
@@ -82,9 +126,7 @@ describe TransactionEvent, type: :events do
   end
 
   describe '#properties' do
-    before do
-      order.update!(last_offer: last_offer)
-    end
+    before { order.update!(last_offer: last_offer) }
 
     it 'returns correct transaction properties' do
       expect(event.properties[:external_id]).to eq 'pi_1'
@@ -108,9 +150,13 @@ describe TransactionEvent, type: :events do
       expect(event.properties[:order][:updated_at]).not_to be_nil
       expect(event.properties[:order][:created_at]).not_to be_nil
       expect(event.properties[:order][:line_items].count).to eq 2
-      expect(event.properties[:order][:line_items]).to match_array(line_item_properties)
-      expect(event.properties[:order][:last_offer][:from_participant]).to eq 'buyer'
-      expect(event.properties[:order][:last_offer][:amount_cents]).to eq 100000
+      expect(event.properties[:order][:line_items]).to match_array(
+        line_item_properties
+      )
+      expect(
+        event.properties[:order][:last_offer][:from_participant]
+      ).to eq 'buyer'
+      expect(event.properties[:order][:last_offer][:amount_cents]).to eq 100_000
       expect(event.properties[:order][:shipping_country]).to eq 'US'
       expect(event.properties[:order][:shipping_name]).to eq 'Fname Lname'
       expect(event.properties[:order][:shipping_region]).to eq 'IL'

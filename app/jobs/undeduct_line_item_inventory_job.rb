@@ -1,7 +1,11 @@
 class UndeductLineItemInventoryJob < ApplicationJob
   queue_as :default
   discard_on(Errors::ValidationError) do |job, _error|
-    Rails.logger.warn("Line item #{job.line_item.id} has deleted artwork, skipping inventory undeduction")
+    Rails.logger.warn(
+      "Line item #{
+        job.line_item.id
+      } has deleted artwork, skipping inventory undeduction"
+    )
   end
 
   attr_accessor :line_item

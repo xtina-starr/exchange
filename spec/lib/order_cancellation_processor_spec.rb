@@ -4,14 +4,44 @@ describe OrderCancelationProcessor, type: :services do
   include_context 'include stripe helper'
   let(:order_mode) { Order::BUY }
   let(:payment_method) { Order::CREDIT_CARD }
-  let(:order) { Fabricate(:order, external_charge_id: 'pi_1', buyer_id: 'buyer', buyer_type: Order::USER, payment_method: payment_method) }
-  let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 123_00), Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00)] }
+  let(:order) do
+    Fabricate(
+      :order,
+      external_charge_id: 'pi_1',
+      buyer_id: 'buyer',
+      buyer_type: Order::USER,
+      payment_method: payment_method
+    )
+  end
+  let!(:line_items) do
+    [
+      Fabricate(
+        :line_item,
+        order: order,
+        artwork_id: 'a-1',
+        list_price_cents: 123_00
+      ),
+      Fabricate(
+        :line_item,
+        order: order,
+        artwork_id: 'a-2',
+        edition_set_id: 'es-1',
+        quantity: 2,
+        list_price_cents: 124_00
+      )
+    ]
+  end
   let(:user_id) { 'user-id' }
   let(:processor) { OrderCancelationProcessor.new(order, user_id) }
 
   describe 'refund_payment' do
     before do
-      Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
+      Fabricate(
+        :transaction,
+        order: order,
+        external_id: 'pi_1',
+        external_type: Transaction::PAYMENT_INTENT
+      )
     end
 
     it 'raises error when payment method is not credit card' do
@@ -23,22 +53,46 @@ describe OrderCancelationProcessor, type: :services do
     end
 
     it 'stores transaction and raises error when transaction fails' do
-      prepare_payment_intent_refund_failure(code: 'something', message: 'refund failed', decline_code: 'failed_refund')
-      expect { processor.refund_payment }.to raise_error(Errors::ProcessingError).and change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
+      prepare_payment_intent_refund_failure(
+        code: 'something',
+        message: 'refund failed',
+        decline_code: 'failed_refund'
+      )
+      expect { processor.refund_payment }.to raise_error(
+        Errors::ProcessingError
+      ).and change(
+                                                 order.transactions.where(
+                                                   status: Transaction::FAILURE
+                                                 ),
+                                                 :count
+                                               ).by(1)
     end
 
     it 'refunds the payment and stores transaction' do
-      stub_request(:post, Rails.application.config_for(:graphql)[:gravity_graphql][:url]).to_return(status: 200, body: '{}', headers: {})
+      stub_request(
+        :post,
+        Rails.application.config_for(:graphql)[:gravity_graphql][:url]
+      ).to_return(status: 200, body: '{}', headers: {})
       prepare_payment_intent_refund_success
-      expect { processor.refund_payment }.to change(order.transactions, :count).by(1)
+      expect { processor.refund_payment }.to change(order.transactions, :count)
+        .by(1)
       transaction = order.transactions.order(created_at: :desc).first
-      expect(transaction).to have_attributes(external_id: 're_1', transaction_type: Transaction::REFUND, status: Transaction::SUCCESS)
+      expect(transaction).to have_attributes(
+        external_id: 're_1',
+        transaction_type: Transaction::REFUND,
+        status: Transaction::SUCCESS
+      )
     end
   end
 
   describe 'cancel_payment' do
     before do
-      Fabricate(:transaction, order: order, external_id: 'pi_1', external_type: Transaction::PAYMENT_INTENT)
+      Fabricate(
+        :transaction,
+        order: order,
+        external_id: 'pi_1',
+        external_type: Transaction::PAYMENT_INTENT
+      )
     end
 
     it 'raises error when payment method is not credit card' do
@@ -50,22 +104,42 @@ describe OrderCancelationProcessor, type: :services do
     end
 
     it 'stores transaction and raises error when transaction fails' do
-      prepare_payment_intent_cancel_failure(charge_error: { code: 'something', message: 'refund failed', decline_code: 'failed_refund' })
-      expect { processor.cancel_payment }.to raise_error(Errors::ProcessingError).and change(order.transactions.where(status: Transaction::FAILURE), :count).by(1)
+      prepare_payment_intent_cancel_failure(
+        charge_error: {
+          code: 'something',
+          message: 'refund failed',
+          decline_code: 'failed_refund'
+        }
+      )
+      expect { processor.cancel_payment }.to raise_error(
+        Errors::ProcessingError
+      ).and change(
+                                                 order.transactions.where(
+                                                   status: Transaction::FAILURE
+                                                 ),
+                                                 :count
+                                               ).by(1)
     end
 
     it 'refunds the payment and stores transaction' do
       prepare_payment_intent_cancel_success
-      expect { processor.cancel_payment }.to change(order.transactions, :count).by(1)
+      expect { processor.cancel_payment }.to change(order.transactions, :count)
+        .by(1)
       transaction = order.transactions.order(created_at: :desc).first
-      expect(transaction).to have_attributes(external_id: 'pi_1', transaction_type: Transaction::CANCEL, status: Transaction::SUCCESS)
+      expect(transaction).to have_attributes(
+        external_id: 'pi_1',
+        transaction_type: Transaction::CANCEL,
+        status: Transaction::SUCCESS
+      )
     end
   end
 
   describe 'queue_undeduct_inventory_jobs' do
     it 'queues undeduct inventory job' do
       processor.queue_undeduct_inventory_jobs
-      line_items.each { |li| expect(UndeductLineItemInventoryJob).to have_been_enqueued.with(li.id) }
+      line_items.each do |li|
+        expect(UndeductLineItemInventoryJob).to have_been_enqueued.with(li.id)
+      end
     end
   end
 

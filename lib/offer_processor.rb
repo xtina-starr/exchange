@@ -17,8 +17,12 @@ class OfferProcessor
   end
 
   def validate_order!
-    raise Errors::ValidationError, :cant_submit unless order.mode == Order::OFFER
-    raise Errors::ValidationError, :missing_required_info unless order.can_commit?
+    unless order.mode == Order::OFFER
+      raise Errors::ValidationError, :cant_submit
+    end
+    unless order.can_commit?
+      raise Errors::ValidationError, :missing_required_info
+    end
 
     unless order.valid_artwork_version?
       Exchange.dogstatsd.increment 'submit.artwork_version_mismatch'
@@ -34,15 +38,21 @@ class OfferProcessor
   end
 
   def confirm_payment_method!(confirmed_setup_intent_id = nil)
-    @transaction = if confirmed_setup_intent_id
-      PaymentMethodService.verify_payment_method(confirmed_setup_intent_id)
-    else
-      PaymentMethodService.confirm_payment_method!(offer.order)
-    end
+    @transaction =
+      if confirmed_setup_intent_id
+        PaymentMethodService.verify_payment_method(confirmed_setup_intent_id)
+      else
+        PaymentMethodService.confirm_payment_method!(offer.order)
+      end
     order.transactions << transaction
     return unless transaction.requires_action? || transaction.failed?
 
-    raise Errors::FailedTransactionError.new(:payment_method_confirmation_failed, transaction) if transaction.failed?
+    if transaction.failed?
+      raise Errors::FailedTransactionError.new(
+              :payment_method_confirmation_failed,
+              transaction
+            )
+    end
 
     Exchange.dogstatsd.increment 'offer.requires_action'
     raise Errors::PaymentRequiresActionError, transaction.action_data
@@ -69,10 +79,16 @@ class OfferProcessor
   end
 
   def on_success
-    OrderFollowUpJob.set(wait_until: offer.order.state_expires_at).perform_later(offer.order.id, offer.order.state)
+    OrderFollowUpJob
+      .set(wait_until: offer.order.state_expires_at)
+      .perform_later(offer.order.id, offer.order.state)
     OfferEvent.delay_post(offer, OfferEvent::SUBMITTED)
-    OfferRespondReminderJob.set(wait_until: offer.order.state_expires_at - Order::DEFAULT_EXPIRATION_REMINDER)
-                           .perform_later(offer.order.id, offer.id)
+    OfferRespondReminderJob
+      .set(
+        wait_until:
+          offer.order.state_expires_at - Order::DEFAULT_EXPIRATION_REMINDER
+      )
+      .perform_later(offer.order.id, offer.id)
     Exchange.dogstatsd.increment 'offer.submit'
   end
 

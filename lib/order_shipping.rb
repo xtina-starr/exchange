@@ -22,7 +22,9 @@ class OrderShipping
 
   def ship!(shipping_info, buyer_phone_number)
     @shipping_address = Address.new(shipping_info)
-    raise Errors::ValidationError, :missing_country if @shipping_address&.country.blank?
+    if @shipping_address&.country.blank?
+      raise Errors::ValidationError, :missing_country
+    end
 
     @order.with_lock do
       @order.update!(
@@ -59,13 +61,14 @@ class OrderShipping
 
   def set_order_totals!
     @order.line_items.map do |li|
-      line_item_totals = LineItemTotals.new(
-        li,
-        fulfillment_type: @order.fulfillment_type,
-        shipping_address: @order.shipping_address,
-        nexus_addresses: @order.nexus_addresses,
-        artsy_collects_sales_tax: @order.artsy_collects_sales_tax?
-      )
+      line_item_totals =
+        LineItemTotals.new(
+          li,
+          fulfillment_type: @order.fulfillment_type,
+          shipping_address: @order.shipping_address,
+          nexus_addresses: @order.nexus_addresses,
+          artsy_collects_sales_tax: @order.artsy_collects_sales_tax?
+        )
       li.update!(
         shipping_total_cents: line_item_totals.shipping_total_cents,
         sales_tax_cents: line_item_totals.tax_total_cents,

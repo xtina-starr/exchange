@@ -17,7 +17,9 @@ class OrderProcessor
   end
 
   def revert!(reversion_reason = nil)
-    Rails.logger.warn("Order #{order.id}/#{order.code} reverted. Reason: #{reversion_reason}")
+    Rails.logger.warn(
+      "Order #{order.id}/#{order.code} reverted. Reason: #{reversion_reason}"
+    )
     undeduct_inventory! if @deducted_inventory.any?
     reset_totals! if @totals_set
     revert_debit_exemption(reversion_reason) if @exempted_commission
@@ -35,8 +37,17 @@ class OrderProcessor
   end
 
   def set_totals!
-    order.line_items.each { |li| li.update!(commission_fee_cents: li.current_commission_fee_cents) } if order.mode == Order::BUY
-    totals = order.mode == Order::BUY ? BuyOrderTotals.new(@order) : OfferOrderTotals.new(@offer)
+    if order.mode == Order::BUY
+      order.line_items.each do |li|
+        li.update!(commission_fee_cents: li.current_commission_fee_cents)
+      end
+    end
+    totals =
+      if order.mode == Order::BUY
+        BuyOrderTotals.new(@order)
+      else
+        OfferOrderTotals.new(@offer)
+      end
     order.update!(
       transaction_fee_cents: totals.transaction_fee_cents,
       commission_rate: order.current_commission_rate,
@@ -48,26 +59,35 @@ class OrderProcessor
   end
 
   def reset_totals!
-    order.line_items.each { |li| li.update!(commission_fee_cents: nil) } if order.mode == Order::BUY
-    order.update!(transaction_fee_cents: nil, commission_rate: nil, commission_fee_cents: nil, seller_total_cents: nil)
+    if order.mode == Order::BUY
+      order.line_items.each { |li| li.update!(commission_fee_cents: nil) }
+    end
+    order.update!(
+      transaction_fee_cents: nil,
+      commission_rate: nil,
+      commission_fee_cents: nil,
+      seller_total_cents: nil
+    )
     @totals_set = false
   end
 
   def hold
-    @transaction = if @order.external_charge_id
-      # we already have a payment intent on this order
-      @payment_service.confirm_payment_intent
-    else
-      @payment_service.hold
-    end
+    @transaction =
+      if @order.external_charge_id
+        # we already have a payment intent on this order
+        @payment_service.confirm_payment_intent
+      else
+        @payment_service.hold
+      end
   end
 
   def charge(off_session = false)
-    @transaction = if @order.external_charge_id
-      @payment_service.confirm_payment_intent
-    else
-      @payment_service.immediate_capture(off_session: off_session)
-    end
+    @transaction =
+      if @order.external_charge_id
+        @payment_service.confirm_payment_intent
+      else
+        @payment_service.immediate_capture(off_session: off_session)
+      end
   end
 
   def failed_payment?
@@ -83,11 +103,13 @@ class OrderProcessor
   end
 
   def valid?
-    @validated ||= begin
-      @validation_error = :unsupported_payment_method unless @order.payment_method == Order::CREDIT_CARD
-      @validation_error ||= :missing_required_info unless @order.can_commit?
-      @validation_error ||= @order.assert_credit_card
-    end
+    @validated ||=
+      begin
+        @validation_error = :unsupported_payment_method unless @order
+          .payment_method == Order::CREDIT_CARD
+        @validation_error ||= :missing_required_info unless @order.can_commit?
+        @validation_error ||= @order.assert_credit_card
+      end
     @validation_error.nil?
   end
 
@@ -109,30 +131,45 @@ class OrderProcessor
 
   def store_transaction(off_session = false)
     order.transactions << transaction
-    order.update!(external_charge_id: transaction.external_id) unless transaction.failed? || (transaction.requires_action? && off_session)
+    unless transaction.failed? || (transaction.requires_action? && off_session)
+      order.update!(external_charge_id: transaction.external_id)
+    end
     PostTransactionNotificationJob.perform_later(transaction.id, @user_id)
   end
 
   def on_success
     OrderEvent.delay_post(order, @user_id)
-    OrderFollowUpJob.set(wait_until: order.state_expires_at).perform_later(order.id, order.state)
-    ReminderFollowUpJob.set(wait_until: order.state_expiration_reminder_time).perform_later(order.id, order.state)
+    OrderFollowUpJob
+      .set(wait_until: order.state_expires_at)
+      .perform_later(order.id, order.state)
+    ReminderFollowUpJob
+      .set(wait_until: order.state_expiration_reminder_time)
+      .perform_later(order.id, order.state)
     Exchange.dogstatsd.increment "order.#{order.state}"
   end
 
   # Call Gravity to check if the partner should be charged commission on this order and apply it if so
   def debit_commission_exemption(notes: '')
-    gmv_to_exempt_and_currency_code = Gravity.debit_commission_exemption(partner_id: order.seller_id,
-                                                                         amount_minor: order.items_total_cents,
-                                                                         currency_code: order.currency_code,
-                                                                         reference_id: order.id,
-                                                                         notes: notes)
-    return if gmv_to_exempt_and_currency_code.nil? || !gmv_to_exempt_and_currency_code.key?(:amount_minor) || gmv_to_exempt_and_currency_code[:amount_minor].zero?
+    gmv_to_exempt_and_currency_code =
+      Gravity.debit_commission_exemption(
+        partner_id: order.seller_id,
+        amount_minor: order.items_total_cents,
+        currency_code: order.currency_code,
+        reference_id: order.id,
+        notes: notes
+      )
+    if gmv_to_exempt_and_currency_code.nil? ||
+         !gmv_to_exempt_and_currency_code.key?(:amount_minor) ||
+         gmv_to_exempt_and_currency_code[:amount_minor].zero?
+      return
+    end
 
     @exempted_commission = true
     apply_commission_exemption(gmv_to_exempt_and_currency_code[:amount_minor])
   rescue GravityGraphql::GraphQLError
-    Rails.logger.error("Could not execute Gravity GraphQL query for order #{order.id}")
+    Rails.logger.error(
+      "Could not execute Gravity GraphQL query for order #{order.id}"
+    )
     nil
   end
 
@@ -140,12 +177,30 @@ class OrderProcessor
   def apply_commission_exemption(exemption_amount_cents)
     return unless exemption_amount_cents.positive?
 
-    totals = order.mode == Order::BUY ? BuyOrderTotals.new(@order, commission_exemption_amount_cents: exemption_amount_cents) : OfferOrderTotals.new(@offer, commission_exemption_amount_cents: exemption_amount_cents)
-    order.update!(seller_total_cents: totals.seller_total_cents, commission_fee_cents: totals.commission_fee_cents)
+    totals =
+      if order.mode == Order::BUY
+        BuyOrderTotals.new(
+          @order,
+          commission_exemption_amount_cents: exemption_amount_cents
+        )
+      else
+        OfferOrderTotals.new(
+          @offer,
+          commission_exemption_amount_cents: exemption_amount_cents
+        )
+      end
+    order.update!(
+      seller_total_cents: totals.seller_total_cents,
+      commission_fee_cents: totals.commission_fee_cents
+    )
   end
 
   def revert_debit_exemption(reversion_reason)
-    Gravity.refund_commission_exemption(partner_id: order.seller_id, reference_id: order.id, notes: reversion_reason)
+    Gravity.refund_commission_exemption(
+      partner_id: order.seller_id,
+      reference_id: order.id,
+      notes: reversion_reason
+    )
     @exempted_commission = false
   end
 end

@@ -10,8 +10,13 @@ class RecordSalesTaxJob < ApplicationJob
     order = line_item.order
     nexus_addresses = order.nexus_addresses
 
-    service = Tax::CollectionService.new(line_item, artwork_address, nexus_addresses)
+    service =
+      Tax::CollectionService.new(line_item, artwork_address, nexus_addresses)
     service.record_tax_collected
-    line_item.update!(sales_tax_transaction_id: service.transaction.transaction_id) if service.transaction.present?
+    if service.transaction.present?
+      line_item.update!(
+        sales_tax_transaction_id: service.transaction.transaction_id
+      )
+    end
   end
 end

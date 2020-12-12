@@ -7,9 +7,7 @@ class TransactionEvent < Events::BaseEvent
   end
 
   def subject
-    {
-      id: @subject
-    }
+    { id: @subject }
   end
 
   def properties

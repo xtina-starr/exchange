@@ -70,9 +70,6 @@ module Errors
       undeduct_inventory_failure
       unknown_event_charge
     ],
-    internal: %i[
-      generic
-      gravity
-    ]
+    internal: %i[generic gravity]
   }.freeze
 end

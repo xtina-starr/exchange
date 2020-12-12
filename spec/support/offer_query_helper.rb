@@ -1,5 +1,6 @@
 module OfferQueryHelper
-  CREATE_OFFER_ORDER = %(
+  CREATE_OFFER_ORDER =
+    '
     mutation($input: CreateOfferOrderWithArtworkInput!) {
       createOfferOrderWithArtwork(input: $input) {
         orderOrError {
@@ -18,9 +19,10 @@ module OfferQueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  ADD_OFFER_TO_ORDER = %(
+  ADD_OFFER_TO_ORDER =
+    '
     mutation($input: AddInitialOfferToOrderInput!) {
       addInitialOfferToOrder(input: $input) {
         orderOrError {
@@ -39,9 +41,10 @@ module OfferQueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  SUBMIT_PENDING_OFFER = %(
+  SUBMIT_PENDING_OFFER =
+    '
     mutation($input: SubmitPendingOfferInput!) {
       submitPendingOffer(input: $input) {
         orderOrError {
@@ -67,9 +70,10 @@ module OfferQueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  SELLER_ACCEPT_OFFER = %(
+  SELLER_ACCEPT_OFFER =
+    '
     mutation($input: SellerAcceptOfferInput!) {
       sellerAcceptOffer(input: $input) {
         orderOrError {
@@ -89,9 +93,10 @@ module OfferQueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  BUYER_ACCEPT_OFFER = %(
+  BUYER_ACCEPT_OFFER =
+    '
     mutation($input: BuyerAcceptOfferInput!) {
       buyerAcceptOffer(input: $input) {
         orderOrError {
@@ -111,9 +116,10 @@ module OfferQueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  SELLER_COUNTER_OFFER = %(
+  SELLER_COUNTER_OFFER =
+    '
     mutation($input: SellerCounterOfferInput!) {
       sellerCounterOffer(input: $input) {
         orderOrError {
@@ -133,9 +139,10 @@ module OfferQueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  SUBMIT_ORDER_WITH_OFFER = %(
+  SUBMIT_ORDER_WITH_OFFER =
+    '
     mutation($input: SubmitOrderWithOfferInput!) {
       submitOrderWithOffer(input: $input) {
         orderOrError {
@@ -162,9 +169,10 @@ module OfferQueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  FAILED_PAYMENT_QUERY = %(
+  FAILED_PAYMENT_QUERY =
+    '
     mutation($input: FixFailedPaymentInput!) {
       fixFailedPayment(input: $input) {
         orderOrError {
@@ -200,5 +208,5 @@ module OfferQueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 end

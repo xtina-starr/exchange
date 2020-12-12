@@ -11,11 +11,7 @@ class Types::ApplicationErrorType < Types::BaseObject
   end
 
   def self.format_error_type(type:, code:, data: nil)
-    {
-      code: code,
-      data: data,
-      type: type
-    }
+    { code: code, data: data, type: type }
   end
 
   def self.root_level_from_application_error(err)
@@ -23,7 +19,12 @@ class Types::ApplicationErrorType < Types::BaseObject
   end
 
   def self.root_level_error_from_exception(err)
-    format_root_level_error(type: :internal, code: :generic, data: { message: err.message }, message: err.message)
+    format_root_level_error(
+      type: :internal,
+      code: :generic,
+      data: { message: err.message },
+      message: err.message
+    )
   end
 
   # For root level errors expect a message key and our detail data should be under extension

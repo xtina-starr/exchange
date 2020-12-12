@@ -17,7 +17,6 @@ class SwitchToBiggerInt < ActiveRecord::Migration[5.2]
       t.change :shipping_total_cents, :bigint
     end
 
-
     change_table :offers, bulk: true do |t|
       t.change :amount_cents, :bigint
       t.change :tax_total_cents, :bigint
@@ -28,6 +27,7 @@ class SwitchToBiggerInt < ActiveRecord::Migration[5.2]
   end
 
   def down
-    raise ActiveRecord::IrreversibleMigration, "This Migration is not easily reversible, you need to manually switch back to int"
+    raise ActiveRecord::IrreversibleMigration,
+          'This Migration is not easily reversible, you need to manually switch back to int'
   end
 end

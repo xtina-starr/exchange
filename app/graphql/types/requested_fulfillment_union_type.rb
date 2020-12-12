@@ -3,8 +3,17 @@ class Types::Ship < Types::BaseObject
   def phone_number
     object.buyer_phone_number
   end
+
   # generate methods for shipping fields to field name on the model (add shipping_)
-  %w[name address_line1 address_line2 city region country postal_code].each do |field_name|
+  %w[
+    name
+    address_line1
+    address_line2
+    city
+    region
+    country
+    postal_code
+  ].each do |field_name|
     field field_name.to_sym, String, null: true
     define_method field_name do
       object.send("shipping_#{field_name}".to_sym)

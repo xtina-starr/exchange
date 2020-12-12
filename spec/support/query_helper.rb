@@ -1,5 +1,6 @@
 module QueryHelper
-  CREATE_ORDER = %(
+  CREATE_ORDER =
+    '
     mutation($input: CreateOrderWithArtworkInput!) {
       createOrderWithArtwork(input: $input) {
         orderOrError {
@@ -18,9 +19,10 @@ module QueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  SET_SHIPPING = %(
+  SET_SHIPPING =
+    '
     mutation($input: SetShippingInput!) {
       setShipping(input: $input) {
         orderOrError {
@@ -48,9 +50,10 @@ module QueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  SET_CREDIT_CARD = %(
+  SET_CREDIT_CARD =
+    '
     mutation($input: SetPaymentInput!) {
       setPayment(input: $input) {
         orderOrError {
@@ -69,9 +72,10 @@ module QueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  SUBMIT_ORDER = %(
+  SUBMIT_ORDER =
+    '
     mutation($input: SubmitOrderInput!) {
       submitOrder(input: $input) {
         orderOrError {
@@ -91,9 +95,10 @@ module QueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  APPROVE_ORDER = %(
+  APPROVE_ORDER =
+    '
     mutation($input: ApproveOrderInput!) {
       approveOrder(input: $input) {
         orderOrError {
@@ -113,9 +118,10 @@ module QueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 
-  FULFILL_ORDER = %(
+  FULFILL_ORDER =
+    '
     mutation($input: FulfillAtOnceInput!) {
       fulfillAtOnce(input: $input) {
         orderOrError {
@@ -150,5 +156,5 @@ module QueryHelper
         }
       }
     }
-  ).freeze
+  '.freeze
 end

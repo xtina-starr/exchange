@@ -23,17 +23,27 @@ class BuyOrderTotals
   end
 
   def buyer_total_cents
-    @buyer_total_cents ||= items_total_cents + shipping_total_cents.to_i + tax_total_cents.to_i
+    @buyer_total_cents ||=
+      items_total_cents + shipping_total_cents.to_i + tax_total_cents.to_i
   end
 
   def transaction_fee_cents
-    @transaction_fee_cents ||= @order.transaction_fee_cents || TransactionFeeCalculator.calculate(buyer_total_cents, @order.currency_code)
+    @transaction_fee_cents ||=
+      @order.transaction_fee_cents ||
+        TransactionFeeCalculator.calculate(
+          buyer_total_cents,
+          @order.currency_code
+        )
   end
 
   def seller_total_cents
-    return unless buyer_total_cents && commission_fee_cents && transaction_fee_cents
+    unless buyer_total_cents && commission_fee_cents && transaction_fee_cents
+      return
+    end
 
-    @seller_total_cents ||= buyer_total_cents - commission_fee_cents - transaction_fee_cents - calculate_remittable_sales_tax
+    @seller_total_cents ||=
+      buyer_total_cents - commission_fee_cents - transaction_fee_cents -
+        calculate_remittable_sales_tax
   end
 
   private
@@ -43,7 +53,9 @@ class BuyOrderTotals
   end
 
   def calculate_commission_fee_cents
-    return @order.commission_fee_cents if @order.commission_fee_cents && @commission_exemption_amount_cents.nil?
+    if @order.commission_fee_cents && @commission_exemption_amount_cents.nil?
+      return @order.commission_fee_cents
+    end
 
     if @commission_exemption_amount_cents.present?
       exemption_running_total = @commission_exemption_amount_cents
@@ -52,7 +64,9 @@ class BuyOrderTotals
           exemption_running_total -= li.list_price_cents
           li.update!(commission_fee_cents: 0)
         else
-          commission_cents = (li.list_price_cents - exemption_running_total) * @order.commission_rate
+          commission_cents =
+            (li.list_price_cents - exemption_running_total) *
+              @order.commission_rate
           exemption_running_total = 0
           li.update!(commission_fee_cents: commission_cents)
         end

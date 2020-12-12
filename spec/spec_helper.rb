@@ -1,8 +1,6 @@
 require 'simplecov'
 
-SimpleCov.start do
-  add_filter '/spec/'
-end
+SimpleCov.start { add_filter '/spec/' }
 
 RSpec.configure do |config|
   config.filter_run focus: true

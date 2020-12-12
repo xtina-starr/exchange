@@ -24,6 +24,13 @@ class ArtsyAuthToken
   private
 
   def decode_token
-    JWT.decode(@jwt, Rails.application.config_for(:jwt)['hmac_secret'], true, algorithm: 'HS256')[0].with_indifferent_access
+    JWT.decode(
+      @jwt,
+      Rails.application.config_for(:jwt)['hmac_secret'],
+      true,
+      algorithm: 'HS256'
+    )[
+      0
+    ].with_indifferent_access
   end
 end

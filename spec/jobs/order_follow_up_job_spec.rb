@@ -20,7 +20,17 @@ describe OrderFollowUpJob, type: :job do
         let(:seller_id) { 'partner_id' }
         let(:buyer_id) { 'user_id' }
         let(:mode) { Order::BUY }
-        let(:order) { Fabricate(:order, mode: mode, state: state, buyer_id: buyer_id, seller_id: seller_id, seller_type: seller_type, buyer_type: buyer_type) }
+        let(:order) do
+          Fabricate(
+            :order,
+            mode: mode,
+            state: state,
+            buyer_id: buyer_id,
+            seller_id: seller_id,
+            seller_type: seller_type,
+            buyer_type: buyer_type
+          )
+        end
         context 'Buy order' do
           it 'transitions a submitted order to seller_lapsed' do
             Timecop.freeze(order.state_expires_at + 1.second) do
@@ -31,10 +41,16 @@ describe OrderFollowUpJob, type: :job do
         end
         context 'Offer order' do
           let(:mode) { Order::OFFER }
-          let(:offer) { Fabricate(:offer, from_id: seller_id, order: order, from_type: seller_type, submitted_at: Time.now.utc) }
-          before do
-            order.update!(last_offer: offer)
+          let(:offer) do
+            Fabricate(
+              :offer,
+              from_id: seller_id,
+              order: order,
+              from_type: seller_type,
+              submitted_at: Time.now.utc
+            )
           end
+          before { order.update!(last_offer: offer) }
           context 'Last offer from seller (awaiting response from buyer)' do
             it 'transitions a submitted order to buyer_lapsed' do
               Timecop.freeze(order.state_expires_at + 1.second) do
@@ -44,7 +60,15 @@ describe OrderFollowUpJob, type: :job do
             end
           end
           context 'Last offer from buyer (awaiting response from seller)' do
-            let(:offer) { Fabricate(:offer, from_id: buyer_id, order: order, from_type: buyer_type, submitted_at: Time.now.utc) }
+            let(:offer) do
+              Fabricate(
+                :offer,
+                from_id: buyer_id,
+                order: order,
+                from_type: buyer_type,
+                submitted_at: Time.now.utc
+              )
+            end
             it 'transitions a submitted order to seller_lapsed' do
               Timecop.freeze(order.state_expires_at + 1.second) do
                 expect(OrderService).to receive(:seller_lapse!)

@@ -1,29 +1,61 @@
 ActiveAdmin.register Order do
-  permit_params :shipping_total_cents, :tax_total_cents, :buyer_total_cents, :transaction_fee_cents, :commission_fee_cents, :seller_total_cents, :items_total_cents
+  permit_params :shipping_total_cents,
+                :tax_total_cents,
+                :buyer_total_cents,
+                :transaction_fee_cents,
+                :commission_fee_cents,
+                :seller_total_cents,
+                :items_total_cents
   actions :all, except: %i[create destroy new]
+
   # TODO: change sort order
   config.sort_order = 'state_updated_at_desc'
 
-  config.action_items.delete_if { |item| item.name == :edit && item.display_on?(:show) }
+  config.action_items.delete_if do |item|
+    item.name == :edit && item.display_on?(:show)
+  end
 
   scope :all
-  scope('Submitted', default: true) { |scope| scope.where(state: Order::SUBMITTED) }
+  scope('Submitted', default: true) do |scope|
+    scope.where(state: Order::SUBMITTED)
+  end
   scope('Active', default: true, &:active)
-  scope('Pickup') { |scope| scope.where(state: [Order::APPROVED, Order::FULFILLED, Order::SUBMITTED], fulfillment_type: Order::PICKUP) }
-  scope('Fulfillment Overdue') { |scope| scope.approved.where('state_expires_at < ?', Time.zone.now) }
+  scope('Pickup') do |scope|
+    scope.where(
+      state: [Order::APPROVED, Order::FULFILLED, Order::SUBMITTED],
+      fulfillment_type: Order::PICKUP
+    )
+  end
+  scope('Fulfillment Overdue') do |scope|
+    scope.approved.where('state_expires_at < ?', Time.zone.now)
+  end
   scope('Completed') { |scope| scope.where(state: Order::FULFILLED) }
-  scope('Case Closed') { |scope| scope.by_last_admin_note(AdminNote::TYPES[:case_closed]) }
-  scope('Case Still Open') { |scope| scope.by_last_admin_note(AdminNote::TYPES.except(:case_closed).values) }
+  scope('Case Closed') do |scope|
+    scope.by_last_admin_note(AdminNote::TYPES[:case_closed])
+  end
+  scope('Case Still Open') do |scope|
+    scope.by_last_admin_note(AdminNote::TYPES.except(:case_closed).values)
+  end
 
   filter :id_eq, label: 'Order Id'
-  filter :mode, as: :check_boxes, collection: proc { Order::MODES }, label: 'Type'
+  filter :mode,
+         as: :check_boxes,
+         collection: proc { Order::MODES },
+         label: 'Type'
   filter :code_eq, label: 'Order Code'
   filter :seller_id_eq, label: 'Seller Id'
   filter :buyer_id_eq, label: 'Buyer Id'
   filter :created_at, as: :date_range, label: 'Submitted Date'
-  filter :fulfillment_type, as: :check_boxes, collection: proc { Order::FULFILLMENT_TYPES }
+  filter :fulfillment_type,
+         as: :check_boxes,
+         collection: proc { Order::FULFILLMENT_TYPES }
   filter :state, as: :check_boxes, collection: proc { Order::STATES }
-  filter :state_reason, as: :check_boxes, collection: proc { Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize) }
+  filter :state_reason,
+         as: :check_boxes,
+         collection:
+           proc {
+             Order::REASONS.values.map(&:values).flatten.uniq.map!(&:humanize)
+           }
   filter :has_offer_note, as: :check_boxes, label: 'Has Offer Note'
   filter :assisted
 
@@ -39,7 +71,10 @@ ActiveAdmin.register Order do
     end
     column :state_expires_at
     column 'Items Total' do |order|
-      format_money_cents(order.items_total_cents, currency_code: order.currency_code)
+      format_money_cents(
+        order.items_total_cents,
+        currency_code: order.currency_code
+      )
     end
   end
 
@@ -49,12 +84,20 @@ ActiveAdmin.register Order do
   end
 
   member_action :cancel, method: :post do
-    OrderService.reject!(resource, current_user[:id], Order::REASONS[Order::CANCELED][:admin_canceled])
+    OrderService.reject!(
+      resource,
+      current_user[:id],
+      Order::REASONS[Order::CANCELED][:admin_canceled]
+    )
     redirect_to resource_path, notice: 'Canceled by Artsy admin!'
   end
 
   member_action :buyer_reject, method: :post do
-    OrderService.reject!(resource, resource.buyer_id, Order::REASONS[Order::CANCELED][:buyer_rejected])
+    OrderService.reject!(
+      resource,
+      resource.buyer_id,
+      Order::REASONS[Order::CANCELED][:buyer_rejected]
+    )
     redirect_to resource_path, notice: 'Canceled on behalf of buyer!'
   end
 
@@ -64,19 +107,33 @@ ActiveAdmin.register Order do
   end
 
   member_action :accept_offer, method: :post do
-    return unless resource.mode == Order::OFFER && resource.state == Order::SUBMITTED
+    unless resource.mode == Order::OFFER && resource.state == Order::SUBMITTED
+      return
+    end
 
     OfferService.accept_offer(resource.last_offer, current_user[:id])
     redirect_to resource_path, notice: 'Offer accepted!'
   end
 
   member_action :confirm_pickup, method: :post do
-    OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true) if resource.fulfillment_type == Order::PICKUP
+    if resource.fulfillment_type == Order::PICKUP
+      OrderService.confirm_fulfillment!(
+        resource,
+        current_user[:id],
+        fulfilled_by_admin: true
+      )
+    end
     redirect_to resource_path, notice: 'Fulfillment confirmed!'
   end
 
   member_action :confirm_fulfillment, method: :post do
-    OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true) if resource.fulfillment_type == Order::SHIP
+    if resource.fulfillment_type == Order::SHIP
+      OrderService.confirm_fulfillment!(
+        resource,
+        current_user[:id],
+        fulfilled_by_admin: true
+      )
+    end
     redirect_to resource_path, notice: 'Fulfillment confirmed!'
   end
 
@@ -86,39 +143,83 @@ ActiveAdmin.register Order do
   end
 
   action_item :refund, only: :show do
-    link_to 'Refund', refund_admin_order_path(order), method: :post, data: { confirm: 'Are you sure you want to refund this order?' } if [Order::APPROVED, Order::FULFILLED].include? order.state
+    if [Order::APPROVED, Order::FULFILLED].include? order.state
+      link_to 'Refund',
+              refund_admin_order_path(order),
+              method: :post,
+              data: { confirm: 'Are you sure you want to refund this order?' }
+    end
   end
 
   action_item :buyer_reject, only: :show do
-    link_to 'Buyer Reject', buyer_reject_admin_order_path(order), method: :post, data: { confirm: 'Are you sure you want to reject this order on behalf of buyer?' } if order.state == Order::SUBMITTED
+    if order.state == Order::SUBMITTED
+      link_to 'Buyer Reject',
+              buyer_reject_admin_order_path(order),
+              method: :post,
+              data: {
+                confirm:
+                  'Are you sure you want to reject this order on behalf of buyer?'
+              }
+    end
   end
 
   action_item :cancel_order, only: :show do
-    link_to 'Cancel Order', cancel_admin_order_path(order), method: :post, data: { confirm: 'Are you sure you want to cancel this order?' } if order.state == Order::SUBMITTED
+    if order.state == Order::SUBMITTED
+      link_to 'Cancel Order',
+              cancel_admin_order_path(order),
+              method: :post,
+              data: { confirm: 'Are you sure you want to cancel this order?' }
+    end
   end
 
   action_item :approve_order, only: :show do
-    link_to 'Approve Order', approve_order_admin_order_path(order), method: :post, data: { confirm: 'Approve this order?' } if order.state == Order::SUBMITTED && resource.mode == Order::BUY
+    if order.state == Order::SUBMITTED && resource.mode == Order::BUY
+      link_to 'Approve Order',
+              approve_order_admin_order_path(order),
+              method: :post,
+              data: { confirm: 'Approve this order?' }
+    end
   end
 
   action_item :accept_offer, only: :show do
-    link_to 'Accept Last Offer', accept_offer_admin_order_path(order), method: :post, data: { confirm: 'Accept last offer on this order?' } if order.state == Order::SUBMITTED && resource.mode == Order::OFFER
+    if order.state == Order::SUBMITTED && resource.mode == Order::OFFER
+      link_to 'Accept Last Offer',
+              accept_offer_admin_order_path(order),
+              method: :post,
+              data: { confirm: 'Accept last offer on this order?' }
+    end
   end
 
   action_item :confirm_pickup, only: :show do
-    link_to 'Confirm Pickup', confirm_pickup_admin_order_path(order), method: :post, data: { confirm: 'Confirm order pickup?' } if order.state == Order::APPROVED && order.fulfillment_type == Order::PICKUP
+    if order.state == Order::APPROVED && order.fulfillment_type == Order::PICKUP
+      link_to 'Confirm Pickup',
+              confirm_pickup_admin_order_path(order),
+              method: :post,
+              data: { confirm: 'Confirm order pickup?' }
+    end
   end
 
   action_item :confirm_fulfillment, only: :show do
-    link_to 'Confirm Fulfillment', confirm_fulfillment_admin_order_path(order), method: :post, data: { confirm: 'Confirm order fulfillment?' } if order.state == Order::APPROVED && order.fulfillment_type == Order::SHIP
+    if order.state == Order::APPROVED && order.fulfillment_type == Order::SHIP
+      link_to 'Confirm Fulfillment',
+              confirm_fulfillment_admin_order_path(order),
+              method: :post,
+              data: { confirm: 'Confirm order fulfillment?' }
+    end
   end
 
   action_item :toggle_assisted_flag, only: :show do
-    link_to 'Toggle Assisted', toggle_assisted_admin_order_path(order), method: :post if order.state != Order::PENDING
+    if order.state != Order::PENDING
+      link_to 'Toggle Assisted',
+              toggle_assisted_admin_order_path(order),
+              method: :post
+    end
   end
 
   action_item :confirm_offline_sale, only: :show do
-    link_to 'Confirm Offline Sale', edit_admin_order_path(order[:id]) if [Order::ABANDONED, Order::CANCELED].include?(order.state)
+    if [Order::ABANDONED, Order::CANCELED].include?(order.state)
+      link_to 'Confirm Offline Sale', edit_admin_order_path(order[:id])
+    end
   end
 
   sidebar :artwork_info, only: :show do
@@ -127,8 +228,11 @@ ActiveAdmin.register Order do
 
       if artwork_info.present?
         if artwork_info[:images].is_a?(Array)
-          square_image = artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
-          img src: square_image[:image_urls][:square], width: '100%' if square_image
+          square_image =
+            artwork_info[:images].find { |im| im[:image_urls].key?(:square) }
+          if square_image
+            img src: square_image[:image_urls][:square], width: '100%'
+          end
         end
 
         attributes_table_for order do
@@ -137,7 +241,12 @@ ActiveAdmin.register Order do
           end
 
           row 'artwork title' do
-            link_to "#{artwork_info[:title]} by #{artwork_info[:artist][:name]}", artsy_view_artwork_url(line_item.artwork_id) if artwork_info.key?(:title)
+            if artwork_info.key?(:title)
+              link_to "#{artwork_info[:title]} by #{
+                        artwork_info[:artist][:name]
+                      }",
+                      artsy_view_artwork_url(line_item.artwork_id)
+            end
           end
 
           row 'import source' do
@@ -180,7 +289,9 @@ ActiveAdmin.register Order do
           if order.shipping_info?
             div order.shipping_address_line1
             div order.shipping_address_line2
-            div "#{order.shipping_city}, #{order.shipping_region} #{order.shipping_postal_code}"
+            div "#{order.shipping_city}, #{order.shipping_region} #{
+                  order.shipping_postal_code
+                }"
             div order.shipping_country
           else
             'None'
@@ -192,7 +303,13 @@ ActiveAdmin.register Order do
       end
     end
 
-    h5 link_to('View User in Admin', artsy_view_user_admin_url(order.buyer_id), class: :button) if order.buyer_type == 'user'
+    if order.buyer_type == 'user'
+      h5 link_to(
+           'View User in Admin',
+           artsy_view_user_admin_url(order.buyer_id),
+           class: :button
+         )
+    end
   end
 
   sidebar :seller_information, only: :show do
@@ -216,14 +333,20 @@ ActiveAdmin.register Order do
             partner_location = partner[:partner_location]
             div partner_location.street_line1
             div partner_location.street_line2
-            div "#{partner_location.city}, #{partner_location.region} #{partner_location.postal_code}"
+            div "#{partner_location.city}, #{partner_location.region} #{
+                  partner_location.postal_code
+                }"
           end
           row :email
         end
       else
         h3 'Failed to fetch partner location info'
       end
-      h5 link_to('View Partner in Admin-Partners', artsy_view_partner_admin_url(order.seller_id), class: :button)
+      h5 link_to(
+           'View Partner in Admin-Partners',
+           artsy_view_partner_admin_url(order.seller_id),
+           class: :button
+         )
     else
       h3 'Failed to fetch partner info'
     end
@@ -249,7 +372,8 @@ ActiveAdmin.register Order do
 
         row 'Last Transaction Failed', &:last_transaction_failed?
 
-        if order.state == Order::FULFILLED && order.fulfillment_type == Order::SHIP
+        if order.state == Order::FULFILLED &&
+             order.fulfillment_type == Order::SHIP
           row 'Shipment' do |order|
             fulfillments = order.line_items.map(&:fulfillments).flatten
             table_for fulfillments do
@@ -277,34 +401,46 @@ ActiveAdmin.register Order do
       panel "Negotiation (#{order.offers.submitted.count})" do
         events = []
 
-        order.offers.submitted.order(created_at: :desc).each do |offer|
-          date = offer.created_at
-          amount = format_money_cents(offer.amount_cents, currency_code: offer.order.currency_code)
+        order
+          .offers
+          .submitted
+          .order(created_at: :desc)
+          .each do |offer|
+            date = offer.created_at
+            amount =
+              format_money_cents(
+                offer.amount_cents,
+                currency_code: offer.order.currency_code
+              )
 
-          if order.state == Order::APPROVED && order.last_offer == offer
-            events << {
-              description: "#{offer.to_participant.capitalize} approved #{offer.from_participant}'s offer",
-              amount: amount,
-              date: date
-            }
-          end
+            if order.state == Order::APPROVED && order.last_offer == offer
+              events << {
+                description:
+                  "#{offer.to_participant.capitalize} approved #{
+                    offer.from_participant
+                  }'s offer",
+                amount: amount,
+                date: date
+              }
+            end
 
-          events << if offer.responds_to
-            {
-              description: "#{offer.from_participant.capitalize} made a counteroffer",
-              amount: amount,
-              date: date,
-              note: offer.note
-            }
-          else
-            {
-              description: 'Buyer made an initial offer',
-              amount: amount,
-              date: date,
-              note: offer.note
-            }
+            events << if offer.responds_to
+              {
+                description:
+                  "#{offer.from_participant.capitalize} made a counteroffer",
+                amount: amount,
+                date: date,
+                note: offer.note
+              }
+            else
+              {
+                description: 'Buyer made an initial offer',
+                amount: amount,
+                date: date,
+                note: offer.note
+              }
+            end
           end
-        end
         table_for(events) do
           column 'Date', :date
           column 'Action', :description
@@ -324,39 +460,79 @@ ActiveAdmin.register Order do
           no_credit_card_found = true
         end
         if no_credit_card_found
-          h5 "Paid #{format_money_cents(order.buyer_total_cents, currency_code: order.currency_code)} on #{pretty_format(order[:created_at])} (Failed to get credit card info)"
+          h5 "Paid #{
+               format_money_cents(
+                 order.buyer_total_cents,
+                 currency_code: order.currency_code
+               )
+             } on #{
+               pretty_format(order[:created_at])
+             } (Failed to get credit card info)"
         else
-          h5 "Paid #{format_money_cents(order.buyer_total_cents, currency_code: order.currency_code)} with #{credit_card_info[:brand]} ending in #{credit_card_info[:last_digits]} on #{pretty_format(order[:created_at])}"
+          h5 "Paid #{
+               format_money_cents(
+                 order.buyer_total_cents,
+                 currency_code: order.currency_code
+               )
+             } with #{credit_card_info[:brand]} ending in #{
+               credit_card_info[:last_digits]
+             } on #{pretty_format(order[:created_at])}"
         end
       end
 
       attributes_table_for order do
         row 'Artwork List Price' do |_order|
-          format_money_cents(order.total_list_price_cents, currency_code: order.currency_code)
+          format_money_cents(
+            order.total_list_price_cents,
+            currency_code: order.currency_code
+          )
         end
         if order.mode == Order::OFFER
           row 'Accepted Offer' do |_order|
-            format_money_cents(order.items_total_cents, currency_code: order.currency_code)
+            format_money_cents(
+              order.items_total_cents,
+              currency_code: order.currency_code
+            )
           end
         end
 
         row 'Shipping' do |order|
-          format_money_cents(order.shipping_total_cents, currency_code: order.currency_code)
+          format_money_cents(
+            order.shipping_total_cents,
+            currency_code: order.currency_code
+          )
         end
         row 'Sales Tax' do |order|
-          format_money_cents(order.tax_total_cents, currency_code: order.currency_code)
+          format_money_cents(
+            order.tax_total_cents,
+            currency_code: order.currency_code
+          )
         end
         row 'Buyer Paid' do |order|
-          format_money_cents(order.buyer_total_cents, currency_code: order.currency_code)
+          format_money_cents(
+            order.buyer_total_cents,
+            currency_code: order.currency_code
+          )
         end
         row 'Processing Fee' do |order|
-          format_money_cents(order.transaction_fee_cents, currency_code: order.currency_code, negate: true)
+          format_money_cents(
+            order.transaction_fee_cents,
+            currency_code: order.currency_code,
+            negate: true
+          )
         end
         row 'Artsy Fee' do |order|
-          format_money_cents(order.commission_fee_cents, currency_code: order.currency_code, negate: true)
+          format_money_cents(
+            order.commission_fee_cents,
+            currency_code: order.currency_code,
+            negate: true
+          )
         end
         row 'Seller Payout' do |order|
-          format_money_cents(order.seller_total_cents, currency_code: order.currency_code)
+          format_money_cents(
+            order.seller_total_cents,
+            currency_code: order.currency_code
+          )
         end
       end
 
@@ -372,7 +548,11 @@ ActiveAdmin.register Order do
     end
 
     panel 'Admin Actions and Notes' do
-      h5 link_to('Add note', new_admin_order_admin_note_path(order), class: :button)
+      h5 link_to(
+           'Add note',
+           new_admin_order_admin_note_path(order),
+           class: :button
+         )
       table_for(order.admin_notes.order(created_at: :desc)) do
         column :created_at
         column 'Admin' do |fraud_review|
@@ -386,7 +566,11 @@ ActiveAdmin.register Order do
     end
 
     panel 'Fraud Review' do
-      h5 link_to('Add fraud review', new_admin_order_fraud_review_path(order), class: :button)
+      h5 link_to(
+           'Add fraud review',
+           new_admin_order_fraud_review_path(order),
+           class: :button
+         )
       table_for(order.fraud_reviews.order(created_at: :desc)) do
         column :created_at
         column 'Reviewed by' do |fraud_review|
@@ -400,16 +584,41 @@ ActiveAdmin.register Order do
 
   form do |f|
     f.inputs do
-      f.input :offline_sale_date, as: :date_picker, input_html: { value: Time.zone.today }, label: 'Offline sale date'
-      f.input :admin_note_description, as: :string, input_html: { value: '' }, label: 'Admin note'
-      f.input :total_list_price_cents, as: :number, input_html: { value: order.total_list_price_cents }, label: "Artwork list price (#{order.currency_code} cents)"
-      f.input :items_total_cents, as: :number, label: "Accepted offer (#{order.currency_code} cents)" if order.mode == Order::OFFER
-      f.input :shipping_total_cents, as: :number, label: "Shipping (#{order.currency_code} cents)"
-      f.input :tax_total_cents, as: :number, label: "Sales Tax (#{order.currency_code} cents)"
-      f.input :buyer_total_cents, as: :number, label: "Buyer Paid (#{order.currency_code} cents)"
-      f.input :transaction_fee_cents, as: :number, label: "Processing Fee (#{order.currency_code} cents)"
-      f.input :commission_fee_cents, as: :number, label: "Artsy Fee (#{order.currency_code} cents)"
-      f.input :seller_total_cents, as: :number, label: "Seller Payout (#{order.currency_code} cents)"
+      f.input :offline_sale_date,
+              as: :date_picker,
+              input_html: { value: Time.zone.today },
+              label: 'Offline sale date'
+      f.input :admin_note_description,
+              as: :string,
+              input_html: { value: '' },
+              label: 'Admin note'
+      f.input :total_list_price_cents,
+              as: :number,
+              input_html: { value: order.total_list_price_cents },
+              label: "Artwork list price (#{order.currency_code} cents)"
+      if order.mode == Order::OFFER
+        f.input :items_total_cents,
+                as: :number,
+                label: "Accepted offer (#{order.currency_code} cents)"
+      end
+      f.input :shipping_total_cents,
+              as: :number,
+              label: "Shipping (#{order.currency_code} cents)"
+      f.input :tax_total_cents,
+              as: :number,
+              label: "Sales Tax (#{order.currency_code} cents)"
+      f.input :buyer_total_cents,
+              as: :number,
+              label: "Buyer Paid (#{order.currency_code} cents)"
+      f.input :transaction_fee_cents,
+              as: :number,
+              label: "Processing Fee (#{order.currency_code} cents)"
+      f.input :commission_fee_cents,
+              as: :number,
+              label: "Artsy Fee (#{order.currency_code} cents)"
+      f.input :seller_total_cents,
+              as: :number,
+              label: "Seller Payout (#{order.currency_code} cents)"
     end
     f.actions
   end
@@ -420,15 +629,28 @@ ActiveAdmin.register Order do
       admin_note_description = params[:order].delete(:admin_note_description)
       total_list_price_cents = params[:order].delete(:total_list_price_cents)
 
-      OrderService.confirm_fulfillment!(resource, current_user[:id], fulfilled_by_admin: true)
+      OrderService.confirm_fulfillment!(
+        resource,
+        current_user[:id],
+        fulfilled_by_admin: true
+      )
 
       # update fulfilled state change timestamp to the `offline_sale_date` provided in the form
-      fulfillment_state = resource.state_histories.where(state: Order::FULFILLED).order(created_at: :asc).last
+      fulfillment_state =
+        resource
+          .state_histories
+          .where(state: Order::FULFILLED)
+          .order(created_at: :asc)
+          .last
       fulfillment_state&.update!(created_at: offline_sale_date)
 
       resource.update_total_list_price_cents(total_list_price_cents)
 
-      resource.admin_notes.create!(note_type: AdminNote::TYPES[:offline_sale], admin_id: current_user[:id], description: admin_note_description)
+      resource.admin_notes.create!(
+        note_type: AdminNote::TYPES[:offline_sale],
+        admin_id: current_user[:id],
+        description: admin_note_description
+      )
 
       update! do |format|
         format.html { redirect_to admin_order_path(params[:id]) }

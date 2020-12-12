@@ -11,13 +11,48 @@ describe Api::GraphqlController, type: :request do
     let(:second_seller_id) { 'partner-2' }
     let(:user_id) { jwt_user_id }
     let(:second_user) { 'user2' }
-    let!(:user1_order1) { Fabricate(:order, seller_type: 'partner', seller_id: seller_id, buyer_type: 'user', buyer_id: user_id, updated_at: 3.days.ago) }
-    let!(:user1_order2) { Fabricate(:order, seller_type: 'partner', seller_id: second_seller_id, buyer_type: 'user', buyer_id: user_id, updated_at: 2.days.ago) }
-    let!(:user1_offer_order1) { Fabricate(:order, seller_type: 'partner', seller_id: second_seller_id, buyer_type: 'user', buyer_id: user_id, updated_at: 1.day.ago, mode: Order::OFFER) }
-    let!(:user2_order1) { Fabricate(:order, seller_type: 'partner', seller_id: seller_id, buyer_type: 'user', buyer_id: second_user) }
+    let!(:user1_order1) do
+      Fabricate(
+        :order,
+        seller_type: 'partner',
+        seller_id: seller_id,
+        buyer_type: 'user',
+        buyer_id: user_id,
+        updated_at: 3.days.ago
+      )
+    end
+    let!(:user1_order2) do
+      Fabricate(
+        :order,
+        seller_type: 'partner',
+        seller_id: second_seller_id,
+        buyer_type: 'user',
+        buyer_id: user_id,
+        updated_at: 2.days.ago
+      )
+    end
+    let!(:user1_offer_order1) do
+      Fabricate(
+        :order,
+        seller_type: 'partner',
+        seller_id: second_seller_id,
+        buyer_type: 'user',
+        buyer_id: user_id,
+        updated_at: 1.day.ago,
+        mode: Order::OFFER
+      )
+    end
+    let!(:user2_order1) do
+      Fabricate(
+        :order,
+        seller_type: 'partner',
+        seller_id: seller_id,
+        buyer_type: 'user',
+        buyer_id: second_user
+      )
+    end
 
-    let(:query) do
-      <<-GRAPHQL
+    let(:query) { <<-GRAPHQL }
         query($sellerId: String, $buyerId: String, $state: OrderStateEnum, $sort: OrderConnectionSortEnum, $mode: OrderModeEnum) {
           orders(sellerId: $sellerId, buyerId: $buyerId, state: $state, sort: $sort, mode: $mode) {
             edges {
@@ -53,7 +88,6 @@ describe Api::GraphqlController, type: :request do
           }
         }
       GRAPHQL
-    end
 
     it 'returns error when missing both buyerId and sellerId' do
       expect do
@@ -62,21 +96,23 @@ describe Api::GraphqlController, type: :request do
         expect(error).to be_a(Graphlient::Errors::ServerError)
         expect(error.message).to eq 'the server responded with status 400'
         expect(error.status_code).to eq 400
-        expect(error.response['errors'].first['extensions']['code']).to eq 'missing_params'
-        expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
+        expect(
+          error.response['errors'].first['extensions']['code']
+        ).to eq 'missing_params'
+        expect(
+          error.response['errors'].first['extensions']['type']
+        ).to eq 'validation'
       end
     end
 
     context 'giving no query parameters' do
-      let(:query) do
-        <<-GRAPHQL
+      let(:query) { <<-GRAPHQL }
           query {
             orders {
               totalCount
             }
           }
         GRAPHQL
-      end
       it 'returns missing_params validation error' do
         expect do
           client.execute(query, state: 'PENDING')
@@ -84,8 +120,12 @@ describe Api::GraphqlController, type: :request do
           expect(error).to be_a(Graphlient::Errors::ServerError)
           expect(error.message).to eq 'the server responded with status 400'
           expect(error.status_code).to eq 400
-          expect(error.response['errors'].first['extensions']['code']).to eq 'missing_params'
-          expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
+          expect(
+            error.response['errors'].first['extensions']['code']
+          ).to eq 'missing_params'
+          expect(
+            error.response['errors'].first['extensions']['type']
+          ).to eq 'validation'
         end
       end
     end
@@ -98,8 +138,12 @@ describe Api::GraphqlController, type: :request do
           expect(error).to be_a(Graphlient::Errors::ServerError)
           expect(error.message).to eq 'the server responded with status 404'
           expect(error.status_code).to eq 404
-          expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
-          expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
+          expect(
+            error.response['errors'].first['extensions']['code']
+          ).to eq 'not_found'
+          expect(
+            error.response['errors'].first['extensions']['type']
+          ).to eq 'validation'
         end
       end
       it 'returns partners orders' do
@@ -115,49 +159,68 @@ describe Api::GraphqlController, type: :request do
         result = client.execute(query, buyerId: user_id)
         expect(result.data.orders.edges.count).to eq 3
         ids = ids_from_result_data(result)
-        expect(ids).to match_array([user1_order1.id, user1_order2.id, user1_offer_order1.id])
+        expect(ids).to match_array(
+          [user1_order1.id, user1_order2.id, user1_offer_order1.id]
+        )
       end
 
       it 'sorts by updated_at in ascending order' do
         result = client.execute(query, buyerId: user_id, sort: 'UPDATED_AT_ASC')
         ids = ids_from_result_data(result)
-        expect(ids).to eq([user1_order1.id, user1_order2.id, user1_offer_order1.id])
+        expect(ids).to eq(
+          [user1_order1.id, user1_order2.id, user1_offer_order1.id]
+        )
       end
 
       it 'sorts by updated_at in descending order' do
-        result = client.execute(query, buyerId: user_id, sort: 'UPDATED_AT_DESC')
+        result =
+          client.execute(query, buyerId: user_id, sort: 'UPDATED_AT_DESC')
         ids = ids_from_result_data(result)
-        expect(ids).to eq([user1_offer_order1.id, user1_order2.id, user1_order1.id])
+        expect(ids).to eq(
+          [user1_offer_order1.id, user1_order2.id, user1_order1.id]
+        )
       end
 
       it 'sorts by state_updated_at in ascending order' do
         user1_order1.update!(state_updated_at: Time.zone.now)
-        result = client.execute(query, buyerId: user_id, sort: 'STATE_UPDATED_AT_ASC')
+        result =
+          client.execute(query, buyerId: user_id, sort: 'STATE_UPDATED_AT_ASC')
         ids = ids_from_result_data(result)
-        expect(ids).to eq([user1_order2.id, user1_offer_order1.id, user1_order1.id])
+        expect(ids).to eq(
+          [user1_order2.id, user1_offer_order1.id, user1_order1.id]
+        )
       end
 
       it 'sorts by state_updated_at in descending order' do
         user1_order1.update!(state_updated_at: Time.zone.now)
-        result = client.execute(query, buyerId: user_id, sort: 'STATE_UPDATED_AT_DESC')
+        result =
+          client.execute(query, buyerId: user_id, sort: 'STATE_UPDATED_AT_DESC')
         ids = ids_from_result_data(result)
-        expect(ids).to eq([user1_order1.id, user1_offer_order1.id, user1_order2.id])
+        expect(ids).to eq(
+          [user1_order1.id, user1_offer_order1.id, user1_order2.id]
+        )
       end
 
       it 'sorts by state_expires_at in ascending order' do
         user1_order1.update!(state_expires_at: 1.day.from_now)
         user1_order2.update!(state_expires_at: 2.days.from_now)
-        result = client.execute(query, buyerId: user_id, sort: 'STATE_EXPIRES_AT_ASC')
+        result =
+          client.execute(query, buyerId: user_id, sort: 'STATE_EXPIRES_AT_ASC')
         ids = ids_from_result_data(result)
-        expect(ids).to eq([user1_order1.id, user1_offer_order1.id, user1_order2.id])
+        expect(ids).to eq(
+          [user1_order1.id, user1_offer_order1.id, user1_order2.id]
+        )
       end
 
       it 'sorts by state_expires_at in descending order' do
         user1_order1.update!(state_expires_at: 1.day.from_now)
         user1_order2.update!(state_expires_at: 2.days.from_now)
-        result = client.execute(query, buyerId: user_id, sort: 'STATE_EXPIRES_AT_DESC')
+        result =
+          client.execute(query, buyerId: user_id, sort: 'STATE_EXPIRES_AT_DESC')
         ids = ids_from_result_data(result)
-        expect(ids).to eq([user1_order2.id, user1_offer_order1.id, user1_order1.id])
+        expect(ids).to eq(
+          [user1_order2.id, user1_offer_order1.id, user1_order1.id]
+        )
       end
     end
 
@@ -182,8 +245,12 @@ describe Api::GraphqlController, type: :request do
             expect(error).to be_a(Graphlient::Errors::ServerError)
             expect(error.status_code).to eq 404
             expect(error.message).to eq 'the server responded with status 404'
-            expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
-            expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
+            expect(
+              error.response['errors'].first['extensions']['code']
+            ).to eq 'not_found'
+            expect(
+              error.response['errors'].first['extensions']['type']
+            ).to eq 'validation'
           end
         end
       end
@@ -199,8 +266,12 @@ describe Api::GraphqlController, type: :request do
           expect(error).to be_a(Graphlient::Errors::ServerError)
           expect(error.status_code).to eq 404
           expect(error.message).to eq 'the server responded with status 404'
-          expect(error.response['errors'].first['extensions']['code']).to eq 'not_found'
-          expect(error.response['errors'].first['extensions']['type']).to eq 'validation'
+          expect(
+            error.response['errors'].first['extensions']['code']
+          ).to eq 'not_found'
+          expect(
+            error.response['errors'].first['extensions']['type']
+          ).to eq 'validation'
         end
       end
     end
@@ -240,8 +311,7 @@ describe Api::GraphqlController, type: :request do
     end
 
     describe 'total_count' do
-      let(:query_with_total_count) do
-        <<-GRAPHQL
+      let(:query_with_total_count) { <<-GRAPHQL }
           query($sellerId: String, $buyerId: String, $state: OrderStateEnum, $sort: OrderConnectionSortEnum) {
             orders(sellerId: $sellerId, buyerId: $buyerId, state: $state, sort: $sort, first: 2) {
               totalCount
@@ -253,9 +323,13 @@ describe Api::GraphqlController, type: :request do
             }
           }
         GRAPHQL
-      end
       before do
-        Fabricate.times(10, :order, seller_type: 'partner', seller_id: seller_id)
+        Fabricate.times(
+          10,
+          :order,
+          seller_type: 'partner',
+          seller_id: seller_id
+        )
       end
       it 'returns proper total count' do
         results = client.execute(query_with_total_count, sellerId: seller_id)

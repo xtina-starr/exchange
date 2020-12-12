@@ -27,13 +27,21 @@ class OfferOrderTotals
   end
 
   def transaction_fee_cents
-    @transaction_fee_cents ||= TransactionFeeCalculator.calculate(buyer_total_cents, @order.currency_code)
+    @transaction_fee_cents ||=
+      TransactionFeeCalculator.calculate(
+        buyer_total_cents,
+        @order.currency_code
+      )
   end
 
   def seller_total_cents
-    return unless buyer_total_cents && commission_fee_cents && transaction_fee_cents
+    unless buyer_total_cents && commission_fee_cents && transaction_fee_cents
+      return
+    end
 
-    @seller_total_cents ||= buyer_total_cents - commission_fee_cents - transaction_fee_cents - calculate_remittable_sales_tax
+    @seller_total_cents ||=
+      buyer_total_cents - commission_fee_cents - transaction_fee_cents -
+        calculate_remittable_sales_tax
   end
 
   private
@@ -43,10 +51,12 @@ class OfferOrderTotals
   end
 
   def calculate_commission_fee_cents
-    if @commission_exemption_amount_cents.nil? || !@commission_exemption_amount_cents.positive?
+    if @commission_exemption_amount_cents.nil? ||
+         !@commission_exemption_amount_cents.positive?
       commission_rate * offer.amount_cents
     else
-      commission_rate * (offer.amount_cents - @commission_exemption_amount_cents)
+      commission_rate *
+        (offer.amount_cents - @commission_exemption_amount_cents)
     end
   end
 end

@@ -3,15 +3,25 @@ require 'rails_helper'
 RSpec.describe 'visit order details', type: :system do
   let!(:order) { Fabricate(:order) }
   before do
-    stub_request(:get, "#{Rails.application.config_for(:gravity)[:api_v1_root]}/user/#{order.buyer_id}")
-      .to_return(status: 200, body: {}.to_json, headers: {})
+    stub_request(
+      :get,
+      "#{Rails.application.config_for(:gravity)[:api_v1_root]}/user/#{
+        order.buyer_id
+      }"
+    ).to_return(status: 200, body: {}.to_json, headers: {})
 
-    stub_request(:get, "#{Rails.application.config_for(:gravity)[:api_v1_root]}/partner/#{order.seller_id}/all")
-      .to_return(status: 200, body: {}.to_json, headers: {})
+    stub_request(
+      :get,
+      "#{Rails.application.config_for(:gravity)[:api_v1_root]}/partner/#{
+        order.seller_id
+      }/all"
+    ).to_return(status: 200, body: {}.to_json, headers: {})
   end
 
   it 'renders order details page', js: true do
-    allow_any_instance_of(ApplicationController).to receive(:require_artsy_authentication)
+    allow_any_instance_of(ApplicationController).to receive(
+      :require_artsy_authentication
+    )
     visit '/admin'
 
     page_title_selector = 'h2#page_title'

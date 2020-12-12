@@ -26,10 +26,7 @@ RSpec.shared_context 'use stripe mock' do
       amount: buyer_amount,
       currency: 'usd',
       source: stripe_helper.generate_card_token,
-      destination: {
-        account: 'ma-1',
-        amount: seller_amount
-      },
+      destination: { account: 'ma-1', amount: seller_amount },
       capture: true
     )
   end

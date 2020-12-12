@@ -25,21 +25,88 @@ describe OrderProcessor, type: :services do
     )
   end
   let(:artwork) { gravity_v1_artwork(_id: 'a-1', current_version_id: '1') }
-  let(:stub_artwork_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1").to_return(status: 200, body: artwork.to_json) }
-  let!(:line_item1) { Fabricate(:line_item, order: order, quantity: 1, list_price_cents: 1000_00, artwork_id: 'a-1', artwork_version_id: '1', sales_tax_cents: 0, shipping_total_cents: 0) }
-  let(:line_item2) { Fabricate(:line_item, order: order, artwork_id: 'a2', quantity: 2) }
-  let(:stub_line_item_1_gravity_deduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { deduct: 1 }) }
-  let(:stub_line_item_1_gravity_undeduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1/inventory").with(body: { undeduct: 1 }) }
-  let(:stub_line_item_2_gravity_deduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a2/inventory").with(body: { deduct: 2 }) }
-  let(:stub_line_item_2_gravity_undeduct) { stub_request(:put, "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a2/inventory").with(body: { undeduct: 2 }) }
+  let(:stub_artwork_request) do
+    stub_request(
+      :get,
+      "#{Rails.application.config_for(:gravity)['api_v1_root']}/artwork/a-1"
+    ).to_return(status: 200, body: artwork.to_json)
+  end
+  let!(:line_item1) do
+    Fabricate(
+      :line_item,
+      order: order,
+      quantity: 1,
+      list_price_cents: 1000_00,
+      artwork_id: 'a-1',
+      artwork_version_id: '1',
+      sales_tax_cents: 0,
+      shipping_total_cents: 0
+    )
+  end
+  let(:line_item2) do
+    Fabricate(:line_item, order: order, artwork_id: 'a2', quantity: 2)
+  end
+  let(:stub_line_item_1_gravity_deduct) do
+    stub_request(
+      :put,
+      "#{
+        Rails.application.config_for(:gravity)['api_v1_root']
+      }/artwork/a-1/inventory"
+    ).with(body: { deduct: 1 })
+  end
+  let(:stub_line_item_1_gravity_undeduct) do
+    stub_request(
+      :put,
+      "#{
+        Rails.application.config_for(:gravity)['api_v1_root']
+      }/artwork/a-1/inventory"
+    ).with(body: { undeduct: 1 })
+  end
+  let(:stub_line_item_2_gravity_deduct) do
+    stub_request(
+      :put,
+      "#{
+        Rails.application.config_for(:gravity)['api_v1_root']
+      }/artwork/a2/inventory"
+    ).with(body: { deduct: 2 })
+  end
+  let(:stub_line_item_2_gravity_undeduct) do
+    stub_request(
+      :put,
+      "#{
+        Rails.application.config_for(:gravity)['api_v1_root']
+      }/artwork/a2/inventory"
+    ).with(body: { undeduct: 2 })
+  end
 
   # stubbed requests
   let(:gravity_partner) { gravity_v1_partner(_id: seller_id) }
-  let(:stub_gravity_partner) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/partner/seller1/all").to_return(body: gravity_partner.to_json) }
+  let(:stub_gravity_partner) do
+    stub_request(
+      :get,
+      "#{
+        Rails.application.config_for(:gravity)['api_v1_root']
+      }/partner/seller1/all"
+    ).to_return(body: gravity_partner.to_json)
+  end
   let(:gravity_merchant_accounts) { [{ external_id: 'ma-1' }] }
-  let(:stub_gravity_merchant_account_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/merchant_accounts?partner_id=seller1").to_return(body: gravity_merchant_accounts.to_json) }
-  let(:gravity_credit_card) { { external_id: 'cc_1', customer_account: { external_id: 'ca_1' } } }
-  let(:stub_gravity_card_request) { stub_request(:get, "#{Rails.application.config_for(:gravity)['api_v1_root']}/credit_card/cc1").to_return(body: gravity_credit_card.to_json) }
+  let(:stub_gravity_merchant_account_request) do
+    stub_request(
+      :get,
+      "#{
+        Rails.application.config_for(:gravity)['api_v1_root']
+      }/merchant_accounts?partner_id=seller1"
+    ).to_return(body: gravity_merchant_accounts.to_json)
+  end
+  let(:gravity_credit_card) do
+    { external_id: 'cc_1', customer_account: { external_id: 'ca_1' } }
+  end
+  let(:stub_gravity_card_request) do
+    stub_request(
+      :get,
+      "#{Rails.application.config_for(:gravity)['api_v1_root']}/credit_card/cc1"
+    ).to_return(body: gravity_credit_card.to_json)
+  end
   let(:offer) { nil }
   let(:order_processor) { OrderProcessor.new(order, buyer_id, offer) }
 
@@ -67,7 +134,15 @@ describe OrderProcessor, type: :services do
     end
     context 'offer order' do
       let(:order_mode) { Order::OFFER }
-      let(:offer) { Fabricate(:offer, order: order, amount_cents: 1000_00, shipping_total_cents: 200_00, tax_total_cents: 100_00) }
+      let(:offer) do
+        Fabricate(
+          :offer,
+          order: order,
+          amount_cents: 1000_00,
+          shipping_total_cents: 200_00,
+          tax_total_cents: 100_00
+        )
+      end
       it 'sets correct totals on order' do
         expect(order.reload).to have_attributes(
           transaction_fee_cents: 51_00,
@@ -109,11 +184,16 @@ describe OrderProcessor, type: :services do
   describe 'revert!' do
     let(:revert_reason) { 'revert reason' }
     it 'logs a warning' do
-      expect(Rails.logger).to receive(:warn).with("Order #{order.id}/#{order.code} reverted. Reason: #{revert_reason}")
+      expect(Rails.logger).to receive(:warn).with(
+        "Order #{order.id}/#{order.code} reverted. Reason: #{revert_reason}"
+      )
       order_processor.revert! revert_reason
     end
     it 'undeducts inventory if there are deducted inventories' do
-      order_processor.instance_variable_set(:@deducted_inventory, [line_item1, line_item2])
+      order_processor.instance_variable_set(
+        :@deducted_inventory,
+        [line_item1, line_item2]
+      )
       stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
       stub_line_item_2_gravity_undeduct.to_return(status: 200, body: {}.to_json)
       order_processor.revert!
@@ -141,9 +221,15 @@ describe OrderProcessor, type: :services do
       order.submit!
       original_state_expires_at = order.reload.state_expires_at
       order_processor.instance_variable_set(:@state_changed, true)
-      order_processor.instance_variable_set(:@original_state_expires_at, original_state_expires_at)
+      order_processor.instance_variable_set(
+        :@original_state_expires_at,
+        original_state_expires_at
+      )
       order_processor.revert!
-      expect(order.reload).to have_attributes(state: Order::PENDING, state_expires_at: original_state_expires_at)
+      expect(order.reload).to have_attributes(
+        state: Order::PENDING,
+        state_expires_at: original_state_expires_at
+      )
       expect(order_processor.instance_variable_get(:@state_changed)).to eq false
     end
     it 'it reverts approved order to pending' do
@@ -151,9 +237,15 @@ describe OrderProcessor, type: :services do
       order.approve!
       original_state_expires_at = order.reload.state_expires_at
       order_processor.instance_variable_set(:@state_changed, true)
-      order_processor.instance_variable_set(:@original_state_expires_at, original_state_expires_at)
+      order_processor.instance_variable_set(
+        :@original_state_expires_at,
+        original_state_expires_at
+      )
       order_processor.revert!
-      expect(order.reload).to have_attributes(state: Order::SUBMITTED, state_expires_at: original_state_expires_at)
+      expect(order.reload).to have_attributes(
+        state: Order::SUBMITTED,
+        state_expires_at: original_state_expires_at
+      )
       expect(order_processor.instance_variable_get(:@state_changed)).to eq false
     end
     it 'it reverts debit commission exemption' do
@@ -161,37 +253,62 @@ describe OrderProcessor, type: :services do
       order.approve!
       order_processor.instance_variable_set(:@exempted_commission, true)
 
-      expect(Gravity).to receive(:refund_commission_exemption).with(partner_id: order.seller_id, reference_id: order.id, notes: 'insufficient_inventory')
+      expect(Gravity).to receive(:refund_commission_exemption).with(
+        partner_id: order.seller_id,
+        reference_id: order.id,
+        notes: 'insufficient_inventory'
+      )
       order_processor.revert!('insufficient_inventory')
-      expect(order_processor.instance_variable_get(:@exempted_commission)).to eq false
+      expect(
+        order_processor.instance_variable_get(:@exempted_commission)
+      ).to eq false
     end
   end
 
   describe 'failed_payment?' do
     it 'returns true when transaction is failed' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::FAILURE))
+      order_processor.instance_variable_set(
+        :@transaction,
+        Fabricate(:transaction, status: Transaction::FAILURE)
+      )
       expect(order_processor.failed_payment?).to be true
     end
     it 'returns false when transaction was successful' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::SUCCESS))
+      order_processor.instance_variable_set(
+        :@transaction,
+        Fabricate(:transaction, status: Transaction::SUCCESS)
+      )
       expect(order_processor.failed_payment?).to be false
     end
   end
 
   describe 'requires_action?' do
     it 'returns true when transaction requires action' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::REQUIRES_ACTION))
+      order_processor.instance_variable_set(
+        :@transaction,
+        Fabricate(:transaction, status: Transaction::REQUIRES_ACTION)
+      )
       expect(order_processor.requires_action?).to be true
     end
     it 'returns false when transaction was successful' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::SUCCESS))
+      order_processor.instance_variable_set(
+        :@transaction,
+        Fabricate(:transaction, status: Transaction::SUCCESS)
+      )
       expect(order_processor.requires_action?).to be false
     end
   end
 
   describe 'action_data' do
     it 'returns true when transaction requires action' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, status: Transaction::REQUIRES_ACTION, payload: { 'client_secret' => 'super_secret' }))
+      order_processor.instance_variable_set(
+        :@transaction,
+        Fabricate(
+          :transaction,
+          status: Transaction::REQUIRES_ACTION,
+          payload: { 'client_secret' => 'super_secret' }
+        )
+      )
       expect(order_processor.action_data).to eq(client_secret: 'super_secret')
     end
   end
@@ -217,22 +334,20 @@ describe OrderProcessor, type: :services do
 
     context 'missing credit card info' do
       let(:gravity_credit_card) { { external_id: nil } }
-      before do
-        stub_gravity_card_request
-      end
+      before { stub_gravity_card_request }
 
       it 'returns false and sets error' do
         expect(order_processor.valid?).to eq false
-        expect(order_processor.validation_error).to eq :credit_card_missing_external_id
+        expect(
+          order_processor.validation_error
+        ).to eq :credit_card_missing_external_id
         expect(stub_gravity_card_request).to have_been_requested
       end
     end
   end
 
   describe 'deduct_inventory' do
-    before do
-      line_item2
-    end
+    before { line_item2 }
     it 'returns true when fully deducted inventory' do
       stub_line_item_1_gravity_deduct.to_return(status: 200, body: {}.to_json)
       stub_line_item_2_gravity_deduct.to_return(status: 200, body: {}.to_json)
@@ -251,7 +366,10 @@ describe OrderProcessor, type: :services do
 
   describe 'undedudct_inventory!' do
     before do
-      order_processor.instance_variable_set(:@deducted_inventory, [line_item1, line_item2])
+      order_processor.instance_variable_set(
+        :@deducted_inventory,
+        [line_item1, line_item2]
+      )
     end
     it 'calls undeduct for line items' do
       stub_line_item_1_gravity_undeduct.to_return(status: 200, body: {}.to_json)
@@ -264,27 +382,66 @@ describe OrderProcessor, type: :services do
 
   describe 'store_transaction' do
     it 'stores transaction on the order' do
-      transaction = Transaction.new(status: Transaction::SUCCESS, transaction_type: Transaction::HOLD)
+      transaction =
+        Transaction.new(
+          status: Transaction::SUCCESS,
+          transaction_type: Transaction::HOLD
+        )
       order_processor.instance_variable_set(:@transaction, transaction)
-      expect { order_processor.store_transaction }.to change(order.transactions, :count).by(1)
+      expect { order_processor.store_transaction }.to change(
+        order.transactions,
+        :count
+      ).by(1)
     end
     it 'stores external_id on the order when transaction was successful' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1', status: Transaction::SUCCESS))
+      order_processor.instance_variable_set(
+        :@transaction,
+        Fabricate(
+          :transaction,
+          order: order,
+          external_id: 'pi_1',
+          status: Transaction::SUCCESS
+        )
+      )
       order_processor.store_transaction
       expect(order.reload.external_charge_id).to eq 'pi_1'
     end
     it 'stores external_id on the order when transaction requires action' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1', status: Transaction::REQUIRES_ACTION))
+      order_processor.instance_variable_set(
+        :@transaction,
+        Fabricate(
+          :transaction,
+          order: order,
+          external_id: 'pi_1',
+          status: Transaction::REQUIRES_ACTION
+        )
+      )
       order_processor.store_transaction
       expect(order.reload.external_charge_id).to eq 'pi_1'
     end
     it 'does not store external_id on the order when transaction failed' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1', status: Transaction::FAILURE))
+      order_processor.instance_variable_set(
+        :@transaction,
+        Fabricate(
+          :transaction,
+          order: order,
+          external_id: 'pi_1',
+          status: Transaction::FAILURE
+        )
+      )
       order_processor.store_transaction
       expect(order.reload.external_charge_id).to be_nil
     end
     it 'does not store external_id on the order when off_session transaction requires action' do
-      order_processor.instance_variable_set(:@transaction, Fabricate(:transaction, order: order, external_id: 'pi_1', status: Transaction::REQUIRES_ACTION))
+      order_processor.instance_variable_set(
+        :@transaction,
+        Fabricate(
+          :transaction,
+          order: order,
+          external_id: 'pi_1',
+          status: Transaction::REQUIRES_ACTION
+        )
+      )
       order_processor.store_transaction(true)
       expect(order.reload.external_charge_id).to be_nil
     end
@@ -302,7 +459,14 @@ describe OrderProcessor, type: :services do
     end
     context 'failed hold' do
       before do
-        prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
+        prepare_payment_intent_create_failure(
+          status: 'requires_payment_method',
+          charge_error: {
+            code: 'card_declined',
+            decline_code: 'do_not_honor',
+            message: 'The card was declined'
+          }
+        )
         order_processor.hold
       end
 
@@ -337,7 +501,10 @@ describe OrderProcessor, type: :services do
       end
 
       it 'sets order_processor.transaction' do
-        expect(order_processor.transaction).to have_attributes(status: Transaction::SUCCESS, transaction_type: Transaction::HOLD)
+        expect(order_processor.transaction).to have_attributes(
+          status: Transaction::SUCCESS,
+          transaction_type: Transaction::HOLD
+        )
       end
     end
   end
@@ -351,11 +518,21 @@ describe OrderProcessor, type: :services do
     end
     context 'failed charge' do
       before do
-        prepare_payment_intent_create_failure(status: 'requires_payment_method', charge_error: { code: 'card_declined', decline_code: 'do_not_honor', message: 'The card was declined' })
+        prepare_payment_intent_create_failure(
+          status: 'requires_payment_method',
+          charge_error: {
+            code: 'card_declined',
+            decline_code: 'do_not_honor',
+            message: 'The card was declined'
+          }
+        )
         order_processor.charge
       end
       it 'sets order_processor.transaction' do
-        expect(order_processor.transaction).to have_attributes(failure_code: 'card_declined', decline_code: 'do_not_honor')
+        expect(order_processor.transaction).to have_attributes(
+          failure_code: 'card_declined',
+          decline_code: 'do_not_honor'
+        )
       end
     end
 
@@ -366,15 +543,19 @@ describe OrderProcessor, type: :services do
       end
 
       it 'sets order_processor.transaction' do
-        expect(order_processor.transaction).to have_attributes(status: Transaction::SUCCESS)
+        expect(order_processor.transaction).to have_attributes(
+          status: Transaction::SUCCESS
+        )
       end
     end
     it 'sets off_session to false by default' do
-      expect_any_instance_of(PaymentService).to receive(:immediate_capture).with(hash_including(off_session: false))
+      expect_any_instance_of(PaymentService).to receive(:immediate_capture)
+        .with(hash_including(off_session: false))
       order_processor.charge
     end
     it 'overrides off_session when passed to method' do
-      expect_any_instance_of(PaymentService).to receive(:immediate_capture).with(hash_including(off_session: true))
+      expect_any_instance_of(PaymentService).to receive(:immediate_capture)
+        .with(hash_including(off_session: true))
       order_processor.charge(true)
     end
   end
@@ -395,20 +576,36 @@ describe OrderProcessor, type: :services do
       OrderTotal = Struct.new(:seller_total_cents, :commission_fee_cents)
       before do
         allow(BuyOrderTotals).to receive(:new).and_return(OrderTotal.new(5, 10))
-        allow(OfferOrderTotals).to receive(:new).and_return(OrderTotal.new(20, 30))
+        allow(OfferOrderTotals).to receive(:new).and_return(
+          OrderTotal.new(20, 30)
+        )
       end
       context 'with an order' do
         it 'initializes buy order totals and updates the order' do
-          expect(order).to receive(:update!).with(seller_total_cents: 5, commission_fee_cents: 10)
+          expect(order).to receive(:update!).with(
+            seller_total_cents: 5,
+            commission_fee_cents: 10
+          )
           order_processor.apply_commission_exemption(10)
         end
       end
 
       context 'with an offer' do
         let(:order_mode) { Order::OFFER }
-        let(:offer) { Fabricate(:offer, order: order, amount_cents: 1000_00, shipping_total_cents: 200_00, tax_total_cents: 100_00) }
+        let(:offer) do
+          Fabricate(
+            :offer,
+            order: order,
+            amount_cents: 1000_00,
+            shipping_total_cents: 200_00,
+            tax_total_cents: 100_00
+          )
+        end
         it 'initializes offer order totals and updates the order' do
-          expect(order).to receive(:update!).with(seller_total_cents: 20, commission_fee_cents: 30)
+          expect(order).to receive(:update!).with(
+            seller_total_cents: 20,
+            commission_fee_cents: 30
+          )
           order_processor.apply_commission_exemption(10)
         end
 
@@ -428,26 +625,43 @@ describe OrderProcessor, type: :services do
     end
     context 'on success' do
       it 'calls apply_commission_exemption if result has amount_minor' do
-        allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 10_00)
-        expect(order_processor).to receive(:apply_commission_exemption).with(10_00)
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(
+          currency_code: 'USD',
+          amount_minor: 10_00
+        )
+        expect(order_processor).to receive(:apply_commission_exemption).with(
+          10_00
+        )
         order_processor.debit_commission_exemption
-        expect(order_processor.instance_variable_get(:@exempted_commission)).to be true
+        expect(
+          order_processor.instance_variable_get(:@exempted_commission)
+        ).to be true
       end
 
       it 'does not call apply_commission_exemption if result is missing amount_minor' do
-        allow(Gravity).to receive(:debit_commission_exemption).and_return(foo: 'bar')
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(
+          foo: 'bar'
+        )
         expect(order_processor).not_to receive(:apply_commission_exemption)
         order_processor.debit_commission_exemption
-        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
+        expect(
+          order_processor.instance_variable_get(:@exempted_commission)
+        ).to be false
       end
     end
 
     context 'failure' do
       it 'does not call apply_commission when error is raised' do
-        allow(Gravity).to receive(:debit_commission_exemption).and_raise(GravityGraphql::GraphQLError)
-        expect(Rails.logger).to receive(:error).with("Could not execute Gravity GraphQL query for order #{order.id}")
+        allow(Gravity).to receive(:debit_commission_exemption).and_raise(
+          GravityGraphql::GraphQLError
+        )
+        expect(Rails.logger).to receive(:error).with(
+          "Could not execute Gravity GraphQL query for order #{order.id}"
+        )
         order_processor.debit_commission_exemption
-        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
+        expect(
+          order_processor.instance_variable_get(:@exempted_commission)
+        ).to be false
         expect(order.commission_fee_cents).to eq 800_00
       end
 
@@ -455,14 +669,21 @@ describe OrderProcessor, type: :services do
         allow(Gravity).to receive(:debit_commission_exemption).and_return(nil)
         expect(order_processor).not_to receive(:apply_commission_exemption)
         order_processor.debit_commission_exemption
-        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
+        expect(
+          order_processor.instance_variable_get(:@exempted_commission)
+        ).to be false
       end
 
       it 'does not call apply_commission_exemption when response amount is 0' do
-        allow(Gravity).to receive(:debit_commission_exemption).and_return(currency_code: 'USD', amount_minor: 0)
+        allow(Gravity).to receive(:debit_commission_exemption).and_return(
+          currency_code: 'USD',
+          amount_minor: 0
+        )
         expect(order_processor).not_to receive(:apply_commission_exemption)
         order_processor.debit_commission_exemption
-        expect(order_processor.instance_variable_get(:@exempted_commission)).to be false
+        expect(
+          order_processor.instance_variable_get(:@exempted_commission)
+        ).to be false
       end
     end
   end

@@ -15,38 +15,62 @@ class PaymentService
   end
 
   def capture_hold
-    raise Errors::ProcessingError, :cannot_capture unless payment_intent.status == 'requires_capture'
+    unless payment_intent.status == 'requires_capture'
+      raise Errors::ProcessingError, :cannot_capture
+    end
 
     payment_intent.capture(transfer_data: { amount: order.seller_total_cents })
-    new_transaction = Transaction.new(
-      external_id: payment_intent.id,
-      external_type: Transaction::PAYMENT_INTENT,
-      source_id: payment_intent.payment_method,
-      destination_id: payment_intent.transfer_data&.destination,
-      amount_cents: payment_intent.amount,
-      transaction_type: Transaction::CAPTURE,
-      payload: payment_intent.to_h
-    )
+    new_transaction =
+      Transaction.new(
+        external_id: payment_intent.id,
+        external_type: Transaction::PAYMENT_INTENT,
+        source_id: payment_intent.payment_method,
+        destination_id: payment_intent.transfer_data&.destination,
+        amount_cents: payment_intent.amount,
+        transaction_type: Transaction::CAPTURE,
+        payload: payment_intent.to_h
+      )
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
   rescue Stripe::StripeError => e
-    transaction_from_payment_intent_failure(e, transaction_type: Transaction::CAPTURE)
+    transaction_from_payment_intent_failure(
+      e,
+      transaction_type: Transaction::CAPTURE
+    )
   end
 
   def refund
-    payment_transaction = @order.transactions.where(external_id: @order.external_charge_id).first
-    payment_transaction.external_type == Transaction::PAYMENT_INTENT ? refund_payment(payment_transaction.external_id) : refund_charge(payment_transaction.external_id)
+    payment_transaction =
+      @order.transactions.where(external_id: @order.external_charge_id).first
+    if payment_transaction.external_type == Transaction::PAYMENT_INTENT
+      refund_payment(payment_transaction.external_id)
+    else
+      refund_charge(payment_transaction.external_id)
+    end
   end
 
   def cancel_payment_intent
     payment_intent.cancel
-    Transaction.new(external_id: @payment_intent_id, external_type: Transaction::PAYMENT_INTENT, transaction_type: Transaction::CANCEL, status: Transaction::SUCCESS, payload: payment_intent.to_h)
+    Transaction.new(
+      external_id: @payment_intent_id,
+      external_type: Transaction::PAYMENT_INTENT,
+      transaction_type: Transaction::CANCEL,
+      status: Transaction::SUCCESS,
+      payload: payment_intent.to_h
+    )
   rescue Stripe::StripeError => e
-    generate_transaction_from_exception(e, Transaction::CANCEL, external_id: @payment_intent_id, external_type: Transaction::PAYMENT_INTENT)
+    generate_transaction_from_exception(
+      e,
+      Transaction::CANCEL,
+      external_id: @payment_intent_id,
+      external_type: Transaction::PAYMENT_INTENT
+    )
   end
 
   def confirm_payment_intent
-    return payment_intent_confirmation_failure(payment_intent) if payment_intent.status != 'requires_confirmation'
+    if payment_intent.status != 'requires_confirmation'
+      return payment_intent_confirmation_failure(payment_intent)
+    end
 
     payment_intent.confirm
     Transaction.new(
@@ -70,38 +94,71 @@ class PaymentService
 
   def refund_charge(charge_id)
     refund = Stripe::Refund.create(charge: charge_id, reverse_transfer: true)
-    Transaction.new(external_id: refund.id, external_type: Transaction::REFUND, transaction_type: Transaction::REFUND, status: Transaction::SUCCESS, payload: refund.charge)
+    Transaction.new(
+      external_id: refund.id,
+      external_type: Transaction::REFUND,
+      transaction_type: Transaction::REFUND,
+      status: Transaction::SUCCESS,
+      payload: refund.charge
+    )
   rescue Stripe::StripeError => e
-    generate_transaction_from_exception(e, Transaction::REFUND, external_id: charge_id, external_type: Transaction::CHARGE)
+    generate_transaction_from_exception(
+      e,
+      Transaction::REFUND,
+      external_id: charge_id,
+      external_type: Transaction::CHARGE
+    )
   end
 
   def refund_payment(external_id)
     payment_intent = Stripe::PaymentIntent.retrieve(external_id)
-    refund = Stripe::Refund.create(charge: payment_intent.charges.first.id, reverse_transfer: true)
-    Transaction.new(external_id: refund.id, external_type: Transaction::REFUND, transaction_type: Transaction::REFUND, status: Transaction::SUCCESS, payload: refund.to_h)
+    refund =
+      Stripe::Refund.create(
+        charge: payment_intent.charges.first.id,
+        reverse_transfer: true
+      )
+    Transaction.new(
+      external_id: refund.id,
+      external_type: Transaction::REFUND,
+      transaction_type: Transaction::REFUND,
+      status: Transaction::SUCCESS,
+      payload: refund.to_h
+    )
   rescue Stripe::StripeError => e
-    generate_transaction_from_exception(e, Transaction::REFUND, external_id: external_id, external_type: Transaction::PAYMENT_INTENT)
+    generate_transaction_from_exception(
+      e,
+      Transaction::REFUND,
+      external_id: external_id,
+      external_type: Transaction::PAYMENT_INTENT
+    )
   end
 
   def create_payment_intent(capture:, off_session: false)
-    payment_intent_params = create_payment_intent_params(capture: capture, off_session: off_session)
-    payment_intent_params.merge!(setup_future_usage: 'off_session') unless off_session
+    payment_intent_params =
+      create_payment_intent_params(capture: capture, off_session: off_session)
+    unless off_session
+      payment_intent_params.merge!(setup_future_usage: 'off_session')
+    end
 
     payment_intent = Stripe::PaymentIntent.create(payment_intent_params)
 
-    new_transaction = Transaction.new(
-      external_id: payment_intent.id,
-      external_type: Transaction::PAYMENT_INTENT,
-      source_id: payment_intent.payment_method,
-      destination_id: order.merchant_account[:external_id],
-      amount_cents: payment_intent.amount,
-      transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD,
-      payload: payment_intent.to_h
-    )
+    new_transaction =
+      Transaction.new(
+        external_id: payment_intent.id,
+        external_type: Transaction::PAYMENT_INTENT,
+        source_id: payment_intent.payment_method,
+        destination_id: order.merchant_account[:external_id],
+        amount_cents: payment_intent.amount,
+        transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD,
+        payload: payment_intent.to_h
+      )
     update_transaction_with_payment_intent(new_transaction, payment_intent)
     new_transaction
   rescue Stripe::StripeError => e
-    transaction_from_payment_intent_failure(e, transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD)
+    transaction_from_payment_intent_failure(
+      e,
+      transaction_type: capture ? Transaction::CAPTURE : Transaction::HOLD
+    )
   end
 
   def create_payment_intent_params(capture:, off_session:)
@@ -138,7 +195,11 @@ class PaymentService
   end
 
   def metadata
-    any_consignment_works = @order.artworks.map { |artwork| artwork[:import_source] == 'convection' }.any?
+    any_consignment_works =
+      @order
+        .artworks
+        .map { |artwork| artwork[:import_source] == 'convection' }
+        .any?
 
     {
       exchange_order_id: @order.id,
@@ -173,7 +234,12 @@ class PaymentService
     end
   end
 
-  def generate_transaction_from_exception(exc, type, external_id: nil, external_type:)
+  def generate_transaction_from_exception(
+    exc,
+    type,
+    external_id: nil,
+    external_type:
+  )
     body = exc.json_body[:error]
     Transaction.new(
       external_id: external_id || body[:charge],
@@ -190,6 +256,7 @@ class PaymentService
   def transaction_from_payment_intent_failure(exc, transaction_type: nil)
     body = exc.json_body
     pi = body[:error][:payment_intent]
+
     # attempting confirm failed
     Transaction.new(
       status: Transaction::FAILURE,
@@ -212,8 +279,16 @@ class PaymentService
       external_type: Transaction::PAYMENT_INTENT,
       transaction_type: Transaction::CONFIRM,
       failure_code: 'cannot_confirm',
-      failure_message: "Payment intent is not in a confirmable state: #{payment_intent.status}",
-      status: payment_intent.status == 'requires_action' ? Transaction::REQUIRES_ACTION : Transaction::FAILURE,
+      failure_message:
+        "Payment intent is not in a confirmable state: #{
+          payment_intent.status
+        }",
+      status:
+        if payment_intent.status == 'requires_action'
+          Transaction::REQUIRES_ACTION
+        else
+          Transaction::FAILURE
+        end,
       payload: payment_intent.to_h
     )
   end

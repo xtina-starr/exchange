@@ -6,14 +6,19 @@ class ReminderFollowUpJob < ApplicationJob
 
   def perform(order_id, state)
     order = Order.find(order_id)
-    return unless order.state == state && Time.zone.now <= order.state_expires_at
+    unless order.state == state && Time.zone.now <= order.state_expires_at
+      return
+    end
 
     case state
     when Order::SUBMITTED
       OrderEvent.post(order, Order::REMINDER_EVENT_VERB[:pending_approval], nil)
-
     when Order::APPROVED
-      OrderEvent.post(order, Order::REMINDER_EVENT_VERB[:pending_fulfillment], nil)
+      OrderEvent.post(
+        order,
+        Order::REMINDER_EVENT_VERB[:pending_fulfillment],
+        nil
+      )
     end
   end
 end

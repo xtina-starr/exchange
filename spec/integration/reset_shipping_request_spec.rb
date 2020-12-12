@@ -8,10 +8,37 @@ describe Api::GraphqlController, type: :request do
     let(:seller_id) { jwt_partner_ids.first }
     let(:user_id) { jwt_user_id }
     let(:order) { Fabricate(:order, seller_id: seller_id, buyer_id: user_id) }
-    let!(:line_items) { [Fabricate(:line_item, order: order, artwork_id: 'a-1', list_price_cents: 1000_00, quantity: 1)] }
-    let(:artwork) { gravity_v1_artwork(_id: 'a-1', domestic_shipping_fee_cents: 200_00, international_shipping_fee_cents: 300_00) }
-    let(:partner) { { id: seller_id, artsy_collects_sales_tax: true, billing_location_id: '123abc' } }
-    let(:seller_addresses) { [Address.new(state: 'NY', country: 'US', postal_code: '10001'), Address.new(state: 'MA', country: 'US', postal_code: '02139')] }
+    let!(:line_items) do
+      [
+        Fabricate(
+          :line_item,
+          order: order,
+          artwork_id: 'a-1',
+          list_price_cents: 1000_00,
+          quantity: 1
+        )
+      ]
+    end
+    let(:artwork) do
+      gravity_v1_artwork(
+        _id: 'a-1',
+        domestic_shipping_fee_cents: 200_00,
+        international_shipping_fee_cents: 300_00
+      )
+    end
+    let(:partner) do
+      {
+        id: seller_id,
+        artsy_collects_sales_tax: true,
+        billing_location_id: '123abc'
+      }
+    end
+    let(:seller_addresses) do
+      [
+        Address.new(state: 'NY', country: 'US', postal_code: '10001'),
+        Address.new(state: 'MA', country: 'US', postal_code: '02139')
+      ]
+    end
 
     let(:us_shipping_address) do
       {
@@ -59,7 +86,14 @@ describe Api::GraphqlController, type: :request do
     describe 'switch from domestic to international shipping' do
       before do
         # set shipping to domestic
-        client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: us_shipping_address })
+        client.execute(
+          QueryHelper::SET_SHIPPING,
+          input: {
+            id: order.id.to_s,
+            fulfillmentType: 'SHIP',
+            shipping: us_shipping_address
+          }
+        )
         expect(order.reload).to have_attributes(
           shipping_country: 'US',
           shipping_city: 'New York',
@@ -72,7 +106,15 @@ describe Api::GraphqlController, type: :request do
           shipping_total_cents: 200_00,
           buyer_total_cents: 1201_16
         )
-        @response = client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: international_shipping_address })
+        @response =
+          client.execute(
+            QueryHelper::SET_SHIPPING,
+            input: {
+              id: order.id.to_s,
+              fulfillmentType: 'SHIP',
+              shipping: international_shipping_address
+            }
+          )
       end
       it 'changes shipping info' do
         expect(order.reload).to have_attributes(
@@ -87,14 +129,24 @@ describe Api::GraphqlController, type: :request do
         )
       end
       it 'updates order totals' do
-        expect(order.reload).to have_attributes(shipping_total_cents: 300_00, buyer_total_cents: 1301_16)
+        expect(order.reload).to have_attributes(
+          shipping_total_cents: 300_00,
+          buyer_total_cents: 1301_16
+        )
       end
     end
 
     describe 'switch from ship to pickup' do
       before do
         # set shipping to domestic
-        client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'SHIP', shipping: us_shipping_address })
+        client.execute(
+          QueryHelper::SET_SHIPPING,
+          input: {
+            id: order.id.to_s,
+            fulfillmentType: 'SHIP',
+            shipping: us_shipping_address
+          }
+        )
         expect(order.reload).to have_attributes(
           shipping_country: 'US',
           shipping_city: 'New York',
@@ -107,7 +159,15 @@ describe Api::GraphqlController, type: :request do
           shipping_total_cents: 200_00,
           buyer_total_cents: 1201_16
         )
-        @response = client.execute(QueryHelper::SET_SHIPPING, input: { id: order.id.to_s, fulfillmentType: 'PICKUP', phoneNumber: '8766543221' })
+        @response =
+          client.execute(
+            QueryHelper::SET_SHIPPING,
+            input: {
+              id: order.id.to_s,
+              fulfillmentType: 'PICKUP',
+              phoneNumber: '8766543221'
+            }
+          )
       end
       it 'changes shipping info' do
         expect(order.reload).to have_attributes(
@@ -123,7 +183,10 @@ describe Api::GraphqlController, type: :request do
         )
       end
       it 'updates order totals' do
-        expect(order.reload).to have_attributes(shipping_total_cents: 0, buyer_total_cents: 1001_16)
+        expect(order.reload).to have_attributes(
+          shipping_total_cents: 0,
+          buyer_total_cents: 1001_16
+        )
       end
     end
   end

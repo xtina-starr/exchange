@@ -4,7 +4,10 @@ class Types::LineItemType < Types::BaseObject
 
   field :id, ID, null: false
   field :internalID, ID, null: false, method: :id, camelize: false
-  field :price_cents, Integer, null: false, deprecation_reason: 'switch to use listPriceCents'
+  field :price_cents,
+        Integer,
+        null: false,
+        deprecation_reason: 'switch to use listPriceCents'
   field :list_price_cents, Integer, null: false
   field :shipping_total_cents, Integer, null: true
   field :artwork_id, String, null: false

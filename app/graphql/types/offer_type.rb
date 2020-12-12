@@ -19,10 +19,7 @@ class Types::OfferType < Types::BaseObject
   field :currency_code, String, null: false
 
   def from
-    OpenStruct.new(
-      id: object.from_id,
-      type: object.from_type
-    )
+    OpenStruct.new(id: object.from_id, type: object.from_type)
   end
 
   def currency_code

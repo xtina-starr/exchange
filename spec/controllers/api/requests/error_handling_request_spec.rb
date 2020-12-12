@@ -2,14 +2,11 @@ require 'rails_helper'
 
 describe Api::GraphqlController, type: :request do
   describe 'ErrorType' do
-    let(:auth_headers) { jwt_headers(user_id: 'user-id', partner_ids: ['p1'], roles: nil) }
-    let(:mutation_input) do
-      {
-        artworkId: 'test'
-      }
+    let(:auth_headers) do
+      jwt_headers(user_id: 'user-id', partner_ids: ['p1'], roles: nil)
     end
-    let(:mutation) do
-      <<-GRAPHQL
+    let(:mutation_input) { { artworkId: 'test' } }
+    let(:mutation) { <<-GRAPHQL }
         mutation($input: CreateOrderWithArtworkInput!) {
           createOrderWithArtwork(input: $input) {
             orderOrError {
@@ -39,12 +36,15 @@ describe Api::GraphqlController, type: :request do
           }
         }
       GRAPHQL
-    end
 
     context 'StandardError' do
       before do
-        expect(OrderService).to receive(:create_with_artwork!).and_raise('something went wrong')
-        post '/api/graphql', params: { query: mutation, variables: { input: mutation_input } }, headers: auth_headers
+        expect(OrderService).to receive(:create_with_artwork!).and_raise(
+          'something went wrong'
+        )
+        post '/api/graphql',
+             params: { query: mutation, variables: { input: mutation_input } },
+             headers: auth_headers
       end
       it 'returns 500' do
         expect(response.status).to eq 500
@@ -56,14 +56,21 @@ describe Api::GraphqlController, type: :request do
         expect(error['message']).to eq 'something went wrong'
         expect(error['extensions']['type']).to eq 'internal'
         expect(error['extensions']['code']).to eq 'generic'
-        expect(error['extensions']['data']['message']).to eq 'something went wrong'
+        expect(
+          error['extensions']['data']['message']
+        ).to eq 'something went wrong'
       end
     end
 
     context 'ActiveRecord::RecordNotFound' do
       before do
-        expect(OrderService).to receive(:create_with_artwork!).and_raise(ActiveRecord::RecordNotFound, 'cannot find')
-        post '/api/graphql', params: { query: mutation, variables: { input: mutation_input } }, headers: auth_headers
+        expect(OrderService).to receive(:create_with_artwork!).and_raise(
+          ActiveRecord::RecordNotFound,
+          'cannot find'
+        )
+        post '/api/graphql',
+             params: { query: mutation, variables: { input: mutation_input } },
+             headers: auth_headers
       end
       it 'returns 404' do
         expect(response.status).to eq 404
@@ -72,7 +79,9 @@ describe Api::GraphqlController, type: :request do
         result = JSON.parse(response.body)
         expect(result['errors']).not_to be_nil
         error = result['errors'].first
-        expect(error['message']).to eq 'type: validation, code: not_found, data: {:message=>"cannot find"}'
+        expect(
+          error['message']
+        ).to eq 'type: validation, code: not_found, data: {:message=>"cannot find"}'
         expect(error['extensions']['type']).to eq 'validation'
         expect(error['extensions']['code']).to eq 'not_found'
         expect(error['extensions']['data']['message']).to eq 'cannot find'
@@ -81,8 +90,13 @@ describe Api::GraphqlController, type: :request do
 
     context 'ActionController::ParameterMissing' do
       before do
-        expect(OrderService).to receive(:create_with_artwork!).and_raise(ActionController::ParameterMissing, 'id')
-        post '/api/graphql', params: { query: mutation, variables: { input: mutation_input } }, headers: auth_headers
+        expect(OrderService).to receive(:create_with_artwork!).and_raise(
+          ActionController::ParameterMissing,
+          'id'
+        )
+        post '/api/graphql',
+             params: { query: mutation, variables: { input: mutation_input } },
+             headers: auth_headers
       end
       it 'returns 400' do
         expect(response.status).to eq 400

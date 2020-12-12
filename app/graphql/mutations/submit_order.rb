@@ -3,7 +3,10 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
 
   argument :id, ID, required: true
 
-  field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure', null: false
+  field :order_or_error,
+        Mutations::OrderOrFailureUnionType,
+        'A union of success/failure',
+        null: false
 
   def resolve(id:)
     order = Order.find(id)
@@ -12,6 +15,8 @@ class Mutations::SubmitOrder < Mutations::BaseMutation
   rescue Errors::PaymentRequiresActionError => e
     { order_or_error: { action_data: e.action_data } }
   rescue Errors::ApplicationError => e
-    { order_or_error: { error: Types::ApplicationErrorType.from_application(e) } }
+    {
+      order_or_error: { error: Types::ApplicationErrorType.from_application(e) }
+    }
   end
 end

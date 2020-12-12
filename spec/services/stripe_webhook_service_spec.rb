@@ -4,8 +4,12 @@ describe StripeWebhookService, type: :services do
   include_context 'use stripe mock'
   let(:state) { Order::APPROVED }
   let(:external_charge_id) { 'ch_some_id' }
-  let!(:order) { Fabricate(:order, state: state, external_charge_id: external_charge_id) }
-  let!(:line_item) { Fabricate(:line_item, order: order, artwork_id: 'artwork-1') }
+  let!(:order) do
+    Fabricate(:order, state: state, external_charge_id: external_charge_id)
+  end
+  let!(:line_item) do
+    Fabricate(:line_item, order: order, artwork_id: 'artwork-1')
+  end
 
   context 'charge.refunded event' do
     let(:event_charge_id) { external_charge_id }
@@ -49,7 +53,11 @@ describe StripeWebhookService, type: :services do
         expect(order.reload.state).to eq Order::REFUNDED
         new_transaction = order.transactions.last
         expect(new_transaction.external_id).to eq charge_refunded_event.id
-        expect(new_transaction.source_id).to eq charge_refunded_event.data.object.source.id
+        expect(new_transaction.source_id).to eq charge_refunded_event
+             .data
+             .object
+             .source
+             .id
       end
     end
 

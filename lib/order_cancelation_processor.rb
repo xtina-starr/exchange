@@ -6,7 +6,9 @@ class OrderCancelationProcessor
   end
 
   def queue_undeduct_inventory_jobs
-    @order.line_items.each { |li| UndeductLineItemInventoryJob.perform_later(li.id) }
+    @order.line_items.each do |li|
+      UndeductLineItemInventoryJob.perform_later(li.id)
+    end
   end
 
   def notify
@@ -14,21 +16,45 @@ class OrderCancelationProcessor
   end
 
   def refund_payment
-    raise Errors::ValidationError.new(:unsupported_payment_method, @order.payment_method) unless @order.payment_method == Order::CREDIT_CARD
+    unless @order.payment_method == Order::CREDIT_CARD
+      raise Errors::ValidationError.new(
+              :unsupported_payment_method,
+              @order.payment_method
+            )
+    end
 
     transaction = @payment_service.refund
     @order.transactions << transaction
-    raise Errors::ProcessingError.new(:refund_failed, transaction.failure_data) if transaction.failed?
+    if transaction.failed?
+      raise Errors::ProcessingError.new(
+              :refund_failed,
+              transaction.failure_data
+            )
+    end
 
     # Only credit commission exemption for refunds, cancelations never deducted from commission exemption total
-    Gravity.refund_commission_exemption(partner_id: @order.seller_id, reference_id: @order.id, notes: 'refund')
+    Gravity.refund_commission_exemption(
+      partner_id: @order.seller_id,
+      reference_id: @order.id,
+      notes: 'refund'
+    )
   end
 
   def cancel_payment
-    raise Errors::ValidationError.new(:unsupported_payment_method, @order.payment_method) unless @order.payment_method == Order::CREDIT_CARD
+    unless @order.payment_method == Order::CREDIT_CARD
+      raise Errors::ValidationError.new(
+              :unsupported_payment_method,
+              @order.payment_method
+            )
+    end
 
     transaction = @payment_service.cancel_payment_intent
     @order.transactions << transaction
-    raise Errors::ProcessingError.new(:cancel_payment_failed, transaction.failure_data) if transaction.failed?
+    if transaction.failed?
+      raise Errors::ProcessingError.new(
+              :cancel_payment_failed,
+              transaction.failure_data
+            )
+    end
   end
 end

@@ -16,15 +16,16 @@ module PaymentMethodService
   def self.confirm_payment_method!(order)
     credit_card = order.credit_card
     merchant_account = order.merchant_account
-    setup_intent = Stripe::SetupIntent.create(
-      payment_method_types: ['card'],
-      confirm: true,
-      customer: credit_card[:customer_account][:external_id],
-      on_behalf_of: merchant_account[:external_id],
-      payment_method: credit_card[:external_id],
-      usage: 'off_session',
-      metadata: metadata(order)
-    )
+    setup_intent =
+      Stripe::SetupIntent.create(
+        payment_method_types: ['card'],
+        confirm: true,
+        customer: credit_card[:customer_account][:external_id],
+        on_behalf_of: merchant_account[:external_id],
+        payment_method: credit_card[:external_id],
+        usage: 'off_session',
+        metadata: metadata(order)
+      )
     Transaction.new(
       external_id: setup_intent.id,
       external_type: Transaction::SETUP_INTENT,
@@ -63,9 +64,12 @@ module PaymentMethodService
 
   def self.transaction_status_from_intent(setup_intent)
     case setup_intent.status # https://stripe.com/docs/payments/intents#intent-statuses
-    when 'requires_capture' then Transaction::REQUIRES_CAPTURE
-    when 'requires_action' then Transaction::REQUIRES_ACTION
-    when 'succeeded' then Transaction::SUCCESS
+    when 'requires_capture'
+      Transaction::REQUIRES_CAPTURE
+    when 'requires_action'
+      Transaction::REQUIRES_ACTION
+    when 'succeeded'
+      Transaction::SUCCESS
     else
       # unknown status raise error
       raise "Unsupported setup_intent status: #{setup_intent.status}"
