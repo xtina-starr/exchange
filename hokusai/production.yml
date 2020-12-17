@@ -1,15 +1,24 @@
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: exchange-web
   namespace: default
+  labels:
+    app: exchange
+    component: web
+    layer: application
 spec:
   strategy:
     rollingUpdate:
       maxSurge: 2
       maxUnavailable: 0
     type: RollingUpdate
+  selector:
+    matchLabels:
+      app: exchange
+      component: web
+      layer: application
   template:
     metadata:
       labels:
@@ -68,10 +77,14 @@ spec:
                       - foreground
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: exchange-sidekiq
+  labels:
+    app: exchange
+    layer: application
+    component: sidekiq
 spec:
   replicas: 1
   strategy:
@@ -79,6 +92,11 @@ spec:
       maxSurge: 1
       maxUnavailable: 0
     type: RollingUpdate
+  selector:
+    matchLabels:
+      app: exchange
+      layer: application
+      component: sidekiq
   template:
     metadata:
       labels:
@@ -120,7 +138,7 @@ metadata:
   namespace: default
 spec:
   scaleTargetRef:
-    apiVersion: extensions/v1beta1
+    apiVersion: apps/v1
     kind: Deployment
     name: exchange-web
   minReplicas: 2
@@ -150,18 +168,20 @@ spec:
   type: ClusterIP
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: exchange
   annotations:
     nginx.ingress.kubernetes.io/whitelist-source-range: "{{ cloudflareIpSourceRanges|join(',') }}"
 spec:
+  ingressClassName: nginx
   rules:
     - host: exchange.artsy.net
       http:
         paths:
           - path: /
+            pathType: Prefix
             backend:
               serviceName: exchange-web-internal
               servicePort: http
