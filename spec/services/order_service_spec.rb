@@ -58,7 +58,7 @@ describe OrderService, type: :services do
             expect(order.buyer_id).to eq buyer_id
             expect(order.seller_id).to eq 'gravity-partner-id'
             expect(order.line_items.count).to eq 1
-            expect(order.line_items.pluck(:artwork_id, :edition_set_id, :quantity).first).to eq [artwork_id, edition_set_id, 2]
+            expect(order.line_items.pick(:artwork_id, :edition_set_id, :quantity)).to eq [artwork_id, edition_set_id, 2]
           end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
         end
 
@@ -93,7 +93,7 @@ describe OrderService, type: :services do
             expect(order.buyer_id).to eq buyer_id
             expect(order.seller_id).to eq 'gravity-partner-id'
             expect(order.line_items.count).to eq 1
-            expect(order.line_items.pluck(:artwork_id, :edition_set_id, :quantity).first).to eq [artwork_id, edition_set_id, 2]
+            expect(order.line_items.pick(:artwork_id, :edition_set_id, :quantity)).to eq [artwork_id, edition_set_id, 2]
           end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
         end
       end
@@ -106,7 +106,7 @@ describe OrderService, type: :services do
             expect(order.buyer_id).to eq buyer_id
             expect(order.seller_id).to eq 'gravity-partner-id'
             expect(order.line_items.count).to eq 1
-            expect(order.line_items.pluck(:artwork_id, :edition_set_id, :quantity).first).to eq [artwork_id, edition_set_id, 2]
+            expect(order.line_items.pick(:artwork_id, :edition_set_id, :quantity)).to eq [artwork_id, edition_set_id, 2]
           end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
         end
 
