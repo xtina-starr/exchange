@@ -39,6 +39,7 @@ end
 
 group :development do
   gem 'listen'
+  gem 'rails-erd'
 end
 
 group :test do
