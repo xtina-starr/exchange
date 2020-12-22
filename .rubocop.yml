@@ -57,21 +57,26 @@ Style/AsciiComments:
 Style/NumericLiterals:
   Enabled: false
 
-Lint/UselessComparison:
-  Exclude:
-    - "spec/lib/address_spec.rb"
+Lint/BinaryOperatorWithIdenticalOperands:
+  Enabled: false
 
 Layout/SpaceAroundMethodCallOperator:
   Enabled: true
+
 Lint/RaiseException:
   Enabled: true
+
 Lint/StructNewOverride:
   Enabled: true
+
 Style/ExponentialNotation:
   Enabled: true
+
 Style/HashEachMethods:
   Enabled: true
+
 Style/HashTransformKeys:
   Enabled: true
+
 Style/HashTransformValues:
   Enabled: true

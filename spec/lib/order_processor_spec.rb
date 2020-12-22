@@ -392,7 +392,7 @@ describe OrderProcessor, type: :services do
     end
 
     context 'with > 0 commission exemption' do
-      OrderTotal = Struct.new(:seller_total_cents, :commission_fee_cents)
+      let(:OrderTotal) { Struct.new(:seller_total_cents, :commission_fee_cents) }
       before do
         allow(BuyOrderTotals).to receive(:new).and_return(OrderTotal.new(5, 10))
         allow(OfferOrderTotals).to receive(:new).and_return(OrderTotal.new(20, 30))
