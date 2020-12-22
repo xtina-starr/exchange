@@ -8,7 +8,7 @@ class Mutations::CreateOfferOrderWithArtwork < Mutations::BaseMutation
 
   field :order_or_error, Mutations::OrderOrFailureUnionType, 'A union of success/failure. If find_active_or_create is not false, it will return existing pending/submitted order for current user if exists, otherwise it will return newly created order', null: false
 
-  def resolve(artwork_id:, edition_set_id: nil, quantity: 1, find_active_or_create:)
+  def resolve(artwork_id:, find_active_or_create:, edition_set_id: nil, quantity: 1)
     order = OrderService.create_with_artwork!(
       buyer_id: context[:current_user][:id],
       buyer_type: Order::USER,

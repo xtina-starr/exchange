@@ -1,6 +1,7 @@
 class OrderCreator
   attr_reader :errors
-  def initialize(buyer_id:, buyer_type:, mode:, quantity: 1, artwork_id:, edition_set_id: nil, user_agent:, user_ip:)
+
+  def initialize(buyer_id:, buyer_type:, mode:, artwork_id:, user_agent:, user_ip:, quantity: 1, edition_set_id: nil)
     @errors = []
     @valid = nil
     @buyer_id = buyer_id

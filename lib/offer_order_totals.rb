@@ -1,6 +1,7 @@
 class OfferOrderTotals
   # Given an offer, it calculate totals on the order
   attr_reader :offer
+
   delegate :tax_total_cents, to: :offer
   delegate :should_remit_sales_tax, to: :offer
   delegate :commission_rate, to: :order
