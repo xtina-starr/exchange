@@ -48,10 +48,16 @@ describe 'Inquiry Checkout happy path with missing artwork metadata', type: :req
   end
 
   it 'supports buyer submitting an offer, seller adding missing metadata, and buyer accepting it' do
-    #
-    # Buyer creates a pending offer order
-    #
+    buyer_creates_pending_offer_order
+    buyer_adds_initial_offer_to_oder
+    buyer_sets_shipping
+    buyer_sets_credit_card
+    buyer_submits_offer_order
+    seller_counters_with_missing_data_provided
+    buyer_accepts_offer
+  end
 
+  def buyer_creates_pending_offer_order
     # TODO: feat: support creating offer order with an impulse_conversation_id
     create_offer_order_input = { artworkId: artwork[:_id], quantity: 1 }
     expect do
@@ -70,10 +76,10 @@ describe 'Inquiry Checkout happy path with missing artwork metadata', type: :req
       buyer_total_cents: nil,
       seller_total_cents: nil
     )
+  end
 
-    #
-    # Buyer adds initial offer to the order
-    #
+  def buyer_adds_initial_offer_to_oder
+    order = Order.last
 
     add_offer_to_order_input = { orderId: order.id, amountCents: 500_00 }
     expect do
@@ -98,10 +104,10 @@ describe 'Inquiry Checkout happy path with missing artwork metadata', type: :req
       tax_total_cents: nil,
       buyer_total_cents: nil
     )
+  end
 
-    #
-    # Buyer sets shipping info
-    #
+  def buyer_sets_shipping
+    order = Order.last
 
     # TODO: feat: support setting shipping with missing artwork location and shipping costs. This mocks out shipping
     # and tax calcualtion for now.
@@ -132,16 +138,17 @@ describe 'Inquiry Checkout happy path with missing artwork metadata', type: :req
       shipping_postal_code: '10012'
     )
 
-    expect(offer.reload).to have_attributes(
+    offer = Offer.last
+    expect(offer).to have_attributes(
       amount_cents: 500_00,
       shipping_total_cents: nil,
       tax_total_cents: nil,
       buyer_total_cents: nil
     )
+  end
 
-    #
-    # Buyer sets credit card
-    #
+  def buyer_sets_credit_card
+    order = Order.last
 
     # TODO: refactor: `id` should be `orderId` to be consistent
     set_credit_card_input = { id: order.id.to_s, creditCardId: buyer_credit_card[:id] }
@@ -153,10 +160,10 @@ describe 'Inquiry Checkout happy path with missing artwork metadata', type: :req
       shipping_country: 'US',
       credit_card_id: 'credit_card_1'
     )
+  end
 
-    #
-    # Buyer submits offer order
-    #
+  def buyer_submits_offer_order
+    order = Order.last
 
     # TODO: feat: allow deferring setting order totals in this step because we don't have shipping or tax info.
     # TODO: question: after offer order submitted, do we also ask partners to respond (with missing
@@ -165,6 +172,8 @@ describe 'Inquiry Checkout happy path with missing artwork metadata', type: :req
       confirm_payment_method!: nil,
       set_order_totals!: nil
     )
+
+    offer = Offer.last
     submit_order_with_offer_input = { offerId: offer.id.to_s }
     # TODO: question: when is the right step to create a setup intent and transaction?
     expect do
@@ -183,10 +192,10 @@ describe 'Inquiry Checkout happy path with missing artwork metadata', type: :req
       shipping_country: 'US',
       credit_card_id: 'credit_card_1'
     )
+  end
 
-    #
-    # Seller counters with shipping cost provided and tax calculated
-    #
+  def seller_counters_with_missing_data_provided
+    order = Order.last
 
     # TODO: feat: partner can counter with artwork location and shipping costs provided. The artwork location will need
     # to be updated in Gravity; shipping costs can be updated in Exchange or both.
@@ -201,9 +210,10 @@ describe 'Inquiry Checkout happy path with missing artwork metadata', type: :req
       transaction_fee_cents: 19_00
     )
     # `last_offer` is set in `set_order_totals!` that we mocked above. Here we manually update it for now.
-    order.update! last_offer: offer
+    order.update! last_offer: Offer.last
     allow_any_instance_of(OfferProcessor).to receive(:set_order_totals!).and_call_original
 
+    offer = Offer.last
     # seller_counter_offer_input = { offerId: offer.id.to_s, shippingTotalCents: 30_00 }
     seller_counter_offer_input = { offerId: offer.id.to_s, amountCents: 500_00 }
     expect do
@@ -223,10 +233,10 @@ describe 'Inquiry Checkout happy path with missing artwork metadata', type: :req
       shipping_country: 'US',
       credit_card_id: 'credit_card_1'
     )
+  end
 
-    #
-    # Buyer accepts the offer
-    #
+  def buyer_accepts_offer
+    order = Order.last
 
     # TODO: feat: capture payment and update transactions
     allow_any_instance_of(OrderProcessor).to receive_messages(
