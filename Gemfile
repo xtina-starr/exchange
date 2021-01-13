@@ -37,6 +37,7 @@ group :development, :test do
   gem 'guard-rspec', require: false
   gem 'rspec-rails'
   gem 'rubocop-rails', require: false
+  gem 'sassc-rails'
 end
 
 group :development do
