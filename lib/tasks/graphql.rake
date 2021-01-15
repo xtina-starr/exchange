@@ -1,18 +1,18 @@
 namespace 'graphql' do
   namespace 'schema' do
-    SCHEMA_FILE_PATH = '_schema.graphql'.freeze
-    ORIG_SCHEMA_PATH = '_schema.graphql.orig'.freeze
+    schema_file_path = '_schema.graphql'.freeze
+    orig_schema_path = '_schema.graphql.orig'.freeze
 
     desc 'fail if there is ungenerated diff in _schema.graphql'
     task diff_check: :environment do
       puts 'Checking for GraphQL schema diffs...'
 
-      cp SCHEMA_FILE_PATH, ORIG_SCHEMA_PATH, verbose: false
+      cp schema_file_path, orig_schema_path, verbose: false
       Rake::Task['graphql:schema:idl'].invoke
 
-      raise failure_message unless identical?(SCHEMA_FILE_PATH, ORIG_SCHEMA_PATH)
+      raise failure_message unless identical?(schema_file_path, orig_schema_path)
     ensure
-      rm(ORIG_SCHEMA_PATH, verbose: false) if File.exist?(ORIG_SCHEMA_PATH)
+      rm(orig_schema_path, verbose: false) if File.exist?(orig_schema_path)
     end
 
     def failure_message

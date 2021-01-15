@@ -33,7 +33,7 @@ class Types::QueryType < Types::BaseObject
     argument :order_states, [Types::OrderStateEnum], required: false
   end
 
-  field :competingOrders, Types::OrderConnectionWithTotalCountType, null: true, connection: true do
+  field :competing_orders, Types::OrderConnectionWithTotalCountType, null: true, connection: true do
     description 'Find list of competing orders'
     argument :order_id, ID, required: true
   end

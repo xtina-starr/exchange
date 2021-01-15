@@ -13,7 +13,7 @@ RSpec.shared_context 'GraphQL Client', shared_context: :metadata do
     Graphlient::Client.new('http://localhost:4000/api/graphql', headers: headers) do |client|
       client.http do |h|
         h.connection do |c|
-          c.use Faraday::Adapter::Rack, app
+          c.adapter Faraday::Adapter::Rack, app
         end
       end
     end
@@ -26,7 +26,7 @@ RSpec.shared_context 'GraphQL Client Helpers', shared_context: :metadata do
     Graphlient::Client.new('http://localhost:4000/api/graphql', headers: auth_headers) do |client|
       client.http do |h|
         h.connection do |c|
-          c.use Faraday::Adapter::Rack, app
+          c.adapter Faraday::Adapter::Rack, app
         end
       end
     end

@@ -13,7 +13,7 @@ describe Gravity, type: :services do
 
     context 'with failed gravity call' do
       before do
-        stub_request(:get, %r{partner\/#{seller_id}}).to_return(status: 404, body: { error: 'not found' }.to_json)
+        stub_request(:get, %r{partner/#{seller_id}}).to_return(status: 404, body: { error: 'not found' }.to_json)
       end
       it 'raises error' do
         expect do
@@ -144,7 +144,7 @@ describe Gravity, type: :services do
 
     context 'with failed gravity call' do
       before do
-        stub_request(:get, %r{credit_card\/#{credit_card_id}}).to_return(status: 404, body: { error: 'not found' }.to_json)
+        stub_request(:get, %r{credit_card/#{credit_card_id}}).to_return(status: 404, body: { error: 'not found' }.to_json)
       end
       it 'raises error' do
         expect do

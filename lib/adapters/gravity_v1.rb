@@ -1,6 +1,8 @@
 module Adapters
   class GravityError < StandardError; end
+
   class GravityNotFoundError < GravityError; end
+
   class GravityV1
     def self.get(url, params: {})
       url = "#{Rails.application.config_for(:gravity)['api_v1_root']}#{url}"

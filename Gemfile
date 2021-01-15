@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 ruby File.read('.ruby-version')
 
-gem 'rails', '6.0.2.2'
+gem 'rails', '6.1.0'
 
 gem 'pg'
 gem 'puma'
@@ -37,6 +37,7 @@ group :development, :test do
   gem 'guard-rspec', require: false
   gem 'rspec-rails'
   gem 'rubocop-rails', require: false
+  gem 'sassc-rails'
 end
 
 group :development do
