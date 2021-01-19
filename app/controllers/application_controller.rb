@@ -5,6 +5,7 @@ class ApplicationController < ActionController::Base
   alias authorized_artsy_token? valid_admin?
 
   attr_reader :current_user
+
   before_action :set_paper_trail_whodunnit
   before_action :set_current_user_for_error_reporting
 

@@ -173,7 +173,7 @@ class PaymentService
     end
   end
 
-  def generate_transaction_from_exception(exc, type, external_id: nil, external_type:)
+  def generate_transaction_from_exception(exc, type, external_type:, external_id: nil)
     body = exc.json_body[:error]
     Transaction.new(
       external_id: external_id || body[:charge],

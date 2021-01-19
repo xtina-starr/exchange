@@ -5,7 +5,7 @@ class Types::BaseField < GraphQL::Schema::Field
     super(**kwargs, &block)
   end
 
-  def authorized?(obj, ctx)
+  def authorized?(obj, _args, ctx)
     case obj
     when Order then order_field_authorized?(obj, ctx[:current_user])
     when LineItem then order_field_authorized?(obj.order, ctx[:current_user])

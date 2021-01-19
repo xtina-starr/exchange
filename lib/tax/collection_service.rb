@@ -1,5 +1,6 @@
 class Tax::CollectionService
   attr_reader :transaction
+
   def initialize(
     line_item,
     artwork_location,
