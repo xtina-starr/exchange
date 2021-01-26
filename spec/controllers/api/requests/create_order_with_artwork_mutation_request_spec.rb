@@ -8,11 +8,13 @@ describe Api::GraphqlController, type: :request do
     let(:edition_set_id) { 'edition-set-id' }
     let(:seller_id) { 'gravity-partner-id' }
     let(:quantity) { 2 }
+
     let(:mutation_input) do
       {
         artworkId: artwork_id,
         editionSetId: edition_set_id,
         quantity: quantity
+
       }
     end
     let(:mutation) do

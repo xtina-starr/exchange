@@ -1,5 +1,5 @@
 module OrderService
-  def self.create_with_artwork!(buyer_id:, buyer_type:, mode:, quantity:, artwork_id:, user_agent:, user_ip:, impulse_conversation_id:, edition_set_id: nil, find_active_or_create: false)
+  def self.create_with_artwork!(buyer_id:, buyer_type:, mode:, quantity:, artwork_id:, user_agent:, user_ip:, impulse_conversation_id: nil, edition_set_id: nil, find_active_or_create: false)
     order_creator = OrderCreator.new(
       buyer_id: buyer_id,
       buyer_type: buyer_type,

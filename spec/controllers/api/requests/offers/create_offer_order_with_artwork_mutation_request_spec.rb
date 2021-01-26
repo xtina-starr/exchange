@@ -251,6 +251,48 @@ describe Api::GraphqlController, type: :request do
               end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
             end
           end
+          context 'impulseConversationId' do
+            it 'accepts impulseConversationId as a valid parameter' do
+              expect do
+                response = client.execute(mutation, input: { artworkId: artwork_id, impulseConversationId: '24681357' })
+                order_id = response.data.create_offer_order_with_artwork.order_or_error.order.id
+                expect(order_id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
+                order = Order.find(order_id)
+                expect(mutation_input[:impulseConversationId]).to eq '24681357'
+                expect(order.mode).to eq Order::OFFER
+                expect(order.currency_code).to eq 'USD'
+                expect(order.buyer_id).to eq jwt_user_id
+                expect(order.seller_id).to eq seller_id
+                expect(order.line_items.count).to eq 1
+                expect(order.line_items.first.list_price_cents).to eq 5400_12
+                expect(order.line_items.first.artwork_id).to eq 'artwork-id'
+                expect(order.line_items.first.edition_set_id).to be_nil
+                expect(order.line_items.first.quantity).to eq 1
+              end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
+            end
+            it 'defaults to nil when no impulseConversationId parameter is passed' do
+              expect do
+                response = client.execute(mutation, input: { artworkId: artwork_id })
+                order_id = response.data.create_offer_order_with_artwork.order_or_error.order.id
+                expect(order_id).not_to be_nil
+                expect(response.data.create_offer_order_with_artwork.order_or_error).not_to respond_to(:error)
+
+                order = Order.find(order_id)
+                expect(mutation_input[:impulseConversationId]).to eq nil
+                expect(order.mode).to eq Order::OFFER
+                expect(order.currency_code).to eq 'USD'
+                expect(order.buyer_id).to eq jwt_user_id
+                expect(order.seller_id).to eq seller_id
+                expect(order.line_items.count).to eq 1
+                expect(order.line_items.first.list_price_cents).to eq 5400_12
+                expect(order.line_items.first.artwork_id).to eq 'artwork-id'
+                expect(order.line_items.first.edition_set_id).to be_nil
+                expect(order.line_items.first.quantity).to eq 1
+              end.to change(Order, :count).by(1).and change(LineItem, :count).by(1)
+            end
+          end
+
           context 'with existing pending buy now order for artwork' do
             let!(:order) do
               order = Fabricate(:order, buyer_id: jwt_user_id, state: Order::PENDING, mode: Order::BUY)
