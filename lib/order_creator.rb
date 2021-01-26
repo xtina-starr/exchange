@@ -1,7 +1,7 @@
 class OrderCreator
   attr_reader :errors
 
-  def initialize(buyer_id:, buyer_type:, mode:, artwork_id:, user_agent:, user_ip:, quantity: 1, edition_set_id: nil)
+  def initialize(buyer_id:, buyer_type:, mode:, artwork_id:, user_agent:, user_ip:, impulse_conversation_id:, quantity: 1, edition_set_id: nil)
     @errors = []
     @valid = nil
     @buyer_id = buyer_id
@@ -12,6 +12,7 @@ class OrderCreator
     @edition_set_id = edition_set_id
     @user_agent = user_agent
     @user_ip = user_ip
+    @impulse_conversation_id = impulse_conversation_id
   end
 
   def valid?
