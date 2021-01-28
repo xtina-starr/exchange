@@ -13,6 +13,7 @@ describe OrderService, type: :services do
      Fabricate(:line_item, order: order, artwork_id: 'a-2', edition_set_id: 'es-1', quantity: 2, list_price_cents: 124_00, sales_tax_cents: 0, shipping_total_cents: 0)]
   end
   let(:user_id) { 'user-id' }
+  let(:impulse_conversation_id) { '11223344556677' }
 
   describe 'create_with_artwork' do
     let(:buyer_id) { 'buyer_id' }
@@ -22,7 +23,10 @@ describe OrderService, type: :services do
     let(:mode) { Order::OFFER }
 
     context 'find_active_or_create=true' do
-      let(:call_service) { OrderService.create_with_artwork!(buyer_id: buyer_id, buyer_type: Order::USER, mode: mode, quantity: 2, artwork_id: artwork_id, edition_set_id: edition_set_id, user_agent: 'ua', user_ip: '0.1', find_active_or_create: true) }
+      let(:call_service) do
+        OrderService.create_with_artwork!(buyer_id: buyer_id, buyer_type: Order::USER, mode: mode, quantity: 2, artwork_id: artwork_id, edition_set_id: edition_set_id, user_agent: 'ua', user_ip: '0.1', find_active_or_create: true,
+                                          impulse_conversation_id: impulse_conversation_id)
+      end
 
       context 'with existing order with same artwork/editionset/mode/quantity' do
         before do
@@ -75,7 +79,10 @@ describe OrderService, type: :services do
     end
 
     context 'find_active_or_create=false' do
-      let(:call_service) { OrderService.create_with_artwork!(buyer_id: buyer_id, buyer_type: Order::USER, mode: mode, quantity: 2, artwork_id: artwork_id, edition_set_id: edition_set_id, user_agent: 'ua', user_ip: '0.1', find_active_or_create: false) }
+      let(:call_service) do
+        OrderService.create_with_artwork!(buyer_id: buyer_id, buyer_type: Order::USER, mode: mode, quantity: 2, artwork_id: artwork_id, edition_set_id: edition_set_id, user_agent: 'ua', user_ip: '0.1', find_active_or_create: false,
+                                          impulse_conversation_id: impulse_conversation_id)
+      end
       before do
         expect(Adapters::GravityV1).to receive(:get).with("/artwork/#{artwork_id}").once.and_return(gravity_v1_artwork)
       end
