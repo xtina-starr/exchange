@@ -1,5 +1,5 @@
 module OrderService
-  def self.create_with_artwork!(buyer_id:, buyer_type:, mode:, quantity:, artwork_id:, user_agent:, user_ip:, edition_set_id: nil, find_active_or_create: false)
+  def self.create_with_artwork!(buyer_id:, buyer_type:, mode:, quantity:, artwork_id:, user_agent:, user_ip:, impulse_conversation_id: nil, edition_set_id: nil, find_active_or_create: false)
     order_creator = OrderCreator.new(
       buyer_id: buyer_id,
       buyer_type: buyer_type,
@@ -8,7 +8,8 @@ module OrderService
       artwork_id: artwork_id,
       edition_set_id: edition_set_id,
       user_agent: user_agent,
-      user_ip: user_ip
+      user_ip: user_ip,
+      impulse_conversation_id: impulse_conversation_id
     )
 
     # in case of Offer orders, we want to reuse existing pending/submitted offers
